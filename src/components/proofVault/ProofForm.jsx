@@ -98,7 +98,7 @@ export default function ProofForm({ open, onOpenChange }) {
         status: 'Draft',
       };
 
-      if (file_type === 'PDF' || fileType === 'Image') {
+      if (fileType === 'PDF' || fileType === 'Image') {
         proofData.file_url = fileUrl;
       }
 
