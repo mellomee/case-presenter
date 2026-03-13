@@ -12,6 +12,7 @@ import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
 import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import RemoveFromJointModal from '@/components/proofVault/RemoveFromJointModal';
+import CreateExtractModal from '@/components/proofVault/CreateExtractModal';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();
