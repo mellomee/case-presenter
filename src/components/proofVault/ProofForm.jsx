@@ -90,6 +90,11 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       return;
     }
 
+    if (!formData.proof_type_category_id) {
+      alert('Proof Type is required.');
+      return;
+    }
+
     if (proofCategory === 'Deposition' && !formData.party_id) {
       alert('Party is required for Depositions.');
       return;
