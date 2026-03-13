@@ -176,38 +176,23 @@ export default function ProofTile({
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-            {(proof.file_url || proof.video_url) && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setViewerOpen(true)}
-                className="h-8 w-8 text-slate-600 hover:text-blue-600"
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(proof)}
-              className="h-8 w-8 text-slate-600 hover:text-blue-600"
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                if (confirm('Delete this proof?')) {
-                  onDelete(proof.id);
-                }
-              }}
-              className="h-8 w-8 text-slate-600 hover:text-red-600"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+          {/* Action Menu */}
+          <div onClick={(e) => e.stopPropagation()}>
+            <ProofActionMenu
+              proof={proof}
+              currentTab={currentTab}
+              allProofs={allProofs}
+              onEdit={() => onEdit(proof)}
+              onView={() => setViewerOpen(true)}
+              onExtract={onExtract}
+              onClip={onClip}
+              onAddToJoint={onAddToJoint}
+              onAdmitAsExhibit={onAdmitAsExhibit}
+              onAdmitAsDemonstrative={onAdmitAsDemonstrative}
+              onRemoveFromJoint={onRemoveFromJoint}
+              onUnAdmit={onUnAdmit}
+              onDelete={onDelete}
+            />
           </div>
         </div>
 
