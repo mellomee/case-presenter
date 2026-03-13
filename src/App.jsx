@@ -42,7 +42,18 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<Navigate to="/Dashboard" replace />} />
+        <Route path="/Dashboard" element={<Dashboard />} />
+        <Route path="/ProofVault" element={<ProofVault />} />
+        <Route path="/Parties" element={<Parties />} />
+        <Route path="/ExamBuilder" element={<ExamBuilder />} />
+        <Route path="/Settings" element={<Settings />} />
+      </Route>
+      
+      <Route path="/present/attorney" element={<AttorneyView />} />
+      <Route path="/present/jury" element={<JuryView />} />
+      
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
