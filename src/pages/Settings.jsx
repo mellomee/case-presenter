@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CategoriesTab from '@/components/settings/CategoriesTab';
-import ProofTypeTab from '@/components/settings/ProofTypeTab';
-import AdmissionTemplateTab from '@/components/settings/AdmissionTemplateTab';
-import RolesTab from '@/components/settings/RolesTab';
-import CredentialsTab from '@/components/settings/CredentialsTab';
-import GeneralTab from '@/components/settings/GeneralTab';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
@@ -44,22 +38,22 @@ export default function SettingsPage() {
 
             <div className="p-8">
               <TabsContent value="general" className="mt-0">
-                <GeneralTab />
+                <div className="text-slate-500">General Settings — Coming Soon</div>
               </TabsContent>
               <TabsContent value="categories" className="mt-0">
-                <CategoriesTab />
+                <div className="text-slate-500">Proof Categories — Coming Soon</div>
               </TabsContent>
               <TabsContent value="proofTypes" className="mt-0">
-                <ProofTypeTab />
+                <div className="text-slate-500">Proof Types — Coming Soon</div>
               </TabsContent>
               <TabsContent value="templates" className="mt-0">
-                <AdmissionTemplateTab />
+                <div className="text-slate-500">Admission Templates — Coming Soon</div>
               </TabsContent>
               <TabsContent value="roles" className="mt-0">
-                <RolesTab />
+                <div className="text-slate-500">Roles — Coming Soon</div>
               </TabsContent>
               <TabsContent value="credentials" className="mt-0">
-                <CredentialsTab />
+                <div className="text-slate-500">Credentials — Coming Soon</div>
               </TabsContent>
             </div>
           </Tabs>
