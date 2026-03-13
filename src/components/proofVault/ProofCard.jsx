@@ -1,12 +1,12 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, FileText, Download } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import ProofActions from './ProofActions';
 
-export default function ProofCard({ proof, onEdit, onDelete }) {
+export default function ProofCard({ proof, tabLocation, onEdit }) {
   const { data: proofType } = useQuery({
     queryKey: ['proofType', proof.proof_type_id],
     queryFn: () =>
@@ -44,36 +44,19 @@ export default function ProofCard({ proof, onEdit, onDelete }) {
       <div className="flex items-center justify-between pt-3 border-t border-slate-200">
         {hasFile ? (
           <a
-            href={proof.file_url}
+            href={proof.file_url || proof.video_url}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs"
           >
             <Download className="w-3 h-3" />
-            View File
+            View
           </a>
         ) : (
-          <span className="text-xs text-slate-400">No file attached</span>
+          <span className="text-xs text-slate-400">No file</span>
         )}
 
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(proof)}
-            className="h-7 w-7 text-slate-600 hover:text-blue-600"
-          >
-            <Pencil className="w-3 h-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(proof.id)}
-            className="h-7 w-7 text-slate-600 hover:text-red-600"
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
+        <ProofActions proof={proof} tabLocation={tabLocation} onEdit={onEdit} />
       </div>
     </Card>
   );
