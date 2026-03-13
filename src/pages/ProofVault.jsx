@@ -91,6 +91,12 @@ export default function ProofVault() {
     ? exhibits 
     : exhibits.filter((e) => e.status === exhibitFilter);
 
+  const renderEmptyState = (title) => (
+    <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
+      <p className="text-slate-600">{title}</p>
+    </div>
+  );
+
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
@@ -113,49 +119,67 @@ export default function ProofVault() {
           </DialogContent>
         </Dialog>
 
-        {proofTypes.length > 0 && (
-          <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-            <Button
-              variant={filterType === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterType('all')}
-              className={filterType === 'all' ? 'bg-blue-600' : ''}
-            >
-              All Proofs ({proofs.length})
-            </Button>
-            {proofTypes.map((type) => {
-              const count = proofs.filter((p) => p.proof_type_id === type.id).length;
-              return (
-                <Button
-                  key={type.id}
-                  variant={filterType === type.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterType(type.id)}
-                  className={filterType === type.id ? 'bg-blue-600' : ''}
-                >
-                  {type.name} ({count})
-                </Button>
-              );
-            })}
-          </div>
-        )}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full justify-start rounded-none border-b border-slate-200 bg-transparent p-0 h-auto">
+              <TabsTrigger value="exhibits" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4 gap-2">
+                <FileText className="w-4 h-4" /> Exhibits
+              </TabsTrigger>
+              <TabsTrigger value="depositions" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4 gap-2">
+                <Film className="w-4 h-4" /> Depositions
+              </TabsTrigger>
+            </TabsList>
 
-        {filteredProofs.length === 0 ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
-            <p className="text-slate-600">No proofs added yet.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProofs.map((proof) => (
-              <ProofCard
-                key={proof.id}
-                proof={proof}
-                onEdit={handleEdit}
-                onDelete={deleteMutation.mutate}
-              />
-            ))}
-          </div>
-        )}
+            <div className="p-6">
+              <TabsContent value="exhibits" className="mt-0">
+                <div className="mb-4 flex gap-2 flex-wrap">
+                  {['all', 'Draft', 'Joint', 'Admitted', 'Demonstrative'].map((status) => (
+                    <Button
+                      key={status}
+                      variant={exhibitFilter === status ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setExhibitFilter(status)}
+                      className={exhibitFilter === status ? 'bg-blue-600' : ''}
+                    >
+                      {status === 'all' ? 'All' : status} ({exhibits.filter((e) => exhibitFilter === 'all' || e.status === status).length})
+                    </Button>
+                  ))}
+                </div>
+                {filteredExhibits.length === 0 ? (
+                  renderEmptyState('No exhibits in this category.')
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredExhibits.map((proof) => (
+                      <ProofCard
+                        key={proof.id}
+                        proof={proof}
+                        onEdit={handleEdit}
+                        onDelete={deleteMutation.mutate}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="depositions" className="mt-0">
+                {depositions.length === 0 ? (
+                  renderEmptyState('No depositions added yet.')
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {depositions.map((proof) => (
+                      <ProofCard
+                        key={proof.id}
+                        proof={proof}
+                        onEdit={handleEdit}
+                        onDelete={deleteMutation.mutate}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
