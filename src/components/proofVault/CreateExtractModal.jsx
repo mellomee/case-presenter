@@ -76,7 +76,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       setUploadedFile(response.file_url);
       setPageRangeError('');
     } catch (error) {
-      alert(`File upload failed: ${error.message}`);
+      setWarningMsg(`File upload failed: ${error.message}`);
+      setShowWarning(true);
     } finally {
       setUploadingFile(false);
     }
