@@ -85,11 +85,13 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
 
   const handleSubmit = async () => {
     if (!internalName.trim()) {
-      alert('Internal Name is required');
+      setWarningMsg('Internal Name is required');
+      setShowWarning(true);
       return;
     }
     if (!formalName.trim()) {
-      alert('Formal Name is required');
+      setWarningMsg('Formal Name is required');
+      setShowWarning(true);
       return;
     }
     if (!validatePageRange(pageRange)) {
@@ -98,7 +100,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
 
     const fileUrl = extractSource === 'original' ? parentProof.file_url : uploadedFile;
     if (!fileUrl) {
-      alert('No file URL available. Please ensure parent has a file or upload a snippet.');
+      setWarningMsg('No file URL available. Please ensure parent has a file or upload a snippet.');
+      setShowWarning(true);
       return;
     }
 
