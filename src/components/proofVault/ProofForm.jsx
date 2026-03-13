@@ -270,7 +270,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       {/* Proof Type */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Proof Type (optional)
+          Proof Type *
         </label>
         <Select
           value={formData.proof_type_category_id}
