@@ -1,158 +1,198 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { RotateCcw, Save } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Trash2, Plus, Edit2 } from 'lucide-react';
 
 const STEPS = ['1', '2', '3', '3.1', '3.2', '3.3', '3.4', '3.5', '4', '5'];
-const STEP_LABELS = {
-  '1': 'Mark',
-  '2': 'Request',
-  '3': 'Authenticate',
-  '3.1': 'Identification',
-  '3.2': 'Description',
-  '3.3': 'Authenticate',
-  '3.4': 'Accuracy',
-  '3.5': 'Helpfulness',
-  '4': 'Move for Admission',
-  '5': 'Publish',
-};
-
-const DEFAULT_TEMPLATES = {
-  '1': 'I\'m showing you what has been marked as Exhibit {{exhibit_num}}. Do you recognize it?',
-  '2': 'I\'d like to request Exhibit {{exhibit_num}} be shown to the jury.',
-  '3.1': 'Can you identify what\'s depicted in this?',
-  '3.2': 'Can you describe what you see?',
-  '3.3': 'Did you create/take this?',
-  '3.4': 'Does this fairly and accurately depict?',
-  '3.5': 'Would this help the jury understand?',
-  '4': 'Your Honor, I move for admission of Exhibit {{exhibit_num}} into evidence.',
-  '5': 'Your Honor, may I publish Exhibit {{exhibit_num}} to the jury?',
-};
 
 export default function AdmissionTemplateTab() {
-  const queryClient = useQueryClient();
-  const [selectedTypeId, setSelectedTypeId] = useState(null);
-  const [editingTemplate, setEditingTemplate] = useState({});
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState({
+    proof_type_category_id: '',
+    step: '1',
+    default_text: '',
+  });
 
-  const { data: types = [] } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['admissionTemplates'],
+    queryFn: () => base44.entities.AdmissionTemplate.list(),
+  });
+
+  const { data: proofTypes = [] } = useQuery({
     queryKey: ['proofTypes'],
     queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
-  const { data: templates = [] } = useQuery({
-    queryKey: ['templates', selectedTypeId],
-    queryFn: () => (selectedTypeId ? base44.entities.AdmissionTemplate.filter({ proof_type_category_id: selectedTypeId }) : Promise.resolve([])),
-    enabled: !!selectedTypeId,
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.AdmissionTemplate.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admissionTemplates'] });
+      resetForm();
+      setShowForm(false);
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.AdmissionTemplate.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['templates'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admissionTemplates'] });
+      resetForm();
+      setShowForm(false);
+    },
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.AdmissionTemplate.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['templates'] }),
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.AdmissionTemplate.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admissionTemplates'] });
+    },
   });
 
-  const handleTypeSelect = (typeId) => {
-    setSelectedTypeId(typeId);
-    setEditingTemplate({});
+  const resetForm = () => {
+    setFormData({ proof_type_category_id: '', step: '1', default_text: '' });
+    setEditingId(null);
   };
 
-  const handleReset = async () => {
-    if (!selectedTypeId) return;
-    for (const step of STEPS) {
-      const existing = templates.find((t) => t.step === step);
-      if (existing) {
-        await updateMutation.mutateAsync({
-          id: existing.id,
-          data: { default_text: DEFAULT_TEMPLATES[step] },
-        });
+  const handleEdit = (template) => {
+    setEditingId(template.id);
+    setFormData({
+      proof_type_category_id: template.proof_type_category_id,
+      step: template.step,
+      default_text: template.default_text,
+    });
+    setShowForm(true);
+  };
+
+  const handleSubmit = () => {
+    if (formData.proof_type_category_id && formData.default_text.trim()) {
+      if (editingId) {
+        updateMutation.mutate({ id: editingId, data: formData });
       } else {
-        await createMutation.mutateAsync({
-          proof_type_category_id: selectedTypeId,
-          step,
-          default_text: DEFAULT_TEMPLATES[step],
-        });
+        createMutation.mutate(formData);
       }
     }
   };
 
-  const handleSave = (stepId, text) => {
-    const existing = templates.find((t) => t.step === stepId);
-    if (existing) {
-      updateMutation.mutate({ id: existing.id, data: { default_text: text } });
-    } else {
-      createMutation.mutate({
-        proof_type_category_id: selectedTypeId,
-        step: stepId,
-        default_text: text,
-      });
-    }
+  const getProofTypeName = (id) => {
+    return proofTypes.find((t) => t.id === id)?.name || 'Unknown';
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-slate-900">Admission Templates</h3>
-        {selectedTypeId && (
-          <Button onClick={handleReset} variant="outline" size="sm" className="gap-2">
-            <RotateCcw className="w-4 h-4" /> Reset All to Defaults
+    <div className="space-y-6">
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogTrigger asChild>
+          <Button onClick={() => resetForm()} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4" />
+            Add Template
           </Button>
-        )}
-      </div>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit Template' : 'Add Admission Template'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="proof_type">Proof Type Category</Label>
+              <Select value={formData.proof_type_category_id} onValueChange={(val) => setFormData({ ...formData, proof_type_category_id: val })}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select proof type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {proofTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      {!selectedTypeId ? (
-        <div className="grid grid-cols-2 gap-2">
-          {types.map((type) => (
-            <button
-              key={type.id}
-              onClick={() => handleTypeSelect(type.id)}
-              className="p-3 text-left border border-slate-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition"
-            >
-              <p className="font-medium text-slate-900">{type.name}</p>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <Button onClick={() => setSelectedTypeId(null)} variant="outline" size="sm">
-            ← Back to Types
-          </Button>
+            <div>
+              <Label htmlFor="step">Step</Label>
+              <Select value={formData.step} onValueChange={(val) => setFormData({ ...formData, step: val })}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select step" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STEPS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      Step {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {STEPS.map((step) => {
-            const template = templates.find((t) => t.step === step);
-            const text = editingTemplate[step] ?? template?.default_text ?? DEFAULT_TEMPLATES[step];
-            return (
-              <div key={step} className="border border-slate-200 rounded-lg p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="font-semibold text-slate-900">
-                    Step {step}: {STEP_LABELS[step]}
-                  </label>
-                </div>
-                <Textarea
-                  value={text}
-                  onChange={(e) => setEditingTemplate({ ...editingTemplate, [step]: e.target.value })}
-                  className="mb-2 text-sm"
-                  rows={3}
-                  placeholder="Question text (use {{exhibit_num}} for auto-fill)"
-                />
-                <p className="text-xs text-slate-500 mb-2">Preview: {text.replace('{{exhibit_num}}', 'B-2')}</p>
+            <div>
+              <Label htmlFor="default_text">Default Question Text</Label>
+              <Textarea
+                id="default_text"
+                value={formData.default_text}
+                onChange={(e) => setFormData({ ...formData, default_text: e.target.value })}
+                placeholder="Use {{exhibit_num}} as placeholder"
+                className="mt-2"
+              />
+              <p className="text-xs text-slate-500 mt-1">Use {{exhibit_num}} as placeholder for exhibit number</p>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowForm(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
+                {editingId ? 'Update' : 'Create'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="space-y-3">
+        {templates.map((template) => (
+          <Card key={template.id} className="p-4 border-slate-200">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="font-medium text-slate-900">{getProofTypeName(template.proof_type_category_id)} — Step {template.step}</p>
+              </div>
+              <div className="flex gap-2">
                 <Button
-                  onClick={() => handleSave(step, text)}
-                  size="sm"
-                  className="gap-2"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEdit(template)}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                 >
-                  <Save className="w-4 h-4" /> Save Step
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteMutation.mutate(template.id)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+            <p className="text-sm text-slate-600">{template.default_text}</p>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
