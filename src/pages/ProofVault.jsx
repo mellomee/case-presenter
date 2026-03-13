@@ -10,6 +10,8 @@ import ProofTile from '@/components/proofVault/ProofTile';
 import AddToJointModal from '@/components/proofVault/AddToJointModal';
 import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
 import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
+import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
+import RemoveFromJointModal from '@/components/proofVault/RemoveFromJointModal';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();
