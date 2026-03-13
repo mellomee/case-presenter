@@ -144,7 +144,12 @@ export default function ProofVault() {
 
   const handleClip = (proof) => {
     setSelectedProofForModal(proof);
-    setShowCreateExtractClipModal(true);
+    // Extract clip for PDF/Extract, Video clip for Video/Deposition
+    if (proof.file_type === 'PDF' || proof.proof_child_type === 'Extract') {
+      setShowCreateExtractClipModal(true);
+    } else if (proof.file_type === 'Video' || proof.file_type === 'VideoClip') {
+      setShowCreateVideoClipModal(true);
+    }
   };
 
   // Separate exhibits and depositions
