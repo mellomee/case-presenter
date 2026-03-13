@@ -194,6 +194,18 @@ export default function ProofTile({
               </div>
             )}
 
+            {/* Video Clips (for VideoClip child) */}
+            {proof.proof_child_type === 'VideoClip' && proof.video_clips && Array.isArray(proof.video_clips) && proof.video_clips.length > 0 && (
+              <div className="text-xs text-slate-600 mb-2">
+                <span className="text-amber-600">• {proof.video_clips.length} segment{proof.video_clips.length !== 1 ? 's' : ''}</span>
+                {proof.video_clips.length <= 2 && (
+                  <span className="ml-2 text-slate-500">
+                    {proof.video_clips.map((clip) => `${clip.start}–${clip.end}`).join(', ')}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Status Pill (for Exhibits) */}
             {proof.proof_category === 'Exhibit' && (
               <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
