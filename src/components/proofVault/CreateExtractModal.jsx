@@ -107,11 +107,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     }
 
     const fileUrl = extractSource === 'original' ? parentProof.file_url : uploadedFile;
-    if (!fileUrl) {
-      setWarningMsg('No file URL available. Please ensure parent has a file or upload a snippet.');
-      setShowWarning(true);
-      return;
-    }
 
     const extractData = {
       proof_category: parentProof.proof_category,
