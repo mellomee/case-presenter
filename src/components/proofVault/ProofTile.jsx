@@ -9,7 +9,20 @@ import { compressPageRange } from './pageRangeUtils';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
 
-export default function ProofTile({ proof, allProofs = [], onEdit, onDelete }) {
+export default function ProofTile({ 
+  proof, 
+  allProofs = [], 
+  currentTab = 'draft',
+  onEdit, 
+  onDelete,
+  onExtract,
+  onClip,
+  onAddToJoint,
+  onAdmitAsExhibit,
+  onAdmitAsDemonstrative,
+  onRemoveFromJoint,
+  onUnAdmit,
+}) {
   const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
 
