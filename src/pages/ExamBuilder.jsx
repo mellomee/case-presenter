@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'react-router-dom';
 import ExamForm from '@/components/examBuilder/ExamForm';
 import ExamCard from '@/components/examBuilder/ExamCard';
-import ExamQuestionBuilder from '@/components/examBuilder/ExamQuestionBuilder';
+import ExamQuestionBuilder from '@/components/examBuilder/ExamQuestionBuilder.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
