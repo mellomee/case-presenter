@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Play, FileText } from 'lucide-react';
-import ProofActionMenu from './ProofActionMenu';
+import { Button } from '@/components/ui/button';
+import { Play, FileText, MoreVertical } from 'lucide-react';
 
-export default function DepositionsList({ depositions, onEdit }) {
+export default function DepositionsList({ depositions }) {
   if (depositions.length === 0) {
     return (
       <Card className="p-12 text-center">
@@ -30,7 +30,9 @@ export default function DepositionsList({ depositions, onEdit }) {
                 <p className="text-sm text-slate-600 mt-2 line-clamp-2">{deposition.description}</p>
               )}
             </div>
-            <ProofActionMenu proof={deposition} onEdit={onEdit} />
+            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
           </div>
         </Card>
       ))}
