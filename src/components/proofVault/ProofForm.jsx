@@ -16,13 +16,21 @@ import { X, Upload } from 'lucide-react';
 export default function ProofForm({ proof, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(
     proof || {
-      title: '',
+      name: '',
+      formal_name: '',
       description: '',
-      proof_type_id: '',
+      proof_category: 'Exhibit',
+      file_type: 'PDF',
+      proof_child_type: null,
+      party_id: '',
+      status: 'Draft',
       category_id: '',
       file_url: '',
-      exhibit_number: '',
-      notes: '',
+      draft_exhibit_num: '',
+      joint_exhibit_num: '',
+      admitted_exhibit_num: '',
+      demonstrative_exhibit_num: '',
+      extract_pages: '',
     }
   );
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -36,6 +44,11 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: () => base44.entities.Category.list(),
+  });
+
+  const { data: parties = [] } = useQuery({
+    queryKey: ['parties'],
+    queryFn: () => base44.entities.Party.list(),
   });
 
   const handleFileUpload = async (e) => {
@@ -61,64 +74,152 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
-          <Input
-            placeholder="Exhibit title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Exhibit Number</label>
-          <Input
-            placeholder="e.g., Exhibit A, Exhibit 1"
-            value={formData.exhibit_number}
-            onChange={(e) => setFormData({ ...formData, exhibit_number: e.target.value })}
-          />
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Proof Type</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Proof Category *</label>
             <Select
-              value={formData.proof_type_id}
-              onValueChange={(value) => setFormData({ ...formData, proof_type_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {proofTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-            <Select
-              value={formData.category_id}
-              onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+              value={formData.proof_category}
+              onValueChange={(value) => setFormData({ ...formData, proof_category: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
+                <SelectItem value="Exhibit">Exhibit</SelectItem>
+                <SelectItem value="Deposition">Deposition</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">File Type *</label>
+            <Select
+              value={formData.file_type}
+              onValueChange={(value) => setFormData({ ...formData, file_type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PDF">PDF</SelectItem>
+                <SelectItem value="Image">Image</SelectItem>
+                <SelectItem value="Video">Video</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Internal Name *</label>
+            <Input
+              placeholder="Internal reference name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Display Name *</label>
+            <Input
+              placeholder="Formal/display name"
+              value={formData.formal_name}
+              onChange={(e) => setFormData({ ...formData, formal_name: e.target.value })}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Associated Party</label>
+            <Select
+              value={formData.party_id}
+              onValueChange={(value) => setFormData({ ...formData, party_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select party" />
+              </SelectTrigger>
+              <SelectContent>
+                {parties.map((party) => (
+                  <SelectItem key={party.id} value={party.id}>
+                    {party.first_name} {party.last_name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => setFormData({ ...formData, status: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Draft">Draft</SelectItem>
+                <SelectItem value="Joint">Joint</SelectItem>
+                <SelectItem value="Admitted">Admitted</SelectItem>
+                <SelectItem value="Demonstrative">Demonstrative</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Draft Exhibit #</label>
+            <Input
+              placeholder="e.g., D-1"
+              value={formData.draft_exhibit_num}
+              onChange={(e) => setFormData({ ...formData, draft_exhibit_num: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Joint Exhibit #</label>
+            <Input
+              placeholder="e.g., J-1"
+              value={formData.joint_exhibit_num}
+              onChange={(e) => setFormData({ ...formData, joint_exhibit_num: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Admitted Exhibit #</label>
+            <Input
+              placeholder="e.g., 1"
+              value={formData.admitted_exhibit_num}
+              onChange={(e) => setFormData({ ...formData, admitted_exhibit_num: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Demonstrative #</label>
+            <Input
+              placeholder="e.g., X-1"
+              value={formData.demonstrative_exhibit_num}
+              onChange={(e) => setFormData({ ...formData, demonstrative_exhibit_num: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {formData.file_type === 'PDF' && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Page Range (Extract)</label>
+            <Input
+              placeholder="e.g., 1-3, 5, 13-18"
+              value={formData.extract_pages}
+              onChange={(e) => setFormData({ ...formData, extract_pages: e.target.value })}
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
