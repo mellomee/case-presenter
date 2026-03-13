@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -14,23 +14,29 @@ import {
 import { X, Upload } from 'lucide-react';
 
 export default function ProofForm({ proof, onSubmit, onCancel }) {
+  const [proofCategory, setProofCategory] = useState(proof?.proof_category || 'Exhibit');
+  const [fileType, setFileType] = useState(proof?.file_type || 'PDF');
   const [formData, setFormData] = useState(
     proof || {
-      title: '',
+      proof_category: 'Exhibit',
+      file_type: 'PDF',
+      proof_child_type: null,
+      name: '',
+      formal_name: '',
       description: '',
-      proof_type_id: '',
+      party_id: '',
       category_id: '',
       file_url: '',
-      exhibit_number: '',
-      notes: '',
+      video_url: '',
+      draft_exhibit_num: '',
     }
   );
-  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { data: proofTypes = [] } = useQuery({
-    queryKey: ['proofTypes'],
-    queryFn: () => base44.entities.ProofTypeCategory.list(),
+  const { data: parties = [] } = useQuery({
+    queryKey: ['parties'],
+    queryFn: () => base44.entities.Party.list(),
   });
 
   const { data: categories = [] } = useQuery({
@@ -45,101 +51,241 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     setIsUploading(true);
     try {
       const response = await base44.integrations.Core.UploadFile({ file });
-      setUploadedFile(file.name);
+      setUploadedFileName(file.name);
       setFormData({ ...formData, file_url: response.file_url });
     } catch (error) {
       console.error('Upload failed:', error);
+      alert('File upload failed. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
 
+  const handleProofCategoryChange = (newCategory) => {
+    setProofCategory(newCategory);
+    setFormData({
+      ...formData,
+      proof_category: newCategory,
+      party_id: newCategory === 'Deposition' ? formData.party_id : '',
+    });
+  };
+
+  const handleFileTypeChange = (newType) => {
+    setFileType(newType);
+    setFormData({ ...formData, file_type: newType });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validation
+    if (!formData.name || !formData.formal_name) {
+      alert('Internal Name and Formal Name are required.');
+      return;
+    }
+
+    if (proofCategory === 'Deposition' && !formData.party_id) {
+      alert('Party is required for Depositions.');
+      return;
+    }
+
+    if (fileType === 'PDF' && !formData.file_url && !proof) {
+      alert('PDF file is required.');
+      return;
+    }
+
+    if (fileType === 'Image' && !formData.file_url && !proof) {
+      alert('Image file is required.');
+      return;
+    }
+
+    if (fileType === 'Video' && !formData.video_url && !formData.file_url && !proof) {
+      alert('Video URL or file is required.');
+      return;
+    }
+
     onSubmit(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto pr-2">
+      {/* Proof Category */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Proof Category</label>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={proofCategory === 'Exhibit'}
+              onChange={() => handleProofCategoryChange('Exhibit')}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-slate-700">Exhibit</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={proofCategory === 'Deposition'}
+              onChange={() => handleProofCategoryChange('Deposition')}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-slate-700">Deposition</span>
+          </label>
+        </div>
+      </div>
+
+      {/* File Type */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">File Type</label>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={fileType === 'PDF'}
+              onChange={() => handleFileTypeChange('PDF')}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-slate-700">PDF</span>
+          </label>
+          <label
+            className={`flex items-center gap-2 cursor-pointer ${
+              proofCategory === 'Deposition' ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <input
+              type="radio"
+              checked={fileType === 'Image'}
+              onChange={() => handleFileTypeChange('Image')}
+              disabled={proofCategory === 'Deposition'}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-slate-700">Image</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={fileType === 'Video'}
+              onChange={() => handleFileTypeChange('Video')}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-slate-700">Video</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Internal Name */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Internal Name *
+        </label>
+        <Input
+          placeholder="e.g., Scene Photo 1"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+        />
+      </div>
+
+      {/* Formal Name */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Formal Name *
+        </label>
+        <Input
+          placeholder="e.g., Photograph of Intersection"
+          value={formData.formal_name}
+          onChange={(e) => setFormData({ ...formData, formal_name: e.target.value })}
+          required
+        />
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Description (optional)
+        </label>
+        <Textarea
+          placeholder="Additional details"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="h-16"
+        />
+      </div>
+
+      {/* Party (Mandatory for Deposition) */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Assign to Party {proofCategory === 'Deposition' && '*'}
+        </label>
+        <Select
+          value={formData.party_id}
+          onValueChange={(value) => setFormData({ ...formData, party_id: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select party (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            {parties.map((party) => (
+              <SelectItem key={party.id} value={party.id}>
+                {party.first_name} {party.last_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Category */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Category (optional)
+        </label>
+        <Select
+          value={formData.category_id}
+          onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Draft Exhibit # (Exhibit only) */}
+      {proofCategory === 'Exhibit' && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Draft Exhibit # (optional)
+          </label>
           <Input
-            placeholder="Exhibit title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
+            placeholder="e.g., A-1"
+            value={formData.draft_exhibit_num}
+            onChange={(e) => setFormData({ ...formData, draft_exhibit_num: e.target.value })}
           />
         </div>
+      )}
 
+      {/* PDF Upload */}
+      {fileType === 'PDF' && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Exhibit Number</label>
-          <Input
-            placeholder="e.g., Exhibit A, Exhibit 1"
-            value={formData.exhibit_number}
-            onChange={(e) => setFormData({ ...formData, exhibit_number: e.target.value })}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Proof Type</label>
-            <Select
-              value={formData.proof_type_id}
-              onValueChange={(value) => setFormData({ ...formData, proof_type_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {proofTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-            <Select
-              value={formData.category_id}
-              onValueChange={(value) => setFormData({ ...formData, category_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-          <Textarea
-            placeholder="Detailed description of the proof"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="h-20"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">File</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Upload PDF {!proof && '*'}
+          </label>
           <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
-            {uploadedFile ? (
+            {uploadedFileName || formData.file_url ? (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-700">{uploadedFile}</span>
+                <span className="text-sm text-slate-700">
+                  {uploadedFileName || formData.file_url.split('/').pop()}
+                </span>
                 <button
                   type="button"
                   onClick={() => {
-                    setUploadedFile(null);
+                    setUploadedFileName(null);
                     setFormData({ ...formData, file_url: '' });
                   }}
                   className="text-red-600 hover:text-red-700"
@@ -150,10 +296,12 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
             ) : (
               <label className="flex flex-col items-center justify-center cursor-pointer">
                 <Upload className="w-6 h-6 text-slate-400 mb-2" />
-                <span className="text-sm font-medium text-slate-700">Click to upload</span>
-                <span className="text-xs text-slate-500">PDF, images, or videos</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Click to upload or drag & drop
+                </span>
                 <input
                   type="file"
+                  accept=".pdf"
                   onChange={handleFileUpload}
                   disabled={isUploading}
                   className="hidden"
@@ -162,25 +310,114 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
             )}
           </div>
         </div>
+      )}
 
+      {/* Image Upload */}
+      {fileType === 'Image' && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-          <Textarea
-            placeholder="Additional notes"
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className="h-16"
-          />
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Upload Image {!proof && '*'}
+          </label>
+          <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
+            {uploadedFileName || formData.file_url ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-700">
+                  {uploadedFileName || formData.file_url.split('/').pop()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadedFileName(null);
+                    setFormData({ ...formData, file_url: '' });
+                  }}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center cursor-pointer">
+                <Upload className="w-6 h-6 text-slate-400 mb-2" />
+                <span className="text-sm font-medium text-slate-700">
+                  Click to upload or drag & drop
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
         </div>
+      )}
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-           <Button type="button" variant="outline" onClick={onCancel}>
-             Cancel
-           </Button>
-           <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-             {proof ? 'Update Proof' : 'Add Proof'}
-           </Button>
-         </div>
-        </form>
-        );
+      {/* Video */}
+      {fileType === 'Video' && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Video URL (YouTube, Dropbox, etc.)
+            </label>
+            <Input
+              placeholder="https://..."
+              value={formData.video_url}
+              onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              or Upload Video File (optional)
+            </label>
+            <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
+              {uploadedFileName || formData.file_url ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-700">
+                    {uploadedFileName || formData.file_url.split('/').pop()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUploadedFileName(null);
+                      setFormData({ ...formData, file_url: '' });
+                    }}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center cursor-pointer">
+                  <Upload className="w-6 h-6 text-slate-400 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">
+                    Click to upload
+                  </span>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileUpload}
+                    disabled={isUploading}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+          {proof ? 'Update Proof' : 'Save Proof'}
+        </Button>
+      </div>
+    </form>
+  );
 }
