@@ -184,6 +184,16 @@ export default function ProofTile({
               </div>
             )}
 
+            {/* Clipped Page (for ExtractClip grandchild) */}
+            {proof.proof_child_type === 'ExtractClip' && proof.clipped_page && (
+              <div className="text-xs text-slate-600 mb-2">
+                Page: <span className="font-mono font-semibold">{proof.clipped_page}</span>
+                {proof.highlights && Array.isArray(proof.highlights) && proof.highlights.length > 0 && (
+                  <span className="ml-2 text-amber-600">• {proof.highlights.length} highlight{proof.highlights.length !== 1 ? 's' : ''}</span>
+                )}
+              </div>
+            )}
+
             {/* Status Pill (for Exhibits) */}
             {proof.proof_category === 'Exhibit' && (
               <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
