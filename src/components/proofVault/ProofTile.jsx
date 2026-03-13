@@ -204,8 +204,16 @@ export default function ProofTile({
                 key={child.id}
                 proof={child}
                 allProofs={allProofs}
+                currentTab={currentTab}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onExtract={onExtract}
+                onClip={onClip}
+                onAddToJoint={onAddToJoint}
+                onAdmitAsExhibit={onAdmitAsExhibit}
+                onAdmitAsDemonstrative={onAdmitAsDemonstrative}
+                onRemoveFromJoint={onRemoveFromJoint}
+                onUnAdmit={onUnAdmit}
               />
             ))}
           </div>
