@@ -12,7 +12,6 @@ import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
 import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import RemoveFromJointModal from '@/components/proofVault/RemoveFromJointModal';
-import CreateExtractModal from '@/components/proofVault/CreateExtractModal';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();
@@ -25,7 +24,6 @@ export default function ProofVault() {
   const [showAdmitDemoModal, setShowAdmitDemoModal] = useState(false);
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
   const [showRemoveFromJointModal, setShowRemoveFromJointModal] = useState(false);
-  const [showCreateExtractModal, setShowCreateExtractModal] = useState(false);
   const [selectedProofForModal, setSelectedProofForModal] = useState(null);
 
   const { data: proofs = [] } = useQuery({
@@ -122,13 +120,8 @@ export default function ProofVault() {
     setShowRemoveFromJointModal(true);
   };
 
-  // Extract handler
-  const handleExtract = (proof) => {
-    setSelectedProofForModal(proof);
-    setShowCreateExtractModal(true);
-  };
-
-  // Placeholder handler (to be implemented in Phase 13)
+  // Placeholder action handlers (to be implemented in later phases)
+  const handleExtract = (proof) => console.log('Extract:', proof);
   const handleClip = (proof) => console.log('Clip:', proof);
 
   // Separate exhibits and depositions
@@ -196,12 +189,6 @@ export default function ProofVault() {
           open={showRemoveFromJointModal}
           onClose={() => setShowRemoveFromJointModal(false)}
           proof={selectedProofForModal}
-        />
-
-        <CreateExtractModal
-          open={showCreateExtractModal}
-          onClose={() => setShowCreateExtractModal(false)}
-          parentProof={selectedProofForModal}
         />
 
         <div className="bg-white rounded-lg shadow-sm border border-slate-200">
