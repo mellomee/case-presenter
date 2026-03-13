@@ -186,11 +186,11 @@ export default function ProofTile({
               onView={() => setViewerOpen(true)}
               onExtract={onExtract}
               onClip={onClip}
-              onAddToJoint={onAddToJoint}
-              onAdmitAsExhibit={onAdmitAsExhibit}
-              onAdmitAsDemonstrative={onAdmitAsDemonstrative}
-              onRemoveFromJoint={onRemoveFromJoint}
-              onUnAdmit={onUnAdmit}
+              onAddToJoint={() => onAddToJoint(proof)}
+              onAdmitAsExhibit={() => onAdmitAsExhibit(proof)}
+              onAdmitAsDemonstrative={() => onAdmitAsDemonstrative(proof)}
+              onRemoveFromJoint={() => onRemoveFromJoint(proof)}
+              onUnAdmit={() => onUnAdmit(proof)}
               onDelete={onDelete}
             />
           </div>
