@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Tv, ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import TrialNav from '@/components/attorneyView/TrialNav';
-import ExamScript from '@/components/attorneyView/ExamScript';
-import ProofViewer from '@/components/attorneyView/ProofViewer';
+import TrialNav from '@/components/attorneyView/TrialNav.jsx';
+import ExamScript from '@/components/attorneyView/ExamScript.jsx';
+import ProofViewer from '@/components/attorneyView/ProofViewer.jsx';
 
 export default function AttorneyView() {
   const [selectedExamId, setSelectedExamId] = useState(null);
