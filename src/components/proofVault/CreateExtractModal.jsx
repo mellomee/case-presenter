@@ -226,25 +226,27 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             </div>
           )}
 
-          {/* Page range input */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">
-              Pages from Original PDF (required)
-            </label>
-            <Input
-              placeholder="e.g. 1-3, 5, 13-18"
-              value={pageRange}
-              onChange={(e) => {
-                setPageRange(e.target.value);
-                if (pageRangeError) setPageRangeError('');
-              }}
-              className={pageRangeError ? 'border-red-500' : ''}
-            />
-            {pageRangeError && (
-              <p className="text-xs text-red-600 mt-1">{pageRangeError}</p>
-            )}
-            <p className="text-xs text-slate-500 mt-1">Format: 1-3, 5, 13-18 (comma-separated ranges or single pages)</p>
-          </div>
+          {/* Page range input - only for upload */}
+          {extractSource === 'upload' && (
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">
+                Pages from Original PDF (required)
+              </label>
+              <Input
+                placeholder="e.g. 1-3, 5, 13-18"
+                value={pageRange}
+                onChange={(e) => {
+                  setPageRange(e.target.value);
+                  if (pageRangeError) setPageRangeError('');
+                }}
+                className={pageRangeError ? 'border-red-500' : ''}
+              />
+              {pageRangeError && (
+                <p className="text-xs text-red-600 mt-1">{pageRangeError}</p>
+              )}
+              <p className="text-xs text-slate-500 mt-1">Format: 1-3, 5, 13-18 (comma-separated ranges or single pages)</p>
+            </div>
+          )}
 
           {/* Name fields */}
           <div className="grid grid-cols-2 gap-4">
