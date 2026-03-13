@@ -134,11 +134,6 @@ export default function ProofVault() {
 
   // Extract and clip handlers
   const handleExtract = (proof) => {
-    if (!proof.file_url) {
-      setWarningMessage('Please upload a PDF file to this proof before creating an Extract.');
-      setShowWarning(true);
-      return;
-    }
     setSelectedProofForModal(proof);
     setShowCreateExtractModal(true);
   };
