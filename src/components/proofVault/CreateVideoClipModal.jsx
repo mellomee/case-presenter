@@ -31,10 +31,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { distance: 8 }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
