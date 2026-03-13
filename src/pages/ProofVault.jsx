@@ -72,19 +72,19 @@ export default function ProofVault() {
               </TabsList>
 
               <TabsContent value="all">
-                <ExhibitsList exhibits={exhibits} />
+                <ExhibitsList exhibits={exhibits} status="all" onDelete={handleDeleteProof} />
               </TabsContent>
               <TabsContent value="Draft">
-                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} status="Draft" onDelete={handleDeleteProof} />
               </TabsContent>
               <TabsContent value="Joint">
-                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} status="Joint" onDelete={handleDeleteProof} />
               </TabsContent>
               <TabsContent value="Admitted">
-                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} status="Admitted" onDelete={handleDeleteProof} />
               </TabsContent>
               <TabsContent value="Demonstrative">
-                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} status="Demonstrative" onDelete={handleDeleteProof} />
               </TabsContent>
             </Tabs>
           </TabsContent>
