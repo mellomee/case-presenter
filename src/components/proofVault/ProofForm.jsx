@@ -262,6 +262,28 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         </Select>
       </div>
 
+      {/* Proof Type */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Proof Type (optional)
+        </label>
+        <Select
+          value={formData.proof_type_category_id}
+          onValueChange={(value) => setFormData({ ...formData, proof_type_category_id: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select proof type" />
+          </SelectTrigger>
+          <SelectContent>
+            {proofTypes.map((type) => (
+              <SelectItem key={type.id} value={type.id}>
+                {type.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Draft Exhibit # (Exhibit only) */}
       {proofCategory === 'Exhibit' && (
         <div>
