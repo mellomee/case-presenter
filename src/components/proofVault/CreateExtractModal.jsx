@@ -294,6 +294,21 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             </Button>
           </div>
         </div>
+
+        <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+                Warning
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-base text-slate-700">
+                {warningMsg}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogAction>OK</AlertDialogAction>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
