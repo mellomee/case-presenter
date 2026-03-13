@@ -135,7 +135,7 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush]);
+  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, numPages]);
 
   const handleMouseDown = (e) => {
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
