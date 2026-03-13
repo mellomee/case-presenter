@@ -119,7 +119,7 @@ export default function ProofActionMenu({
     }
 
     // DRAFT TAB
-    if (currentTab === 'draft' || proof.status === 'Draft') {
+    if ((currentTab === 'draft' || proof.status === 'Draft') && (proof.file_url || proof.video_url)) {
       if (isTopLevel) {
         actions.push({
           id: 'addToJoint',
