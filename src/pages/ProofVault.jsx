@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { FileText, Video } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import ExhibitsList from '@/components/proofVault/ExhibitsList';
 import DepositionsList from '@/components/proofVault/DepositionsList';
+import ProofForm from '@/components/proofVault/ProofForm';
 
 export default function ProofVault() {
   const [exhibitTab, setExhibitTab] = useState('all');
+  const [formOpen, setFormOpen] = useState(false);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -30,10 +33,18 @@ export default function ProofVault() {
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <FileText className="w-8 h-8 text-blue-600" />
-          <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
+        <div className="flex items-center justify-between gap-3 mb-8">
+          <div className="flex items-center gap-3">
+            <FileText className="w-8 h-8 text-blue-600" />
+            <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
+          </div>
+          <Button onClick={() => setFormOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add Proof
+          </Button>
         </div>
+
+        <ProofForm open={formOpen} onOpenChange={setFormOpen} />
 
         <Tabs defaultValue="exhibits" className="space-y-6">
           <TabsList>
