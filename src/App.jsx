@@ -1,11 +1,18 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-// Add page imports here
+import Layout from '@/components/Layout';
+import Dashboard from '@/pages/Dashboard';
+import ProofVault from '@/pages/ProofVault';
+import Parties from '@/pages/Parties';
+import ExamBuilder from '@/pages/ExamBuilder';
+import AttorneyView from '@/pages/AttorneyView';
+import JuryView from '@/pages/JuryView';
+import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -33,7 +40,34 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route path="/" element={<Navigate to="/Dashboard" replace />} />
+      
+      <Route element={<Layout><Dashboard /></Layout>}>
+        <Route path="/Dashboard" element={<Dashboard />} />
+      </Route>
+      
+      <Route element={<Layout><ProofVault /></Layout>}>
+        <Route path="/ProofVault" element={<ProofVault />} />
+      </Route>
+      
+      <Route element={<Layout><Parties /></Layout>}>
+        <Route path="/Parties" element={<Parties />} />
+      </Route>
+      
+      <Route element={<Layout><ExamBuilder /></Layout>}>
+        <Route path="/ExamBuilder" element={<ExamBuilder />} />
+      </Route>
+      
+      <Route element={<Layout><AttorneyView /></Layout>}>
+        <Route path="/AttorneyView" element={<AttorneyView />} />
+      </Route>
+      
+      <Route path="/present/jury" element={<JuryView />} />
+      
+      <Route element={<Layout><Settings /></Layout>}>
+        <Route path="/Settings" element={<Settings />} />
+      </Route>
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
