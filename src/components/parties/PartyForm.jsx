@@ -59,7 +59,7 @@ export default function PartyForm({ party, onSubmit, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-white rounded-lg border border-slate-200">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-slate-900 mb-1">Name *</label>
         <Input

@@ -60,12 +60,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">
-        {proof ? 'Edit Proof' : 'Add New Proof'}
-      </h3>
-
-      <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
           <Input
@@ -179,14 +174,13 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-            {proof ? 'Update Proof' : 'Add Proof'}
-          </Button>
-        </div>
-      </div>
-    </form>
-  );
+           <Button type="button" variant="outline" onClick={onCancel}>
+             Cancel
+           </Button>
+           <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+             {proof ? 'Update Proof' : 'Add Proof'}
+           </Button>
+         </div>
+        </form>
+        );
 }
