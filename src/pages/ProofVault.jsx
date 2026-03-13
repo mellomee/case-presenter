@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Film } from 'lucide-react';
+import { FileText, Plus, Film, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import ProofForm from '@/components/proofVault/ProofForm';
 import ProofTile from '@/components/proofVault/ProofTile';
 import AddToJointModal from '@/components/proofVault/AddToJointModal';
