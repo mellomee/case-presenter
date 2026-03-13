@@ -35,6 +35,7 @@ export default function ProofVault() {
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
   const [showRemoveFromJointModal, setShowRemoveFromJointModal] = useState(false);
   const [showCreateExtractModal, setShowCreateExtractModal] = useState(false);
+  const [showCreateExtractClipModal, setShowCreateExtractClipModal] = useState(false);
   const [selectedProofForModal, setSelectedProofForModal] = useState(null);
   const [warningMessage, setWarningMessage] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
