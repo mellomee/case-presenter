@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { FileText, Video } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { FileText, Plus } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import ExhibitsList from '@/components/proofVault/ExhibitsList';
 import DepositionsList from '@/components/proofVault/DepositionsList';
+import AddProofModal from '@/components/proofVault/AddProofModal';
 
 export default function ProofVault() {
   const [exhibitTab, setExhibitTab] = useState('all');
+  const [modalOpen, setModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
