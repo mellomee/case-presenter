@@ -32,7 +32,11 @@ export default function ProofViewerModal({ proof, allProofs, isOpen, onClose }) 
         <div className="w-full h-full flex flex-col">
           {isExtractClip ? (
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" syncState={viewerState} onStateChange={setViewerState} />
-          ) : isVideoClip || proof.file_type === 'Video' ? (
+          ) : isVideoClip ? (
+            <div className="p-6">
+              <VideoClipViewer videoUrl={proof.video_url || proof.file_url} segments={proof.video_clips || []} />
+            </div>
+          ) : proof.file_type === 'Video' ? (
             <VideoViewer proof={proof} allProofs={allProofs} mode="controller" syncState={viewerState} onStateChange={setViewerState} />
           ) : (
             <PDFViewer fileUrl={proof.file_url} mode="controller" syncState={viewerState} onStateChange={setViewerState} />
