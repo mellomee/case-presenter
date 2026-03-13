@@ -86,7 +86,7 @@ export default function PDFViewer({
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush]);
+  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, numPages]);
 
   useEffect(() => {
     const el = containerRef.current;
