@@ -140,13 +140,14 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
     setSegments(segments.filter((s) => s.id !== id));
   };
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = segments.findIndex((s) => s.id === active.id);
-      const newIndex = segments.findIndex((s) => s.id === over.id);
-      setSegments(arrayMove(segments, oldIndex, newIndex));
-    }
+  const handleDragEnd = (result) => {
+    const { source, destination } = result;
+    if (!destination || source.index === destination.index) return;
+    
+    const newSegments = Array.from(segments);
+    const [movedSegment] = newSegments.splice(source.index, 1);
+    newSegments.splice(destination.index, 0, movedSegment);
+    setSegments(newSegments);
   };
 
   const handleSubmit = () => {
