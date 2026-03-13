@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProofForm from '@/components/proofVault/ProofForm';
-import ProofCard from '@/components/proofVault/ProofCard';
+import ProofTile from '@/components/proofVault/ProofTile';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();
@@ -148,11 +148,12 @@ export default function ProofVault() {
                 {filteredExhibits.length === 0 ? (
                   renderEmptyState('No exhibits in this category.')
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredExhibits.map((proof) => (
-                      <ProofCard
+                  <div className="space-y-3">
+                    {filteredExhibits.filter((p) => !p.parent_proof_id).map((proof) => (
+                      <ProofTile
                         key={proof.id}
                         proof={proof}
+                        allProofs={filteredExhibits}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                       />
@@ -165,11 +166,12 @@ export default function ProofVault() {
                 {depositions.length === 0 ? (
                   renderEmptyState('No depositions added yet.')
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {depositions.map((proof) => (
-                      <ProofCard
+                  <div className="space-y-3">
+                    {depositions.filter((p) => !p.parent_proof_id).map((proof) => (
+                      <ProofTile
                         key={proof.id}
                         proof={proof}
+                        allProofs={depositions}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                       />
