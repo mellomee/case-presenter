@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Eye, ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { compressPageRange } from './pageRangeUtils';
 import ProofViewerModal from './ProofViewerModal';
+import ProofActionMenu from './ProofActionMenu';
 
-export default function ProofTile({ proof, allProofs = [], onEdit, onDelete }) {
+export default function ProofTile({ proof, allProofs = [], currentTab = 'draft', onEdit, onDelete, onView }) {
   const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
 
