@@ -20,7 +20,7 @@ export default function GeneralTab() {
   });
 
   useEffect(() => {
-    if (settings.length > 0) {
+    if (settings && Array.isArray(settings) && settings.length > 0) {
       const appSettings = settings[0];
       setFormData({
         case_name: appSettings.case_name || '',
