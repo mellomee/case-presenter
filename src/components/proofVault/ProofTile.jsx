@@ -146,8 +146,8 @@ export default function ProofTile({
               )}
             </div>
 
-            {/* Badges Row 1: Type, Party, Category */}
-            <div className="flex gap-2 mb-2 flex-wrap">
+            {/* Badges Row 1: Type, Party, Category, Attachment Status */}
+            <div className="flex gap-2 mb-2 flex-wrap items-center">
               <Badge variant="outline" className="text-xs">
                 {proof.file_type}
               </Badge>
@@ -157,6 +157,19 @@ export default function ProofTile({
                 </Badge>
               )}
               {category && <Badge className="bg-slate-100 text-slate-700 text-xs">{category.name}</Badge>}
+              {(isParentProof || isExtract) && (
+                hasAttachment ? (
+                  <div className="flex items-center gap-1 text-xs text-green-600">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Attached</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-xs text-amber-600">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>No File</span>
+                  </div>
+                )
+              )}
             </div>
 
             {/* Exhibit # History (for Exhibits) */}
