@@ -279,21 +279,27 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
           <div>
             <label className="text-sm font-medium text-slate-700 mb-3 block">Segments (drag to reorder)</label>
             {segments.length > 0 ? (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={segments.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-2">
-                    {segments.map((segment, idx) => (
-                      <SegmentItem
-                        key={segment.id}
-                        id={segment.id}
-                        segment={segment}
-                        index={idx}
-                        onDelete={handleDeleteSegment}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="segments">
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`space-y-2 ${snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg p-2' : ''}`}
+                    >
+                      {segments.map((segment, idx) => (
+                        <SegmentItem
+                          key={segment.id}
+                          segment={segment}
+                          index={idx}
+                          onDelete={handleDeleteSegment}
+                        />
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             ) : (
               <p className="text-sm text-slate-500 italic">No segments yet</p>
             )}
