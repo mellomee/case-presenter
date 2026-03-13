@@ -1,0 +1,219 @@
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Pencil, Trash2, Eye, ChevronDown, ChevronRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { compressPageRange } from '@/lib/pageRangeUtils';
+import ProofViewerModal from './ProofViewerModal';
+
+export default function ProofTile({ proof, allProofs = [], onEdit, onDelete }) {
+  const [expanded, setExpanded] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+
+  const { data: party } = useQuery({
+    queryKey: ['party', proof.party_id],
+    queryFn: () =>
+      proof.party_id ? base44.entities.Party.list().then((parties) => parties.find((p) => p.id === proof.party_id)) : null,
+    enabled: !!proof.party_id,
+  });
+
+  const { data: category } = useQuery({
+    queryKey: ['category', proof.category_id],
+    queryFn: () =>
+      proof.category_id ? base44.entities.Category.list().then((cats) => cats.find((c) => c.id === proof.category_id)) : null,
+    enabled: !!proof.category_id,
+  });
+
+  // Get children proofs
+  const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
+  const hasChildren = children.length > 0;
+
+  // Determine party color label
+  const getPartyColor = () => {
+    if (!party) return 'bg-slate-100 text-slate-700';
+    switch (party.side) {
+      case 'Plaintiff':
+        return 'bg-red-100 text-red-700';
+      case 'Defense':
+        return 'bg-blue-100 text-blue-700';
+      case 'Neutral':
+        return 'bg-yellow-100 text-yellow-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Draft':
+        return 'bg-slate-100 text-slate-600';
+      case 'Joint':
+        return 'bg-blue-100 text-blue-700';
+      case 'Admitted':
+        return 'bg-green-100 text-green-700';
+      case 'Demonstrative':
+        return 'bg-purple-100 text-purple-700';
+      default:
+        return 'bg-slate-100 text-slate-600';
+    }
+  };
+
+  const getFileTypeIcon = () => {
+    if (proof.file_type === 'PDF') return '📄';
+    if (proof.file_type === 'Image') return '🖼️';
+    if (proof.file_type === 'Video') return '🎥';
+    return '📎';
+  };
+
+  const renderExhibitHistory = () => {
+    const pills = [];
+    if (proof.draft_exhibit_num) {
+      pills.push(
+        <span key="draft" className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 font-mono">
+          D: {proof.draft_exhibit_num}
+        </span>
+      );
+    }
+    if (proof.joint_exhibit_num) {
+      pills.push(
+        <span key="joint" className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 font-mono">
+          J: {proof.joint_exhibit_num}
+        </span>
+      );
+    }
+    if (proof.admitted_exhibit_num) {
+      pills.push(
+        <span key="admitted" className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 font-mono">
+          Adm: {proof.admitted_exhibit_num}
+        </span>
+      );
+    } else if (proof.demonstrative_exhibit_num) {
+      pills.push(
+        <span key="demo" className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 font-mono">
+          Demo: {proof.demonstrative_exhibit_num}
+        </span>
+      );
+    }
+    return pills.length > 0 ? pills : null;
+  };
+
+  return (
+    <>
+      <Card className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${expanded ? 'ring-2 ring-blue-400' : ''}`}>
+        {/* Header Row */}
+        <div
+          className="p-4 flex items-start gap-3"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {hasChildren && (
+            <div className="mt-0.5">
+              {expanded ? (
+                <ChevronDown className="w-5 h-5 text-slate-400" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-slate-400" />
+              )}
+            </div>
+          )}
+          {!hasChildren && <div className="w-5" />}
+
+          {/* Name & Type */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">{getFileTypeIcon()}</span>
+              <h3 className="font-semibold text-slate-900 truncate">{proof.name}</h3>
+              {proof.formal_name && (
+                <span className="text-xs text-slate-500 italic truncate">({proof.formal_name})</span>
+              )}
+            </div>
+
+            {/* Badges Row 1: Type, Party, Category */}
+            <div className="flex gap-2 mb-2 flex-wrap">
+              <Badge variant="outline" className="text-xs">
+                {proof.file_type}
+              </Badge>
+              {party && (
+                <Badge className={`text-xs ${getPartyColor()}`}>
+                  {party.first_name} {party.last_name}
+                </Badge>
+              )}
+              {category && <Badge className="bg-slate-100 text-slate-700 text-xs">{category.name}</Badge>}
+            </div>
+
+            {/* Exhibit # History (for Exhibits) */}
+            {proof.proof_category === 'Exhibit' && renderExhibitHistory() && (
+              <div className="flex gap-1 mb-2 flex-wrap">{renderExhibitHistory()}</div>
+            )}
+
+            {/* Extract Pages (for Extract child) */}
+            {proof.proof_child_type === 'Extract' && proof.extract_pages && (
+              <div className="text-xs text-slate-600 mb-2">
+                Pages: <span className="font-mono font-semibold">{compressPageRange(proof.extract_pages.split(',').map(Number))}</span>
+              </div>
+            )}
+
+            {/* Status Pill (for Exhibits) */}
+            {proof.proof_category === 'Exhibit' && (
+              <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
+            )}
+            {proof.proof_category === 'Deposition' && (
+              <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+            {(proof.file_url || proof.video_url) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewerOpen(true)}
+                className="h-8 w-8 text-slate-600 hover:text-blue-600"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(proof)}
+              className="h-8 w-8 text-slate-600 hover:text-blue-600"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (confirm('Delete this proof?')) {
+                  onDelete(proof.id);
+                }
+              }}
+              className="h-8 w-8 text-slate-600 hover:text-red-600"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Children Accordion */}
+        {expanded && hasChildren && (
+          <div className="border-t border-slate-200 bg-slate-50">
+            {children.map((child) => (
+              <ProofTile
+                key={child.id}
+                proof={child}
+                allProofs={allProofs}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <ProofViewerModal proof={proof} allProofs={allProofs} isOpen={viewerOpen} onClose={() => setViewerOpen(false)} />
+    </>
+  );
+}
