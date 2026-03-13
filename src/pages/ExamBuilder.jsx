@@ -12,10 +12,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import PartySelector from '@/components/examBuilder/PartySelector';
-import ExamTypeToggle from '@/components/examBuilder/ExamTypeToggle';
-import BucketList from '@/components/examBuilder/BucketList';
-import BucketModal from '@/components/examBuilder/BucketModal';
+import PartySelector from '@/components/examBuilder/PartySelector.jsx';
+import ExamTypeToggle from '@/components/examBuilder/ExamTypeToggle.jsx';
+import BucketList from '@/components/examBuilder/BucketList.jsx';
+import BucketModal from '@/components/examBuilder/BucketModal.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
