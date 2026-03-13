@@ -31,12 +31,28 @@ export default function ProofVault() {
   const admittedCount = exhibits.filter((e) => e.status === 'Admitted').length;
   const demoCount = exhibits.filter((e) => e.status === 'Demonstrative').length;
 
+  const handleDeleteProof = async (proof) => {
+    if (!confirm(`Delete "${proof.formal_name}"?`)) return;
+    try {
+      await base44.entities.Proof.delete(proof.id);
+      queryClient.invalidateQueries({ queryKey: ['proofs'] });
+    } catch (error) {
+      alert('Failed to delete proof');
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <FileText className="w-8 h-8 text-blue-600" />
-          <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <FileText className="w-8 h-8 text-blue-600" />
+            <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
+          </div>
+          <Button onClick={() => setModalOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add Proof
+          </Button>
         </div>
 
         <Tabs defaultValue="exhibits" className="space-y-6">
