@@ -140,7 +140,10 @@ export default function ProofVault() {
     setShowCreateExtractModal(true);
   };
 
-  const handleClip = (proof) => console.log('Clip:', proof);
+  const handleClip = (proof) => {
+    setSelectedProofForModal(proof);
+    setShowCreateExtractClipModal(true);
+  };
 
   // Separate exhibits and depositions
   const exhibits = proofs.filter((p) => p.proof_category === 'Exhibit' && !p.parent_proof_id);
