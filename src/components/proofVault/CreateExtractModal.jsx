@@ -36,7 +36,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       onClose();
     },
     onError: (error) => {
-      alert(`Error creating extract: ${error.message}`);
+      setWarningMsg(`Error creating extract: ${error.message}`);
+      setShowWarning(true);
     },
   });
 
