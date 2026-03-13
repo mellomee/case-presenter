@@ -90,9 +90,11 @@ export default function ProofVault() {
           </TabsContent>
 
           <TabsContent value="depositions">
-            <DepositionsList depositions={depositions} />
+            <DepositionsList depositions={depositions} onDelete={handleDeleteProof} />
           </TabsContent>
         </Tabs>
+
+        <AddProofModal open={modalOpen} onOpenChange={setModalOpen} />
       </div>
     </div>
   );
