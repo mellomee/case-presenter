@@ -179,6 +179,18 @@ export default function ProofVault() {
           proof={selectedProofForModal}
         />
 
+        <UnAdmitModal
+          open={showUnAdmitModal}
+          onClose={() => setShowUnAdmitModal(false)}
+          proof={selectedProofForModal}
+        />
+
+        <RemoveFromJointModal
+          open={showRemoveFromJointModal}
+          onClose={() => setShowRemoveFromJointModal(false)}
+          proof={selectedProofForModal}
+        />
+
         <div className="bg-white rounded-lg shadow-sm border border-slate-200">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start rounded-none border-b border-slate-200 bg-transparent p-0 h-auto">
