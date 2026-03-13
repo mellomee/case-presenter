@@ -59,7 +59,7 @@ export default function Parties() {
   };
 
   const filteredParties =
-    filterType === 'all' ? parties : parties.filter((p) => p.party_type === filterType);
+    filterType === 'all' ? parties : parties.filter((p) => p.side === filterType);
 
   return (
     <div className="p-8">
@@ -84,7 +84,7 @@ export default function Parties() {
         </Dialog>
 
         <div className="mb-6 flex gap-2">
-          {['all', 'plaintiff', 'defense', 'neutral'].map((type) => (
+          {['all', 'Plaintiff', 'Defense', 'Neutral'].map((type) => (
             <Button
               key={type}
               variant={filterType === type ? 'default' : 'outline'}
@@ -92,7 +92,7 @@ export default function Parties() {
               onClick={() => setFilterType(type)}
               className={filterType === type ? 'bg-blue-600' : ''}
             >
-              {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
+              {type === 'all' ? 'All' : type}
             </Button>
           ))}
         </div>

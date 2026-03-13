@@ -16,18 +16,34 @@ export default function PartyCard({ party, onEdit, onDelete }) {
     queryFn: () => base44.entities.Credential.list(),
   });
 
-  const roleLabel = roles.find((r) => r.id === party.role_id)?.name || 'No role';
-  const partyCredentials = credentials.filter((c) => party.credentials?.includes(c.id)) || [];
+  const roleLabel = roles.find((r) => r.id === party.role_id)?.name || '—';
+  const partyCredentials = Array.isArray(party.credentials) 
+    ? credentials.filter((c) => party.credentials.includes(c.id))
+    : [];
 
-  const bgColor = party.color === 'red' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
-  const badgeColor = party.color === 'red' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+  const sideColor = {
+    'Plaintiff': 'bg-green-50 border-green-200',
+    'Defense': 'bg-red-50 border-red-200',
+    'Neutral': 'bg-yellow-50 border-yellow-200',
+  }[party.side] || 'bg-slate-50 border-slate-200';
+
+  const badgeColor = {
+    'Plaintiff': 'bg-green-100 text-green-800',
+    'Defense': 'bg-red-100 text-red-800',
+    'Neutral': 'bg-yellow-100 text-yellow-800',
+  }[party.side] || 'bg-slate-100 text-slate-800';
 
   return (
-    <div className={`rounded-lg border ${bgColor} p-4`}>
+    <div className={`rounded-lg border ${sideColor} p-4`}>
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
-          <h3 className="font-semibold text-slate-900">{party.name}</h3>
-          <p className="text-xs text-slate-600">{roleLabel}</p>
+          <h3 className="font-semibold text-slate-900">{party.first_name} {party.last_name}</h3>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge className={badgeColor} variant="outline">
+              {party.side}
+            </Badge>
+            {roleLabel !== '—' && <span className="text-xs text-slate-600">{roleLabel}</span>}
+          </div>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => onEdit(party)} size="sm" variant="ghost">
@@ -43,15 +59,13 @@ export default function PartyCard({ party, onEdit, onDelete }) {
         <div className="mb-3">
           <div className="flex flex-wrap gap-1">
             {partyCredentials.map((cred) => (
-              <Badge key={cred.id} className={badgeColor} variant="outline">
+              <Badge key={cred.id} className="bg-slate-100 text-slate-800" variant="outline">
                 {cred.name}
               </Badge>
             ))}
           </div>
         </div>
       )}
-
-      {party.notes && <p className="text-xs text-slate-600 italic">{party.notes}</p>}
     </div>
   );
 }
