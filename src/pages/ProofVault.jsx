@@ -11,7 +11,6 @@ import ProofForm from '@/components/proofVault/ProofForm';
 export default function ProofVault() {
   const [exhibitTab, setExhibitTab] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
-  const [editingProof, setEditingProof] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -64,25 +63,25 @@ export default function ProofVault() {
               </TabsList>
 
               <TabsContent value="all">
-                <ExhibitsList exhibits={exhibits} tabLocation="all" onEdit={(proof) => { setEditingProof(proof); setFormOpen(true); }} />
+                <ExhibitsList exhibits={exhibits} />
               </TabsContent>
               <TabsContent value="Draft">
-                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} tabLocation="draft" onEdit={(proof) => { setEditingProof(proof); setFormOpen(true); }} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} />
               </TabsContent>
               <TabsContent value="Joint">
-                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} tabLocation="joint" onEdit={(proof) => { setEditingProof(proof); setFormOpen(true); }} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} />
               </TabsContent>
               <TabsContent value="Admitted">
-                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} tabLocation="admitted" onEdit={(proof) => { setEditingProof(proof); setFormOpen(true); }} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} />
               </TabsContent>
               <TabsContent value="Demonstrative">
-                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} tabLocation="demonstrative" onEdit={(proof) => { setEditingProof(proof); setFormOpen(true); }} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} />
               </TabsContent>
             </Tabs>
           </TabsContent>
 
           <TabsContent value="depositions">
-            <DepositionsList depositions={depositions} tabLocation="depositions" onEdit={(proof) => { setEditingProof(proof); setFormOpen(true); }} />
+            <DepositionsList depositions={depositions} />
           </TabsContent>
         </Tabs>
       </div>
