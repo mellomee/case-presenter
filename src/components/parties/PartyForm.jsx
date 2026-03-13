@@ -17,12 +17,12 @@ import { useQuery } from '@tanstack/react-query';
 export default function PartyForm({ party, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(
     party || {
-      name: '',
-      party_type: 'plaintiff',
+      first_name: '',
+      last_name: '',
+      side: 'Plaintiff',
       role_id: '',
       credentials: [],
       notes: '',
-      color: 'green',
     }
   );
 
@@ -36,13 +36,7 @@ export default function PartyForm({ party, onSubmit, onCancel }) {
     queryFn: () => base44.entities.Credential.list(),
   });
 
-  useEffect(() => {
-    if (formData.party_type === 'plaintiff' || formData.party_type === 'neutral') {
-      setFormData((prev) => ({ ...prev, color: 'green' }));
-    } else {
-      setFormData((prev) => ({ ...prev, color: 'red' }));
-    }
-  }, [formData.party_type]);
+
 
   const handleCredentialToggle = (credId) => {
     setFormData((prev) => ({
@@ -60,27 +54,38 @@ export default function PartyForm({ party, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-slate-900 mb-1">Name *</label>
-        <Input
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Full name"
-          required
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-900 mb-1">First Name *</label>
+          <Input
+            value={formData.first_name}
+            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+            placeholder="First name"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-900 mb-1">Last Name *</label>
+          <Input
+            value={formData.last_name}
+            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+            placeholder="Last name"
+            required
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-900 mb-1">Party Type *</label>
-          <Select value={formData.party_type} onValueChange={(value) => setFormData({ ...formData, party_type: value })}>
+          <label className="block text-sm font-medium text-slate-900 mb-1">Side *</label>
+          <Select value={formData.side} onValueChange={(value) => setFormData({ ...formData, side: value })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="plaintiff">Plaintiff / Direct</SelectItem>
-              <SelectItem value="defense">Defense / Cross</SelectItem>
-              <SelectItem value="neutral">Neutral</SelectItem>
+              <SelectItem value="Plaintiff">Plaintiff</SelectItem>
+              <SelectItem value="Defense">Defense</SelectItem>
+              <SelectItem value="Neutral">Neutral</SelectItem>
             </SelectContent>
           </Select>
         </div>
