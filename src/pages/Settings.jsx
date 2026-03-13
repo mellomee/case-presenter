@@ -12,7 +12,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
   const [error, setError] = React.useState(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleError = (event) => {
       setError(event.message || 'An error occurred');
     };
