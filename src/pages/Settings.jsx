@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import GeneralTab from '@/components/settings/GeneralTab';
 import CategoriesTab from '@/components/settings/CategoriesTab';
@@ -15,7 +15,7 @@ export default function Settings() {
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-8">
-          <Settings className="w-8 h-8 text-blue-600" />
+          <SettingsIcon className="w-8 h-8 text-blue-600" />
           <h2 className="text-3xl font-bold text-slate-900">Settings</h2>
         </div>
 
