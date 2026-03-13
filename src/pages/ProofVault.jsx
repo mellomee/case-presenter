@@ -11,16 +11,16 @@ export default function ProofVault() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingProof, setEditingProof] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all');
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
   });
 
-  const { data: parties = [] } = useQuery({
-    queryKey: ['parties'],
-    queryFn: () => base44.entities.Party.list(),
+  const { data: proofTypes = [] } = useQuery({
+    queryKey: ['proofTypes'],
+    queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
   const createMutation = useMutation({
@@ -64,7 +64,7 @@ export default function ProofVault() {
   };
 
   const filteredProofs =
-    filterStatus === 'all' ? proofs : proofs.filter((p) => p.status === filterStatus);
+    filterType === 'all' ? proofs : proofs.filter((p) => p.proof_type_id === filterType);
 
   return (
     <div className="p-8">
@@ -88,30 +88,32 @@ export default function ProofVault() {
           </DialogContent>
         </Dialog>
 
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          <Button
-            variant={filterStatus === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilterStatus('all')}
-            className={filterStatus === 'all' ? 'bg-blue-600' : ''}
-          >
-            All Proofs ({proofs.length})
-          </Button>
-          {['Draft', 'Joint', 'Admitted', 'Demonstrative'].map((status) => {
-            const count = proofs.filter((p) => p.status === status).length;
-            return (
-              <Button
-                key={status}
-                variant={filterStatus === status ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterStatus(status)}
-                className={filterStatus === status ? 'bg-blue-600' : ''}
-              >
-                {status} ({count})
-              </Button>
-            );
-          })}
-        </div>
+        {proofTypes.length > 0 && (
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+            <Button
+              variant={filterType === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilterType('all')}
+              className={filterType === 'all' ? 'bg-blue-600' : ''}
+            >
+              All Proofs ({proofs.length})
+            </Button>
+            {proofTypes.map((type) => {
+              const count = proofs.filter((p) => p.proof_type_id === type.id).length;
+              return (
+                <Button
+                  key={type.id}
+                  variant={filterType === type.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterType(type.id)}
+                  className={filterType === type.id ? 'bg-blue-600' : ''}
+                >
+                  {type.name} ({count})
+                </Button>
+              );
+            })}
+          </div>
+        )}
 
         {filteredProofs.length === 0 ? (
           <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
