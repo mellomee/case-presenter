@@ -81,6 +81,10 @@ export default function ProofTile({
     return '📎';
   };
 
+  const hasAttachment = proof.file_url || proof.video_url;
+  const isParentProof = !proof.parent_proof_id && (proof.file_type === 'PDF' || proof.file_type === 'Video');
+  const isExtract = proof.proof_child_type === 'Extract';
+
   const renderExhibitHistory = () => {
     const pills = [];
     if (proof.draft_exhibit_num) {
