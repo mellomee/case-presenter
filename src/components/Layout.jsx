@@ -1,8 +1,8 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings } from 'lucide-react';
 
-export default function Layout({ children }) {
+export default function Layout() {
   const location = useLocation();
 
   const navItems = [
@@ -10,7 +10,7 @@ export default function Layout({ children }) {
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
     { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
-    { label: 'Present', path: '/AttorneyView', icon: Tv },
+    { label: 'Present', path: '/present/attorney', icon: Tv },
     { label: 'Settings', path: '/Settings', icon: Settings },
   ];
 
@@ -41,7 +41,7 @@ export default function Layout({ children }) {
                     to={item.path}
                     className={`flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${
                       active
-                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 pl-3'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
@@ -76,7 +76,7 @@ export default function Layout({ children }) {
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto">
-          {children}
+          <Outlet />
         </div>
       </div>
     </div>
