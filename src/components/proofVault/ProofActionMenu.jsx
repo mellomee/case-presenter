@@ -107,8 +107,8 @@ export default function ProofActionMenu({
       });
     }
 
-    // CLIP - Video or Extract only
-    if ((isVideo && isTopLevel) || isExtract) {
+    // CLIP - Video top-level or Extract only (with file)
+    if ((isVideo && isTopLevel && proof.file_url) || (isExtract && proof.file_url)) {
       actions.push({
         id: 'clip',
         label: 'Clip',
