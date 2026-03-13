@@ -10,6 +10,34 @@ import CredentialsTab from '@/components/settings/CredentialsTab';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    const handleError = (event) => {
+      setError(event.message || 'An error occurred');
+    };
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h3 className="font-semibold text-red-900">Error loading Settings</h3>
+            <p className="text-red-700 text-sm mt-2">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
