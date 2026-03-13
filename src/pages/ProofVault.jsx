@@ -218,6 +218,21 @@ export default function ProofVault() {
           parentProof={selectedProofForModal}
         />
 
+        <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+                Warning
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-base text-slate-700">
+                {warningMessage}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogAction>OK</AlertDialogAction>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div className="bg-white rounded-lg shadow-sm border border-slate-200">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start rounded-none border-b border-slate-200 bg-transparent p-0 h-auto">
