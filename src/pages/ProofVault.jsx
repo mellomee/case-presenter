@@ -22,6 +22,7 @@ import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import RemoveFromJointModal from '@/components/proofVault/RemoveFromJointModal';
 import CreateExtractModal from '@/components/proofVault/CreateExtractModal';
 import CreateExtractClipModal from '@/components/proofVault/CreateExtractClipModal';
+import CreateVideoClipModal from '@/components/proofVault/CreateVideoClipModal';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();
