@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProofForm from '@/components/proofVault/ProofForm';
 import ProofTile from '@/components/proofVault/ProofTile';
+import AddToJointModal from '@/components/proofVault/AddToJointModal';
+import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
+import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();
