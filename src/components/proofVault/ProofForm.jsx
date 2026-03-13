@@ -44,6 +44,11 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     queryFn: () => base44.entities.Category.list(),
   });
 
+  const { data: proofTypes = [] } = useQuery({
+    queryKey: ['proofTypes'],
+    queryFn: () => base44.entities.ProofTypeCategory.list(),
+  });
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
