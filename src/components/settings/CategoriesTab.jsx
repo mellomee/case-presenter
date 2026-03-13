@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Edit2, Plus } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import { Trash2, Plus } from 'lucide-react';
 
 export default function CategoriesTab() {
+  const [newName, setNewName] = useState('');
   const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState(null);
-  const [editValues, setEditValues] = useState({});
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -17,83 +18,56 @@ export default function CategoriesTab() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Category.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Category.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      setEditingId(null);
+      setNewName('');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Category.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
   });
 
-  const handleAddNew = () => {
-    createMutation.mutate({ name: 'New Category', description: '' });
-  };
-
-  const handleEdit = (category) => {
-    setEditingId(category.id);
-    setEditValues(category);
-  };
-
-  const handleSave = () => {
-    updateMutation.mutate({ id: editingId, data: editValues });
+  const handleCreate = () => {
+    if (newName.trim()) {
+      createMutation.mutate({ name: newName });
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-slate-900">Proof Categories</h3>
-        <Button onClick={handleAddNew} size="sm" className="gap-2">
-          <Plus className="w-4 h-4" /> Add Category
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <Card className="p-6 border-slate-200">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Add New Category</h3>
+        <div className="flex gap-3">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Category name"
+            onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
+          />
+          <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 gap-2">
+            <Plus className="w-4 h-4" />
+            Add
+          </Button>
+        </div>
+      </Card>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {categories.map((cat) => (
-          <div key={cat.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-md border border-slate-200">
-            {editingId === cat.id ? (
-              <>
-                <Input
-                  value={editValues.name}
-                  onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
-                  className="flex-1"
-                  placeholder="Category name"
-                />
-                <Input
-                  value={editValues.description || ''}
-                  onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
-                  className="flex-1"
-                  placeholder="Description (optional)"
-                />
-                <Button onClick={handleSave} size="sm" variant="default">
-                  Save
-                </Button>
-                <Button onClick={() => setEditingId(null)} size="sm" variant="outline">
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="flex-1">
-                  <p className="font-medium text-slate-900">{cat.name}</p>
-                  {cat.description && <p className="text-xs text-slate-600">{cat.description}</p>}
-                </div>
-                <Button onClick={() => handleEdit(cat)} size="sm" variant="ghost">
-                  <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button onClick={() => deleteMutation.mutate(cat.id)} size="sm" variant="ghost" className="text-red-600">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </>
-            )}
-          </div>
+          <Card key={cat.id} className="p-4 border-slate-200 flex items-center justify-between">
+            <span className="text-slate-900 font-medium">{cat.name}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => deleteMutation.mutate(cat.id)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </Card>
         ))}
       </div>
     </div>
