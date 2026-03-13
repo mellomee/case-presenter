@@ -3,6 +3,7 @@ import { Users, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PartyForm from '@/components/parties/PartyForm';
 import PartyCard from '@/components/parties/PartyCard';
 
@@ -73,11 +74,14 @@ export default function Parties() {
           </Button>
         </div>
 
-        {showForm && (
-          <div className="mb-8">
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingParty ? 'Edit Party' : 'Add Party'}</DialogTitle>
+            </DialogHeader>
             <PartyForm party={editingParty} onSubmit={handleSubmit} onCancel={handleCancel} />
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
         <div className="mb-6 flex gap-2">
           {['all', 'plaintiff', 'defense', 'neutral'].map((type) => (
