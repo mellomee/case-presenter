@@ -26,6 +26,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       description: '',
       party_id: '',
       category_id: '',
+      proof_type_category_id: '',
       file_url: '',
       video_url: '',
       draft_exhibit_num: '',
