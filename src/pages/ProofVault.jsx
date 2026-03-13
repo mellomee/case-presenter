@@ -231,6 +231,12 @@ export default function ProofVault() {
           parentExtract={selectedProofForModal}
         />
 
+        <CreateVideoClipModal
+          open={showCreateVideoClipModal}
+          onClose={() => setShowCreateVideoClipModal(false)}
+          parentProof={selectedProofForModal}
+        />
+
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
           <AlertDialogContent>
             <AlertDialogHeader>
