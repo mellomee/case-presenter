@@ -18,17 +18,16 @@ export default function PartyCard({ party, onEdit, onDelete }) {
 
   const roleLabel = roles.find((r) => r.id === party.role_id)?.name || 'No role';
   const partyCredentials = credentials.filter((c) => party.credentials?.includes(c.id)) || [];
-  const fullName = `${party.first_name} ${party.last_name}`;
 
-  const bgColor = party.side === 'Defense' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
-  const badgeColor = party.side === 'Defense' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+  const bgColor = party.color === 'red' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
+  const badgeColor = party.color === 'red' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
 
   return (
     <div className={`rounded-lg border ${bgColor} p-4`}>
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
-          <h3 className="font-semibold text-slate-900">{fullName}</h3>
-          <p className="text-xs text-slate-600">{party.side} • {roleLabel}</p>
+          <h3 className="font-semibold text-slate-900">{party.name}</h3>
+          <p className="text-xs text-slate-600">{roleLabel}</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => onEdit(party)} size="sm" variant="ghost">

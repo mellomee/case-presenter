@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
-import { Users, Plus, Upload } from 'lucide-react';
+import { Users, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PartyForm from '@/components/parties/PartyForm';
 import PartyCard from '@/components/parties/PartyCard';
-import BulkImportDialog from '@/components/parties/BulkImportDialog';
 
 export default function Parties() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [showImport, setShowImport] = useState(false);
   const [editingParty, setEditingParty] = useState(null);
-  const [filterSide, setFilterSide] = useState('all');
+  const [filterType, setFilterType] = useState('all');
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
@@ -60,13 +58,8 @@ export default function Parties() {
     setShowForm(false);
   };
 
-  const handleImportSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['parties'] });
-    setShowImport(false);
-  };
-
   const filteredParties =
-    filterSide === 'all' ? parties : parties.filter((p) => p.side === filterSide);
+    filterType === 'all' ? parties : parties.filter((p) => p.party_type === filterType);
 
   return (
     <div className="p-8">
@@ -76,14 +69,9 @@ export default function Parties() {
             <Users className="w-8 h-8 text-blue-600" />
             <h2 className="text-3xl font-bold text-slate-900">Parties</h2>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setShowImport(true)} variant="outline" className="gap-2">
-              <Upload className="w-4 h-4" /> Import Excel
-            </Button>
-            <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4" /> Add Party
-            </Button>
-          </div>
+          <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4" /> Add Party
+          </Button>
         </div>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -95,18 +83,16 @@ export default function Parties() {
           </DialogContent>
         </Dialog>
 
-        <BulkImportDialog open={showImport} onOpenChange={setShowImport} onSuccess={handleImportSuccess} />
-
         <div className="mb-6 flex gap-2">
-          {['all', 'Plaintiff', 'Defense', 'Neutral'].map((side) => (
+          {['all', 'plaintiff', 'defense', 'neutral'].map((type) => (
             <Button
-              key={side}
-              variant={filterSide === side ? 'default' : 'outline'}
+              key={type}
+              variant={filterType === type ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setFilterSide(side)}
-              className={filterSide === side ? 'bg-blue-600' : ''}
+              onClick={() => setFilterType(type)}
+              className={filterType === type ? 'bg-blue-600' : ''}
             >
-              {side === 'all' ? 'All Parties' : side}
+              {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
             </Button>
           ))}
         </div>

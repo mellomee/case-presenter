@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Trash2, Plus, Edit2 } from 'lucide-react';
+import { Trash2, Edit2, Plus } from 'lucide-react';
 
 export default function RolesTab() {
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [name, setName] = useState('');
   const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
 
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
@@ -21,111 +17,74 @@ export default function RolesTab() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Role.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      resetForm();
-      setShowForm(false);
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Role.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      resetForm();
-      setShowForm(false);
+      setEditingId(null);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Role.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
   });
 
-  const resetForm = () => {
-    setName('');
-    setEditingId(null);
+  const handleAddNew = () => {
+    createMutation.mutate({ name: 'New Role' });
   };
 
   const handleEdit = (role) => {
     setEditingId(role.id);
-    setName(role.name);
-    setShowForm(true);
+    setEditName(role.name);
   };
 
-  const handleSubmit = () => {
-    if (name.trim()) {
-      if (editingId) {
-        updateMutation.mutate({ id: editingId, data: { name } });
-      } else {
-        createMutation.mutate({ name });
-      }
-    }
+  const handleSave = () => {
+    updateMutation.mutate({ id: editingId, data: { name: editName } });
   };
 
   return (
-    <div className="space-y-6">
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogTrigger asChild>
-          <Button onClick={() => resetForm()} className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4" />
-            Add Role
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Role' : 'Add Role'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="role_name">Role Name</Label>
-              <Input
-                id="role_name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Expert Witness, Plaintiff Attorney"
-                className="mt-2"
-                onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
-              />
-            </div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-semibold text-slate-900">Party Roles</h3>
+        <Button onClick={handleAddNew} size="sm" className="gap-2">
+          <Plus className="w-4 h-4" /> Add Role
+        </Button>
+      </div>
 
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
-                {editingId ? 'Update' : 'Create'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <div className="space-y-3">
+      <div className="space-y-2">
         {roles.map((role) => (
-          <Card key={role.id} className="p-4 border-slate-200 flex items-center justify-between">
-            <span className="text-slate-900 font-medium">{role.name}</span>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleEdit(role)}
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteMutation.mutate(role.id)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </Card>
+          <div key={role.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-md border border-slate-200">
+            {editingId === role.id ? (
+              <>
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="flex-1"
+                  placeholder="Role name"
+                />
+                <Button onClick={handleSave} size="sm" variant="default">
+                  Save
+                </Button>
+                <Button onClick={() => setEditingId(null)} size="sm" variant="outline">
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="flex-1 font-medium text-slate-900">{role.name}</p>
+                <Button onClick={() => handleEdit(role)} size="sm" variant="ghost">
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+                <Button onClick={() => deleteMutation.mutate(role.id)} size="sm" variant="ghost" className="text-red-600">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
         ))}
       </div>
     </div>
