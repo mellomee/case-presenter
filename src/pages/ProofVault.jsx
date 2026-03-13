@@ -25,6 +25,7 @@ export default function ProofVault() {
   const [showAdmitDemoModal, setShowAdmitDemoModal] = useState(false);
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
   const [showRemoveFromJointModal, setShowRemoveFromJointModal] = useState(false);
+  const [showCreateExtractModal, setShowCreateExtractModal] = useState(false);
   const [selectedProofForModal, setSelectedProofForModal] = useState(null);
 
   const { data: proofs = [] } = useQuery({
