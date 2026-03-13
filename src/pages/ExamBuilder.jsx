@@ -3,6 +3,7 @@ import { BookOpen, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSearchParams } from 'react-router-dom';
 import ExamForm from '@/components/examBuilder/ExamForm';
 import ExamCard from '@/components/examBuilder/ExamCard';
@@ -87,9 +88,14 @@ export default function ExamBuilder() {
           </Button>
         </div>
 
-        {showForm && (
-          <ExamForm exam={editingExam} onSubmit={handleSubmit} onCancel={handleCancel} />
-        )}
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingExam ? 'Edit Exam' : 'Create Exam'}</DialogTitle>
+            </DialogHeader>
+            <ExamForm exam={editingExam} onSubmit={handleSubmit} onCancel={handleCancel} />
+          </DialogContent>
+        </Dialog>
 
         <div className="mb-6 flex gap-2">
           {['all', 'direct', 'cross'].map((type) => {
