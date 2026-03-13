@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
-import { FileText, Plus } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileText, Video } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import ExhibitsList from '@/components/proofVault/ExhibitsList';
 import DepositionsList from '@/components/proofVault/DepositionsList';
-import AddProofModal from '@/components/proofVault/AddProofModal';
 
 export default function ProofVault() {
   const [exhibitTab, setExhibitTab] = useState('all');
-  const [modalOpen, setModalOpen] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -31,28 +27,12 @@ export default function ProofVault() {
   const admittedCount = exhibits.filter((e) => e.status === 'Admitted').length;
   const demoCount = exhibits.filter((e) => e.status === 'Demonstrative').length;
 
-  const handleDeleteProof = async (proof) => {
-    if (!confirm(`Delete "${proof.formal_name}"?`)) return;
-    try {
-      await base44.entities.Proof.delete(proof.id);
-      queryClient.invalidateQueries({ queryKey: ['proofs'] });
-    } catch (error) {
-      alert('Failed to delete proof');
-    }
-  };
-
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8 text-blue-600" />
-            <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
-          </div>
-          <Button onClick={() => setModalOpen(true)} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Proof
-          </Button>
+        <div className="flex items-center gap-3 mb-8">
+          <FileText className="w-8 h-8 text-blue-600" />
+          <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
         </div>
 
         <Tabs defaultValue="exhibits" className="space-y-6">
@@ -72,29 +52,27 @@ export default function ProofVault() {
               </TabsList>
 
               <TabsContent value="all">
-                <ExhibitsList exhibits={exhibits} status="all" onDelete={handleDeleteProof} />
+                <ExhibitsList exhibits={exhibits} />
               </TabsContent>
               <TabsContent value="Draft">
-                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} status="Draft" onDelete={handleDeleteProof} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} />
               </TabsContent>
               <TabsContent value="Joint">
-                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} status="Joint" onDelete={handleDeleteProof} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} />
               </TabsContent>
               <TabsContent value="Admitted">
-                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} status="Admitted" onDelete={handleDeleteProof} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} />
               </TabsContent>
               <TabsContent value="Demonstrative">
-                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} status="Demonstrative" onDelete={handleDeleteProof} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} />
               </TabsContent>
             </Tabs>
           </TabsContent>
 
           <TabsContent value="depositions">
-            <DepositionsList depositions={depositions} onDelete={handleDeleteProof} />
+            <DepositionsList depositions={depositions} />
           </TabsContent>
         </Tabs>
-
-        <AddProofModal open={modalOpen} onOpenChange={setModalOpen} />
       </div>
     </div>
   );
