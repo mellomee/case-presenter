@@ -189,8 +189,16 @@ export default function ProofVault() {
                         key={proof.id}
                         proof={proof}
                         allProofs={depositions}
+                        currentTab="depositions"
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
+                        onExtract={handleExtract}
+                        onClip={handleClip}
+                        onAddToJoint={handleAddToJoint}
+                        onAdmitAsExhibit={handleAdmitAsExhibit}
+                        onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                        onRemoveFromJoint={handleRemoveFromJoint}
+                        onUnAdmit={handleUnAdmit}
                       />
                     ))}
                   </div>
