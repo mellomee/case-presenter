@@ -102,7 +102,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       setShowWarning(true);
       return;
     }
-    if (!validatePageRange(pageRange)) {
+    if (extractSource === 'upload' && !validatePageRange(pageRange)) {
       return;
     }
 
