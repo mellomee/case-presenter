@@ -122,8 +122,16 @@ export default function ProofVault() {
     setShowRemoveFromJointModal(true);
   };
 
-  // Placeholder action handlers (to be implemented in later phases)
-  const handleExtract = (proof) => console.log('Extract:', proof);
+  // Extract and clip handlers
+  const handleExtract = (proof) => {
+    if (!proof.file_url) {
+      alert('Please upload a PDF file to this proof before creating an Extract.');
+      return;
+    }
+    setSelectedProofForModal(proof);
+    setShowCreateExtractModal(true);
+  };
+
   const handleClip = (proof) => console.log('Clip:', proof);
 
   // Separate exhibits and depositions
