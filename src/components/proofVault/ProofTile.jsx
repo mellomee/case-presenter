@@ -190,8 +190,10 @@ export default function ProofTile({ proof, allProofs = [], currentTab = 'draft',
                 key={child.id}
                 proof={child}
                 allProofs={allProofs}
+                currentTab={currentTab}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onView={onView}
               />
             ))}
           </div>
