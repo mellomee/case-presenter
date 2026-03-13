@@ -122,8 +122,13 @@ export default function ProofVault() {
     setShowRemoveFromJointModal(true);
   };
 
-  // Placeholder action handlers (to be implemented in later phases)
-  const handleExtract = (proof) => console.log('Extract:', proof);
+  // Extract handler
+  const handleExtract = (proof) => {
+    setSelectedProofForModal(proof);
+    setShowCreateExtractModal(true);
+  };
+
+  // Placeholder handler (to be implemented in Phase 13)
   const handleClip = (proof) => console.log('Clip:', proof);
 
   // Separate exhibits and depositions
