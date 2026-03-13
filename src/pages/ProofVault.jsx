@@ -109,11 +109,20 @@ export default function ProofVault() {
     setShowAdmitDemoModal(true);
   };
 
+  // Demotion modal handlers
+  const handleUnAdmit = (proof) => {
+    setSelectedProofForModal(proof);
+    setShowUnAdmitModal(true);
+  };
+
+  const handleRemoveFromJoint = (proof) => {
+    setSelectedProofForModal(proof);
+    setShowRemoveFromJointModal(true);
+  };
+
   // Placeholder action handlers (to be implemented in later phases)
   const handleExtract = (proof) => console.log('Extract:', proof);
   const handleClip = (proof) => console.log('Clip:', proof);
-  const handleRemoveFromJoint = (proof) => console.log('Remove from Joint:', proof);
-  const handleUnAdmit = (proof) => console.log('Un-Admit:', proof);
 
   // Separate exhibits and depositions
   const exhibits = proofs.filter((p) => p.proof_category === 'Exhibit' && !p.parent_proof_id);
