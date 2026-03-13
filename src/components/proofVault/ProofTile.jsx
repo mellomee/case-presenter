@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Eye, ChevronDown, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { compressPageRange } from './pageRangeUtils';
 import ProofViewerModal from './ProofViewerModal';
-import ProofActionMenu from './ProofActionMenu';
 
-export default function ProofTile({ proof, allProofs = [], currentTab = 'draft', onEdit, onDelete, onView }) {
+export default function ProofTile({ proof, allProofs = [], onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
 
@@ -162,23 +162,38 @@ export default function ProofTile({ proof, allProofs = [], currentTab = 'draft',
             )}
           </div>
 
-          {/* Action Menu */}
+          {/* Action Buttons */}
           <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-            <ProofActionMenu
-              proof={proof}
-              currentTab={currentTab}
-              allProofs={allProofs}
-              onEdit={onEdit}
-              onView={() => setViewerOpen(true)}
-              onDelete={onDelete}
-              onAddToJoint={() => {}}
-              onAdmitAsExhibit={() => {}}
-              onAdmitAsDemonstrative={() => {}}
-              onRemoveFromJoint={() => {}}
-              onUnAdmit={() => {}}
-              onCreateExtract={() => {}}
-              onCreateClip={() => {}}
-            />
+            {(proof.file_url || proof.video_url) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewerOpen(true)}
+                className="h-8 w-8 text-slate-600 hover:text-blue-600"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(proof)}
+              className="h-8 w-8 text-slate-600 hover:text-blue-600"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (confirm('Delete this proof?')) {
+                  onDelete(proof.id);
+                }
+              }}
+              className="h-8 w-8 text-slate-600 hover:text-red-600"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
@@ -190,10 +205,8 @@ export default function ProofTile({ proof, allProofs = [], currentTab = 'draft',
                 key={child.id}
                 proof={child}
                 allProofs={allProofs}
-                currentTab={currentTab}
                 onEdit={onEdit}
                 onDelete={onDelete}
-                onView={onView}
               />
             ))}
           </div>
