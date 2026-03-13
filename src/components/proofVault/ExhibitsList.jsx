@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FileText, Image, Play, MoreVertical } from 'lucide-react';
+import { FileText, Image, Play } from 'lucide-react';
+import ProofActionMenu from './ProofActionMenu';
 
-export default function ExhibitsList({ exhibits }) {
+export default function ExhibitsList({ exhibits, onEdit }) {
   const getFileIcon = (fileType) => {
     switch (fileType) {
       case 'Image':
@@ -52,9 +52,7 @@ export default function ExhibitsList({ exhibits }) {
           <Card key={exhibit.id} className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-3">
               <Icon className="w-8 h-8 text-slate-400" />
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
+              <ProofActionMenu proof={exhibit} onEdit={onEdit} />
             </div>
             <h3 className="font-semibold text-slate-900 mb-1 truncate">
               {exhibit.formal_name || exhibit.name}

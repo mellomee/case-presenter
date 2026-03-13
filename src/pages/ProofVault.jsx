@@ -11,6 +11,7 @@ import ProofForm from '@/components/proofVault/ProofForm';
 export default function ProofVault() {
   const [exhibitTab, setExhibitTab] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
+  const [editingProof, setEditingProof] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -63,25 +64,25 @@ export default function ProofVault() {
               </TabsList>
 
               <TabsContent value="all">
-                <ExhibitsList exhibits={exhibits} />
+                <ExhibitsList exhibits={exhibits} onEdit={setEditingProof} />
               </TabsContent>
               <TabsContent value="Draft">
-                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Draft')} onEdit={setEditingProof} />
               </TabsContent>
               <TabsContent value="Joint">
-                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Joint')} onEdit={setEditingProof} />
               </TabsContent>
               <TabsContent value="Admitted">
-                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Admitted')} onEdit={setEditingProof} />
               </TabsContent>
               <TabsContent value="Demonstrative">
-                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} />
+                <ExhibitsList exhibits={getExhibitsByStatus('Demonstrative')} onEdit={setEditingProof} />
               </TabsContent>
             </Tabs>
           </TabsContent>
 
           <TabsContent value="depositions">
-            <DepositionsList depositions={depositions} />
+            <DepositionsList depositions={depositions} onEdit={setEditingProof} />
           </TabsContent>
         </Tabs>
       </div>
