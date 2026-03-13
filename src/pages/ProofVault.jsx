@@ -17,6 +17,10 @@ export default function ProofVault() {
   const [editingProof, setEditingProof] = useState(null);
   const [activeTab, setActiveTab] = useState('exhibits');
   const [exhibitFilter, setExhibitFilter] = useState('all');
+  const [showAddToJointModal, setShowAddToJointModal] = useState(false);
+  const [showAdmitExhibitModal, setShowAdmitExhibitModal] = useState(false);
+  const [showAdmitDemoModal, setShowAdmitDemoModal] = useState(false);
+  const [selectedProofForModal, setSelectedProofForModal] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
