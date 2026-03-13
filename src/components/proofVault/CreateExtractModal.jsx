@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 
-export default function CreateExtractModal({ open, onClose, parentProof }) {
+export default function CreateExtractModal({ open, onClose, parentProof, onWarning }) {
   const queryClient = useQueryClient();
   const [extractSource, setExtractSource] = useState('original');
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -18,6 +18,8 @@ export default function CreateExtractModal({ open, onClose, parentProof }) {
   const [formalName, setFormalName] = useState('');
   const [draftExhibitNum, setDraftExhibitNum] = useState('');
   const [pageRangeError, setPageRangeError] = useState('');
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMsg, setWarningMsg] = useState('');
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
