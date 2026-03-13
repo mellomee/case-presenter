@@ -89,12 +89,25 @@ export default function ProofVault() {
     setShowForm(false);
   };
 
+  // Status workflow modal handlers
+  const handleAddToJoint = (proof) => {
+    setSelectedProofForModal(proof);
+    setShowAddToJointModal(true);
+  };
+
+  const handleAdmitAsExhibit = (proof) => {
+    setSelectedProofForModal(proof);
+    setShowAdmitExhibitModal(true);
+  };
+
+  const handleAdmitAsDemonstrative = (proof) => {
+    setSelectedProofForModal(proof);
+    setShowAdmitDemoModal(true);
+  };
+
   // Placeholder action handlers (to be implemented in later phases)
   const handleExtract = (proof) => console.log('Extract:', proof);
   const handleClip = (proof) => console.log('Clip:', proof);
-  const handleAddToJoint = (proof) => console.log('Add to Joint:', proof);
-  const handleAdmitAsExhibit = (proof) => console.log('Admit as Exhibit:', proof);
-  const handleAdmitAsDemonstrative = (proof) => console.log('Admit as Demonstrative:', proof);
   const handleRemoveFromJoint = (proof) => console.log('Remove from Joint:', proof);
   const handleUnAdmit = (proof) => console.log('Un-Admit:', proof);
 
