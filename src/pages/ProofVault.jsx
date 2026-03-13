@@ -3,6 +3,7 @@ import { FileText, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProofForm from '@/components/proofVault/ProofForm';
 import ProofCard from '@/components/proofVault/ProofCard';
 
@@ -78,9 +79,14 @@ export default function ProofVault() {
           </Button>
         </div>
 
-        {showForm && (
-          <ProofForm proof={editingProof} onSubmit={handleSubmit} onCancel={handleCancel} />
-        )}
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingProof ? 'Edit Proof' : 'Add Proof'}</DialogTitle>
+            </DialogHeader>
+            <ProofForm proof={editingProof} onSubmit={handleSubmit} onCancel={handleCancel} />
+          </DialogContent>
+        </Dialog>
 
         {proofTypes.length > 0 && (
           <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
