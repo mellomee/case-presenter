@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import PDFViewer from './PDFViewer';
 import ExtractClipViewer from './ExtractClipViewer';
 import VideoViewer from './VideoViewer';
+import VideoClipViewer from './VideoClipViewer';
 
 export default function ProofViewerModal({ proof, allProofs, isOpen, onClose }) {
   const [viewerState, setViewerState] = useState({ currentPage: 1, zoom: 1, panX: 0, panY: 0 });
