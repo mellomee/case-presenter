@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Film } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProofForm from '@/components/proofVault/ProofForm';
 import ProofCard from '@/components/proofVault/ProofCard';
@@ -11,16 +12,12 @@ export default function ProofVault() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingProof, setEditingProof] = useState(null);
-  const [filterType, setFilterType] = useState('all');
+  const [activeTab, setActiveTab] = useState('exhibits');
+  const [exhibitFilter, setExhibitFilter] = useState('all');
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
-  });
-
-  const { data: proofTypes = [] } = useQuery({
-    queryKey: ['proofTypes'],
-    queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
   const createMutation = useMutation({
@@ -41,8 +38,30 @@ export default function ProofVault() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Proof.delete(id),
+    mutationFn: async (id) => {
+      const proof = proofs.find((p) => p.id === id);
+      const children = proofs.filter((p) => p.parent_proof_id === id);
+      
+      if (children.length > 0) {
+        throw new Error(`This proof has ${children.length} child proofs. Delete all children first.`);
+      }
+
+      const questions = await base44.entities.Question.list();
+      const attached = questions.filter((q) => {
+        const proofIds = Array.isArray(q.proof_ids) ? q.proof_ids : [];
+        return proofIds.includes(id);
+      });
+
+      if (attached.length > 0) {
+        throw new Error('Remove this proof from all Questions first.');
+      }
+
+      return base44.entities.Proof.delete(id);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
+    onError: (error) => {
+      alert(`Cannot delete: ${error.message}`);
+    },
   });
 
   const handleSubmit = (formData) => {
@@ -63,8 +82,14 @@ export default function ProofVault() {
     setShowForm(false);
   };
 
-  const filteredProofs =
-    filterType === 'all' ? proofs : proofs.filter((p) => p.proof_type_id === filterType);
+  // Separate exhibits and depositions
+  const exhibits = proofs.filter((p) => p.proof_category === 'Exhibit' && !p.parent_proof_id);
+  const depositions = proofs.filter((p) => p.proof_category === 'Deposition' && !p.parent_proof_id);
+
+  // Filter exhibits by status
+  const filteredExhibits = exhibitFilter === 'all' 
+    ? exhibits 
+    : exhibits.filter((e) => e.status === exhibitFilter);
 
   return (
     <div className="p-8">
