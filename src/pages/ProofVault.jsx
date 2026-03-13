@@ -154,8 +154,10 @@ export default function ProofVault() {
                         key={proof.id}
                         proof={proof}
                         allProofs={filteredExhibits}
+                        currentTab={exhibitFilter}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
+                        onView={() => {}}
                       />
                     ))}
                   </div>
