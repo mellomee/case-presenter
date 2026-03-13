@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2, Eye, ChevronDown, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { compressPageRange } from '@/lib/pageRangeUtils';
+import { compressPageRange } from './pageRangeUtils';
 import ProofViewerModal from './ProofViewerModal';
 
 export default function ProofTile({ proof, allProofs = [], onEdit, onDelete }) {
