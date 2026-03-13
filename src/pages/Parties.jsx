@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Users, Plus } from 'lucide-react';
+import { Users, Plus, Upload } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PartyForm from '@/components/parties/PartyForm';
 import PartyCard from '@/components/parties/PartyCard';
+import PartyImportModal from '@/components/parties/PartyImportModal';
 
 export default function Parties() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingParty, setEditingParty] = useState(null);
   const [filterType, setFilterType] = useState('all');
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
@@ -36,8 +38,26 @@ export default function Parties() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Party.delete(id),
+    mutationFn: async (id) => {
+      const questions = await base44.entities.Question.list();
+      const hasQuestions = questions.some((q) => q.party_id === id);
+
+      const buckets = await base44.entities.Bucket.list();
+      const hasBuckets = buckets.some((b) => b.party_id === id);
+
+      const proofs = await base44.entities.Proof.list();
+      const hasProofs = proofs.some((p) => p.party_id === id);
+
+      if (hasQuestions || hasBuckets || hasProofs) {
+        throw new Error('This party has associated proofs, buckets, or questions. Reassign or delete them first.');
+      }
+
+      return base44.entities.Party.delete(id);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['parties'] }),
+    onError: (error) => {
+      alert(`Cannot delete: ${error.message}`);
+    },
   });
 
   const handleSubmit = (formData) => {
@@ -69,9 +89,14 @@ export default function Parties() {
             <Users className="w-8 h-8 text-blue-600" />
             <h2 className="text-3xl font-bold text-slate-900">Parties</h2>
           </div>
-          <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4" /> Add Party
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowImportModal(true)} variant="outline" className="gap-2">
+              <Upload className="w-4 h-4" /> Import Excel
+            </Button>
+            <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4" /> Add Party
+            </Button>
+          </div>
         </div>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -82,6 +107,15 @@ export default function Parties() {
             <PartyForm party={editingParty} onSubmit={handleSubmit} onCancel={handleCancel} />
           </DialogContent>
         </Dialog>
+
+        <PartyImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImportComplete={() => {
+            setShowImportModal(false);
+            queryClient.invalidateQueries({ queryKey: ['parties'] });
+          }}
+        />
 
         <div className="mb-6 flex gap-2">
           {['all', 'Plaintiff', 'Defense', 'Neutral'].map((type) => (
