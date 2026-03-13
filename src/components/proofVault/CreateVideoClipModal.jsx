@@ -10,49 +10,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Play, Trash2 } from 'lucide-react';
+import { AlertCircle, Play, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ReactPlayer from 'react-player';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-
-// Segment item for drag-drop
-function SegmentItem({ id, segment, index, onDelete }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-  const style = { transform: CSS.Transform.toString(transform), transition };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg"
-    >
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-400">
-        ⋮⋮
-      </div>
-      <div className="flex-1 text-sm">
-        <span className="font-semibold text-slate-700">#{index + 1}</span>
-        <span className="text-slate-600 ml-3">
-          {segment.start} → {segment.end}
-        </span>
-        {segment.label && (
-          <span className="text-xs text-slate-500 ml-2 italic">{segment.label}</span>
-        )}
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onDelete(id)}
-        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-      >
-        <Trash2 className="w-4 h-4" />
-      </Button>
-    </div>
-  );
-}
 
 export default function CreateVideoClipModal({ open, onClose, parentProof }) {
   const queryClient = useQueryClient();
