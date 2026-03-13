@@ -10,10 +10,47 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Play, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { AlertCircle, Play, Trash2, GripVertical } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ReactPlayer from 'react-player';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+
+// Segment item for drag-drop
+function SegmentItem({ segment, index, onDelete }) {
+  return (
+    <Draggable draggableId={segment.id} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={`flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg ${snapshot.isDragging ? 'bg-blue-50 border-blue-300' : ''}`}
+        >
+          <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-400">
+            <GripVertical className="w-4 h-4" />
+          </div>
+      <div className="flex-1 text-sm">
+        <span className="font-semibold text-slate-700">#{index + 1}</span>
+        <span className="text-slate-600 ml-3">
+          {segment.start} → {segment.end}
+        </span>
+        {segment.label && (
+          <span className="text-xs text-slate-500 ml-2 italic">{segment.label}</span>
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onDelete(id)}
+        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
+        </div>
+      )}
+    </Draggable>
+  );
+}
 
 export default function CreateVideoClipModal({ open, onClose, parentProof }) {
   const queryClient = useQueryClient();
@@ -30,8 +67,6 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
   const [tempEndTime, setTempEndTime] = useState('00:00:00');
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
-
-
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
@@ -105,11 +140,12 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
     setSegments(segments.filter((s) => s.id !== id));
   };
 
-  const handleMoveSegment = (fromIdx, toIdx) => {
-    if (toIdx >= 0 && toIdx < segments.length) {
-      const newSegments = [...segments];
-      [newSegments[fromIdx], newSegments[toIdx]] = [newSegments[toIdx], newSegments[fromIdx]];
-      setSegments(newSegments);
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = segments.findIndex((s) => s.id === active.id);
+      const newIndex = segments.findIndex((s) => s.id === over.id);
+      setSegments(arrayMove(segments, oldIndex, newIndex));
     }
   };
 
@@ -240,47 +276,23 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
 
           {/* Segments list */}
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-3 block">Segments (reorderable)</label>
+            <label className="text-sm font-medium text-slate-700 mb-3 block">Segments (drag to reorder)</label>
             {segments.length > 0 ? (
-              <div className="space-y-2">
-                {segments.map((segment, idx) => (
-                  <div key={segment.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <div className="flex flex-col gap-1">
-                      <button
-                        onClick={() => handleMoveSegment(idx, idx - 1)}
-                        disabled={idx === 0}
-                        className="p-1 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded"
-                      >
-                        <ChevronUp className="w-4 h-4 text-slate-600" />
-                      </button>
-                      <button
-                        onClick={() => handleMoveSegment(idx, idx + 1)}
-                        disabled={idx === segments.length - 1}
-                        className="p-1 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded"
-                      >
-                        <ChevronDown className="w-4 h-4 text-slate-600" />
-                      </button>
-                    </div>
-                    <div className="flex-1 text-sm">
-                      <span className="font-semibold text-slate-700">#{idx + 1}</span>
-                      <span className="text-slate-600 ml-3">
-                        {segment.start} → {segment.end}
-                      </span>
-                      {segment.label && (
-                        <span className="text-xs text-slate-500 ml-2 italic">{segment.label}</span>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteSegment(segment.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={segments.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {segments.map((segment, idx) => (
+                      <SegmentItem
+                        key={segment.id}
+                        id={segment.id}
+                        segment={segment}
+                        index={idx}
+                        onDelete={handleDeleteSegment}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             ) : (
               <p className="text-sm text-slate-500 italic">No segments yet</p>
             )}
