@@ -29,23 +29,23 @@ function SegmentItem({ segment, index, onDelete }) {
           <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-400">
             <GripVertical className="w-4 h-4" />
           </div>
-      <div className="flex-1 text-sm">
-        <span className="font-semibold text-slate-700">#{index + 1}</span>
-        <span className="text-slate-600 ml-3">
-          {segment.start} → {segment.end}
-        </span>
-        {segment.label && (
-          <span className="text-xs text-slate-500 ml-2 italic">{segment.label}</span>
-        )}
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onDelete(id)}
-        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-      >
-        <Trash2 className="w-4 h-4" />
-      </Button>
+          <div className="flex-1 text-sm">
+            <span className="font-semibold text-slate-700">#{index + 1}</span>
+            <span className="text-slate-600 ml-3">
+              {segment.start} → {segment.end}
+            </span>
+            {segment.label && (
+              <span className="text-xs text-slate-500 ml-2 italic">{segment.label}</span>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(segment.id)}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       )}
     </Draggable>
