@@ -82,6 +82,15 @@ export default function ProofVault() {
     setShowForm(false);
   };
 
+  // Placeholder action handlers (to be implemented in later phases)
+  const handleExtract = (proof) => console.log('Extract:', proof);
+  const handleClip = (proof) => console.log('Clip:', proof);
+  const handleAddToJoint = (proof) => console.log('Add to Joint:', proof);
+  const handleAdmitAsExhibit = (proof) => console.log('Admit as Exhibit:', proof);
+  const handleAdmitAsDemonstrative = (proof) => console.log('Admit as Demonstrative:', proof);
+  const handleRemoveFromJoint = (proof) => console.log('Remove from Joint:', proof);
+  const handleUnAdmit = (proof) => console.log('Un-Admit:', proof);
+
   // Separate exhibits and depositions
   const exhibits = proofs.filter((p) => p.proof_category === 'Exhibit' && !p.parent_proof_id);
   const depositions = proofs.filter((p) => p.proof_category === 'Deposition' && !p.parent_proof_id);
