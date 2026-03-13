@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Upload, AlertCircle, CheckCircle } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { Upload, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 export default function PartyImportModal({ isOpen, onClose, onImportComplete }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [error, setError] = useState(null);
 
   const handleFileSelect = async (e) => {
@@ -16,30 +16,53 @@ export default function PartyImportModal({ isOpen, onClose, onImportComplete }) 
     if (!selectedFile) return;
     
     setError(null);
-    setFile(selectedFile);
+    setParsing(true);
 
     try {
-      const data = await selectedFile.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(worksheet);
+      const fileUrl = await base44.integrations.Core.UploadFile({ file: selectedFile });
+      
+      const partySchema = {
+        type: 'object',
+        properties: {
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          side: { type: 'string' },
+          role: { type: 'string' },
+          credentials: { type: 'string' },
+        },
+      };
 
+      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url: fileUrl.file_url,
+        json_schema: partySchema,
+      });
+
+      if (result.status !== 'success' || !Array.isArray(result.output)) {
+        setError('Failed to parse Excel file');
+        setParsing(false);
+        return;
+      }
+
+      const rows = result.output;
       if (rows.length === 0) {
-        setError('Excel file is empty');
+        setError('Excel file has no data rows');
+        setParsing(false);
         return;
       }
 
-      const headers = Object.keys(rows[0]);
-      const hasRequiredFields = ['first_name', 'last_name', 'side'].every((h) => headers.includes(h));
-
+      const hasRequiredFields = rows.every((r) => r.first_name && r.last_name && r.side);
       if (!hasRequiredFields) {
-        setError('Excel must have columns: first_name, last_name, side');
+        setError('Some rows missing required fields: first_name, last_name, side');
+        setParsing(false);
         return;
       }
 
+      setFile(selectedFile);
       setPreview({ rows, total: rows.length });
     } catch (err) {
       setError(err.message);
+    } finally {
+      setParsing(false);
     }
   };
 
@@ -79,27 +102,18 @@ export default function PartyImportModal({ isOpen, onClose, onImportComplete }) 
   };
 
   const handleDownloadTemplate = () => {
-    const template = [
-      {
-        first_name: 'Jane',
-        last_name: 'Smith',
-        side: 'Plaintiff',
-        role: 'Plaintiff',
-        credentials: '["MD", "PhD"]',
-      },
-      {
-        first_name: 'John',
-        last_name: 'Doe',
-        side: 'Defense',
-        role: 'Expert Witness',
-        credentials: '["CPA"]',
-      },
-    ];
+    const templateCSV = `first_name,last_name,side,role,credentials
+Jane,Smith,Plaintiff,Expert Witness,"MD, PhD"
+John,Doe,Defense,Expert Witness,CPA
+Sarah,Johnson,Plaintiff,Fact Witness,`;
 
-    const ws = XLSX.utils.json_to_sheet(template);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Parties');
-    XLSX.writeFile(wb, 'party_import_template.xlsx');
+    const blob = new Blob([templateCSV], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'party_import_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -114,19 +128,29 @@ export default function PartyImportModal({ isOpen, onClose, onImportComplete }) 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Select Excel File</label>
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                <Upload className="w-8 h-8 mx-auto text-slate-400 mb-2" />
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="file-input"
-                />
-                <label htmlFor="file-input" className="cursor-pointer">
-                  <span className="text-blue-600 hover:underline">Click to upload</span>
-                  {' or drag and drop'}
-                </label>
-                <p className="text-xs text-slate-500 mt-2">XLSX, XLS, or CSV</p>
+                {parsing ? (
+                  <>
+                    <Loader className="w-8 h-8 mx-auto text-slate-400 mb-2 animate-spin" />
+                    <p className="text-sm text-slate-600">Parsing file...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 mx-auto text-slate-400 mb-2" />
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-input"
+                      disabled={parsing}
+                    />
+                    <label htmlFor="file-input" className="cursor-pointer">
+                      <span className="text-blue-600 hover:underline">Click to upload</span>
+                      {' or drag and drop'}
+                    </label>
+                    <p className="text-xs text-slate-500 mt-2">XLSX, XLS, or CSV</p>
+                  </>
+                )}
               </div>
             </div>
 
