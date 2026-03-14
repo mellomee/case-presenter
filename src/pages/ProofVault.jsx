@@ -45,7 +45,6 @@ export default function ProofVault() {
   const [showWarning, setShowWarning] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
-  const [expandedParents, setExpandedParents] = useState(new Set());
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -157,10 +156,6 @@ export default function ProofVault() {
     }
   };
 
-  const handleChildCreated = ({ parentId }) => {
-    setExpandedParents(new Set([...expandedParents, parentId]));
-  };
-
   // Separate exhibits and depositions
   const exhibits = proofs.filter((p) => p.proof_category === 'Exhibit' && !p.parent_proof_id);
   const depositions = proofs.filter((p) => p.proof_category === 'Deposition' && !p.parent_proof_id);
@@ -240,7 +235,6 @@ export default function ProofVault() {
           open={showCreateExtractModal}
           onClose={() => setShowCreateExtractModal(false)}
           parentProof={selectedProofForModal}
-          onWarning={handleChildCreated}
         />
 
         <CreateExtractClipModal
@@ -318,7 +312,6 @@ export default function ProofVault() {
                         proof={proof}
                         allProofs={filteredExhibits}
                         currentTab={exhibitFilter}
-                        isExpanded={expandedParents.has(proof.id)}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}
@@ -345,7 +338,6 @@ export default function ProofVault() {
                         proof={proof}
                         allProofs={depositions}
                         currentTab="depositions"
-                        isExpanded={expandedParents.has(proof.id)}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}

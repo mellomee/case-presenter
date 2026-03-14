@@ -13,7 +13,6 @@ export default function ProofTile({
   proof, 
   allProofs = [], 
   currentTab = 'draft',
-  isExpanded = false,
   onEdit, 
   onDelete,
   onExtract,
@@ -24,7 +23,7 @@ export default function ProofTile({
   onRemoveFromJoint,
   onUnAdmit,
 }) {
-  const [expanded, setExpanded] = useState(isExpanded);
+  const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
 
   const { data: party } = useQuery({
@@ -245,7 +244,6 @@ export default function ProofTile({
                 proof={child}
                 allProofs={allProofs}
                 currentTab={currentTab}
-                isExpanded={false}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onExtract={(p) => onExtract(p)}

@@ -182,7 +182,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
       file_url: parentProof.file_url || null,
       draft_exhibit_num: exhibitNum.trim() || null,
       description: description.trim() || null,
-      video_clips: segments.map(({ start, end, label }) => ({ start, end, label })),
+      video_clips: segments,
     };
 
     createMutation.mutate(clipData);
