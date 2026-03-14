@@ -102,6 +102,11 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       setShowWarning(true);
       return;
     }
+    if (!parentProof.proof_type_category_id) {
+      setWarningMsg('The parent proof is missing a Proof Type Category. Please edit the parent proof and set a Proof Type Category before creating an extract.');
+      setShowWarning(true);
+      return;
+    }
     if (extractSource === 'upload' && !validatePageRange(pageRange)) {
       return;
     }
@@ -118,7 +123,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       party_id: parentProof.party_id || null,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
-      proof_type_category_id: parentProof.proof_type_category_id || null,
+      proof_type_category_id: parentProof.proof_type_category_id,
       file_url: fileUrl,
       extract_pages: pageRange.trim(),
       draft_exhibit_num: draftExhibitNum.trim() || null,
