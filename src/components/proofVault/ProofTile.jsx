@@ -29,9 +29,16 @@ export default function ProofTile({
   const [expanded, setExpanded] = useState(isExpanded);
   const [viewerOpen, setViewerOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setExpanded(isExpanded);
   }, [isExpanded]);
+
+  const handleExpandChange = (newExpanded) => {
+    setExpanded(newExpanded);
+    if (onExpandChange) {
+      onExpandChange(newExpanded);
+    }
+  };
 
   const { data: party } = useQuery({
     queryKey: ['party', proof.party_id],
