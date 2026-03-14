@@ -156,14 +156,18 @@ export default function ProofVault() {
     }
   };
 
-  // Separate exhibits and depositions
-  const exhibits = proofs.filter((p) => p.proof_category === 'Exhibit' && !p.parent_proof_id);
-  const depositions = proofs.filter((p) => p.proof_category === 'Deposition' && !p.parent_proof_id);
+  // Separate exhibits and depositions (include ALL, not just top-level)
+  const allExhibits = proofs.filter((p) => p.proof_category === 'Exhibit');
+  const allDepositions = proofs.filter((p) => p.proof_category === 'Deposition');
 
-  // Filter exhibits by status
+  // Get only top-level proofs for rendering
+  const exhibitsTopLevel = allExhibits.filter((p) => !p.parent_proof_id);
+  const depositionsTopLevel = allDepositions.filter((p) => !p.parent_proof_id);
+
+  // Filter top-level exhibits by status (but pass all exhibits to ProofTile)
   const filteredExhibits = exhibitFilter === 'all' 
-    ? exhibits 
-    : exhibits.filter((e) => e.status === exhibitFilter);
+    ? exhibitsTopLevel 
+    : exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
 
   const renderEmptyState = (title) => (
     <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
@@ -298,19 +302,19 @@ export default function ProofVault() {
                       onClick={() => setExhibitFilter(status)}
                       className={exhibitFilter === status ? 'bg-blue-600' : ''}
                     >
-                      {status === 'all' ? 'All' : status} ({exhibits.filter((e) => exhibitFilter === 'all' || e.status === status).length})
+                      {status === 'all' ? 'All' : status} ({exhibitsTopLevel.filter((e) => exhibitFilter === 'all' || e.status === status).length})
                     </Button>
                   ))}
                 </div>
                 {filteredExhibits.length === 0 ? (
-                  renderEmptyState('No exhibits in this category.')
-                ) : (
-                  <div className="space-y-3">
-                    {filteredExhibits.filter((p) => !p.parent_proof_id).map((proof) => (
-                      <ProofTile
-                        key={proof.id}
-                        proof={proof}
-                        allProofs={filteredExhibits}
+                   renderEmptyState('No exhibits in this category.')
+                 ) : (
+                   <div className="space-y-3">
+                     {filteredExhibits.map((proof) => (
+                       <ProofTile
+                         key={proof.id}
+                         proof={proof}
+                         allProofs={allExhibits}
                         currentTab={exhibitFilter}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
@@ -328,15 +332,15 @@ export default function ProofVault() {
               </TabsContent>
 
               <TabsContent value="depositions" className="mt-0">
-                {depositions.length === 0 ? (
+                {depositionsTopLevel.length === 0 ? (
                   renderEmptyState('No depositions added yet.')
                 ) : (
                   <div className="space-y-3">
-                    {depositions.filter((p) => !p.parent_proof_id).map((proof) => (
+                    {depositionsTopLevel.map((proof) => (
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={depositions}
+                        allProofs={allDepositions}
                         currentTab="depositions"
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
