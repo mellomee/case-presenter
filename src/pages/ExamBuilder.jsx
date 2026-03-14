@@ -16,23 +16,33 @@ import PartySelector from '@/components/examBuilder/PartySelector.jsx';
 import ExamTypeToggle from '@/components/examBuilder/ExamTypeToggle.jsx';
 import BucketList from '@/components/examBuilder/BucketList.jsx';
 import BucketModal from '@/components/examBuilder/BucketModal.jsx';
+import QuestionModal from '@/components/examBuilder/QuestionModal.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
   const [selectedParty, setSelectedParty] = useState(null);
   const [selectedExamType, setSelectedExamType] = useState('Direct');
+
+  // Bucket modal state
   const [showBucketModal, setShowBucketModal] = useState(false);
   const [editingBucket, setEditingBucket] = useState(null);
+
+  // Question modal state
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [questionBucket, setQuestionBucket] = useState(null);
+  const [parentQuestion, setParentQuestion] = useState(null);
+
+  // Error state
   const [deleteError, setDeleteError] = useState(null);
   const [showDeleteError, setShowDeleteError] = useState(false);
 
-  // Fetch parties
+  // ── Data fetching ──────────────────────────────────────
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
     queryFn: () => base44.entities.Party.list(),
   });
 
-  // Fetch buckets for selected party and exam type
   const { data: buckets = [] } = useQuery({
     queryKey: ['buckets', selectedParty?.id, selectedExamType],
     queryFn: async () => {
@@ -45,16 +55,19 @@ export default function ExamBuilder() {
     enabled: !!selectedParty,
   });
 
-  // Fetch trial points
   const { data: trialPoints = [] } = useQuery({
     queryKey: ['trialPoints'],
     queryFn: () => base44.entities.TrialPoint.list(),
   });
 
-  // Fetch questions and admission blocks to check dependencies
   const { data: questions = [] } = useQuery({
-    queryKey: ['questions'],
-    queryFn: () => base44.entities.Question.list(),
+    queryKey: ['questions', selectedParty?.id, selectedExamType],
+    queryFn: async () => {
+      if (!selectedParty) return [];
+      const all = await base44.entities.Question.list();
+      return all.filter((q) => q.party_id === selectedParty.id && q.type === selectedExamType);
+    },
+    enabled: !!selectedParty,
   });
 
   const { data: admissionBlocks = [] } = useQuery({
@@ -62,14 +75,16 @@ export default function ExamBuilder() {
     queryFn: () => base44.entities.AdmissionBlock.list(),
   });
 
-  // Create/Update bucket mutation
+  const { data: proofs = [] } = useQuery({
+    queryKey: ['proofs'],
+    queryFn: () => base44.entities.Proof.list(),
+  });
+
+  // ── Bucket mutations ────────────────────────────────────
   const bucketMutation = useMutation({
     mutationFn: async (data) => {
-      if (editingBucket) {
-        return base44.entities.Bucket.update(editingBucket.id, data);
-      } else {
-        return base44.entities.Bucket.create(data);
-      }
+      if (editingBucket) return base44.entities.Bucket.update(editingBucket.id, data);
+      return base44.entities.Bucket.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buckets'] });
@@ -78,55 +93,67 @@ export default function ExamBuilder() {
     },
   });
 
-  // Delete bucket mutation
-  const deleteMutation = useMutation({
+  const deleteBucketMutation = useMutation({
     mutationFn: async (bucketId) => {
-      // Check for attached questions
       const attachedQuestions = questions.filter((q) => q.bucket_id === bucketId);
-      // Check for attached admission blocks
       const attachedBlocks = admissionBlocks.filter((ab) => ab.bucket_id === bucketId);
-
       if (attachedQuestions.length > 0 || attachedBlocks.length > 0) {
         throw new Error(
           `This Bucket contains ${attachedQuestions.length} questions and ${attachedBlocks.length} admission blocks. Delete or move them first.`
         );
       }
-
       return base44.entities.Bucket.delete(bucketId);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['buckets'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['buckets'] }),
     onError: (error) => {
       setDeleteError(error.message);
       setShowDeleteError(true);
     },
   });
 
-  // Reorder buckets
-  const reorderMutation = useMutation({
-    mutationFn: async (bucketsInNewOrder) => {
-      return Promise.all(
-        bucketsInNewOrder.map((bucket, idx) =>
-          base44.entities.Bucket.update(bucket.id, { sort_order: idx })
-        )
-      );
+  const reorderBucketMutation = useMutation({
+    mutationFn: (bucketsInOrder) =>
+      Promise.all(bucketsInOrder.map((b, idx) => base44.entities.Bucket.update(b.id, { sort_order: idx }))),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['buckets'] }),
+  });
+
+  // ── Question mutations ──────────────────────────────────
+  const questionMutation = useMutation({
+    mutationFn: async (data) => {
+      if (editingQuestion) return base44.entities.Question.update(editingQuestion.id, data);
+      return base44.entities.Question.create(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['buckets'] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      setShowQuestionModal(false);
+      setEditingQuestion(null);
+      setParentQuestion(null);
+      setQuestionBucket(null);
     },
   });
 
-  const handleAddBucket = () => {
-    setEditingBucket(null);
-    setShowBucketModal(true);
-  };
+  const deleteQuestionMutation = useMutation({
+    mutationFn: async (question) => {
+      const children = questions.filter((q) => q.parent_question_id === question.id);
+      if (children.length > 0) {
+        throw new Error(`Delete all ${children.length} follow-up question${children.length !== 1 ? 's' : ''} first.`);
+      }
+      return base44.entities.Question.delete(question.id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['questions'] }),
+    onError: (error) => {
+      setDeleteError(error.message);
+      setShowDeleteError(true);
+    },
+  });
 
-  const handleEditBucket = (bucket) => {
-    setEditingBucket(bucket);
-    setShowBucketModal(true);
-  };
+  const reorderQuestionMutation = useMutation({
+    mutationFn: (questionsInOrder) =>
+      Promise.all(questionsInOrder.map((q, idx) => base44.entities.Question.update(q.id, { sort_order: idx }))),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['questions'] }),
+  });
 
+  // ── Bucket handlers ─────────────────────────────────────
   const handleSaveBucket = (data) => {
     bucketMutation.mutate({
       ...data,
@@ -138,12 +165,38 @@ export default function ExamBuilder() {
 
   const handleDeleteBucket = (bucketId) => {
     if (confirm('Are you sure you want to delete this bucket?')) {
-      deleteMutation.mutate(bucketId);
+      deleteBucketMutation.mutate(bucketId);
     }
   };
 
-  const handleReorderBuckets = (reorderedBuckets) => {
-    reorderMutation.mutate(reorderedBuckets);
+  // ── Question handlers ───────────────────────────────────
+  const openAddQuestion = (bucket) => {
+    setEditingQuestion(null);
+    setParentQuestion(null);
+    setQuestionBucket(bucket);
+    setShowQuestionModal(true);
+  };
+
+  const openEditQuestion = (question) => {
+    const bucket = buckets.find((b) => b.id === question.bucket_id) || null;
+    setEditingQuestion(question);
+    setParentQuestion(null);
+    setQuestionBucket(bucket);
+    setShowQuestionModal(true);
+  };
+
+  const openAddChildQuestion = (parent) => {
+    const bucket = buckets.find((b) => b.id === parent.bucket_id) || null;
+    setEditingQuestion(null);
+    setParentQuestion(parent);
+    setQuestionBucket(bucket);
+    setShowQuestionModal(true);
+  };
+
+  const handleDeleteQuestion = (question) => {
+    if (confirm('Delete this question?')) {
+      deleteQuestionMutation.mutate(question);
+    }
   };
 
   if (!selectedParty) {
@@ -164,7 +217,7 @@ export default function ExamBuilder() {
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Exam Builder</h1>
             <p className="text-sm text-slate-600 mt-1">
@@ -175,17 +228,20 @@ export default function ExamBuilder() {
         </div>
 
         {/* Exam Type Toggle */}
-        <div className="mb-8">
+        <div className="mb-6">
           <ExamTypeToggle selectedType={selectedExamType} onSelect={setSelectedExamType} />
         </div>
 
         {/* Buckets Section */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-semibold text-slate-900">
               {selectedExamType === 'Direct' ? '🟢' : '🔴'} Buckets
             </h2>
-            <Button onClick={handleAddBucket} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Button
+              onClick={() => { setEditingBucket(null); setShowBucketModal(true); }}
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
+            >
               <Plus className="w-4 h-4" /> Add Bucket
             </Button>
           </div>
@@ -198,45 +254,76 @@ export default function ExamBuilder() {
             <BucketList
               buckets={buckets}
               trialPoints={trialPoints}
-              onEdit={handleEditBucket}
+              questions={questions}
+              proofs={proofs}
+              examType={selectedExamType}
+              onEdit={(bucket) => { setEditingBucket(bucket); setShowBucketModal(true); }}
               onDelete={handleDeleteBucket}
-              onReorder={handleReorderBuckets}
+              onReorder={(reordered) => reorderBucketMutation.mutate(reordered)}
+              onAddQuestion={openAddQuestion}
+              onEditQuestion={openEditQuestion}
+              onDeleteQuestion={handleDeleteQuestion}
+              onAddChildQuestion={openAddChildQuestion}
+              onReorderQuestions={(reordered) => reorderQuestionMutation.mutate(reordered)}
             />
           )}
         </div>
-
-        {/* Bucket Modal */}
-        <Dialog open={showBucketModal} onOpenChange={setShowBucketModal}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingBucket ? 'Edit Bucket' : 'Add Bucket'}</DialogTitle>
-            </DialogHeader>
-            <BucketModal
-              bucket={editingBucket}
-              trialPoints={trialPoints}
-              onSubmit={handleSaveBucket}
-              onCancel={() => setShowBucketModal(false)}
-              isLoading={bucketMutation.isPending}
-            />
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Error Dialog */}
-        <AlertDialog open={showDeleteError} onOpenChange={setShowDeleteError}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                Cannot Delete Bucket
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-base text-slate-700">
-                {deleteError}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogAction>Understood</AlertDialogAction>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      {/* Bucket Modal */}
+      <Dialog open={showBucketModal} onOpenChange={setShowBucketModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingBucket ? 'Edit Bucket' : 'Add Bucket'}</DialogTitle>
+          </DialogHeader>
+          <BucketModal
+            bucket={editingBucket}
+            trialPoints={trialPoints}
+            onSubmit={handleSaveBucket}
+            onCancel={() => setShowBucketModal(false)}
+            isLoading={bucketMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Question Modal */}
+      <Dialog open={showQuestionModal} onOpenChange={setShowQuestionModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingQuestion ? 'Edit Question' : parentQuestion ? 'Add Follow-up Question' : 'Add Question'}
+            </DialogTitle>
+          </DialogHeader>
+          {questionBucket && (
+            <QuestionModal
+              question={editingQuestion}
+              parentQuestion={parentQuestion}
+              bucketId={questionBucket.id}
+              partyId={selectedParty.id}
+              examType={selectedExamType}
+              onSubmit={(data) => questionMutation.mutate(data)}
+              onCancel={() => setShowQuestionModal(false)}
+              isLoading={questionMutation.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Error */}
+      <AlertDialog open={showDeleteError} onOpenChange={setShowDeleteError}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              Cannot Delete
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-slate-700">
+              {deleteError}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction>Understood</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
