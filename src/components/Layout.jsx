@@ -131,6 +131,15 @@ export default function Layout() {
         </button>
       )}
 
+      {/* Incoming message toast */}
+      {toastMessage && !chatOpen && showChat && (
+        <ChatMessageToast
+          message={toastMessage}
+          onOpen={() => { setToastMessage(null); handleOpenChat(); }}
+          onDismiss={() => setToastMessage(null)}
+        />
+      )}
+
       {/* Chat Panel */}
       {chatOpen && showChat && (
         <ChatPanel onClose={() => setChatOpen(false)} user={user} />

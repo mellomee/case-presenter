@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Film, AlertCircle, Upload } from 'lucide-react';
+import { FileText, Plus, Film, AlertCircle, Upload, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
