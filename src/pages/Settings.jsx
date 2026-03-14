@@ -74,7 +74,7 @@ export default function Settings() {
               </TabsTrigger>
             </TabsList>
 
-            <div className="p-8">
+            <div className="p-4 sm:p-8">
               <TabsContent value="general" className="mt-0">
                 <GeneralTab />
               </TabsContent>
