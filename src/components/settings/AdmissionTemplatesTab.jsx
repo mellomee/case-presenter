@@ -42,11 +42,27 @@ export default function AdmissionTemplatesTab() {
     queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
-  const { data: admissionTemplates = [] } = useQuery({
+  const { data: admissionTemplates = [], isLoading: loadingTemplates } = useQuery({
     queryKey: ['admissionTemplates', proofTypeId],
     queryFn: () => base44.entities.AdmissionTemplate.filter({ proof_type_category_id: proofTypeId }),
     enabled: !!proofTypeId,
   });
+
+  // When templates load (or proofTypeId changes), populate the form
+  useEffect(() => {
+    if (!proofTypeId) return;
+    const templateMap = {};
+    admissionTemplates.forEach((t) => {
+      templateMap[t.step] = t.default_text;
+    });
+    STEPS.forEach((step) => {
+      if (!templateMap[step.id]) {
+        templateMap[step.id] = DEFAULT_TEMPLATES[step.id] || '';
+      }
+    });
+    setTemplates(templateMap);
+    setHasChanges(false);
+  }, [admissionTemplates, proofTypeId]);
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -73,16 +89,7 @@ export default function AdmissionTemplatesTab() {
 
   const handleProofTypeSelect = (id) => {
     setProofTypeId(id);
-    const templateMap = {};
-    admissionTemplates.forEach((t) => {
-      templateMap[t.step] = t.default_text;
-    });
-    STEPS.forEach((step) => {
-      if (!templateMap[step.id]) {
-        templateMap[step.id] = DEFAULT_TEMPLATES[step.id] || '';
-      }
-    });
-    setTemplates(templateMap);
+    // templates will be populated via the useEffect above when the query resolves
     setHasChanges(false);
   };
 
