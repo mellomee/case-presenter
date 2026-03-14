@@ -60,8 +60,10 @@ export default function BucketList({
             {buckets.map((bucket, index) => {
               const trialPointName = getTrialPointName(bucket.trial_point_id);
               const bucketQuestions = getBucketQuestions(bucket.id);
+              const bucketBlocks = admissionBlocks.filter(b => b.bucket_id === bucket.id).sort((a,b) => (a.sort_order||0)-(b.sort_order||0));
               const isExpanded = !!expandedBuckets[bucket.id];
               const qCount = bucketQuestions.filter(q => !q.parent_question_id).length;
+              const bCount = bucketBlocks.length;
 
               return (
                 <Draggable key={bucket.id} draggableId={bucket.id} index={index}>
