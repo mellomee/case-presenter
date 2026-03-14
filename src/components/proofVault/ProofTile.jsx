@@ -47,8 +47,6 @@ export default function ProofTile({
     enabled: !!proof.category_id,
   });
 
-  // Get children proofs
-  const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
   const hasChildren = children.length > 0;
 
   // Determine party color label
