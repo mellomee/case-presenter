@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, StickyNote, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import AdmissionEndActions from './AdmissionEndActions.jsx';
 
 function ChildItem({ item, depth = 0 }) {
   const [open, setOpen] = useState(false);
@@ -32,17 +33,16 @@ function ChildItem({ item, depth = 0 }) {
   );
 }
 
-export default function CurrentQuestionCard({ item, index, total, examType, onSelectProof }) {
+export default function CurrentQuestionCard({ item, index, total, examType, onSelectProof, onRuling, isRulingLoading }) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
   if (!item) return null;
 
-  const { data: q, bucket, children = [], proofs: attachedProofs = [] } = item;
+  const { data: q, bucket, children = [], proofs: attachedProofs = [], blockProof } = item;
 
   const isBlock = q.block_type === 'AdmissionBlock';
   const accentClass = examType === 'Direct' ? 'border-green-500' : 'border-red-500';
-  const accentBg = examType === 'Direct' ? 'bg-green-600' : 'bg-red-600';
 
   return (
     <div className={`bg-slate-800 rounded-xl border-l-4 ${accentClass} shadow-xl`}>
@@ -127,6 +127,15 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
             </div>
           )}
         </div>
+      )}
+
+      {/* Admission End Actions — only for Admission Blocks */}
+      {isBlock && blockProof && (
+        <AdmissionEndActions
+          proof={blockProof}
+          onRuling={onRuling}
+          isLoading={isRulingLoading}
+        />
       )}
     </div>
   );
