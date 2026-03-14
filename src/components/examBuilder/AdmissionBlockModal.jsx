@@ -3,94 +3,134 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Check, X, ChevronRight } from 'lucide-react';
+import { Pencil, Check, X, RotateCcw, Eye } from 'lucide-react';
 
 const STEPS = [
-  { key: '1',   label: 'Step 1 — Mark the Exhibit',         sub: false },
-  { key: '2',   label: 'Step 2 — Request Witness Review',   sub: false },
-  { key: '3',   label: 'Step 3 — Authenticate (Intro)',     sub: false },
-  { key: '3.1', label: 'Step 3.1 — Identification',         sub: true },
-  { key: '3.2', label: 'Step 3.2 — Description',            sub: true },
-  { key: '3.3', label: 'Step 3.3 — Authentication',         sub: true },
-  { key: '3.4', label: 'Step 3.4 — Accuracy',               sub: true },
-  { key: '3.5', label: 'Step 3.5 — Helpfulness / Relevance',sub: true },
-  { key: '4',   label: 'Step 4 — Move for Admission',       sub: false },
-  { key: '5',   label: 'Step 5 — Publish to Jury',          sub: false },
+  { key: '1',   label: 'Step 1',   title: 'Mark the Exhibit',          sub: false },
+  { key: '2',   label: 'Step 2',   title: 'Request Witness Review',     sub: false },
+  { key: '3',   label: 'Step 3',   title: 'Authenticate (Intro)',       sub: false },
+  { key: '3.1', label: 'Step 3.1', title: 'Identification',             sub: true  },
+  { key: '3.2', label: 'Step 3.2', title: 'Description',                sub: true  },
+  { key: '3.3', label: 'Step 3.3', title: 'Authentication',             sub: true  },
+  { key: '3.4', label: 'Step 3.4', title: 'Accuracy',                   sub: true  },
+  { key: '3.5', label: 'Step 3.5', title: 'Helpfulness / Relevance',    sub: true  },
+  { key: '4',   label: 'Step 4',   title: 'Move for Admission',         sub: false },
+  { key: '5',   label: 'Step 5',   title: 'Publish to Jury',            sub: false },
 ];
 
-function StepRow({ stepKey, label, sub, resolvedText, override, onSaveOverride, exhibitNum }) {
+function fillExhibitNum(text, exhibitNum) {
+  return text.replace(/\{\{exhibit_num\}\}/g, exhibitNum || '[Exhibit #]');
+}
+
+function StepRow({ stepKey, label, title, sub, templateText, override, onSaveOverride, exhibitNum }) {
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
 
-  const displayed = override || resolvedText || '';
-  const isOverridden = !!override;
+  const activeText = override ?? templateText ?? '';
+  const isOverridden = override !== null && override !== undefined;
+  const hasTemplate = !!templateText;
+
+  const preview = activeText ? fillExhibitNum(activeText, exhibitNum) : null;
 
   const startEdit = () => {
-    setDraftText(displayed);
+    setDraftText(activeText);
     setEditing(true);
   };
 
   const commitEdit = () => {
-    onSaveOverride(stepKey, draftText.trim() || null);
+    const trimmed = draftText.trim();
+    // Only save as override if different from template
+    if (trimmed === templateText) {
+      onSaveOverride(stepKey, null); // remove override, revert to template
+    } else {
+      onSaveOverride(stepKey, trimmed || null);
+    }
     setEditing(false);
   };
 
   const cancelEdit = () => setEditing(false);
 
-  const resetOverride = () => {
+  const resetToTemplate = () => {
     onSaveOverride(stepKey, null);
     setEditing(false);
   };
 
-  // Replace {{exhibit_num}} for preview
-  const preview = displayed.replace('{{exhibit_num}}', exhibitNum || '[Exhibit #]');
-
   return (
-    <div className={`rounded-lg border ${sub ? 'ml-6 border-slate-100 bg-slate-50/60' : 'border-slate-200 bg-white'} p-3`}>
-      <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <p className={`text-xs font-semibold mb-1 ${sub ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
-          {editing ? (
+    <div className={`rounded-lg border transition-all ${sub ? 'ml-5 border-slate-100 bg-slate-50/50' : 'border-slate-200 bg-white'} ${isOverridden ? 'ring-1 ring-amber-300' : ''}`}>
+      <div className="p-3">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${sub ? 'bg-slate-100 text-slate-500' : 'bg-slate-800 text-white'}`}>
+              {label}
+            </span>
+            <span className={`text-xs font-medium ${sub ? 'text-slate-400' : 'text-slate-600'}`}>{title}</span>
+            {isOverridden && (
+              <Badge className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0">✏ Custom</Badge>
+            )}
+          </div>
+          <div className="flex gap-1">
+            {editing ? (
+              <>
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600 hover:bg-green-50" onClick={commitEdit} title="Save">
+                  <Check className="w-3 h-3" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-slate-400 hover:bg-slate-100" onClick={cancelEdit} title="Cancel">
+                  <X className="w-3 h-3" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-slate-400 hover:text-blue-600 hover:bg-blue-50" onClick={startEdit} title="Edit">
+                  <Pencil className="w-3 h-3" />
+                </Button>
+                {isOverridden && (
+                  <Button size="icon" variant="ghost" className="h-6 w-6 text-amber-500 hover:text-amber-700 hover:bg-amber-50" onClick={resetToTemplate} title="Reset to template">
+                    <RotateCcw className="w-3 h-3" />
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        {editing ? (
+          <div className="space-y-1.5">
             <Textarea
               value={draftText}
               onChange={(e) => setDraftText(e.target.value)}
               rows={2}
-              className="text-sm resize-none"
+              className="text-sm resize-none font-mono"
               autoFocus
+              placeholder={hasTemplate ? `Template: ${templateText}` : 'Enter custom question text…'}
             />
-          ) : (
-            <p className={`text-sm leading-snug ${preview ? 'text-slate-800' : 'text-slate-400 italic'}`}>
-              {preview || 'No template — click ✏️ to add custom text'}
-            </p>
-          )}
-          {isOverridden && !editing && (
-            <span className="text-xs text-amber-600 font-medium mt-1 inline-block">✏️ Customised</span>
-          )}
-        </div>
-        <div className="flex gap-1 flex-shrink-0 mt-0.5">
-          {editing ? (
-            <>
-              <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600 hover:bg-green-50" onClick={commitEdit}>
-                <Check className="w-3.5 h-3.5" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:bg-slate-100" onClick={cancelEdit}>
-                <X className="w-3.5 h-3.5" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50" onClick={startEdit}>
-                <Pencil className="w-3.5 h-3.5" />
-              </Button>
-              {isOverridden && (
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-amber-600 hover:bg-amber-50" onClick={resetOverride} title="Reset to template">
-                  <X className="w-3.5 h-3.5" />
-                </Button>
-              )}
-            </>
-          )}
-        </div>
+            {/* Live preview inside edit */}
+            {draftText && (
+              <div className="flex items-start gap-1.5 bg-blue-50 rounded p-2">
+                <Eye className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-800 italic leading-snug">
+                  {fillExhibitNum(draftText, exhibitNum)}
+                </p>
+              </div>
+            )}
+            {hasTemplate && draftText !== templateText && (
+              <p className="text-xs text-slate-400">
+                Template: <span className="italic">{templateText}</span>
+              </p>
+            )}
+          </div>
+        ) : (
+          <div>
+            {preview ? (
+              <p className="text-sm text-slate-800 leading-snug">{preview}</p>
+            ) : (
+              <p className="text-xs text-slate-400 italic">No template — click ✏ to add custom text</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -101,26 +141,26 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
   const [proofTypeCategoryId, setProofTypeCategoryId] = useState('');
   const [stepOverrides, setStepOverrides] = useState({});
 
-  // Data
   const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list() });
   const { data: proofTypeCategories = [] } = useQuery({ queryKey: ['proofTypeCategories'], queryFn: () => base44.entities.ProofTypeCategory.list() });
   const { data: admissionTemplates = [] } = useQuery({ queryKey: ['admissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list() });
 
-  // Joint exhibits only (top-level + children)
   const jointExhibits = proofs.filter(p =>
-    p.proof_category === 'Exhibit' && (p.status === 'Joint' || p.status === 'Admitted' || p.status === 'Demonstrative')
+    p.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(p.status)
   );
 
-  // Populate on edit
   useEffect(() => {
     if (block) {
       setSelectedProofId(block.proof_id || '');
       setProofTypeCategoryId(block.proof_type_category_id || '');
       setStepOverrides(block.step_overrides || {});
+    } else {
+      setSelectedProofId('');
+      setProofTypeCategoryId('');
+      setStepOverrides({});
     }
   }, [block]);
 
-  // Auto-set proof type category from proof
   const handleSelectProof = (proofId) => {
     setSelectedProofId(proofId);
     const proof = proofs.find(p => p.id === proofId);
@@ -138,14 +178,24 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
   const handleSaveOverride = (stepKey, text) => {
     setStepOverrides(prev => {
       const next = { ...prev };
-      if (text === null) delete next[stepKey];
+      if (text === null || text === undefined) delete next[stepKey];
       else next[stepKey] = { text };
       return next;
     });
   };
 
+  const resetAllToTemplate = () => {
+    setStepOverrides({});
+  };
+
+  const overriddenCount = Object.keys(stepOverrides).length;
+
   const selectedProof = proofs.find(p => p.id === selectedProofId);
-  const exhibitNum = selectedProof?.joint_exhibit_num || selectedProof?.admitted_exhibit_num || selectedProof?.demonstrative_exhibit_num || '';
+  const exhibitNum =
+    selectedProof?.admitted_exhibit_num ||
+    selectedProof?.demonstrative_exhibit_num ||
+    selectedProof?.joint_exhibit_num ||
+    '';
 
   const handleSubmit = () => {
     if (!selectedProofId || !proofTypeCategoryId) return;
@@ -179,7 +229,7 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
                   <span className="font-medium">{p.formal_name || p.name}</span>
                   {(p.joint_exhibit_num || p.admitted_exhibit_num) && (
                     <span className="ml-2 text-xs text-slate-400 font-mono">
-                      [{p.joint_exhibit_num || p.admitted_exhibit_num}]
+                      [{p.admitted_exhibit_num || p.joint_exhibit_num}]
                     </span>
                   )}
                 </SelectItem>
@@ -204,23 +254,57 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
             ))}
           </SelectContent>
         </Select>
-        {proofTypeCategoryId && (
-          <p className="text-xs text-slate-500">Template questions loaded below. Click ✏️ on any step to customise.</p>
-        )}
       </div>
 
-      {/* Steps */}
+      {/* Exhibit # Preview Banner */}
+      {selectedProof && (
+        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-500">Selected Exhibit</p>
+            <p className="text-sm font-semibold text-slate-800 truncate">{selectedProof.formal_name || selectedProof.name}</p>
+          </div>
+          {exhibitNum ? (
+            <div className="text-right flex-shrink-0">
+              <p className="text-xs text-slate-500">Exhibit #</p>
+              <p className="text-sm font-bold font-mono text-blue-700">{exhibitNum}</p>
+            </div>
+          ) : (
+            <Badge className="bg-amber-100 text-amber-700 text-xs">No exhibit # yet</Badge>
+          )}
+        </div>
+      )}
+
+      {/* Admission Script */}
       {proofTypeCategoryId && (
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-slate-700">Admission Script</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Admission Script</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Click <Pencil className="w-3 h-3 inline" /> to customise a step. <code className="bg-slate-100 px-1 rounded text-xs">{'{{exhibit_num}}'}</code> is auto-replaced in preview.
+              </p>
+            </div>
+            {overriddenCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetAllToTemplate}
+                className="gap-1.5 text-amber-700 border-amber-300 hover:bg-amber-50 h-7 text-xs"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset All ({overriddenCount})
+              </Button>
+            )}
+          </div>
           <div className="space-y-2">
             {STEPS.map(step => (
               <StepRow
                 key={step.key}
                 stepKey={step.key}
                 label={step.label}
+                title={step.title}
                 sub={step.sub}
-                resolvedText={getTemplateText(step.key)}
+                templateText={getTemplateText(step.key)}
                 override={stepOverrides[step.key]?.text ?? null}
                 onSaveOverride={handleSaveOverride}
                 exhibitNum={exhibitNum}
