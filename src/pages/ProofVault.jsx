@@ -157,6 +157,10 @@ export default function ProofVault() {
     }
   };
 
+  const handleChildCreated = ({ parentId }) => {
+    setExpandedParents(new Set([...expandedParents, parentId]));
+  };
+
   // Separate exhibits and depositions
   const exhibits = proofs.filter((p) => p.proof_category === 'Exhibit' && !p.parent_proof_id);
   const depositions = proofs.filter((p) => p.proof_category === 'Deposition' && !p.parent_proof_id);
