@@ -344,6 +344,7 @@ export default function ProofVault() {
                         proof={proof}
                         allProofs={depositions}
                         currentTab="depositions"
+                        isExpanded={expandedParents.has(proof.id)}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}
