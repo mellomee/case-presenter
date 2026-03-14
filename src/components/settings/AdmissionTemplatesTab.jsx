@@ -114,11 +114,13 @@ export default function AdmissionTemplatesTab() {
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-slate-900">Admission Templates</h3>
         <div className="flex gap-2">
-          {hasChanges && (
-            <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
-              Save Changes
-            </Button>
-          )}
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || saveMutation.isPending}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40"
+          >
+            {saveMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</> : 'Save Changes'}
+          </Button>
           <Button variant="outline" onClick={handleResetAll} className="gap-2">
             <RotateCcw className="w-4 h-4" />
             Reset All
