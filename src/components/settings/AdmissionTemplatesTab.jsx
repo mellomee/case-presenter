@@ -130,40 +130,53 @@ export default function AdmissionTemplatesTab() {
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-slate-700 mb-2">Select Proof Type Category</label>
-        <div className="grid grid-cols-2 gap-2">
-          {proofTypes.map((pt) => (
-            <button
-              key={pt.id}
-              onClick={() => handleProofTypeSelect(pt.id)}
-              className={`p-3 text-sm font-medium rounded-lg border-2 transition-colors ${
-                proofTypeId === pt.id
-                  ? 'bg-blue-50 border-blue-600 text-blue-600'
-                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              {pt.name}
-            </button>
-          ))}
-        </div>
+        {proofTypes.length === 0 ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+            No proof type categories yet. Add them in the <strong>Proof Types</strong> tab first.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {proofTypes.map((pt) => (
+              <button
+                key={pt.id}
+                onClick={() => handleProofTypeSelect(pt.id)}
+                className={`p-3 text-sm font-medium rounded-lg border-2 transition-colors text-left ${
+                  proofTypeId === pt.id
+                    ? 'bg-blue-50 border-blue-600 text-blue-600'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                {pt.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {proofTypeId && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <p className="text-sm text-slate-600">
-            Edit the default question text for each step. Use <code className="bg-slate-100 px-2 py-1 rounded">{'{{exhibit_num}}'}</code> as a placeholder for the exhibit number.
+            Edit the default question text for each step. Use <code className="bg-slate-100 px-2 py-1 rounded text-xs">{'{{exhibit_num}}'}</code> as a placeholder for the exhibit number.
           </p>
 
-          {STEPS.map((step) => (
-            <div key={step.id} className="border border-slate-200 rounded-lg p-4 bg-white">
-              <label className="block text-sm font-semibold text-slate-900 mb-3">{step.label}</label>
-              <Textarea
-                value={templates[step.id] || ''}
-                onChange={(e) => handleTemplateChange(step.id, e.target.value)}
-                placeholder={DEFAULT_TEMPLATES[step.id]}
-                className="w-full min-h-24 text-sm"
-              />
+          {loadingTemplates ? (
+            <div className="flex items-center gap-2 py-8 justify-center text-slate-400">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm">Loading templates…</span>
             </div>
-          ))}
+          ) : (
+            STEPS.map((step) => (
+              <div key={step.id} className="border border-slate-200 rounded-lg p-4 bg-white">
+                <label className="block text-sm font-semibold text-slate-900 mb-2">{step.label}</label>
+                <Textarea
+                  value={templates[step.id] || ''}
+                  onChange={(e) => handleTemplateChange(step.id, e.target.value)}
+                  placeholder={DEFAULT_TEMPLATES[step.id]}
+                  className="w-full min-h-20 text-sm"
+                />
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>
