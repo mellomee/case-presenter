@@ -499,6 +499,19 @@ export default function ExamBuilder() {
         </DialogContent>
       </Dialog>
 
+      {/* Trial Data Bulk Import Modal */}
+      <TrialDataImportModal
+        open={showTrialImport}
+        onClose={() => setShowTrialImport(false)}
+        parties={parties}
+        trialPoints={trialPoints}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['trialPoints'] });
+          queryClient.invalidateQueries({ queryKey: ['buckets'] });
+          queryClient.invalidateQueries({ queryKey: ['questions'] });
+        }}
+      />
+
       {/* Questions Import Modal */}
       <QuestionsImportModal
         open={showQImport}
