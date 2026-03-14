@@ -24,8 +24,11 @@ export default function Layout() {
   // Track unread count via real-time subscription
   useEffect(() => {
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
-      if (event.type === 'create' && !chatOpen && event.data?.sender_id !== user?.id) {
-        setUnread(n => n + 1);
+      if (event.type === 'create' && event.data?.sender_id !== user?.id) {
+        if (!chatOpen) {
+          setUnread(n => n + 1);
+          setToastMessage(event.data);
+        }
       }
     });
     return unsub;

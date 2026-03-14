@@ -180,6 +180,9 @@ export default function ProofVault() {
             <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowPrintModal(true)} className="gap-2">
+              <Printer className="w-4 h-4" /> Print List
+            </Button>
             <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
               <Upload className="w-4 h-4" /> Import
             </Button>
