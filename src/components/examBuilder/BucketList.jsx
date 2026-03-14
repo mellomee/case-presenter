@@ -101,9 +101,10 @@ export default function BucketList({
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold text-slate-900">{bucket.name}</h3>
                               {qCount > 0 && (
-                                <Badge className="bg-slate-100 text-slate-600 text-xs">
-                                  {qCount} Q
-                                </Badge>
+                                <Badge className="bg-slate-100 text-slate-600 text-xs">{qCount} Q</Badge>
+                              )}
+                              {bCount > 0 && (
+                                <Badge className="bg-blue-100 text-blue-700 text-xs">{bCount} Block{bCount !== 1 ? 's' : ''}</Badge>
                               )}
                             </div>
                             {trialPointName && (
