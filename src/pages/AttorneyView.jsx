@@ -9,6 +9,7 @@ import BucketNav from '@/components/attorneyView/BucketNav.jsx';
 import CurrentQuestionCard from '@/components/attorneyView/CurrentQuestionCard.jsx';
 import NextQuestionCard from '@/components/attorneyView/NextQuestionCard.jsx';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
+import OverviewPanel from '@/components/attorneyView/OverviewPanel.jsx';
 
 // Build a flat ordered list of top-level questions/blocks from buckets
 function buildFlatList(buckets, questions, admissionBlocks, proofs) {
