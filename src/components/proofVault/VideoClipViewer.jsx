@@ -122,10 +122,11 @@ export default function VideoClipViewer({ videoUrl, segments }) {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
             onClick={() => {
-              setCurrentSegmentIdx(idx);
-              setCurrentTime(timeToSeconds(seg.start));
-              setPlaying(false);
-            }}
+               setCurrentSegmentIdx(idx);
+               setCurrentTime(timeToSeconds(seg.start));
+               playerRef.current?.seekTo(timeToSeconds(seg.start), 'seconds');
+               setPlaying(false);
+             }}
           >
             #{idx + 1} · {seg.start} → {seg.end}
             {seg.label && <span className="ml-2 italic text-slate-600">({seg.label})</span>}
