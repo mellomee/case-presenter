@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, AlertCircle, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, AlertCircle, MapPin, Upload } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import QuestionModal from '@/components/examBuilder/QuestionModal.jsx';
 import AdmissionBlockModal from '@/components/examBuilder/AdmissionBlockModal.jsx';
 import TrialPointList from '@/components/examBuilder/TrialPointList.jsx';
 import TrialPointModal from '@/components/examBuilder/TrialPointModal.jsx';
+import QuestionsImportModal from '@/components/examBuilder/QuestionsImportModal.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
@@ -49,6 +51,7 @@ export default function ExamBuilder() {
   // Error state
   const [deleteError, setDeleteError] = useState(null);
   const [showDeleteError, setShowDeleteError] = useState(false);
+  const [showQImport, setShowQImport] = useState(false);
 
   // ── Data fetching ──────────────────────────────────────
   const { data: parties = [] } = useQuery({
@@ -348,12 +351,17 @@ export default function ExamBuilder() {
                 <h2 className="text-xl font-semibold text-slate-900">
                   {selectedExamType === 'Direct' ? '🟢' : '🔴'} Buckets
                 </h2>
-                <Button
-                  onClick={() => { setEditingBucket(null); setShowBucketModal(true); }}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4" /> Add Bucket
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowQImport(true)} className="gap-2">
+                    <Upload className="w-4 h-4" /> Import Questions
+                  </Button>
+                  <Button
+                    onClick={() => { setEditingBucket(null); setShowBucketModal(true); }}
+                    className="gap-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="w-4 h-4" /> Add Bucket
+                  </Button>
+                </div>
               </div>
 
               {buckets.length === 0 ? (
@@ -486,6 +494,18 @@ export default function ExamBuilder() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Questions Import Modal */}
+      <QuestionsImportModal
+        open={showQImport}
+        onClose={() => setShowQImport(false)}
+        party={selectedParty}
+        examType={selectedExamType}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['buckets'] });
+          queryClient.invalidateQueries({ queryKey: ['questions'] });
+        }}
+      />
 
       {/* Delete Error */}
       <AlertDialog open={showDeleteError} onOpenChange={setShowDeleteError}>
