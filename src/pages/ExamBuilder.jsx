@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, AlertCircle, MapPin, Upload } from 'lucide-react';
+import { Plus, AlertCircle, MapPin, Upload, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ import TrialPointList from '@/components/examBuilder/TrialPointList.jsx';
 import TrialPointModal from '@/components/examBuilder/TrialPointModal.jsx';
 import QuestionsImportModal from '@/components/examBuilder/QuestionsImportModal.jsx';
 import TrialDataImportModal from '@/components/examBuilder/TrialDataImportModal.jsx';
+import PrintQuestionsTrialModal from '@/components/examBuilder/PrintQuestionsTrialModal.jsx';
+import PrintQuestionsListModal from '@/components/examBuilder/PrintQuestionsListModal.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
@@ -53,6 +55,8 @@ export default function ExamBuilder() {
   const [showDeleteError, setShowDeleteError] = useState(false);
   const [showQImport, setShowQImport] = useState(false);
   const [showTrialImport, setShowTrialImport] = useState(false);
+  const [showPrintTrial, setShowPrintTrial] = useState(false);
+  const [showPrintList, setShowPrintList] = useState(false);
 
   // ── Data fetching ──────────────────────────────────────
   const { data: parties = [] } = useQuery({
@@ -110,6 +114,11 @@ export default function ExamBuilder() {
   const { data: trialPointCategories = [] } = useQuery({
     queryKey: ['trialPointCategories'],
     queryFn: () => base44.entities.TrialPointCategory.list(),
+  });
+
+  const { data: admissionTemplates = [] } = useQuery({
+    queryKey: ['admissionTemplates'],
+    queryFn: () => base44.entities.AdmissionTemplate.list(),
   });
 
   // ── Bucket mutations ────────────────────────────────────
@@ -353,6 +362,12 @@ export default function ExamBuilder() {
                   {selectedExamType === 'Direct' ? '🟢' : '🔴'} Buckets
                 </h2>
                 <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowPrintList(true)} className="gap-2">
+                    <Printer className="w-4 h-4" /> List View
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowPrintTrial(true)} className="gap-2">
+                    <Printer className="w-4 h-4" /> Trial View
+                  </Button>
                   <Button variant="outline" onClick={() => setShowTrialImport(true)} className="gap-2">
                     <Upload className="w-4 h-4" /> Bulk Import
                   </Button>
@@ -510,6 +525,34 @@ export default function ExamBuilder() {
           queryClient.invalidateQueries({ queryKey: ['buckets'] });
           queryClient.invalidateQueries({ queryKey: ['questions'] });
         }}
+      />
+
+      {/* Print Trial View Modal */}
+      <PrintQuestionsTrialModal
+        open={showPrintTrial}
+        onClose={() => setShowPrintTrial(false)}
+        party={selectedParty}
+        examType={selectedExamType}
+        buckets={buckets}
+        questions={questions}
+        admissionBlocks={admissionBlocks.filter(ab => buckets.some(b => b.id === ab.bucket_id))}
+        proofs={proofs}
+        admissionTemplates={admissionTemplates}
+        trialPoints={trialPoints}
+      />
+
+      {/* Print List View Modal */}
+      <PrintQuestionsListModal
+        open={showPrintList}
+        onClose={() => setShowPrintList(false)}
+        party={selectedParty}
+        examType={selectedExamType}
+        buckets={buckets}
+        questions={questions}
+        admissionBlocks={admissionBlocks.filter(ab => buckets.some(b => b.id === ab.bucket_id))}
+        proofs={proofs}
+        admissionTemplates={admissionTemplates}
+        trialPoints={trialPoints}
       />
 
       {/* Questions Import Modal */}
