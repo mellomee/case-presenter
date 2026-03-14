@@ -66,7 +66,6 @@ export default function VideoClipViewer({ videoUrl, segments }) {
           controls
           playing={playing}
           onProgress={(state) => setCurrentTime(state.playedSeconds)}
-          onReady={() => playerRef.current?.seekTo(startSec)}
           config={{
             youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
           }}
