@@ -93,6 +93,9 @@ export default function Settings() {
               <TabsContent value="credentials" className="mt-0">
                 <CredentialsTab />
               </TabsContent>
+              <TabsContent value="trialPointCategories" className="mt-0">
+                <TrialPointCategoriesTab />
+              </TabsContent>
             </div>
           </Tabs>
         </div>
