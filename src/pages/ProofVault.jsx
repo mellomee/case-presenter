@@ -240,6 +240,7 @@ export default function ProofVault() {
           open={showCreateExtractModal}
           onClose={() => setShowCreateExtractModal(false)}
           parentProof={selectedProofForModal}
+          onWarning={handleChildCreated}
         />
 
         <CreateExtractClipModal
