@@ -259,9 +259,9 @@ export default function ProofTile({
                 proof={child}
                 allProofs={allProofs}
                 currentTab={currentTab}
-                isExpanded={expandedProofIds.includes(child.id)}
+                isExpanded={expandedChildIds.includes(child.id)}
                 onExpandChange={(isExpanded) => {
-                  setExpandedProofIds((prev) =>
+                  setExpandedChildIds((prev) =>
                     isExpanded
                       ? Array.from(new Set([...prev, child.id]))
                       : prev.filter((id) => id !== child.id)
