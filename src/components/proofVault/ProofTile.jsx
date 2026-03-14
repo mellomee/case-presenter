@@ -136,8 +136,8 @@ export default function ProofTile({
       <Card className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${expanded ? 'ring-2 ring-blue-400' : ''}`}>
         {/* Header Row */}
         <div
-          className="p-4 flex items-start gap-3"
-          onClick={() => setExpanded(!expanded)}
+          className={`p-4 flex items-start gap-3 ${highlightedProofId === proof.id ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}`}
+          onClick={() => handleExpandChange(!expanded)}
         >
           {hasChildren && (
             <div className="mt-0.5">
