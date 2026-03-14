@@ -223,8 +223,8 @@ export default function ProofTile({
               allProofs={allProofs}
               onEdit={() => onEdit(proof)}
               onView={() => setViewerOpen(true)}
-              onExtract={onExtract}
-              onClip={onClip}
+              onExtract={() => onExtract(proof)}
+              onClip={() => onClip(proof)}
               onAddToJoint={() => onAddToJoint(proof)}
               onAdmitAsExhibit={() => onAdmitAsExhibit(proof)}
               onAdmitAsDemonstrative={() => onAdmitAsDemonstrative(proof)}
