@@ -318,7 +318,8 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={filteredExhibits}
+                        allProofs={proofs}
+                        newlyCreatedChildId={newlyCreatedChildId}
                         currentTab={exhibitFilter}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
@@ -344,7 +345,8 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={depositions}
+                        allProofs={proofs}
+                        newlyCreatedChildId={newlyCreatedChildId}
                         currentTab="depositions"
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
