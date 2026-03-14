@@ -11,6 +11,7 @@ export default function Layout() {
   const [user, setUser] = useState(null);
   const [unread, setUnread] = useState(0);
   const [lastSeen, setLastSeen] = useState(() => Date.now());
+  const [toastMessage, setToastMessage] = useState(null);
 
   // Pages that should hide the chat button
   const hideChatPages = ['/JuryView'];
