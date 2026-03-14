@@ -28,7 +28,7 @@ export default function ProofTile({
   const isNewlyCreatedParent = newlyCreatedChildId === proof.id;
   const [expanded, setExpanded] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isNewlyCreatedParent) setExpanded(true);
   }, [isNewlyCreatedParent]);
   const [viewerOpen, setViewerOpen] = useState(false);
