@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, GripVertical, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { Pencil, Trash2, GripVertical, ChevronDown, ChevronRight, Plus, FileCheck } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import QuestionList from './QuestionList.jsx';
+import AdmissionBlockList from './AdmissionBlockList.jsx';
 
 export default function BucketList({
   buckets,
   trialPoints,
   questions = [],
   proofs = [],
+  proofTypeCategories = [],
+  admissionBlocks = [],
   examType,
   onEdit,
   onDelete,
@@ -20,6 +23,9 @@ export default function BucketList({
   onDeleteQuestion,
   onAddChildQuestion,
   onReorderQuestions,
+  onAddBlock,
+  onEditBlock,
+  onDeleteBlock,
 }) {
   const [expandedBuckets, setExpandedBuckets] = useState({});
 
