@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +13,6 @@ export default function ProofTile({
   proof, 
   allProofs = [], 
   currentTab = 'draft',
-  isExpanded = false,
-  onExpandChange,
-  highlightedProofId,
   onEdit, 
   onDelete,
   onExtract,
@@ -26,20 +23,8 @@ export default function ProofTile({
   onRemoveFromJoint,
   onUnAdmit,
 }) {
-  const [expanded, setExpanded] = useState(isExpanded);
+  const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [expandedChildIds, setExpandedChildIds] = useState([]);
-
-  useEffect(() => {
-    setExpanded(isExpanded);
-  }, [isExpanded]);
-
-  const handleExpandChange = (newExpanded) => {
-    setExpanded(newExpanded);
-    if (onExpandChange) {
-      onExpandChange(newExpanded);
-    }
-  };
 
   const { data: party } = useQuery({
     queryKey: ['party', proof.party_id],
@@ -137,8 +122,8 @@ export default function ProofTile({
       <Card className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${expanded ? 'ring-2 ring-blue-400' : ''}`}>
         {/* Header Row */}
         <div
-          className={`p-4 flex items-start gap-3 ${highlightedProofId === proof.id ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}`}
-          onClick={() => handleExpandChange(!expanded)}
+          className="p-4 flex items-start gap-3"
+          onClick={() => setExpanded(!expanded)}
         >
           {hasChildren && (
             <div className="mt-0.5">
@@ -259,15 +244,6 @@ export default function ProofTile({
                 proof={child}
                 allProofs={allProofs}
                 currentTab={currentTab}
-                isExpanded={expandedChildIds.includes(child.id)}
-                onExpandChange={(isExpanded) => {
-                  setExpandedChildIds((prev) =>
-                    isExpanded
-                      ? Array.from(new Set([...prev, child.id]))
-                      : prev.filter((id) => id !== child.id)
-                  );
-                }}
-                highlightedProofId={highlightedProofId}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onExtract={(p) => onExtract(p)}

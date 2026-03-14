@@ -45,8 +45,6 @@ export default function ProofVault() {
   const [showWarning, setShowWarning] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
-  const [expandedProofIds, setExpandedProofIds] = useState([]);
-  const [highlightedProofId, setHighlightedProofId] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -55,16 +53,9 @@ export default function ProofVault() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Proof.create(data),
-    onSuccess: (newProof) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       setShowForm(false);
-      
-      // If it's a child proof, expand parent and highlight the new child
-      if (newProof.parent_proof_id) {
-        setExpandedProofIds((prev) => Array.from(new Set([...prev, newProof.parent_proof_id])));
-        setHighlightedProofId(newProof.id);
-        setTimeout(() => setHighlightedProofId(null), 3000);
-      }
     },
   });
 
@@ -319,17 +310,8 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={exhibits}
+                        allProofs={filteredExhibits}
                         currentTab={exhibitFilter}
-                        isExpanded={expandedProofIds.includes(proof.id)}
-                        onExpandChange={(isExpanded) => {
-                          setExpandedProofIds((prev) =>
-                            isExpanded
-                              ? Array.from(new Set([...prev, proof.id]))
-                              : prev.filter((id) => id !== proof.id)
-                          );
-                        }}
-                        highlightedProofId={highlightedProofId}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}
@@ -354,17 +336,8 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={proofs}
+                        allProofs={depositions}
                         currentTab="depositions"
-                        isExpanded={expandedProofIds.includes(proof.id)}
-                        onExpandChange={(isExpanded) => {
-                          setExpandedProofIds((prev) =>
-                            isExpanded
-                              ? Array.from(new Set([...prev, proof.id]))
-                              : prev.filter((id) => id !== proof.id)
-                          );
-                        }}
-                        highlightedProofId={highlightedProofId}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}
