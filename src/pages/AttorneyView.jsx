@@ -275,12 +275,17 @@ export default function AttorneyView() {
 
             {/* Proof Preview Pane */}
             <div className="w-80 flex-shrink-0 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col">
-              <div className="px-4 py-2.5 border-b border-slate-700">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Proof Preview</span>
-              </div>
-              <div className="flex-1 min-h-0">
-                <ProofPreviewPane proof={selectedProof} onClose={() => setSelectedProof(null)} />
-              </div>
+            <div className="px-4 py-2.5 border-b border-slate-700">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Proof Preview</span>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ProofPreviewPane
+                proof={selectedProof}
+                juryState={juryState}
+                onUpdateJury={updateJury}
+                onClose={() => setSelectedProof(null)}
+              />
+            </div>
             </div>
 
             {/* Overview Panel */}
