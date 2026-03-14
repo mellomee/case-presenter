@@ -356,6 +356,15 @@ export default function ProofVault() {
                         proof={proof}
                         allProofs={depositions}
                         currentTab="depositions"
+                        isExpanded={expandedProofIds.includes(proof.id)}
+                        onExpandChange={(isExpanded) => {
+                          setExpandedProofIds((prev) =>
+                            isExpanded
+                              ? Array.from(new Set([...prev, proof.id]))
+                              : prev.filter((id) => id !== proof.id)
+                          );
+                        }}
+                        highlightedProofId={highlightedProofId}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}
