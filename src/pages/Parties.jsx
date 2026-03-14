@@ -117,7 +117,7 @@ export default function Parties() {
           }}
         />
 
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex flex-wrap gap-2">
           {['all', 'Plaintiff', 'Defense', 'Neutral'].map((type) => (
             <Button
               key={type}
