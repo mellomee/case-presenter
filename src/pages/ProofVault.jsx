@@ -45,6 +45,8 @@ export default function ProofVault() {
   const [showWarning, setShowWarning] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [expandedProofIds, setExpandedProofIds] = useState([]);
+  const [highlightedProofId, setHighlightedProofId] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
