@@ -22,6 +22,7 @@ import AdmissionBlockModal from '@/components/examBuilder/AdmissionBlockModal.js
 import TrialPointList from '@/components/examBuilder/TrialPointList.jsx';
 import TrialPointModal from '@/components/examBuilder/TrialPointModal.jsx';
 import QuestionsImportModal from '@/components/examBuilder/QuestionsImportModal.jsx';
+import TrialDataImportModal from '@/components/examBuilder/TrialDataImportModal.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
