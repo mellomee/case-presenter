@@ -158,6 +158,29 @@ export default function ExamBuilder() {
     },
   });
 
+  // ── Admission block mutations ───────────────────────────
+  const blockMutation = useMutation({
+    mutationFn: async (data) => {
+      if (editingBlock) return base44.entities.AdmissionBlock.update(editingBlock.id, data);
+      return base44.entities.AdmissionBlock.create(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admissionBlocks'] });
+      setShowBlockModal(false);
+      setEditingBlock(null);
+      setBlockBucket(null);
+    },
+  });
+
+  const deleteBlockMutation = useMutation({
+    mutationFn: (block) => base44.entities.AdmissionBlock.delete(block.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admissionBlocks'] }),
+    onError: (error) => {
+      setDeleteError(error.message);
+      setShowDeleteError(true);
+    },
+  });
+
   const reorderQuestionMutation = useMutation({
     mutationFn: (questionsInOrder) =>
       Promise.all(questionsInOrder.map((q, idx) => base44.entities.Question.update(q.id, { sort_order: idx }))),
