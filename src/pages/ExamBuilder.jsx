@@ -86,6 +86,11 @@ export default function ExamBuilder() {
     queryFn: () => base44.entities.Proof.list(),
   });
 
+  const { data: proofTypeCategories = [] } = useQuery({
+    queryKey: ['proofTypeCategories'],
+    queryFn: () => base44.entities.ProofTypeCategory.list(),
+  });
+
   // ── Bucket mutations ────────────────────────────────────
   const bucketMutation = useMutation({
     mutationFn: async (data) => {
