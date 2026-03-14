@@ -317,6 +317,7 @@ export default function ProofVault() {
                         proof={proof}
                         allProofs={filteredExhibits}
                         currentTab={exhibitFilter}
+                        isExpanded={expandedParents.has(proof.id)}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}
