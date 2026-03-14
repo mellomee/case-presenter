@@ -48,22 +48,10 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AttorneyView from './pages/AttorneyView';
-import Dashboard from './pages/Dashboard';
-import ExamBuilder from './pages/ExamBuilder';
-import JuryView from './pages/JuryView';
-import Parties from './pages/Parties';
-import ProofVault from './pages/ProofVault';
-import Settings from './pages/Settings';
 
 
 export const PAGES = {
     "AttorneyView": AttorneyView,
-    "Dashboard": Dashboard,
-    "ExamBuilder": ExamBuilder,
-    "JuryView": JuryView,
-    "Parties": Parties,
-    "ProofVault": ProofVault,
-    "Settings": Settings,
 }
 
 export const pagesConfig = {

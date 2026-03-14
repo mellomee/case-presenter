@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -16,17 +16,14 @@ function buildFlatList(buckets, questions, admissionBlocks, proofs) {
   const allItems = [];
 
   for (const bucket of buckets) {
-    // Get top-level questions (no parent) for this bucket
     const bucketQuestions = questions
       .filter(q => q.bucket_id === bucket.id && !q.parent_question_id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-    // Get admission blocks for this bucket
     const bucketBlocks = admissionBlocks
       .filter(ab => ab.bucket_id === bucket.id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-    // Merge by sort_order
     const merged = [
       ...bucketQuestions.map(q => ({ type: 'question', data: q, bucket })),
       ...bucketBlocks.map(ab => ({ type: 'block', data: { ...ab, block_type: 'AdmissionBlock', text: buildBlockText(ab, proofs) }, bucket })),
@@ -35,7 +32,6 @@ function buildFlatList(buckets, questions, admissionBlocks, proofs) {
     allItems.push(...merged);
   }
 
-  // Attach children and proofs
   return allItems.map(item => {
     const children = item.type === 'question'
       ? buildChildren(item.data.id, questions)
@@ -47,7 +43,11 @@ function buildFlatList(buckets, questions, admissionBlocks, proofs) {
           .filter(Boolean)
       : [];
 
-    return { ...item, children, proofs: attachedProofs };
+    const blockProof = item.type === 'block'
+      ? proofs.find(p => p.id === item.data.proof_id) || null
+      : null;
+
+    return { ...item, children, proofs: attachedProofs, blockProof };
   });
 }
 
@@ -55,11 +55,7 @@ function buildChildren(parentId, questions) {
   const children = questions
     .filter(q => q.parent_question_id === parentId)
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-
-  return children.map(c => ({
-    data: c,
-    children: buildChildren(c.id, questions),
-  }));
+  return children.map(c => ({ data: c, children: buildChildren(c.id, questions) }));
 }
 
 function buildBlockText(block, proofs) {
@@ -68,36 +64,28 @@ function buildBlockText(block, proofs) {
 }
 
 export default function AttorneyView() {
+  const queryClient = useQueryClient();
   const [selectedPartyId, setSelectedPartyId] = useState('');
   const [selectedExamType, setSelectedExamType] = useState('Direct');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedProof, setSelectedProof] = useState(null);
   const [showOverview, setShowOverview] = useState(false);
 
-  const { data: parties = [] } = useQuery({
-    queryKey: ['parties'],
-    queryFn: () => base44.entities.Party.list(),
+  const { data: parties = [] } = useQuery({ queryKey: ['parties'], queryFn: () => base44.entities.Party.list() });
+  const { data: allBuckets = [] } = useQuery({ queryKey: ['allBuckets'], queryFn: () => base44.entities.Bucket.list() });
+  const { data: allQuestions = [] } = useQuery({ queryKey: ['allQuestions'], queryFn: () => base44.entities.Question.list() });
+  const { data: admissionBlocks = [] } = useQuery({ queryKey: ['admissionBlocks'], queryFn: () => base44.entities.AdmissionBlock.list() });
+  const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list() });
+
+  const rulingMutation = useMutation({
+    mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
   });
 
-  const { data: allBuckets = [] } = useQuery({
-    queryKey: ['allBuckets'],
-    queryFn: () => base44.entities.Bucket.list(),
-  });
-
-  const { data: allQuestions = [] } = useQuery({
-    queryKey: ['allQuestions'],
-    queryFn: () => base44.entities.Question.list(),
-  });
-
-  const { data: admissionBlocks = [] } = useQuery({
-    queryKey: ['admissionBlocks'],
-    queryFn: () => base44.entities.AdmissionBlock.list(),
-  });
-
-  const { data: proofs = [] } = useQuery({
-    queryKey: ['proofs'],
-    queryFn: () => base44.entities.Proof.list(),
-  });
+  const handleRuling = useCallback(({ action, proofId, data }) => {
+    if (action === 'not_admitted') return; // local note only, no DB change
+    rulingMutation.mutate({ proofId, data });
+  }, [rulingMutation]);
 
   const buckets = useMemo(() => {
     if (!selectedPartyId) return [];
@@ -123,7 +111,6 @@ export default function AttorneyView() {
 
   const currentItem = flatList[currentIndex] || null;
   const nextItem = flatList[currentIndex + 1] || null;
-
   const selectedParty = parties.find(p => p.id === selectedPartyId);
 
   const goNext = useCallback(() => {
@@ -141,9 +128,6 @@ export default function AttorneyView() {
 
   const currentBucketId = currentItem?.bucket?.id || null;
 
-  const handleSelectProof = (proof) => setSelectedProof(proof);
-  const handleCloseProof = () => setSelectedProof(null);
-
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden">
       {/* Left Sidebar — Bucket Nav */}
@@ -159,9 +143,7 @@ export default function AttorneyView() {
             </SelectTrigger>
             <SelectContent>
               {parties.map(p => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.first_name} {p.last_name}
-                </SelectItem>
+                <SelectItem key={p.id} value={p.id}>{p.first_name} {p.last_name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -195,7 +177,6 @@ export default function AttorneyView() {
           />
         </div>
 
-        {/* Open Jury View */}
         <div className="px-3 py-3 border-t border-slate-700">
           <a href={createPageUrl('JuryView')} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700">
@@ -255,26 +236,21 @@ export default function AttorneyView() {
           <div className="flex-1 flex gap-6 p-6 min-h-0 overflow-hidden">
             {/* Questions column */}
             <div className="flex-1 flex flex-col gap-4 min-w-0 overflow-y-auto">
-              {/* Current Question */}
               <CurrentQuestionCard
                 item={currentItem}
                 index={currentIndex}
                 total={flatList.length}
                 examType={selectedExamType}
-                onSelectProof={handleSelectProof}
+                onSelectProof={setSelectedProof}
+                onRuling={handleRuling}
+                isRulingLoading={rulingMutation.isPending}
               />
 
-              {/* Next Question */}
               <div>
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Up Next</p>
-                <NextQuestionCard
-                  item={nextItem}
-                  examType={selectedExamType}
-                  onClick={goNext}
-                />
+                <NextQuestionCard item={nextItem} examType={selectedExamType} onClick={goNext} />
               </div>
 
-              {/* Nav Buttons */}
               <div className="flex items-center gap-3 mt-2">
                 <Button
                   variant="outline"
@@ -296,11 +272,11 @@ export default function AttorneyView() {
 
             {/* Proof Preview Pane */}
             <div className="w-80 flex-shrink-0 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col">
-              <div className="px-4 py-2.5 border-b border-slate-700 flex items-center justify-between">
+              <div className="px-4 py-2.5 border-b border-slate-700">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Proof Preview</span>
               </div>
               <div className="flex-1 min-h-0">
-                <ProofPreviewPane proof={selectedProof} onClose={handleCloseProof} />
+                <ProofPreviewPane proof={selectedProof} onClose={() => setSelectedProof(null)} />
               </div>
             </div>
 
@@ -315,7 +291,6 @@ export default function AttorneyView() {
                 />
               </div>
             )}
-
           </div>
         )}
       </div>
