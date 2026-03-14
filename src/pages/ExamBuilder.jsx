@@ -310,6 +310,8 @@ export default function ExamBuilder() {
               trialPoints={trialPoints}
               questions={questions}
               proofs={proofs}
+              proofTypeCategories={proofTypeCategories}
+              admissionBlocks={admissionBlocks}
               examType={selectedExamType}
               onEdit={(bucket) => { setEditingBucket(bucket); setShowBucketModal(true); }}
               onDelete={handleDeleteBucket}
@@ -319,6 +321,9 @@ export default function ExamBuilder() {
               onDeleteQuestion={handleDeleteQuestion}
               onAddChildQuestion={openAddChildQuestion}
               onReorderQuestions={(reordered) => reorderQuestionMutation.mutate(reordered)}
+              onAddBlock={openAddBlock}
+              onEditBlock={openEditBlock}
+              onDeleteBlock={handleDeleteBlock}
             />
           )}
         </div>
