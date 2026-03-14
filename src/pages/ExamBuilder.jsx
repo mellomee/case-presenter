@@ -98,6 +98,16 @@ export default function ExamBuilder() {
     queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
+  const { data: allBucketsForTrialPoints = [] } = useQuery({
+    queryKey: ['allBuckets'],
+    queryFn: () => base44.entities.Bucket.list(),
+  });
+
+  const { data: trialPointCategories = [] } = useQuery({
+    queryKey: ['trialPointCategories'],
+    queryFn: () => base44.entities.TrialPointCategory.list(),
+  });
+
   // ── Bucket mutations ────────────────────────────────────
   const bucketMutation = useMutation({
     mutationFn: async (data) => {
