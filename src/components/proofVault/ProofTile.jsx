@@ -28,6 +28,7 @@ export default function ProofTile({
 }) {
   const [expanded, setExpanded] = useState(isExpanded);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [expandedChildIds, setExpandedChildIds] = useState([]);
 
   useEffect(() => {
     setExpanded(isExpanded);
