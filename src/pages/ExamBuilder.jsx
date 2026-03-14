@@ -17,6 +17,7 @@ import ExamTypeToggle from '@/components/examBuilder/ExamTypeToggle.jsx';
 import BucketList from '@/components/examBuilder/BucketList.jsx';
 import BucketModal from '@/components/examBuilder/BucketModal.jsx';
 import QuestionModal from '@/components/examBuilder/QuestionModal.jsx';
+import AdmissionBlockModal from '@/components/examBuilder/AdmissionBlockModal.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
