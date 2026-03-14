@@ -8,23 +8,25 @@ export default function VideoClipViewer({ videoUrl, segments }) {
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
+  useEffect(() => {
+    if (segments.length === 0) return;
+    const startSec = timeToSeconds(segments[currentSegmentIdx].start);
+    playerRef.current?.seekTo(startSec, 'seconds');
+    setCurrentTime(startSec);
+  }, [currentSegmentIdx, segments]);
+
   // Auto-play segments in sequence
   useEffect(() => {
     if (segments.length === 0) return;
 
     const segment = segments[currentSegmentIdx];
-    const startSec = timeToSeconds(segment.start);
     const endSec = timeToSeconds(segment.end);
 
-    // Check if we've reached the end of current segment
     if (currentTime >= endSec) {
       if (currentSegmentIdx < segments.length - 1) {
-        // Move to next segment
-        setCurrentSegmentIdx(currentSegmentIdx + 1);
-        setCurrentTime(timeToSeconds(segments[currentSegmentIdx + 1].start));
-        setPlaying(false); // Stop and wait for next play
+        setCurrentSegmentIdx((idx) => idx + 1);
+        setPlaying(true);
       } else {
-        // All segments done
         setPlaying(false);
       }
     }
