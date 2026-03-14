@@ -91,7 +91,6 @@ export default function VideoClipViewer({ videoUrl, segments }) {
             <button
               onClick={() => {
                 setCurrentSegmentIdx(currentSegmentIdx + 1);
-                setCurrentTime(timeToSeconds(segments[currentSegmentIdx + 1].start));
                 setPlaying(false);
               }}
               className="px-3 py-1 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium transition"
@@ -114,7 +113,6 @@ export default function VideoClipViewer({ videoUrl, segments }) {
             }`}
             onClick={() => {
               setCurrentSegmentIdx(idx);
-              setCurrentTime(timeToSeconds(seg.start));
               setPlaying(false);
             }}
           >
