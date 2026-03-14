@@ -52,7 +52,7 @@ function SegmentItem({ segment, index, onDelete }) {
   );
 }
 
-export default function CreateVideoClipModal({ open, onClose, parentProof }) {
+export default function CreateVideoClipModal({ open, onClose, parentProof, onCreated }) {
   const queryClient = useQueryClient();
   const playerRef = useRef(null);
   const [duration, setDuration] = useState(0);
@@ -76,6 +76,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       resetForm();
       onClose();
+      if (onCreated) onCreated(parentProof.id);
     },
     onError: (error) => {
       setWarningMsg(`Error creating video clip: ${error.message}`);
