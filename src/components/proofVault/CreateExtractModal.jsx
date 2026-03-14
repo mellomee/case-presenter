@@ -42,6 +42,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       resetForm();
       onClose();
+      onWarning && onWarning({ parentId: parentProof.id, action: 'extractCreated' });
     },
     onError: (error) => {
       setWarningMsg(`Error creating extract: ${error.message}`);
