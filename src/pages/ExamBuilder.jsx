@@ -368,6 +368,25 @@ export default function ExamBuilder() {
         </DialogContent>
       </Dialog>
 
+      {/* Admission Block Modal */}
+      <Dialog open={showBlockModal} onOpenChange={setShowBlockModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingBlock ? 'Edit Admission Block' : 'Add Admission Block'}</DialogTitle>
+          </DialogHeader>
+          {blockBucket && (
+            <AdmissionBlockModal
+              block={editingBlock}
+              bucketId={blockBucket.id}
+              partyId={selectedParty?.id}
+              onSubmit={(data) => blockMutation.mutate(data)}
+              onCancel={() => setShowBlockModal(false)}
+              isLoading={blockMutation.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Error */}
       <AlertDialog open={showDeleteError} onOpenChange={setShowDeleteError}>
         <AlertDialogContent>
