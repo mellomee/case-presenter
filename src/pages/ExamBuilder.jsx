@@ -326,12 +326,12 @@ export default function ExamBuilder() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Exam Builder</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Exam Builder</h1>
             <p className="text-sm text-slate-600 mt-1">
               {selectedParty.first_name} {selectedParty.last_name}
             </p>
