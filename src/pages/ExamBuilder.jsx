@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, MapPin } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,8 @@ import BucketList from '@/components/examBuilder/BucketList.jsx';
 import BucketModal from '@/components/examBuilder/BucketModal.jsx';
 import QuestionModal from '@/components/examBuilder/QuestionModal.jsx';
 import AdmissionBlockModal from '@/components/examBuilder/AdmissionBlockModal.jsx';
+import TrialPointList from '@/components/examBuilder/TrialPointList.jsx';
+import TrialPointModal from '@/components/examBuilder/TrialPointModal.jsx';
 
 export default function ExamBuilder() {
   const queryClient = useQueryClient();
