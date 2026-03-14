@@ -63,9 +63,9 @@ export default function VideoClipViewer({ videoUrl, segments }) {
   const startSec = timeToSeconds(segment.start);
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
       {/* Video player */}
-      <div className="bg-slate-900 rounded-lg overflow-hidden aspect-video border border-slate-200">
+      <div className="bg-slate-900 rounded-lg overflow-hidden border border-slate-200 flex-1 min-h-[240px]">
         <ReactPlayer
           ref={playerRef}
           url={videoUrl}
@@ -113,7 +113,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
       </div>
 
       {/* Segments list */}
-      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden shrink-0">
         <button
           type="button"
           onClick={() => setSegmentsOpen((open) => !open)}
@@ -126,7 +126,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
         </button>
 
         {segmentsOpen && (
-          <div className="max-h-56 overflow-y-auto p-2 space-y-1 border-t border-slate-200">
+          <div className="max-h-[32vh] overflow-y-auto p-2 space-y-1 border-t border-slate-200">
             {segments.map((seg, idx) => (
               <div
                 key={idx}
