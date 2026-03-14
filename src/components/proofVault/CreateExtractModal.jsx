@@ -118,7 +118,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       party_id: parentProof.party_id || null,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
-      proof_type_category_id: parentProof.proof_type_category_id || null,
       file_url: fileUrl,
       extract_pages: pageRange.trim(),
       draft_exhibit_num: draftExhibitNum.trim() || null,
