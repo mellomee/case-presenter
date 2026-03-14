@@ -471,6 +471,22 @@ export default function ExamBuilder() {
         </DialogContent>
       </Dialog>
 
+      {/* Trial Point Modal */}
+      <Dialog open={showTrialPointModal} onOpenChange={setShowTrialPointModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingTrialPoint ? 'Edit Trial Point' : 'Add Trial Point'}</DialogTitle>
+          </DialogHeader>
+          <TrialPointModal
+            trialPoint={editingTrialPoint}
+            categories={trialPointCategories}
+            onSubmit={(data) => trialPointMutation.mutate(data)}
+            onCancel={() => setShowTrialPointModal(false)}
+            isLoading={trialPointMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Error */}
       <AlertDialog open={showDeleteError} onOpenChange={setShowDeleteError}>
         <AlertDialogContent>
