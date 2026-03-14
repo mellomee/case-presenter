@@ -13,6 +13,7 @@ export default function ProofTile({
   proof, 
   allProofs = [], 
   currentTab = 'draft',
+  newlyCreatedChildId = null,
   onEdit, 
   onDelete,
   onExtract,
@@ -23,7 +24,13 @@ export default function ProofTile({
   onRemoveFromJoint,
   onUnAdmit,
 }) {
+  const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
+  const isNewlyCreatedParent = newlyCreatedChildId === proof.id;
   const [expanded, setExpanded] = useState(false);
+
+  React.useEffect(() => {
+    if (isNewlyCreatedParent) setExpanded(true);
+  }, [isNewlyCreatedParent]);
   const [viewerOpen, setViewerOpen] = useState(false);
 
   const { data: party } = useQuery({
