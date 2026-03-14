@@ -10,7 +10,7 @@ import CurrentQuestionCard from '@/components/attorneyView/CurrentQuestionCard.j
 import NextQuestionCard from '@/components/attorneyView/NextQuestionCard.jsx';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import OverviewPanel from '@/components/attorneyView/OverviewPanel.jsx';
-import { useJurySync } from '@/components/attorneyView/useJurySync.js';
+import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 
 // Build a flat ordered list of top-level questions/blocks from buckets
 function buildFlatList(buckets, questions, admissionBlocks, proofs) {
