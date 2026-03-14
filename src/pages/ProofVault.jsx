@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Film, AlertCircle } from 'lucide-react';
+import { FileText, Plus, Film, AlertCircle, Upload } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import RemoveFromJointModal from '@/components/proofVault/RemoveFromJointModal';
 import CreateExtractModal from '@/components/proofVault/CreateExtractModal';
 import CreateExtractClipModal from '@/components/proofVault/CreateExtractClipModal';
 import CreateVideoClipModal from '@/components/proofVault/CreateVideoClipModal';
+import ProofImportModal from '@/components/proofVault/ProofImportModal';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();
@@ -41,6 +42,7 @@ export default function ProofVault() {
   const [selectedProofForModal, setSelectedProofForModal] = useState(null);
   const [warningMessage, setWarningMessage] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -175,9 +177,14 @@ export default function ProofVault() {
             <FileText className="w-8 h-8 text-blue-600" />
             <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
           </div>
-          <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4" /> Add Proof
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+              <Upload className="w-4 h-4" /> Import
+            </Button>
+            <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4" /> Add Proof
+            </Button>
+          </div>
         </div>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -229,6 +236,12 @@ export default function ProofVault() {
           open={showCreateExtractClipModal}
           onClose={() => setShowCreateExtractClipModal(false)}
           parentExtract={selectedProofForModal}
+        />
+
+        <ProofImportModal
+          open={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['proofs'] })}
         />
 
         <CreateVideoClipModal
