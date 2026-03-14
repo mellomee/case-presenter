@@ -13,12 +13,13 @@ export default function VideoClipViewer({ videoUrl, segments }) {
     if (segments.length === 0 || !playerRef.current) return;
     const segment = segments[currentSegmentIdx];
     const startSec = timeToSeconds(segment.start);
-    playerRef.current.seekTo(startSec);
+    playerRef.current.seekTo(startSec, 'seconds');
+    setCurrentTime(startSec);
   }, [currentSegmentIdx, segments]);
 
   // Auto-play segments in sequence
   useEffect(() => {
-    if (segments.length === 0) return;
+    if (segments.length === 0 || !playing) return;
 
     const segment = segments[currentSegmentIdx];
     const endSec = timeToSeconds(segment.end);
@@ -33,7 +34,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
         setPlaying(false);
       }
     }
-  }, [currentTime, currentSegmentIdx, segments]);
+  }, [currentTime, currentSegmentIdx, segments, playing]);
 
   const timeToSeconds = (timeStr) => {
     const parts = timeStr.split(':').map(Number);
