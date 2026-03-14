@@ -13,9 +13,6 @@ export default function ProofTile({
   proof, 
   allProofs = [], 
   currentTab = 'draft',
-  highlightedProofId = null,
-  expandedProofIds = [],
-  setExpandedProofIds,
   onEdit, 
   onDelete,
   onExtract,
@@ -26,17 +23,8 @@ export default function ProofTile({
   onRemoveFromJoint,
   onUnAdmit,
 }) {
-  const [expanded, setExpanded] = useState(expandedProofIds.includes(proof.id));
+  const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
-
-  const isHighlighted = highlightedProofId === proof.id;
-
-  const handleToggleExpand = () => {
-    setExpanded(!expanded);
-    if (!expanded && setExpandedProofIds) {
-      setExpandedProofIds((prev) => [...new Set([...prev, proof.id])]);
-    }
-  };
 
   const { data: party } = useQuery({
     queryKey: ['party', proof.party_id],
@@ -131,11 +119,11 @@ export default function ProofTile({
 
   return (
     <>
-      <Card className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${expanded ? 'ring-2 ring-blue-400' : ''} ${isHighlighted ? 'bg-yellow-50 ring-2 ring-yellow-400' : ''}`}>
+      <Card className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${expanded ? 'ring-2 ring-blue-400' : ''}`}>
         {/* Header Row */}
         <div
           className="p-4 flex items-start gap-3"
-          onClick={() => handleToggleExpand()}
+          onClick={() => setExpanded(!expanded)}
         >
           {hasChildren && (
             <div className="mt-0.5">
@@ -256,9 +244,6 @@ export default function ProofTile({
                 proof={child}
                 allProofs={allProofs}
                 currentTab={currentTab}
-                highlightedProofId={highlightedProofId}
-                expandedProofIds={expandedProofIds}
-                setExpandedProofIds={setExpandedProofIds}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onExtract={(p) => onExtract(p)}
