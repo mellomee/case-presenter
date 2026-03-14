@@ -243,6 +243,12 @@ export default function ProofVault() {
           parentExtract={selectedProofForModal}
         />
 
+        <PrintExhibitListModal
+          open={showPrintModal}
+          onClose={() => setShowPrintModal(false)}
+          proofs={proofs}
+        />
+
         <ProofImportModal
           open={showImportModal}
           onClose={() => setShowImportModal(false)}
