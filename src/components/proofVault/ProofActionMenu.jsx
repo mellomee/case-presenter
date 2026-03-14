@@ -96,8 +96,8 @@ export default function ProofActionMenu({
       });
     }
 
-    // EXTRACT - PDF top-level (with file) or Extract only
-    if ((isPDF && isTopLevel && proof.file_url) || isExtract) {
+    // EXTRACT - PDF top-level only
+    if (isPDF && isTopLevel && proof.file_url) {
       actions.push({
         id: 'extract',
         label: 'Extract',
