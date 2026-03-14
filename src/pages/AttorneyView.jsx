@@ -72,6 +72,7 @@ export default function AttorneyView() {
   const [selectedExamType, setSelectedExamType] = useState('Direct');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedProof, setSelectedProof] = useState(null);
+  const [showOverview, setShowOverview] = useState(false);
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
