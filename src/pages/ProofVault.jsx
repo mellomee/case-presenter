@@ -319,7 +319,7 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={filteredExhibits}
+                        allProofs={exhibits}
                         currentTab={exhibitFilter}
                         isExpanded={expandedProofIds.includes(proof.id)}
                         onExpandChange={(isExpanded) => {
@@ -354,7 +354,7 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={depositions}
+                        allProofs={proofs}
                         currentTab="depositions"
                         isExpanded={expandedProofIds.includes(proof.id)}
                         onExpandChange={(isExpanded) => {
