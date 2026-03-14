@@ -119,6 +119,14 @@ export default function BucketList({
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => onAddBlock(bucket)}
+                              className="gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8"
+                            >
+                              <FileCheck className="w-3.5 h-3.5" /> Add Block
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => onAddQuestion(bucket)}
                               className="gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8"
                             >
