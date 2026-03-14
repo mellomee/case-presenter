@@ -8,12 +8,19 @@ export default function VideoClipViewer({ videoUrl, segments }) {
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
+  // Seek to new segment when currentSegmentIdx changes
+  useEffect(() => {
+    if (segments.length === 0 || !playerRef.current) return;
+    const segment = segments[currentSegmentIdx];
+    const startSec = timeToSeconds(segment.start);
+    playerRef.current.seekTo(startSec);
+  }, [currentSegmentIdx, segments]);
+
   // Auto-play segments in sequence
   useEffect(() => {
     if (segments.length === 0) return;
 
     const segment = segments[currentSegmentIdx];
-    const startSec = timeToSeconds(segment.start);
     const endSec = timeToSeconds(segment.end);
 
     // Check if we've reached the end of current segment
@@ -21,8 +28,6 @@ export default function VideoClipViewer({ videoUrl, segments }) {
       if (currentSegmentIdx < segments.length - 1) {
         // Move to next segment
         setCurrentSegmentIdx(currentSegmentIdx + 1);
-        setCurrentTime(timeToSeconds(segments[currentSegmentIdx + 1].start));
-        setPlaying(false); // Stop and wait for next play
       } else {
         // All segments done
         setPlaying(false);
