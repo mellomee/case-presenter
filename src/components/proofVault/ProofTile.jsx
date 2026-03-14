@@ -245,6 +245,7 @@ export default function ProofTile({
                 proof={child}
                 allProofs={allProofs}
                 currentTab={currentTab}
+                isExpanded={false}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onExtract={(p) => onExtract(p)}
