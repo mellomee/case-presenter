@@ -22,9 +22,37 @@ export default function ProofTile({
   onAdmitAsDemonstrative,
   onRemoveFromJoint,
   onUnAdmit,
+  expandedProofId,
+  highlightedChildId,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const cardRef = React.useRef(null);
+
+  const hasHighlightedDescendant = React.useMemo(() => {
+    if (!highlightedChildId) return false;
+
+    const hasDescendant = (parentId) => {
+      return allProofs.some((item) => {
+        if (item.parent_proof_id !== parentId) return false;
+        return item.id === highlightedChildId || hasDescendant(item.id);
+      });
+    };
+
+    return hasDescendant(proof.id);
+  }, [allProofs, proof.id, highlightedChildId]);
+
+  React.useEffect(() => {
+    if (proof.id === expandedProofId || hasHighlightedDescendant) {
+      setExpanded(true);
+    }
+  }, [proof.id, expandedProofId, hasHighlightedDescendant]);
+
+  React.useEffect(() => {
+    if (proof.id === highlightedChildId) {
+      cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [proof.id, highlightedChildId]);
 
   const { data: party } = useQuery({
     queryKey: ['party', proof.party_id],
@@ -119,7 +147,10 @@ export default function ProofTile({
 
   return (
     <>
-      <Card className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${expanded ? 'ring-2 ring-blue-400' : ''}`}>
+      <Card
+        ref={cardRef}
+        className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}
+      >
         {/* Header Row */}
         <div
           className="p-4 flex items-start gap-3"
@@ -253,6 +284,8 @@ export default function ProofTile({
                 onAdmitAsDemonstrative={onAdmitAsDemonstrative}
                 onRemoveFromJoint={onRemoveFromJoint}
                 onUnAdmit={onUnAdmit}
+                expandedProofId={expandedProofId}
+                highlightedChildId={highlightedChildId}
               />
             ))}
           </div>

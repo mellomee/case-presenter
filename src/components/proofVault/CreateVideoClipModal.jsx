@@ -52,7 +52,7 @@ function SegmentItem({ segment, index, onDelete }) {
   );
 }
 
-export default function CreateVideoClipModal({ open, onClose, parentProof }) {
+export default function CreateVideoClipModal({ open, onClose, parentProof, onSuccess }) {
   const queryClient = useQueryClient();
   const playerRef = useRef(null);
   const [duration, setDuration] = useState(0);
@@ -72,8 +72,9 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
     mutationFn: async (data) => {
       return base44.entities.Proof.create(data);
     },
-    onSuccess: () => {
+    onSuccess: (createdProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
+      onSuccess?.(createdProof);
       resetForm();
       onClose();
     },

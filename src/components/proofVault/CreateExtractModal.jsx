@@ -16,7 +16,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 
-export default function CreateExtractModal({ open, onClose, parentProof, onWarning }) {
+export default function CreateExtractModal({ open, onClose, parentProof, onWarning, onSuccess }) {
   const queryClient = useQueryClient();
   const [extractSource, setExtractSource] = useState('original');
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -38,8 +38,9 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     mutationFn: async (data) => {
       return base44.entities.Proof.create(data);
     },
-    onSuccess: () => {
+    onSuccess: (createdProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
+      onSuccess?.(createdProof);
       resetForm();
       onClose();
     },

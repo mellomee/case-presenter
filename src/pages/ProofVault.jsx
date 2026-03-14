@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileText, Plus, Film, AlertCircle, Upload, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -45,6 +45,8 @@ export default function ProofVault() {
   const [showWarning, setShowWarning] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [expandedProofId, setExpandedProofId] = useState(null);
+  const [highlightedChildId, setHighlightedChildId] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -156,6 +158,18 @@ export default function ProofVault() {
     }
   };
 
+  const handleChildCreated = (createdProof) => {
+    if (!createdProof) return;
+    setExpandedProofId(createdProof.parent_proof_id || null);
+    setHighlightedChildId(createdProof.id);
+  };
+
+  useEffect(() => {
+    if (!highlightedChildId) return;
+    const timeout = setTimeout(() => setHighlightedChildId(null), 3500);
+    return () => clearTimeout(timeout);
+  }, [highlightedChildId]);
+
   // Separate exhibits and depositions (include ALL, not just top-level)
   const allExhibits = proofs.filter((p) => p.proof_category === 'Exhibit');
   const allDepositions = proofs.filter((p) => p.proof_category === 'Deposition');
@@ -239,12 +253,14 @@ export default function ProofVault() {
           open={showCreateExtractModal}
           onClose={() => setShowCreateExtractModal(false)}
           parentProof={selectedProofForModal}
+          onSuccess={handleChildCreated}
         />
 
         <CreateExtractClipModal
           open={showCreateExtractClipModal}
           onClose={() => setShowCreateExtractClipModal(false)}
           parentExtract={selectedProofForModal}
+          onSuccess={handleChildCreated}
         />
 
         <PrintExhibitListModal
@@ -263,6 +279,7 @@ export default function ProofVault() {
           open={showCreateVideoClipModal}
           onClose={() => setShowCreateVideoClipModal(false)}
           parentProof={selectedProofForModal}
+          onSuccess={handleChildCreated}
         />
 
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
@@ -325,6 +342,8 @@ export default function ProofVault() {
                         onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
                         onRemoveFromJoint={handleRemoveFromJoint}
                         onUnAdmit={handleUnAdmit}
+                        expandedProofId={expandedProofId}
+                        highlightedChildId={highlightedChildId}
                       />
                     ))}
                   </div>
@@ -351,6 +370,8 @@ export default function ProofVault() {
                         onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
                         onRemoveFromJoint={handleRemoveFromJoint}
                         onUnAdmit={handleUnAdmit}
+                        expandedProofId={expandedProofId}
+                        highlightedChildId={highlightedChildId}
                       />
                     ))}
                   </div>

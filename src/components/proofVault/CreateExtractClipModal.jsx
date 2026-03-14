@@ -15,7 +15,7 @@ const HIGHLIGHT_COLORS = [
   { name: 'Purple', hex: '#EDE9FE', bg: 'bg-purple-100', border: 'border-purple-300' },
 ];
 
-export default function CreateExtractClipModal({ open, onClose, parentExtract }) {
+export default function CreateExtractClipModal({ open, onClose, parentExtract, onSuccess }) {
   const queryClient = useQueryClient();
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -39,8 +39,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract })
     mutationFn: async (data) => {
       return base44.entities.Proof.create(data);
     },
-    onSuccess: () => {
+    onSuccess: (createdProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
+      onSuccess?.(createdProof);
       resetForm();
       onClose();
     },
