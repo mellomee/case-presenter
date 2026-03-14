@@ -52,59 +52,90 @@ export default function Layout() {
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path);
 
-  return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
-        {/* Logo / App Name */}
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex items-center gap-3 mb-1">
-            <Scale className="w-6 h-6 text-blue-600" />
+  const SidebarContent = () => (
+    <>
+      {/* Logo / App Name */}
+      <div className="p-5 border-b border-slate-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Scale className="w-6 h-6 text-blue-600 flex-shrink-0" />
             <h1 className="text-lg font-bold text-slate-900">Case Presenter</h1>
           </div>
-          <p className="text-xs text-slate-500">Trial Management System</p>
+          <button className="lg:hidden p-1 text-slate-400 hover:text-slate-600" onClick={() => setSidebarOpen(false)}>
+            <X className="w-5 h-5" />
+          </button>
         </div>
+        <p className="text-xs text-slate-500 mt-1 pl-9">Trial Management System</p>
+      </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6">
-          <ul className="space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-              return (
-                <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${
-                      active
-                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 pl-3'
-                        : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-5">
+        <ul className="space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors min-h-[44px] ${
+                    active
+                      ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 pl-2'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-200 text-xs text-slate-500">
-          <p>© 2026 Case Presenter</p>
-        </div>
+      {/* Footer */}
+      <div className="p-4 border-t border-slate-200 text-xs text-slate-500">
+        <p>© 2026 Case Presenter</p>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="flex h-screen bg-slate-50">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — desktop always visible, mobile slide-in */}
+      <div className={`
+        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col
+        transform transition-transform duration-200 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <SidebarContent />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Bar */}
-        <div className="h-16 bg-white border-b border-slate-200 flex items-center px-8">
-          <div className="flex-1">
-            <p className="text-sm text-slate-600">Welcome to Case Presenter</p>
+        <div className="h-14 bg-white border-b border-slate-200 flex items-center px-4 gap-3 flex-shrink-0">
+          {/* Mobile menu toggle */}
+          <button
+            className="lg:hidden p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-slate-600 truncate">Welcome to Case Presenter</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
               {user?.full_name?.[0]?.toUpperCase() || 'U'}
             </div>
           </div>
