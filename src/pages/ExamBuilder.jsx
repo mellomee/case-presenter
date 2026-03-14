@@ -357,11 +357,11 @@ export default function ExamBuilder() {
             </div>
 
             <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <h2 className="text-xl font-semibold text-slate-900">
                   {selectedExamType === 'Direct' ? '🟢' : '🔴'} Buckets
                 </h2>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => setShowPrintList(true)} className="gap-2">
                     <Printer className="w-4 h-4" /> List View
                   </Button>
@@ -372,7 +372,7 @@ export default function ExamBuilder() {
                     <Upload className="w-4 h-4" /> Bulk Import
                   </Button>
                   <Button variant="outline" onClick={() => setShowQImport(true)} className="gap-2">
-                    <Upload className="w-4 h-4" /> Import Questions
+                    <Upload className="w-4 h-4" /> Import
                   </Button>
                   <Button
                     onClick={() => { setEditingBucket(null); setShowBucketModal(true); }}
