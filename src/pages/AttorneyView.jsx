@@ -221,9 +221,17 @@ export default function AttorneyView() {
             )}
           </div>
           {flatList.length > 0 && (
-            <span className="text-xs text-slate-500">
-              {currentIndex + 1} / {flatList.length}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-500">{currentIndex + 1} / {flatList.length}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowOverview(o => !o)}
+                className={`gap-1.5 text-xs h-7 px-2.5 ${showOverview ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                <LayoutList className="w-3.5 h-3.5" /> Overview
+              </Button>
+            </div>
           )}
         </div>
 
