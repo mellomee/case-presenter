@@ -73,6 +73,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
               setCurrentTime(state.playedSeconds);
             }
           }}
+          onReady={() => playerRef.current?.seekTo(timeToSeconds(segments[currentSegmentIdx].start), 'seconds')}
           config={{
             youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
           }}
