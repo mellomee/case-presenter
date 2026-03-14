@@ -1,28 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Scale, Maximize } from 'lucide-react';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
 function JuryPDF({ fileUrl, page, highlights = [] }) {
   return (
     <Document
       file={fileUrl}
-      loading={<div className="flex items-center justify-center h-full"><Loader2 className="w-10 h-10 animate-spin text-white/30" /></div>}
+      loading={<Loader2 className="w-10 h-10 animate-spin text-white/30" />}
       className="flex items-center justify-center w-full h-full"
     >
       <div className="relative">
         <Page
           pageNumber={page || 1}
-          width={Math.min(window.innerWidth * 0.88, 1100)}
+          width={Math.min(window.innerWidth * 0.9, 1200)}
           renderTextLayer={false}
           renderAnnotationLayer={false}
-          loading={<div className="w-full h-full bg-zinc-800 animate-pulse rounded" />}
+          loading={<div className="w-64 h-96 bg-zinc-800 animate-pulse rounded" />}
         />
         {highlights.map((h, i) => (
           <div
@@ -48,15 +50,12 @@ function JuryPDF({ fileUrl, page, highlights = [] }) {
 
 function JuryVideo({ proof, videoTime, isPlaying }) {
   const videoRef = useRef(null);
-  const syncRef = useRef({ time: videoTime, playing: isPlaying });
 
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
     const newTime = videoTime ?? 0;
-    if (Math.abs(el.currentTime - newTime) > 1.5) {
-      el.currentTime = newTime;
-    }
+    if (Math.abs(el.currentTime - newTime) > 1.5) el.currentTime = newTime;
   }, [videoTime]);
 
   useEffect(() => {
@@ -68,22 +67,81 @@ function JuryVideo({ proof, videoTime, isPlaying }) {
 
   return (
     <div className="flex items-center justify-center w-full h-full bg-black">
-      <video
-        ref={videoRef}
-        src={proof.video_url || proof.file_url}
-        className="max-w-full max-h-full"
-      />
+      <video ref={videoRef} src={proof.video_url || proof.file_url} className="max-w-full max-h-full" />
     </div>
   );
 }
+
+// ─── Overlay badges ────────────────────────────────────────────────────────────
+
+function TopRightBadges({ proof, demoLabel }) {
+  const isDemo = proof.status === 'Demonstrative';
+  const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num;
+
+  return (
+    <div className="absolute top-4 right-5 flex flex-col items-end gap-2 pointer-events-none z-20">
+      {exhibitNum && (
+        <div className="bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-bold px-3 py-1.5 rounded-lg tracking-wide shadow-lg">
+          {isDemo ? 'Demo' : 'Exhibit'} {exhibitNum}
+        </div>
+      )}
+      {isDemo && (
+        <div className="bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 text-amber-300 text-xs italic px-3 py-1.5 rounded-lg shadow-lg max-w-xs text-right">
+          {demoLabel}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Fullscreen button ─────────────────────────────────────────────────────────
+
+function FullscreenButton() {
+  const handleFullscreen = () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
+
+  return (
+    <button
+      onClick={handleFullscreen}
+      className="absolute bottom-4 right-4 z-30 bg-white/5 hover:bg-white/15 border border-white/10 text-white/40 hover:text-white/80 p-2 rounded-lg transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
+      title="Toggle fullscreen"
+    >
+      <Maximize className="w-4 h-4" />
+    </button>
+  );
+}
+
+// ─── Blank screen ──────────────────────────────────────────────────────────────
+
+function BlankScreen({ caseName }) {
+  return (
+    <div className="flex items-center justify-center w-full h-screen bg-black group">
+      <div className="text-center select-none">
+        <Scale className="w-24 h-24 text-white/8 mx-auto mb-6" strokeWidth={1} />
+        <p className="text-white/12 text-lg tracking-[0.3em] uppercase font-light">
+          {caseName || 'Case Presenter'}
+        </p>
+      </div>
+      <FullscreenButton />
+    </div>
+  );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function JuryView() {
   const { juryState } = useJurySync('jury');
 
   const { data: proof } = useQuery({
-    queryKey: ['proof', juryState?.published_proof_id],
+    queryKey: ['juryProof', juryState?.published_proof_id],
     queryFn: () => base44.entities.Proof.filter({ id: juryState.published_proof_id }).then(r => r[0]),
-    enabled: !!juryState?.published_proof_id,
+    enabled: !!juryState?.published_proof_id && !juryState?.is_blank,
   });
 
   const { data: settings } = useQuery({
@@ -91,60 +149,54 @@ export default function JuryView() {
     queryFn: () => base44.entities.AppSettings.list().then(r => r[0] || {}),
   });
 
+  // Enter fullscreen automatically on load (best-effort)
+  useEffect(() => {
+    const tryFs = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      }
+    };
+    // Requires user gesture — attach to first click instead
+    document.addEventListener('click', tryFs, { once: true });
+    return () => document.removeEventListener('click', tryFs);
+  }, []);
+
+  const caseName = settings?.case_name || 'Case Presenter';
+  const demoLabel = settings?.jury_demonstrative_label || 'For illustrative purposes only';
   const isBlank = !juryState || juryState.is_blank || !juryState.published_proof_id;
 
+  // Loading state (before JuryState record arrives)
   if (!juryState) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
-        <Loader2 className="w-10 h-10 animate-spin text-white/20" />
+        <Loader2 className="w-8 h-8 animate-spin text-white/15" />
       </div>
     );
   }
 
   if (isBlank) {
-    return (
-      <div className="flex items-center justify-center w-full h-screen bg-black">
-        <div className="text-center">
-          <div className="text-9xl mb-8 opacity-10">⚖️</div>
-          <p className="text-white/20 text-xl tracking-widest uppercase">
-            {settings?.case_name || 'Case Presenter'}
-          </p>
-        </div>
-      </div>
-    );
+    return <BlankScreen caseName={caseName} />;
   }
 
+  // Proof loading
   if (!proof) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
-        <Loader2 className="w-10 h-10 animate-spin text-white/20" />
+        <Loader2 className="w-8 h-8 animate-spin text-white/15" />
       </div>
     );
   }
 
-  const isDemo = proof.status === 'Demonstrative';
-  const demoLabel = settings?.jury_demonstrative_label || 'For illustrative purposes only';
-
   return (
-    <div className="flex flex-col w-full h-screen bg-black overflow-hidden">
-      {/* Exhibit Label Bar */}
-      {juryState.exhibit_label && (
-        <div className="flex-shrink-0 flex items-center justify-center bg-black/80 border-b border-white/5 py-2 px-6">
-          <span className="text-white/70 text-base font-semibold tracking-wide">
-            {juryState.exhibit_label}
-          </span>
-          {isDemo && (
-            <span className="ml-4 text-amber-400/60 text-sm italic">
-              {demoLabel}
-            </span>
-          )}
-        </div>
-      )}
+    <div className="relative flex flex-col w-full h-screen bg-black overflow-hidden group">
 
-      {/* Content */}
+      {/* Top-right: Exhibit # + Demo label */}
+      <TopRightBadges proof={proof} demoLabel={demoLabel} />
+
+      {/* Proof content */}
       <div className="flex-1 overflow-hidden flex items-center justify-center">
         {proof.file_type === 'Image' ? (
-          <div className="flex items-center justify-center w-full h-full p-8">
+          <div className="flex items-center justify-center w-full h-full p-6">
             <img
               src={proof.file_url}
               alt={proof.formal_name || proof.name}
@@ -164,18 +216,12 @@ export default function JuryView() {
             highlights={proof.highlights || []}
           />
         ) : (
-          <div className="text-white/30 text-center">
-            <p className="text-xl">No file available</p>
-          </div>
+          <p className="text-white/20 text-lg">No file attached</p>
         )}
       </div>
 
-      {/* Demonstrative watermark */}
-      {isDemo && (
-        <div className="absolute bottom-6 right-8 pointer-events-none">
-          <span className="text-amber-400/30 text-sm font-medium italic">{demoLabel}</span>
-        </div>
-      )}
+      {/* Fullscreen toggle (visible on hover) */}
+      <FullscreenButton />
     </div>
   );
 }
