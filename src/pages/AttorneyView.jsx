@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tv, ChevronLeft, ChevronRight, ExternalLink, User } from 'lucide-react';
+import { Tv, ChevronLeft, ChevronRight, ExternalLink, User, LayoutList } from 'lucide-react';
 import BucketNav from '@/components/attorneyView/BucketNav.jsx';
 import CurrentQuestionCard from '@/components/attorneyView/CurrentQuestionCard.jsx';
 import NextQuestionCard from '@/components/attorneyView/NextQuestionCard.jsx';
