@@ -55,9 +55,16 @@ export default function ProofVault() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Proof.create(data),
-    onSuccess: () => {
+    onSuccess: (newProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       setShowForm(false);
+      
+      // If it's a child proof, expand parent and highlight the new child
+      if (newProof.parent_proof_id) {
+        setExpandedProofIds((prev) => Array.from(new Set([...prev, newProof.parent_proof_id])));
+        setHighlightedProofId(newProof.id);
+        setTimeout(() => setHighlightedProofId(null), 3000);
+      }
     },
   });
 
