@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactPlayer from 'react-player';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function VideoClipViewer({ videoUrl, segments }) {
   const playerRef = useRef(null);
@@ -8,6 +8,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
   const [playing, setPlaying] = useState(false);
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [segmentsOpen, setSegmentsOpen] = useState(true);
 
   useEffect(() => {
     if (segments.length === 0) return;
@@ -112,24 +113,39 @@ export default function VideoClipViewer({ videoUrl, segments }) {
       </div>
 
       {/* Segments list */}
-      <div className="space-y-1">
-        {segments.map((seg, idx) => (
-          <div
-            key={idx}
-            className={`p-2 rounded-md text-xs cursor-pointer transition ${
-              idx === currentSegmentIdx
-                ? 'bg-blue-100 text-blue-900 font-semibold'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-            onClick={() => {
-              setCurrentSegmentIdx(idx);
-              setPlaying(false);
-            }}
-          >
-            #{idx + 1} · {seg.start} → {seg.end}
-            {seg.label && <span className="ml-2 italic text-slate-600">({seg.label})</span>}
+      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setSegmentsOpen((open) => !open)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition"
+        >
+          <div className="text-sm font-medium text-slate-700">
+            Playlist Segments ({segments.length})
           </div>
-        ))}
+          {segmentsOpen ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+        </button>
+
+        {segmentsOpen && (
+          <div className="max-h-56 overflow-y-auto p-2 space-y-1 border-t border-slate-200">
+            {segments.map((seg, idx) => (
+              <div
+                key={idx}
+                className={`p-2 rounded-md text-xs cursor-pointer transition ${
+                  idx === currentSegmentIdx
+                    ? 'bg-blue-100 text-blue-900 font-semibold'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+                onClick={() => {
+                  setCurrentSegmentIdx(idx);
+                  setPlaying(false);
+                }}
+              >
+                #{idx + 1} · {seg.start} → {seg.end}
+                {seg.label && <span className="ml-2 italic text-slate-600">({seg.label})</span>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
