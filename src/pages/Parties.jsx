@@ -133,10 +133,16 @@ export default function Parties() {
 
         {filteredParties.length === 0 ? (
           <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
-            <p className="text-slate-600">No parties added yet.</p>
+            <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-600 font-medium">
+              {filterType === 'all' ? 'No parties added yet.' : `No ${filterType} parties.`}
+            </p>
+            {filterType === 'all' && (
+              <p className="text-sm text-slate-400 mt-1">Add witnesses, experts, and other parties to get started.</p>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredParties.map((party) => (
               <PartyCard
                 key={party.id}
