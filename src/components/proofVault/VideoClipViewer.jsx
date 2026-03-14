@@ -57,15 +57,22 @@ export default function VideoClipViewer({ videoUrl, segments }) {
     <div className="space-y-4">
       {/* Video player */}
       <div className="bg-slate-900 rounded-lg overflow-hidden aspect-video border border-slate-200">
-        <ReactPlayer
+         <ReactPlayer
           ref={playerRef}
           url={videoUrl}
           width="100%"
           height="100%"
           controls
           playing={playing}
-          onProgress={(state) => setCurrentTime(state.playedSeconds)}
-          onReady={() => playerRef.current?.seekTo(startSec)}
+          onProgress={(state) => {
+            const endSec = timeToSeconds(segments[currentSegmentIdx].end);
+            if (state.playedSeconds >= endSec) {
+              // Stop playback at segment end
+              setPlaying(false);
+            } else {
+              setCurrentTime(state.playedSeconds);
+            }
+          }}
           config={{
             youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
           }}
