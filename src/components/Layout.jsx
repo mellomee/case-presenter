@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare } from 'lucide-react';
+import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare, Menu, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ChatPanel from './chat/ChatPanel.jsx';
 import ChatMessageToast from './chat/ChatMessageToast.jsx';
