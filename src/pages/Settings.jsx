@@ -7,6 +7,7 @@ import ProofTypeCategoriesTab from '@/components/settings/ProofTypeCategoriesTab
 import AdmissionTemplatesTab from '@/components/settings/AdmissionTemplatesTab';
 import RolesTab from '@/components/settings/RolesTab';
 import CredentialsTab from '@/components/settings/CredentialsTab';
+import TrialPointCategoriesTab from '@/components/settings/TrialPointCategoriesTab';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
