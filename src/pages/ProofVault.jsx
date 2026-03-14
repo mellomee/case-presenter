@@ -241,6 +241,7 @@ export default function ProofVault() {
           open={showCreateExtractModal}
           onClose={() => setShowCreateExtractModal(false)}
           parentProof={selectedProofForModal}
+          onCreated={handleChildCreated}
         />
 
         <CreateExtractClipModal
@@ -265,6 +266,7 @@ export default function ProofVault() {
           open={showCreateVideoClipModal}
           onClose={() => setShowCreateVideoClipModal(false)}
           parentProof={selectedProofForModal}
+          onCreated={handleChildCreated}
         />
 
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
