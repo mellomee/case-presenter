@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,6 @@ export default function ProofTile({
   proof, 
   allProofs = [], 
   currentTab = 'draft',
-  newlyCreatedChildId = null,
   onEdit, 
   onDelete,
   onExtract,
@@ -24,13 +23,7 @@ export default function ProofTile({
   onRemoveFromJoint,
   onUnAdmit,
 }) {
-  const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
-  const isNewlyCreatedParent = newlyCreatedChildId === proof.id;
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    if (isNewlyCreatedParent) setExpanded(true);
-  }, [isNewlyCreatedParent]);
   const [viewerOpen, setViewerOpen] = useState(false);
 
   const { data: party } = useQuery({
@@ -47,6 +40,8 @@ export default function ProofTile({
     enabled: !!proof.category_id,
   });
 
+  // Get children proofs
+  const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
   const hasChildren = children.length > 0;
 
   // Determine party color label
@@ -200,19 +195,16 @@ export default function ProofTile({
             )}
 
             {/* Video Clips (for VideoClip child) */}
-            {proof.proof_child_type === 'VideoClip' && (() => {
-              const segs = proof.video_clips?.segments || (Array.isArray(proof.video_clips) ? proof.video_clips : []);
-              return segs.length > 0 ? (
-                <div className="text-xs text-slate-600 mb-2">
-                  <span className="text-amber-600">• {segs.length} segment{segs.length !== 1 ? 's' : ''}</span>
-                  {segs.length <= 2 && (
-                    <span className="ml-2 text-slate-500">
-                      {segs.map((clip) => `${clip.start}–${clip.end}`).join(', ')}
-                    </span>
-                  )}
-                </div>
-              ) : null;
-            })()}
+            {proof.proof_child_type === 'VideoClip' && proof.video_clips && Array.isArray(proof.video_clips) && proof.video_clips.length > 0 && (
+              <div className="text-xs text-slate-600 mb-2">
+                <span className="text-amber-600">• {proof.video_clips.length} segment{proof.video_clips.length !== 1 ? 's' : ''}</span>
+                {proof.video_clips.length <= 2 && (
+                  <span className="ml-2 text-slate-500">
+                    {proof.video_clips.map((clip) => `${clip.start}–${clip.end}`).join(', ')}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Status Pill (for Exhibits) */}
             {proof.proof_category === 'Exhibit' && (
@@ -252,7 +244,6 @@ export default function ProofTile({
                 proof={child}
                 allProofs={allProofs}
                 currentTab={currentTab}
-                newlyCreatedChildId={newlyCreatedChildId}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onExtract={(p) => onExtract(p)}

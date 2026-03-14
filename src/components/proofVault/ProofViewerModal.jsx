@@ -34,7 +34,7 @@ export default function ProofViewerModal({ proof, allProofs, isOpen, onClose }) 
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" syncState={viewerState} onStateChange={setViewerState} />
           ) : isVideoClip ? (
             <div className="p-6">
-              <VideoClipViewer videoUrl={proof.video_url || proof.file_url} segments={proof.video_clips?.segments || (Array.isArray(proof.video_clips) ? proof.video_clips : [])} />
+              <VideoClipViewer videoUrl={proof.video_url || proof.file_url} segments={proof.video_clips || []} />
             </div>
           ) : proof.file_type === 'Video' ? (
             <VideoViewer proof={proof} allProofs={allProofs} mode="controller" syncState={viewerState} onStateChange={setViewerState} />

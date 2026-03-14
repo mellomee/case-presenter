@@ -8,31 +8,27 @@ export default function VideoClipViewer({ videoUrl, segments }) {
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
-  // Seek to start of current segment when segment changes
+  // Auto-play segments in sequence
   useEffect(() => {
-    if (segments.length === 0 || !playerRef.current) return;
-    const startSec = timeToSeconds(segments[currentSegmentIdx].start);
-    playerRef.current.seekTo(startSec, 'seconds');
-  }, [currentSegmentIdx, segments]);
-
-  // Auto-advance to next segment when current segment ends
-  useEffect(() => {
-    if (segments.length === 0 || !playing) return;
+    if (segments.length === 0) return;
 
     const segment = segments[currentSegmentIdx];
+    const startSec = timeToSeconds(segment.start);
     const endSec = timeToSeconds(segment.end);
 
     // Check if we've reached the end of current segment
     if (currentTime >= endSec) {
       if (currentSegmentIdx < segments.length - 1) {
-        // Move to next segment (it will auto-play due to playing state)
+        // Move to next segment
         setCurrentSegmentIdx(currentSegmentIdx + 1);
+        setCurrentTime(timeToSeconds(segments[currentSegmentIdx + 1].start));
+        setPlaying(false); // Stop and wait for next play
       } else {
         // All segments done
         setPlaying(false);
       }
     }
-  }, [currentTime, currentSegmentIdx, segments, playing]);
+  }, [currentTime, currentSegmentIdx, segments]);
 
   const timeToSeconds = (timeStr) => {
     const parts = timeStr.split(':').map(Number);
@@ -57,27 +53,15 @@ export default function VideoClipViewer({ videoUrl, segments }) {
     <div className="space-y-4">
       {/* Video player */}
       <div className="bg-slate-900 rounded-lg overflow-hidden aspect-video border border-slate-200">
-         <ReactPlayer
+        <ReactPlayer
           ref={playerRef}
           url={videoUrl}
           width="100%"
           height="100%"
           controls
           playing={playing}
-          onProgress={(state) => {
-            const endSec = timeToSeconds(segments[currentSegmentIdx].end);
-            if (state.playedSeconds >= endSec) {
-              // Seek back to prevent overshoot
-              playerRef.current?.seekTo(endSec, 'seconds');
-              // Only pause if this is the last segment
-              if (currentSegmentIdx >= segments.length - 1) {
-                setPlaying(false);
-              }
-            } else {
-              setCurrentTime(state.playedSeconds);
-            }
-          }}
-          onReady={() => playerRef.current?.seekTo(timeToSeconds(segments[currentSegmentIdx].start), 'seconds')}
+          onProgress={(state) => setCurrentTime(state.playedSeconds)}
+          onReady={() => playerRef.current?.seekTo(startSec)}
           config={{
             youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
           }}
@@ -127,11 +111,10 @@ export default function VideoClipViewer({ videoUrl, segments }) {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
             onClick={() => {
-               setCurrentSegmentIdx(idx);
-               setCurrentTime(timeToSeconds(seg.start));
-               playerRef.current?.seekTo(timeToSeconds(seg.start), 'seconds');
-               setPlaying(false);
-             }}
+              setCurrentSegmentIdx(idx);
+              setCurrentTime(timeToSeconds(seg.start));
+              setPlaying(false);
+            }}
           >
             #{idx + 1} · {seg.start} → {seg.end}
             {seg.label && <span className="ml-2 italic text-slate-600">({seg.label})</span>}

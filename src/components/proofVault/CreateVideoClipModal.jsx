@@ -52,7 +52,7 @@ function SegmentItem({ segment, index, onDelete }) {
   );
 }
 
-export default function CreateVideoClipModal({ open, onClose, parentProof, onCreated }) {
+export default function CreateVideoClipModal({ open, onClose, parentProof }) {
   const queryClient = useQueryClient();
   const playerRef = useRef(null);
   const [duration, setDuration] = useState(0);
@@ -76,7 +76,6 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onCre
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       resetForm();
       onClose();
-      if (onCreated) onCreated(parentProof.id);
     },
     onError: (error) => {
       setWarningMsg(`Error creating video clip: ${error.message}`);
@@ -183,7 +182,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onCre
       file_url: parentProof.file_url || null,
       draft_exhibit_num: exhibitNum.trim() || null,
       description: description.trim() || null,
-      video_clips: { segments: segments.map(({ start, end, label }) => ({ start, end, label })) },
+      video_clips: segments,
     };
 
     createMutation.mutate(clipData);

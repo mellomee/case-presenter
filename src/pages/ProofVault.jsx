@@ -45,7 +45,6 @@ export default function ProofVault() {
   const [showWarning, setShowWarning] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
-  const [newlyCreatedChildId, setNewlyCreatedChildId] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -139,11 +138,6 @@ export default function ProofVault() {
   const handleRemoveFromJoint = (proof) => {
     setSelectedProofForModal(proof);
     setShowRemoveFromJointModal(true);
-  };
-
-  const handleChildCreated = (parentId) => {
-    setNewlyCreatedChildId(parentId);
-    setTimeout(() => setNewlyCreatedChildId(null), 3000);
   };
 
   // Extract and clip handlers
@@ -241,7 +235,6 @@ export default function ProofVault() {
           open={showCreateExtractModal}
           onClose={() => setShowCreateExtractModal(false)}
           parentProof={selectedProofForModal}
-          onCreated={handleChildCreated}
         />
 
         <CreateExtractClipModal
@@ -266,7 +259,6 @@ export default function ProofVault() {
           open={showCreateVideoClipModal}
           onClose={() => setShowCreateVideoClipModal(false)}
           parentProof={selectedProofForModal}
-          onCreated={handleChildCreated}
         />
 
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
@@ -318,8 +310,7 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={proofs}
-                        newlyCreatedChildId={newlyCreatedChildId}
+                        allProofs={filteredExhibits}
                         currentTab={exhibitFilter}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
@@ -345,8 +336,7 @@ export default function ProofVault() {
                       <ProofTile
                         key={proof.id}
                         proof={proof}
-                        allProofs={proofs}
-                        newlyCreatedChildId={newlyCreatedChildId}
+                        allProofs={depositions}
                         currentTab="depositions"
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
