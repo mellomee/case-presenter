@@ -52,6 +52,7 @@ export default function ExamBuilder() {
   const [deleteError, setDeleteError] = useState(null);
   const [showDeleteError, setShowDeleteError] = useState(false);
   const [showQImport, setShowQImport] = useState(false);
+  const [showTrialImport, setShowTrialImport] = useState(false);
 
   // ── Data fetching ──────────────────────────────────────
   const { data: parties = [] } = useQuery({
