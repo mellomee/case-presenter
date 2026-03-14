@@ -198,6 +198,34 @@ export default function ExamBuilder() {
     },
   });
 
+  // ── Trial Point mutations ────────────────────────────────
+  const trialPointMutation = useMutation({
+    mutationFn: async (data) => {
+      if (editingTrialPoint) return base44.entities.TrialPoint.update(editingTrialPoint.id, data);
+      return base44.entities.TrialPoint.create(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trialPoints'] });
+      setShowTrialPointModal(false);
+      setEditingTrialPoint(null);
+    },
+  });
+
+  const deleteTrialPointMutation = useMutation({
+    mutationFn: async (tp) => {
+      const mapped = allBucketsForTrialPoints.filter(b => b.trial_point_id === tp.id);
+      if (mapped.length > 0) throw new Error(`Remove all ${mapped.length} mapped bucket${mapped.length !== 1 ? 's' : ''} from this Trial Point first.`);
+      return base44.entities.TrialPoint.delete(tp.id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trialPoints'] }),
+    onError: (error) => { setDeleteError(error.message); setShowDeleteError(true); },
+  });
+
+  const reorderTrialPointMutation = useMutation({
+    mutationFn: (tps) => Promise.all(tps.map((tp, idx) => base44.entities.TrialPoint.update(tp.id, { sort_order: idx }))),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trialPoints'] }),
+  });
+
   const reorderQuestionMutation = useMutation({
     mutationFn: (questionsInOrder) =>
       Promise.all(questionsInOrder.map((q, idx) => base44.entities.Question.update(q.id, { sort_order: idx }))),
