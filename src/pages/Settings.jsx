@@ -69,6 +69,9 @@ export default function Settings() {
               <TabsTrigger value="credentials" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
                 Credentials
               </TabsTrigger>
+              <TabsTrigger value="trialPointCategories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
+                Trial Point Categories
+              </TabsTrigger>
             </TabsList>
 
             <div className="p-8">
