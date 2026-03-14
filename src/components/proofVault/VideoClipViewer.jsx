@@ -4,6 +4,7 @@ import { Play, Pause } from 'lucide-react';
 
 export default function VideoClipViewer({ videoUrl, segments }) {
   const playerRef = useRef(null);
+  const shouldAutoResumeRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -13,6 +14,14 @@ export default function VideoClipViewer({ videoUrl, segments }) {
     const startSec = timeToSeconds(segments[currentSegmentIdx].start);
     playerRef.current?.seekTo(startSec, 'seconds');
     setCurrentTime(startSec);
+
+    if (shouldAutoResumeRef.current) {
+      const timeout = setTimeout(() => {
+        setPlaying(true);
+        shouldAutoResumeRef.current = false;
+      }, 80);
+      return () => clearTimeout(timeout);
+    }
   }, [currentSegmentIdx, segments]);
 
   // Auto-play segments in sequence
@@ -24,8 +33,9 @@ export default function VideoClipViewer({ videoUrl, segments }) {
 
     if (currentTime >= endSec) {
       if (currentSegmentIdx < segments.length - 1) {
+        shouldAutoResumeRef.current = true;
+        setPlaying(false);
         setCurrentSegmentIdx((idx) => idx + 1);
-        setPlaying(true);
       } else {
         setPlaying(false);
       }
