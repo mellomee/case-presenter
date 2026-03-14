@@ -42,6 +42,10 @@ export default function ExamBuilder() {
   const [editingBlock, setEditingBlock] = useState(null);
   const [blockBucket, setBlockBucket] = useState(null);
 
+  // Trial Point modal state
+  const [showTrialPointModal, setShowTrialPointModal] = useState(false);
+  const [editingTrialPoint, setEditingTrialPoint] = useState(null);
+
   // Error state
   const [deleteError, setDeleteError] = useState(null);
   const [showDeleteError, setShowDeleteError] = useState(false);
