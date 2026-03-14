@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { FileText, X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
+import JuryPublishBar from './JuryPublishBar.jsx';
 
 function statusPill(proof) {
   if (proof.status === 'Admitted') return 'bg-green-100 text-green-700';
@@ -10,7 +12,32 @@ function statusPill(proof) {
   return 'bg-slate-100 text-slate-600';
 }
 
-export default function ProofPreviewPane({ proof, onClose }) {
+export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClose }) {
+  const videoRef = useRef(null);
+
+  const handlePdfStateChange = useCallback((pdfSync) => {
+    if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
+    onUpdateJury({ pdf_page: pdfSync.currentPage });
+  }, [juryState, proof, onUpdateJury]);
+
+  const handleVideoTimeUpdate = useCallback(() => {
+    const el = videoRef.current;
+    if (!el || !juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
+    onUpdateJury({ video_time: el.currentTime, is_playing: !el.paused });
+  }, [juryState, proof, onUpdateJury]);
+
+  const handleVideoPlay = useCallback(() => {
+    if (juryState?.published_proof_id === proof?.id && !juryState?.is_blank) {
+      onUpdateJury({ is_playing: true });
+    }
+  }, [juryState, proof, onUpdateJury]);
+
+  const handleVideoPause = useCallback(() => {
+    if (juryState?.published_proof_id === proof?.id && !juryState?.is_blank) {
+      onUpdateJury({ is_playing: false });
+    }
+  }, [juryState, proof, onUpdateJury]);
+
   if (!proof) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -29,7 +56,7 @@ export default function ProofPreviewPane({ proof, onClose }) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-700 flex items-start justify-between gap-2">
+      <div className="px-4 py-3 border-b border-slate-700 flex items-start justify-between gap-2 flex-shrink-0">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
             {exhibitNum && (
@@ -58,7 +85,7 @@ export default function ProofPreviewPane({ proof, onClose }) {
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 overflow-hidden bg-slate-900/50">
+      <div className="flex-1 overflow-hidden bg-slate-900/50 min-h-0">
         {proof.file_url ? (
           <div className="w-full h-full">
             {proof.file_type === 'Image' ? (
@@ -72,16 +99,22 @@ export default function ProofPreviewPane({ proof, onClose }) {
             ) : proof.file_type === 'Video' ? (
               <div className="flex items-center justify-center h-full p-4">
                 <video
+                  ref={videoRef}
                   src={proof.video_url || proof.file_url}
                   controls
                   className="max-w-full max-h-full rounded"
+                  onTimeUpdate={handleVideoTimeUpdate}
+                  onPlay={handleVideoPlay}
+                  onPause={handleVideoPause}
                 />
               </div>
             ) : (
-              <iframe
-                src={proof.file_url}
-                className="w-full h-full"
-                title={proof.formal_name || proof.name}
+              <PDFViewer
+                fileUrl={proof.file_url}
+                mode="controller"
+                onStateChange={handlePdfStateChange}
+                highlights={proof.highlights || []}
+                clippedPage={proof.clipped_page || null}
               />
             )}
           </div>
@@ -97,10 +130,13 @@ export default function ProofPreviewPane({ proof, onClose }) {
 
       {/* Description */}
       {proof.description && (
-        <div className="px-4 py-3 border-t border-slate-700 bg-slate-800/50">
+        <div className="px-4 py-2 border-t border-slate-700 bg-slate-800/50 flex-shrink-0">
           <p className="text-xs text-slate-400 leading-relaxed">{proof.description}</p>
         </div>
       )}
+
+      {/* Jury Publish Bar */}
+      <JuryPublishBar proof={proof} juryState={juryState} onUpdate={onUpdateJury} />
     </div>
   );
 }
