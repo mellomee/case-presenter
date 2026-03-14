@@ -353,6 +353,9 @@ export default function ExamBuilder() {
                   {selectedExamType === 'Direct' ? '🟢' : '🔴'} Buckets
                 </h2>
                 <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowTrialImport(true)} className="gap-2">
+                    <Upload className="w-4 h-4" /> Bulk Import
+                  </Button>
                   <Button variant="outline" onClick={() => setShowQImport(true)} className="gap-2">
                     <Upload className="w-4 h-4" /> Import Questions
                   </Button>
