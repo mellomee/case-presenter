@@ -249,6 +249,7 @@ export default function ProofTile({
                 proof={child}
                 allProofs={allProofs}
                 currentTab={currentTab}
+                newlyCreatedChildId={newlyCreatedChildId}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onExtract={(p) => onExtract(p)}
