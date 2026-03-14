@@ -24,6 +24,7 @@ import CreateExtractModal from '@/components/proofVault/CreateExtractModal';
 import CreateExtractClipModal from '@/components/proofVault/CreateExtractClipModal';
 import CreateVideoClipModal from '@/components/proofVault/CreateVideoClipModal';
 import ProofImportModal from '@/components/proofVault/ProofImportModal';
+import PrintExhibitListModal from '@/components/proofVault/PrintExhibitListModal';
 
 export default function ProofVault() {
   const queryClient = useQueryClient();

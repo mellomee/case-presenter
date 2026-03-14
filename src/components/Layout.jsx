@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ChatPanel from './chat/ChatPanel.jsx';
+import ChatMessageToast from './chat/ChatMessageToast.jsx';
 
 export default function Layout() {
   const location = useLocation();
