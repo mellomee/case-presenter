@@ -50,7 +50,7 @@ export default function Settings() {
 
         <div className="bg-white rounded-lg shadow-sm border border-slate-200">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start rounded-none border-b border-slate-200 bg-transparent p-0 h-auto">
+            <TabsList className="w-full justify-start rounded-none border-b border-slate-200 bg-transparent p-0 h-auto overflow-x-auto flex-nowrap">
               <TabsTrigger value="general" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
                 General
               </TabsTrigger>
