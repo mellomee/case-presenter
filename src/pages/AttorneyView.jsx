@@ -78,6 +78,8 @@ export default function AttorneyView() {
   const { data: admissionBlocks = [] } = useQuery({ queryKey: ['admissionBlocks'], queryFn: () => base44.entities.AdmissionBlock.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list() });
 
+  const { juryState, update: updateJury } = useJurySync('attorney');
+
   const rulingMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
