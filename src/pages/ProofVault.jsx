@@ -45,6 +45,8 @@ export default function ProofVault() {
   const [showWarning, setShowWarning] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [highlightedProofId, setHighlightedProofId] = useState(null);
+  const [expandedProofIds, setExpandedProofIds] = useState([]);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -53,9 +55,14 @@ export default function ProofVault() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Proof.create(data),
-    onSuccess: () => {
+    onSuccess: (newProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       setShowForm(false);
+      setHighlightedProofId(newProof.id);
+      if (newProof.parent_proof_id) {
+        setExpandedProofIds((prev) => [...new Set([...prev, newProof.parent_proof_id])]);
+      }
+      setTimeout(() => setHighlightedProofId(null), 3000);
     },
   });
 
@@ -316,6 +323,9 @@ export default function ProofVault() {
                          proof={proof}
                          allProofs={allExhibits}
                         currentTab={exhibitFilter}
+                        highlightedProofId={highlightedProofId}
+                        expandedProofIds={expandedProofIds}
+                        setExpandedProofIds={setExpandedProofIds}
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}
                         onExtract={handleExtract}
@@ -326,7 +336,7 @@ export default function ProofVault() {
                         onRemoveFromJoint={handleRemoveFromJoint}
                         onUnAdmit={handleUnAdmit}
                       />
-                    ))}
+                     ))}
                   </div>
                 )}
               </TabsContent>
@@ -337,21 +347,24 @@ export default function ProofVault() {
                 ) : (
                   <div className="space-y-3">
                     {depositionsTopLevel.map((proof) => (
-                      <ProofTile
-                        key={proof.id}
-                        proof={proof}
-                        allProofs={allDepositions}
-                        currentTab="depositions"
-                        onEdit={handleEdit}
-                        onDelete={deleteMutation.mutate}
-                        onExtract={handleExtract}
-                        onClip={handleClip}
-                        onAddToJoint={handleAddToJoint}
-                        onAdmitAsExhibit={handleAdmitAsExhibit}
-                        onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
-                        onRemoveFromJoint={handleRemoveFromJoint}
-                        onUnAdmit={handleUnAdmit}
-                      />
+                       <ProofTile
+                         key={proof.id}
+                         proof={proof}
+                         allProofs={allDepositions}
+                         currentTab="depositions"
+                         highlightedProofId={highlightedProofId}
+                         expandedProofIds={expandedProofIds}
+                         setExpandedProofIds={setExpandedProofIds}
+                         onEdit={handleEdit}
+                         onDelete={deleteMutation.mutate}
+                         onExtract={handleExtract}
+                         onClip={handleClip}
+                         onAddToJoint={handleAddToJoint}
+                         onAdmitAsExhibit={handleAdmitAsExhibit}
+                         onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                         onRemoveFromJoint={handleRemoveFromJoint}
+                         onUnAdmit={handleUnAdmit}
+                       />
                     ))}
                   </div>
                 )}
