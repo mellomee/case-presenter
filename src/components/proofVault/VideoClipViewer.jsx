@@ -67,7 +67,8 @@ export default function VideoClipViewer({ videoUrl, segments }) {
           onProgress={(state) => {
             const endSec = timeToSeconds(segments[currentSegmentIdx].end);
             if (state.playedSeconds >= endSec) {
-              // Stop playback at segment end
+              // Stop playback at segment end and seek back to prevent overshoot
+              playerRef.current?.seekTo(endSec, 'seconds');
               setPlaying(false);
             } else {
               setCurrentTime(state.playedSeconds);
