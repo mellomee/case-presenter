@@ -151,18 +151,35 @@ export default function BucketList({
                           </div>
                         </div>
 
-                        {/* Questions Panel */}
+                        {/* Expanded Panel */}
                         {isExpanded && (
-                          <div className="border-t border-slate-100 bg-slate-50/50 p-4">
-                            <QuestionList
-                              questions={bucketQuestions}
-                              proofs={proofs}
-                              examType={examType}
-                              onEdit={onEditQuestion}
-                              onDelete={onDeleteQuestion}
-                              onAddChild={onAddChildQuestion}
-                              onReorder={(reordered) => onReorderQuestions(reordered, bucket.id)}
-                            />
+                          <div className="border-t border-slate-100 bg-slate-50/50 p-4 space-y-4">
+                            {bucketBlocks.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Admission Blocks</p>
+                                <AdmissionBlockList
+                                  blocks={bucketBlocks}
+                                  proofs={proofs}
+                                  proofTypeCategories={proofTypeCategories}
+                                  onEdit={onEditBlock}
+                                  onDelete={onDeleteBlock}
+                                />
+                              </div>
+                            )}
+                            <div>
+                              {(bucketBlocks.length > 0 || bucketQuestions.filter(q => !q.parent_question_id).length > 0) && (
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Questions</p>
+                              )}
+                              <QuestionList
+                                questions={bucketQuestions}
+                                proofs={proofs}
+                                examType={examType}
+                                onEdit={onEditQuestion}
+                                onDelete={onDeleteQuestion}
+                                onAddChild={onAddChildQuestion}
+                                onReorder={(reordered) => onReorderQuestions(reordered, bucket.id)}
+                              />
+                            </div>
                           </div>
                         )}
                       </Card>
