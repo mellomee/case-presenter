@@ -326,52 +326,91 @@ export default function ExamBuilder() {
           <PartySelector parties={parties} selectedParty={selectedParty} onSelect={setSelectedParty} />
         </div>
 
-        {/* Exam Type Toggle */}
-        <div className="mb-6">
-          <ExamTypeToggle selectedType={selectedExamType} onSelect={setSelectedExamType} />
-        </div>
+        <Tabs defaultValue="buckets" className="w-full">
+          <TabsList className="mb-6 bg-white border border-slate-200 p-1 h-auto rounded-lg gap-1">
+            <TabsTrigger value="buckets" className="rounded-md px-4 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Buckets & Questions
+            </TabsTrigger>
+            <TabsTrigger value="trialpoints" className="rounded-md px-4 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <MapPin className="w-3.5 h-3.5 mr-1.5" /> Trial Points
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Buckets Section */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-semibold text-slate-900">
-              {selectedExamType === 'Direct' ? '🟢' : '🔴'} Buckets
-            </h2>
-            <Button
-              onClick={() => { setEditingBucket(null); setShowBucketModal(true); }}
-              className="gap-2 bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4" /> Add Bucket
-            </Button>
-          </div>
-
-          {buckets.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-slate-600">No buckets yet. Create one to get started.</p>
+          {/* Buckets Tab */}
+          <TabsContent value="buckets" className="mt-0">
+            {/* Exam Type Toggle */}
+            <div className="mb-6">
+              <ExamTypeToggle selectedType={selectedExamType} onSelect={setSelectedExamType} />
             </div>
-          ) : (
-            <BucketList
-              buckets={buckets}
-              trialPoints={trialPoints}
-              questions={questions}
-              proofs={proofs}
-              proofTypeCategories={proofTypeCategories}
-              admissionBlocks={admissionBlocks}
-              examType={selectedExamType}
-              onEdit={(bucket) => { setEditingBucket(bucket); setShowBucketModal(true); }}
-              onDelete={handleDeleteBucket}
-              onReorder={(reordered) => reorderBucketMutation.mutate(reordered)}
-              onAddQuestion={openAddQuestion}
-              onEditQuestion={openEditQuestion}
-              onDeleteQuestion={handleDeleteQuestion}
-              onAddChildQuestion={openAddChildQuestion}
-              onReorderQuestions={(reordered) => reorderQuestionMutation.mutate(reordered)}
-              onAddBlock={openAddBlock}
-              onEditBlock={openEditBlock}
-              onDeleteBlock={handleDeleteBlock}
-            />
-          )}
-        </div>
+
+            <div className="bg-white rounded-lg border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  {selectedExamType === 'Direct' ? '🟢' : '🔴'} Buckets
+                </h2>
+                <Button
+                  onClick={() => { setEditingBucket(null); setShowBucketModal(true); }}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4" /> Add Bucket
+                </Button>
+              </div>
+
+              {buckets.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-slate-600">No buckets yet. Create one to get started.</p>
+                </div>
+              ) : (
+                <BucketList
+                  buckets={buckets}
+                  trialPoints={trialPoints}
+                  questions={questions}
+                  proofs={proofs}
+                  proofTypeCategories={proofTypeCategories}
+                  admissionBlocks={admissionBlocks}
+                  examType={selectedExamType}
+                  onEdit={(bucket) => { setEditingBucket(bucket); setShowBucketModal(true); }}
+                  onDelete={handleDeleteBucket}
+                  onReorder={(reordered) => reorderBucketMutation.mutate(reordered)}
+                  onAddQuestion={openAddQuestion}
+                  onEditQuestion={openEditQuestion}
+                  onDeleteQuestion={handleDeleteQuestion}
+                  onAddChildQuestion={openAddChildQuestion}
+                  onReorderQuestions={(reordered) => reorderQuestionMutation.mutate(reordered)}
+                  onAddBlock={openAddBlock}
+                  onEditBlock={openEditBlock}
+                  onDeleteBlock={handleDeleteBlock}
+                />
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Trial Points Tab */}
+          <TabsContent value="trialpoints" className="mt-0">
+            <div className="bg-white rounded-lg border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900">Trial Points</h2>
+                  <p className="text-sm text-slate-500 mt-0.5">Drag to reorder. Buckets can be mapped to trial points.</p>
+                </div>
+                <Button
+                  onClick={() => { setEditingTrialPoint(null); setShowTrialPointModal(true); }}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4" /> Add Trial Point
+                </Button>
+              </div>
+              <TrialPointList
+                trialPoints={trialPoints.slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))}
+                categories={trialPointCategories}
+                buckets={allBucketsForTrialPoints}
+                onEdit={(tp) => { setEditingTrialPoint(tp); setShowTrialPointModal(true); }}
+                onDelete={(tp) => deleteTrialPointMutation.mutate(tp)}
+                onReorder={(reordered) => reorderTrialPointMutation.mutate(reordered)}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Bucket Modal */}
