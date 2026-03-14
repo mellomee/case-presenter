@@ -34,6 +34,11 @@ export default function ExamBuilder() {
   const [questionBucket, setQuestionBucket] = useState(null);
   const [parentQuestion, setParentQuestion] = useState(null);
 
+  // Admission block modal state
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [editingBlock, setEditingBlock] = useState(null);
+  const [blockBucket, setBlockBucket] = useState(null);
+
   // Error state
   const [deleteError, setDeleteError] = useState(null);
   const [showDeleteError, setShowDeleteError] = useState(false);
