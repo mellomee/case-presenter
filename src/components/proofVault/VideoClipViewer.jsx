@@ -117,7 +117,6 @@ export default function VideoClipViewer({ videoUrl, segments }) {
             }`}
             onClick={() => {
               setCurrentSegmentIdx(idx);
-              setCurrentTime(timeToSeconds(seg.start));
               setPlaying(false);
             }}
           >
