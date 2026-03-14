@@ -303,6 +303,19 @@ export default function AttorneyView() {
                 <ProofPreviewPane proof={selectedProof} onClose={handleCloseProof} />
               </div>
             </div>
+
+            {/* Overview Panel */}
+            {showOverview && (
+              <div className="w-72 flex-shrink-0 overflow-hidden rounded-xl border border-slate-700">
+                <OverviewPanel
+                  flatList={flatList}
+                  currentIndex={currentIndex}
+                  onJumpTo={(idx) => { setCurrentIndex(idx); setSelectedProof(null); }}
+                  onClose={() => setShowOverview(false)}
+                />
+              </div>
+            )}
+
           </div>
         )}
       </div>
