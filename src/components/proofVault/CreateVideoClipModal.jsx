@@ -177,6 +177,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof }) {
       party_id: parentProof.party_id || null,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
+      proof_type_category_id: parentProof.proof_type_category_id,
       video_url: parentProof.video_url || parentProof.file_url,
       file_url: parentProof.file_url || null,
       draft_exhibit_num: exhibitNum.trim() || null,
