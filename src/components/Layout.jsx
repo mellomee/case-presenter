@@ -1,20 +1,50 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings } from 'lucide-react';
+import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import ChatPanel from './chat/ChatPanel.jsx';
 
 export default function Layout() {
   const location = useLocation();
+  const [chatOpen, setChatOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [unread, setUnread] = useState(0);
+  const [lastSeen, setLastSeen] = useState(() => Date.now());
+
+  // Pages that should hide the chat button
+  const hideChatPages = ['/JuryView'];
+  const showChat = !hideChatPages.some(p => location.pathname.includes(p));
+
+  useEffect(() => {
+    base44.auth.me().then(u => setUser(u)).catch(() => {});
+  }, []);
+
+  // Track unread count via real-time subscription
+  useEffect(() => {
+    const unsub = base44.entities.ChatMessage.subscribe((event) => {
+      if (event.type === 'create' && !chatOpen && event.data?.sender_id !== user?.id) {
+        setUnread(n => n + 1);
+      }
+    });
+    return unsub;
+  }, [chatOpen, user?.id]);
+
+  const handleOpenChat = () => {
+    setChatOpen(true);
+    setUnread(0);
+    setLastSeen(Date.now());
+  };
 
   const navItems = [
     { label: 'Dashboard', path: '/Dashboard', icon: LayoutDashboard },
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
     { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
-    { label: 'Present', path: '/present/attorney', icon: Tv },
+    { label: 'Present', path: '/AttorneyView', icon: Tv },
     { label: 'Settings', path: '/Settings', icon: Settings },
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path);
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -69,7 +99,7 @@ export default function Layout() {
           </div>
           <div className="flex items-center gap-4">
             <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-              U
+              {user?.full_name?.[0]?.toUpperCase() || 'U'}
             </div>
           </div>
         </div>
@@ -79,6 +109,27 @@ export default function Layout() {
           <Outlet />
         </div>
       </div>
+
+      {/* Floating Chat Button */}
+      {showChat && (
+        <button
+          onClick={handleOpenChat}
+          className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+          title="Team Chat"
+        >
+          <MessageSquare className="w-5 h-5" />
+          {unread > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Chat Panel */}
+      {chatOpen && showChat && (
+        <ChatPanel onClose={() => setChatOpen(false)} user={user} />
+      )}
     </div>
   );
 }
