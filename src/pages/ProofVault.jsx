@@ -141,6 +141,11 @@ export default function ProofVault() {
     setShowRemoveFromJointModal(true);
   };
 
+  const handleChildCreated = (parentId) => {
+    setNewlyCreatedChildId(parentId);
+    setTimeout(() => setNewlyCreatedChildId(null), 3000);
+  };
+
   // Extract and clip handlers
   const handleExtract = (proof) => {
     setSelectedProofForModal(proof);
