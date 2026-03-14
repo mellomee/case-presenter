@@ -82,16 +82,16 @@ export default function Parties() {
     filterType === 'all' ? parties : parties.filter((p) => p.side === filterType);
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-600" />
-            <h2 className="text-3xl font-bold text-slate-900">Parties</h2>
+            <Users className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Parties</h2>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowImportModal(true)} variant="outline" className="gap-2">
-              <Upload className="w-4 h-4" /> Import Excel
+              <Upload className="w-4 h-4" /> Import
             </Button>
             <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4" /> Add Party
