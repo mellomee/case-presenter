@@ -227,6 +227,26 @@ export default function ExamBuilder() {
     setShowQuestionModal(true);
   };
 
+  // ── Block handlers ──────────────────────────────────────
+  const openAddBlock = (bucket) => {
+    setEditingBlock(null);
+    setBlockBucket(bucket);
+    setShowBlockModal(true);
+  };
+
+  const openEditBlock = (block) => {
+    const bucket = buckets.find(b => b.id === block.bucket_id) || null;
+    setEditingBlock(block);
+    setBlockBucket(bucket);
+    setShowBlockModal(true);
+  };
+
+  const handleDeleteBlock = (block) => {
+    if (confirm('Delete this admission block?')) {
+      deleteBlockMutation.mutate(block);
+    }
+  };
+
   const handleDeleteQuestion = (question) => {
     if (confirm('Delete this question?')) {
       deleteQuestionMutation.mutate(question);
