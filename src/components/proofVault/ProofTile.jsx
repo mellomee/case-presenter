@@ -246,8 +246,8 @@ export default function ProofTile({
                 currentTab={currentTab}
                 onEdit={onEdit}
                 onDelete={onDelete}
-                onExtract={onExtract}
-                onClip={onClip}
+                onExtract={(p) => onExtract(p)}
+                onClip={(p) => onClip(p)}
                 onAddToJoint={onAddToJoint}
                 onAdmitAsExhibit={onAdmitAsExhibit}
                 onAdmitAsDemonstrative={onAdmitAsDemonstrative}
