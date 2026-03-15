@@ -214,6 +214,11 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                 <span className="text-sm text-slate-700">Upload New Snippet</span>
               </label>
             </div>
+            {hasChildClips && (
+              <p className="mt-2 text-xs text-amber-700">
+                Extract source is locked because this extract already has child clips attached.
+              </p>
+            )}
           </div>
 
           {/* Conditional upload section */}
