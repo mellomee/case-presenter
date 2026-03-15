@@ -70,6 +70,12 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     ? proofs.find((proof) => proof.id === parentProof?.parent_proof_id) || parentProof
     : parentProof;
 
+  const childClips = isEditing
+    ? proofs.filter((proof) => proof.parent_proof_id === parentProof?.id && proof.proof_child_type === 'ExtractClip')
+    : [];
+
+  const canChangeExtractSource = !isEditing || childClips.length === 0;
+
   useEffect(() => {
     if (!open || !parentProof) return;
 
@@ -192,7 +198,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                   value="original"
                   checked={extractSource === 'original'}
                   onChange={(e) => setExtractSource(e.target.value)}
-                  disabled={isEditing}
+                  disabled={!canChangeExtractSource}
                   className="w-4 h-4"
                 />
                 <span className="text-sm text-slate-700">Use Original PDF</span>
@@ -204,12 +210,17 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                   value="upload"
                   checked={extractSource === 'upload'}
                   onChange={(e) => setExtractSource(e.target.value)}
-                  disabled={isEditing}
+                  disabled={!canChangeExtractSource}
                   className="w-4 h-4"
                 />
                 <span className="text-sm text-slate-700">Upload New Snippet</span>
               </label>
             </div>
+            {!canChangeExtractSource && (
+              <p className="text-xs text-amber-700 mt-2">
+                Extract source is locked because this extract already has child clips attached.
+              </p>
+            )}
           </div>
 
           {/* Conditional upload section */}
