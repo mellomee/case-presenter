@@ -208,6 +208,19 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     }
   };
 
+  const handleOpacityChange = (value) => {
+    const nextOpacity = parseFloat(value);
+    setSelectedOpacity(nextOpacity);
+
+    if (selectedHighlight !== null) {
+      setHighlights((prev) =>
+        prev.map((highlight, idx) =>
+          idx === selectedHighlight ? { ...highlight, opacity: nextOpacity } : highlight
+        )
+      );
+    }
+  };
+
   const handleSubmit = () => {
     if (!clipName.trim()) {
       setWarning('Clip Name is required');
@@ -281,6 +294,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
             if (mode !== 'select') return;
             event.stopPropagation();
             setSelectedHighlight(idx);
+            setSelectedOpacity(highlight.opacity ?? 0.45);
           }}
         />
       ))}
@@ -387,7 +401,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                   max="1"
                   step="0.05"
                   value={selectedOpacity}
-                  onChange={(e) => setSelectedOpacity(parseFloat(e.target.value))}
+                  onChange={(e) => handleOpacityChange(e.target.value)}
                   className="w-full"
                 />
               </div>
