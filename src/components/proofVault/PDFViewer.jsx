@@ -16,13 +16,17 @@ export default function PDFViewer({
   onStateChange,
   highlights = [],
   clippedPage = null,
+  currentPage: controlledPage,
+  onPageChange,
+  allowPan = true,
+  pageOverlay = null,
 }) {
   const [numPages, setNumPages] = useState(null);
-  const [currentPage, setCurrentPage] = useState(clippedPage || 1);
+  const [currentPage, setCurrentPage] = useState(controlledPage || clippedPage || 1);
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
-  const [pageInput, setPageInput] = useState(String(clippedPage || 1));
+  const [pageInput, setPageInput] = useState(String(controlledPage || clippedPage || 1));
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [searchMatchPages, setSearchMatchPages] = useState([]);
@@ -39,6 +43,12 @@ export default function PDFViewer({
   );
 
   useEffect(() => {
+    if (controlledPage === undefined) return;
+    setCurrentPage(controlledPage);
+    setPageInput(String(controlledPage));
+  }, [controlledPage]);
+
+  useEffect(() => {
     if (mode !== 'viewer' || !syncState) return;
     if (syncState.currentPage) {
       setCurrentPage(syncState.currentPage);
@@ -53,13 +63,16 @@ export default function PDFViewer({
     (p) => {
       if (clippedPage && p !== clippedPage) return;
       const target = Math.min(Math.max(1, p), numPages || 1);
-      setCurrentPage(target);
-      setPageInput(String(target));
-      setPanX(0);
-      setPanY(0);
+      if (controlledPage === undefined) {
+        setCurrentPage(target);
+        setPageInput(String(target));
+        setPanX(0);
+        setPanY(0);
+      }
+      onPageChange?.(target);
       if (mode === 'controller') debouncedPush({ currentPage: target, zoom, panX: 0, panY: 0 });
     },
-    [numPages, zoom, mode, debouncedPush, clippedPage]
+    [numPages, zoom, mode, debouncedPush, clippedPage, controlledPage, onPageChange]
   );
 
   const applyZoom = useCallback(
@@ -78,7 +91,7 @@ export default function PDFViewer({
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         applyZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1));
-      } else {
+      } else if (allowPan) {
         const ny = panY - e.deltaY * 0.5;
         setPanY(ny);
         if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY: ny });
@@ -101,7 +114,7 @@ export default function PDFViewer({
           ),
           initZoom: zoom,
         };
-      } else {
+      } else if (allowPan) {
         touchRef.current = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
@@ -138,6 +151,7 @@ export default function PDFViewer({
   }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, numPages]);
 
   const handleMouseDown = (e) => {
+    if (!allowPan) return;
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
   };
   const handleMouseMove = (e) => {
@@ -379,7 +393,7 @@ export default function PDFViewer({
 
           <div
             ref={containerRef}
-            className="flex-1 overflow-hidden flex items-start justify-center pt-6 cursor-grab active:cursor-grabbing bg-zinc-900"
+            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ touchAction: 'none' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -421,6 +435,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
+                {pageOverlay}
               </div>
             </div>
           </div>
