@@ -344,23 +344,13 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
           </div>
 
           <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 space-y-3">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">Highlight & Clip Details</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {highlightPage ? `Highlights on page ${highlightPage}.` : 'No highlights placed yet.'}
-                </p>
+            <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
+              <div className="text-xs text-slate-500 shrink-0 lg:pb-2 min-w-[120px]">
+                {highlightPage ? `Highlights on page ${highlightPage}.` : 'No highlights placed yet.'}
               </div>
-              {selectedHighlight !== null && (
-                <Button variant="outline" size="sm" onClick={deleteSelectedHighlight} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete Selected
-                </Button>
-              )}
-            </div>
 
-            <div className="flex flex-wrap xl:flex-nowrap items-end gap-3">
               <div className="shrink-0">
-                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Interaction</label>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">Interaction</label>
                 <div className="flex gap-2">
                   <Button type="button" size="sm" variant={mode === 'highlight' ? 'default' : 'outline'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
                     Highlight
@@ -375,7 +365,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               </div>
 
               <div className="shrink-0">
-                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Color</label>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">Color</label>
                 <div className="flex gap-2">
                   {HIGHLIGHT_COLORS.map((color) => (
                     <button
@@ -390,8 +380,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 </div>
               </div>
 
-              <div className="min-w-[180px] flex-1 xl:max-w-[240px]">
-                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Opacity {Math.round(selectedOpacity * 100)}%</label>
+              <div className="w-[180px] shrink-0">
+                <label className="text-xs font-medium text-slate-700 mb-1 block">Opacity {Math.round(selectedOpacity * 100)}%</label>
                 <input
                   type="range"
                   min="0.1"
@@ -403,9 +393,15 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 />
               </div>
 
-              <div className="text-xs text-slate-500 shrink-0 xl:pb-2">
+              <div className="text-xs text-slate-500 shrink-0 lg:pb-2 whitespace-nowrap">
                 {mode === 'highlight' ? 'Drag on PDF to draw' : mode === 'select' ? 'Click highlight to select' : 'Pan with PDF controls'}
               </div>
+
+              {selectedHighlight !== null && (
+                <Button variant="outline" size="sm" onClick={deleteSelectedHighlight} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 shrink-0">
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete Selected
+                </Button>
+              )}
             </div>
 
             <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
