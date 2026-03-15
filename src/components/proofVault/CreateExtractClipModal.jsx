@@ -350,15 +350,20 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               </div>
 
               <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shrink-0">
-                <Button type="button" size="sm" variant={mode === 'highlight' ? 'default' : 'ghost'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700 h-7 px-2 text-xs' : 'h-7 px-2 text-xs'}>
-                  Highlight
+                <Button type="button" size="icon" variant={mode === 'highlight' ? 'default' : 'ghost'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'} title="Highlight" aria-label="Highlight">
+                  <Highlighter className="w-4 h-4" />
                 </Button>
-                <Button type="button" size="sm" variant={mode === 'select' ? 'default' : 'ghost'} onClick={() => setMode('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700 h-7 px-2 text-xs' : 'h-7 px-2 text-xs'}>
-                  Select
+                <Button type="button" size="icon" variant={mode === 'select' ? 'default' : 'ghost'} onClick={() => setMode('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'} title="Select" aria-label="Select">
+                  <MousePointer2 className="w-4 h-4" />
                 </Button>
-                <Button type="button" size="sm" variant={mode === 'pan' ? 'default' : 'ghost'} onClick={() => setMode('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700 h-7 px-2 text-xs' : 'h-7 px-2 text-xs'}>
-                  Move PDF
+                <Button type="button" size="icon" variant={mode === 'pan' ? 'default' : 'ghost'} onClick={() => setMode('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'} title="Move PDF" aria-label="Move PDF">
+                  <Hand className="w-4 h-4" />
                 </Button>
+                {selectedHighlight !== null && (
+                  <Button type="button" size="icon" variant="ghost" onClick={deleteSelectedHighlight} className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50" title="Delete selected highlight" aria-label="Delete selected highlight">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
