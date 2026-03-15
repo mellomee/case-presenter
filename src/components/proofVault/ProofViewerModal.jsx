@@ -20,7 +20,10 @@ export default function ProofViewerModal({ proof, allProofs, isOpen, onClose }) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-6xl h-[90vh] p-0 bg-zinc-900 border-zinc-700">
+      <DialogContent
+        className="w-full max-w-6xl h-[90vh] p-0 bg-zinc-900 border-zinc-700"
+        onPointerDownOutside={() => onClose?.()}
+      >
         <DialogHeader className="absolute top-0 right-0 p-4 z-10">
           <DialogClose asChild>
             <button className="text-zinc-400 hover:text-white">

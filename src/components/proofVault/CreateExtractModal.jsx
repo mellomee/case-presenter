@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import PDFViewer from './PDFViewer';
 
 export default function CreateExtractModal({ open, onClose, parentProof, onWarning, onSuccess }) {
   const queryClient = useQueryClient();
+  const isEditing = parentProof?.proof_child_type === 'Extract';
   const [extractSource, setExtractSource] = useState('original');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -34,18 +35,21 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     queryFn: () => base44.entities.Proof.list(),
   });
 
-  const createMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async (data) => {
+      if (isEditing) {
+        return base44.entities.Proof.update(parentProof.id, data);
+      }
       return base44.entities.Proof.create(data);
     },
-    onSuccess: (createdProof) => {
+    onSuccess: (savedProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
-      onSuccess?.(createdProof);
+      onSuccess?.(savedProof);
       resetForm();
       onClose();
     },
     onError: (error) => {
-      setWarningMsg(`Error creating extract: ${error.message}`);
+      setWarningMsg(`Error ${isEditing ? 'saving' : 'creating'} extract: ${error.message}`);
       setShowWarning(true);
     },
   });
@@ -58,7 +62,33 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     setFormalName('');
     setDraftExhibitNum('');
     setPageRangeError('');
+    setWarningMsg('');
+    setShowWarning(false);
   };
+
+  const actualParentProof = isEditing
+    ? proofs.find((proof) => proof.id === parentProof?.parent_proof_id) || parentProof
+    : parentProof;
+
+  useEffect(() => {
+    if (!open || !parentProof) return;
+
+    if (isEditing) {
+      const usingOriginal = parentProof.file_url === actualParentProof?.file_url;
+      setExtractSource(usingOriginal ? 'original' : 'upload');
+      setUploadedFile(usingOriginal ? null : parentProof.file_url || null);
+      setPageRange(parentProof.extract_pages || '');
+      setInternalName(parentProof.name || '');
+      setFormalName(parentProof.formal_name || '');
+      setDraftExhibitNum(parentProof.draft_exhibit_num || '');
+      setPageRangeError('');
+      setWarningMsg('');
+      setShowWarning(false);
+      return;
+    }
+
+    resetForm();
+  }, [open, parentProof, isEditing, actualParentProof]);
 
   // Validate page range format (e.g. "1-3, 5, 13-18")
   const validatePageRange = (range) => {
@@ -107,7 +137,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       return;
     }
 
-    const fileUrl = extractSource === 'original' ? parentProof.file_url : uploadedFile;
+    const fileUrl = extractSource === 'original' ? actualParentProof.file_url : uploadedFile;
 
     const extractData = {
       proof_category: parentProof.proof_category,
@@ -115,7 +145,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       proof_child_type: 'Extract',
       name: internalName.trim(),
       formal_name: formalName.trim(),
-      parent_proof_id: parentProof.id,
+      parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
       party_id: parentProof.party_id || null,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
@@ -125,7 +155,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       draft_exhibit_num: draftExhibitNum.trim() || null,
     };
 
-    createMutation.mutate(extractData);
+    saveMutation.mutate(extractData);
   };
 
   if (!parentProof) return null;
@@ -134,7 +164,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Extract</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Extract' : 'Create Extract'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -143,10 +173,10 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-blue-900">
-                From: {parentProof.formal_name}
+                {isEditing ? `Editing: ${parentProof.formal_name || parentProof.name}` : `From: ${parentProof.formal_name}`}
               </p>
               <p className="text-xs text-blue-700 mt-1">
-                {parentProof.proof_category === 'Exhibit' ? 'Exhibit' : 'Deposition'} · {parentProof.file_type}
+                {actualParentProof.proof_category === 'Exhibit' ? 'Exhibit' : 'Deposition'} · {actualParentProof.file_type}
               </p>
             </div>
           </div>
@@ -162,6 +192,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                   value="original"
                   checked={extractSource === 'original'}
                   onChange={(e) => setExtractSource(e.target.value)}
+                  disabled={isEditing}
                   className="w-4 h-4"
                 />
                 <span className="text-sm text-slate-700">Use Original PDF</span>
@@ -173,6 +204,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                   value="upload"
                   checked={extractSource === 'upload'}
                   onChange={(e) => setExtractSource(e.target.value)}
+                  disabled={isEditing}
                   className="w-4 h-4"
                 />
                 <span className="text-sm text-slate-700">Upload New Snippet</span>
@@ -211,12 +243,12 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
           )}
 
           {/* PDF viewer for page selection */}
-          {(extractSource === 'original' ? parentProof.file_url : uploadedFile) && (
+          {(extractSource === 'original' ? actualParentProof.file_url : uploadedFile) && (
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">PDF Preview</label>
               <div className="bg-slate-900 rounded-lg overflow-hidden h-64 border border-slate-200">
                 <PDFViewer
-                  fileUrl={extractSource === 'original' ? parentProof.file_url : uploadedFile}
+                  fileUrl={extractSource === 'original' ? actualParentProof.file_url : uploadedFile}
                   mode="viewer"
                 />
               </div>
@@ -286,10 +318,10 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={createMutation.isPending}
+              disabled={saveMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {createMutation.isPending ? 'Creating...' : 'Save Extract'}
+              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract')}
             </Button>
           </div>
         </div>
