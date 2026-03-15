@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Trash2 } from 'lucide-react';
+import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
@@ -391,11 +391,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 {mode === 'highlight' ? 'Drag on PDF to draw' : mode === 'select' ? 'Click highlight to select' : 'Pan with PDF controls'}
               </div>
 
-              {selectedHighlight !== null && (
-                <Button variant="outline" size="sm" onClick={deleteSelectedHighlight} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-7 px-2 shrink-0">
-                  <Trash2 className="w-4 h-4 mr-1" /> Delete
-                </Button>
-              )}
+
             </div>
 
             <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
