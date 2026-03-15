@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -55,6 +55,7 @@ function SegmentItem({ segment, index, onDelete }) {
 export default function CreateVideoClipModal({ open, onClose, parentProof, onSuccess }) {
   const queryClient = useQueryClient();
   const playerRef = useRef(null);
+  const isEditing = parentProof?.proof_child_type === 'VideoClip';
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [internalName, setInternalName] = useState('');
@@ -68,18 +69,21 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
 
-  const createMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async (data) => {
+      if (isEditing) {
+        return base44.entities.Proof.update(parentProof.id, data);
+      }
       return base44.entities.Proof.create(data);
     },
-    onSuccess: (createdProof) => {
+    onSuccess: (savedProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
-      onSuccess?.(createdProof);
+      onSuccess?.(savedProof);
       resetForm();
       onClose();
     },
     onError: (error) => {
-      setWarningMsg(`Error creating video clip: ${error.message}`);
+      setWarningMsg(`Error ${isEditing ? 'saving' : 'creating'} video clip: ${error.message}`);
       setShowWarning(true);
     },
   });
@@ -94,7 +98,35 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
     setTempStartTime('00:00:00');
     setTempEndTime('00:00:00');
     setCurrentTime(0);
+    setWarningMsg('');
+    setShowWarning(false);
   };
+
+  useEffect(() => {
+    if (!open || !parentProof) return;
+
+    if (isEditing) {
+      setInternalName(parentProof.name || '');
+      setFormalName(parentProof.formal_name || '');
+      setExhibitNum(parentProof.draft_exhibit_num || '');
+      setDescription(parentProof.description || '');
+      setSegments(
+        (Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []).map((segment, idx) => ({
+          ...segment,
+          id: segment.id || `seg-${idx}-${Date.now()}`,
+        }))
+      );
+      setSegmentLabel('');
+      setTempStartTime('00:00:00');
+      setTempEndTime('00:00:00');
+      setCurrentTime(0);
+      setWarningMsg('');
+      setShowWarning(false);
+      return;
+    }
+
+    resetForm();
+  }, [open, parentProof, isEditing]);
 
   const secondsToTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -174,7 +206,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       proof_child_type: 'VideoClip',
       name: internalName.trim(),
       formal_name: formalName.trim(),
-      parent_proof_id: parentProof.id,
+      parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
       party_id: parentProof.party_id || null,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
@@ -183,10 +215,10 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       file_url: parentProof.file_url || null,
       draft_exhibit_num: exhibitNum.trim() || null,
       description: description.trim() || null,
-      video_clips: segments,
+      video_clips: segments.map(({ id, ...segment }) => segment),
     };
 
-    createMutation.mutate(clipData);
+    saveMutation.mutate(clipData);
   };
 
   if (!parentProof) return null;
@@ -195,7 +227,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>🎬 New Video Clip</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Video Clip' : '🎬 New Video Clip'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -204,7 +236,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-blue-900">
-                From: {parentProof.formal_name}
+                {isEditing ? `Editing: ${parentProof.formal_name || parentProof.name}` : `From: ${parentProof.formal_name}`}
               </p>
               <p className="text-xs text-blue-700 mt-1">Video</p>
             </div>
@@ -369,10 +401,10 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={createMutation.isPending}
+              disabled={saveMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
-            >
-              {createMutation.isPending ? 'Creating...' : 'Save Video Clip'}
+              >
+              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Video Clip')}
             </Button>
           </div>
         </div>

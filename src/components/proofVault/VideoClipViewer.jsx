@@ -7,7 +7,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
   const shouldAutoResumeRef = useRef(false);
   const segmentItemRefs = useRef({});
   const [playing, setPlaying] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 

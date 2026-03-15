@@ -106,6 +106,12 @@ export default function ProofVault() {
   };
 
   const handleEdit = (proof) => {
+    if (proof.proof_child_type === 'VideoClip') {
+      setSelectedProofForModal(proof);
+      setShowCreateVideoClipModal(true);
+      return;
+    }
+
     setEditingProof(proof);
     setShowForm(true);
   };
