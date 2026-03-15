@@ -341,10 +341,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
-              <label className="text-sm font-medium text-slate-700">PDF Viewer</label>
-              <p className="text-xs text-slate-500">Use the PDF toolbar for search, thumbnails, page navigation, zoom, pinch, pan, and scroll.</p>
-            </div>
             <div className="bg-slate-900 rounded-lg overflow-hidden h-[70vh] border border-slate-200">
               <PDFViewer
                 fileUrl={actualParentExtract.file_url}
