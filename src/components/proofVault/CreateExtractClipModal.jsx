@@ -250,7 +250,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const pageOverlay = (
     <div
       ref={overlayRef}
-      className={`absolute inset-0 ${mode === 'pan' ? 'pointer-events-none' : mode === 'highlight' ? 'cursor-crosshair' : 'cursor-default'}`}
+      className={`absolute inset-0 z-20 ${mode === 'pan' ? 'pointer-events-none' : 'pointer-events-auto'} ${mode === 'highlight' ? 'cursor-crosshair' : mode === 'select' ? 'cursor-pointer' : 'cursor-default'}`}
+      style={{ cursor: mode === 'highlight' ? 'crosshair' : mode === 'select' ? 'pointer' : 'default' }}
       onMouseDown={handleOverlayMouseDown}
       onMouseMove={handleOverlayMouseMove}
       onMouseUp={handleOverlayMouseUp}
@@ -274,6 +275,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
             background: highlight.color,
             opacity: highlight.opacity,
             mixBlendMode: 'multiply',
+            cursor: mode === 'select' ? 'pointer' : 'crosshair',
           }}
           onClick={(event) => {
             if (mode !== 'select') return;
@@ -341,89 +343,87 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Highlight & Clip Details</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  {highlightPage ? `Highlights currently live on page ${highlightPage}.` : 'No highlights placed yet.'}
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {highlightPage ? `Highlights on page ${highlightPage}.` : 'No highlights placed yet.'}
                 </p>
               </div>
               {selectedHighlight !== null && (
-                <Button variant="outline" onClick={deleteSelectedHighlight} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete Selected Highlight
+                <Button variant="outline" size="sm" onClick={deleteSelectedHighlight} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete Selected
                 </Button>
               )}
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Interaction Mode</label>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant={mode === 'highlight' ? 'default' : 'outline'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
-                      Highlight
-                    </Button>
-                    <Button type="button" variant={mode === 'select' ? 'default' : 'outline'} onClick={() => setMode('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
-                      Select
-                    </Button>
-                    <Button type="button" variant={mode === 'pan' ? 'default' : 'outline'} onClick={() => setMode('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
-                      Move PDF
-                    </Button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Highlight Color</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {HIGHLIGHT_COLORS.map((color) => (
-                      <button
-                        key={color.hex}
-                        type="button"
-                        onClick={() => setSelectedColor(color.hex)}
-                        className={`w-8 h-8 rounded border-2 transition ${selectedColor === color.hex ? 'border-slate-900 shadow-md' : 'border-slate-300 hover:border-slate-500'}`}
-                        style={{ backgroundColor: color.hex }}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Opacity: {Math.round(selectedOpacity * 100)}%</label>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1"
-                    step="0.05"
-                    value={selectedOpacity}
-                    onChange={(e) => setSelectedOpacity(parseFloat(e.target.value))}
-                    className="w-full"
-                  />
+            <div className="grid xl:grid-cols-[1.4fr_1fr_1fr_auto] gap-3 items-end">
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Interaction</label>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant={mode === 'highlight' ? 'default' : 'outline'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                    Highlight
+                  </Button>
+                  <Button type="button" size="sm" variant={mode === 'select' ? 'default' : 'outline'} onClick={() => setMode('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                    Select
+                  </Button>
+                  <Button type="button" size="sm" variant={mode === 'pan' ? 'default' : 'outline'} onClick={() => setMode('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                    Move PDF
+                  </Button>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 mb-2 block">Clip Name (Internal) *</label>
-                    <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
-                    <Input value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} placeholder="e.g. A-1a" />
-                  </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Color</label>
+                <div className="flex gap-2 flex-wrap">
+                  {HIGHLIGHT_COLORS.map((color) => (
+                    <button
+                      key={color.hex}
+                      type="button"
+                      onClick={() => setSelectedColor(color.hex)}
+                      className={`w-7 h-7 rounded border-2 transition ${selectedColor === color.hex ? 'border-slate-900 shadow-md' : 'border-slate-300 hover:border-slate-500'}`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    />
+                  ))}
                 </div>
+              </div>
 
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name *</label>
-                  <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
-                </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Opacity {Math.round(selectedOpacity * 100)}%</label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1"
+                  step="0.05"
+                  value={selectedOpacity}
+                  onChange={(e) => setSelectedOpacity(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
 
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Description (optional)</label>
-                  <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Additional notes" />
-                </div>
+              <div className="text-xs text-slate-500 pb-2">
+                {mode === 'highlight' ? 'Drag on PDF to draw' : mode === 'select' ? 'Click highlight to select' : 'Pan with PDF controls'}
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
+                <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name *</label>
+                <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
+                <Input value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} placeholder="e.g. A-1a" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
+                <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Additional notes" />
               </div>
             </div>
           </div>
