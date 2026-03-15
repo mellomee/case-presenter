@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Trash2 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import PDFViewer from './PDFViewer';
+import ExtractClipEditor from './ExtractClipEditor';
 
 const HIGHLIGHT_COLORS = [
   { name: 'Yellow', hex: '#FEF3C7', bg: 'bg-yellow-100', border: 'border-yellow-300' },
@@ -17,19 +17,14 @@ const HIGHLIGHT_COLORS = [
 
 export default function CreateExtractClipModal({ open, onClose, parentExtract, onSuccess }) {
   const queryClient = useQueryClient();
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
 
   const [clipName, setClipName] = useState('');
   const [formalName, setFormalName] = useState('');
   const [draftExhibitNum, setDraftExhibitNum] = useState('');
   const [description, setDescription] = useState('');
-  const [mode, setMode] = useState('select'); // 'draw' or 'select'
+  const [mode, setMode] = useState('draw');
   const [selectedColor, setSelectedColor] = useState(HIGHLIGHT_COLORS[0].hex);
-  const [selectedOpacity, setSelectedOpacity] = useState(1);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [startY, setStartY] = useState(0);
+  const [selectedOpacity, setSelectedOpacity] = useState(0.35);
   const [highlights, setHighlights] = useState([]);
   const [selectedHighlight, setSelectedHighlight] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,120 +50,13 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setFormalName('');
     setDraftExhibitNum('');
     setDescription('');
-    setMode('select');
+    setMode('draw');
     setSelectedColor(HIGHLIGHT_COLORS[0].hex);
-    setSelectedOpacity(1);
+    setSelectedOpacity(0.35);
     setHighlights([]);
     setSelectedHighlight(null);
     setCurrentPage(1);
     setWarning('');
-  };
-
-  const handleCanvasMouseDown = (e) => {
-    if (mode !== 'draw') return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    setStartX(e.clientX - rect.left);
-    setStartY(e.clientY - rect.top);
-    setIsDrawing(true);
-  };
-
-  const handleCanvasMouseMove = (e) => {
-    if (!isDrawing || mode !== 'draw') return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
-
-    // Redraw canvas with all highlights and current preview
-    redrawCanvas([
-      ...highlights,
-      {
-        x: Math.min(startX, currentX),
-        y: Math.min(startY, currentY),
-        width: Math.abs(currentX - startX),
-        height: Math.abs(currentY - startY),
-        color: selectedColor,
-        opacity: selectedOpacity,
-        temp: true,
-      },
-    ]);
-  };
-
-  const handleCanvasMouseUp = (e) => {
-    if (!isDrawing || mode !== 'draw') return;
-    setIsDrawing(false);
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const endX = e.clientX - rect.left;
-    const endY = e.clientY - rect.top;
-
-    const newHighlight = {
-      x: Math.min(startX, endX),
-      y: Math.min(startY, endY),
-      width: Math.abs(endX - startX),
-      height: Math.abs(endY - startY),
-      color: selectedColor,
-      opacity: selectedOpacity,
-    };
-
-    if (newHighlight.width > 5 && newHighlight.height > 5) {
-      setHighlights([...highlights, newHighlight]);
-    }
-
-    redrawCanvas(highlights);
-  };
-
-  const handleCanvasClick = (e) => {
-    if (mode !== 'select') return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    for (let i = highlights.length - 1; i >= 0; i--) {
-      const h = highlights[i];
-      if (
-        clickX >= h.x &&
-        clickX <= h.x + h.width &&
-        clickY >= h.y &&
-        clickY <= h.y + h.height
-      ) {
-        setSelectedHighlight(i);
-        redrawCanvas(highlights, i);
-        return;
-      }
-    }
-
-    setSelectedHighlight(null);
-    redrawCanvas(highlights);
-  };
-
-  const redrawCanvas = (highlightList, selectedIdx = null) => {
-    if (!canvasRef.current) return;
-
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-    highlightList.forEach((h, idx) => {
-      ctx.fillStyle = h.color + Math.round(h.opacity * 255).toString(16).padStart(2, '0');
-      ctx.fillRect(h.x, h.y, h.width, h.height);
-
-      if (selectedIdx === idx) {
-        ctx.strokeStyle = '#1F2937';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(h.x, h.y, h.width, h.height);
-      }
-    });
-  };
-
-  const deleteSelectedHighlight = () => {
-    if (selectedHighlight === null) return;
-
-    const newHighlights = highlights.filter((_, idx) => idx !== selectedHighlight);
-    setHighlights(newHighlights);
-    setSelectedHighlight(null);
-    redrawCanvas(newHighlights);
   };
 
   const handleSubmit = async () => {
@@ -205,7 +93,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[96vw] w-[1400px] max-h-[94vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Extract Clip</DialogTitle>
         </DialogHeader>
@@ -229,120 +117,25 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
             </div>
           </div>
 
-          {/* PDF Viewer */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">PDF Page</label>
-            <div className="bg-slate-900 rounded-lg overflow-hidden h-96 border border-slate-200">
-              <PDFViewer
-                fileUrl={parentExtract.file_url}
-                mode="controlled"
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          </div>
-
-          {/* Drawing Canvas - overlay on top of viewer */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Highlight & Annotations</label>
-            <div ref={containerRef} className="relative bg-slate-100 rounded-lg border border-slate-300 h-64 overflow-hidden">
-              <canvas
-                ref={canvasRef}
-                width={800}
-                height={600}
-                className="absolute inset-0 cursor-crosshair"
-                onMouseDown={handleCanvasMouseDown}
-                onMouseMove={handleCanvasMouseMove}
-                onMouseUp={handleCanvasMouseUp}
-                onMouseLeave={() => setIsDrawing(false)}
-                onClick={handleCanvasClick}
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 text-sm">
-                {mode === 'draw' ? 'Drag to highlight' : 'Click to select'}
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="space-y-4 bg-slate-50 rounded-lg p-4 border border-slate-200">
-            {/* Mode */}
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Mode</label>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setMode('draw')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                    mode === 'draw'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                  }`}
-                >
-                  🖊 Draw Highlight
-                </button>
-                <button
-                  onClick={() => setMode('select')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                    mode === 'select'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                  }`}
-                >
-                  ↖ Select Highlight
-                </button>
-              </div>
-            </div>
-
-            {/* Colors and Opacity */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Color</label>
-                <div className="flex gap-2">
-                  {HIGHLIGHT_COLORS.map((color) => (
-                    <button
-                      key={color.hex}
-                      onClick={() => setSelectedColor(color.hex)}
-                      className={`w-8 h-8 rounded border-2 transition ${
-                        selectedColor === color.hex
-                          ? 'border-slate-900 shadow-md'
-                          : 'border-slate-300 hover:border-slate-500'
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Opacity: {Math.round(selectedOpacity * 100)}%
-                </label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.1"
-                  value={selectedOpacity}
-                  onChange={(e) => setSelectedOpacity(parseFloat(e.target.value))}
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            {/* Delete selected */}
-            {selectedHighlight !== null && (
-              <button
-                onClick={deleteSelectedHighlight}
-                className="w-full px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm font-medium hover:bg-red-100 transition flex items-center justify-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Selected Highlight
-              </button>
-            )}
-
-            {/* Highlight count */}
-            <p className="text-xs text-slate-600">
-              {highlights.length} highlight{highlights.length !== 1 ? 's' : ''} on page {currentPage}
+            <label className="text-sm font-medium text-slate-700">Clip Area</label>
+            <ExtractClipEditor
+              fileUrl={parentExtract.file_url}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              highlights={highlights}
+              setHighlights={setHighlights}
+              selectedHighlight={selectedHighlight}
+              setSelectedHighlight={setSelectedHighlight}
+              mode={mode}
+              setMode={setMode}
+              selectedColor={selectedColor}
+              setSelectedColor={setSelectedColor}
+              selectedOpacity={selectedOpacity}
+              setSelectedOpacity={setSelectedOpacity}
+            />
+            <p className="text-xs text-slate-500">
+              {mode === 'draw' ? 'Drag directly on the PDF page to create a highlight.' : 'Click an existing highlight on the PDF page to select it.'}
             </p>
           </div>
 
