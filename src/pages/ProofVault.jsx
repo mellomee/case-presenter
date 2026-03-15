@@ -112,6 +112,12 @@ export default function ProofVault() {
       return;
     }
 
+    if (proof.proof_child_type === 'ExtractClip') {
+      setSelectedProofForModal(proof);
+      setShowCreateExtractClipModal(true);
+      return;
+    }
+
     if (proof.proof_child_type === 'Extract') {
       setSelectedProofForModal(proof);
       setShowCreateExtractModal(true);

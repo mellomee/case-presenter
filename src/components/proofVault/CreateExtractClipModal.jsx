@@ -1,5 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, Trash2 } from 'lucide-react';
@@ -8,45 +17,63 @@ import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 
 const HIGHLIGHT_COLORS = [
-  { name: 'Yellow', hex: '#FEF3C7', bg: 'bg-yellow-100', border: 'border-yellow-300' },
-  { name: 'Green', hex: '#D1FAE5', bg: 'bg-green-100', border: 'border-green-300' },
-  { name: 'Blue', hex: '#DBEAFE', bg: 'bg-blue-100', border: 'border-blue-300' },
-  { name: 'Red', hex: '#FEE2E2', bg: 'bg-red-100', border: 'border-red-300' },
-  { name: 'Purple', hex: '#EDE9FE', bg: 'bg-purple-100', border: 'border-purple-300' },
+  { name: 'Yellow', hex: '#FEF3C7' },
+  { name: 'Green', hex: '#D1FAE5' },
+  { name: 'Blue', hex: '#DBEAFE' },
+  { name: 'Red', hex: '#FEE2E2' },
+  { name: 'Purple', hex: '#EDE9FE' },
 ];
+
+function clamp(value, min = 0, max = 100) {
+  return Math.min(Math.max(value, min), max);
+}
 
 export default function CreateExtractClipModal({ open, onClose, parentExtract, onSuccess }) {
   const queryClient = useQueryClient();
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
+  const overlayRef = useRef(null);
+  const dragStartRef = useRef(null);
+  const isEditing = parentExtract?.proof_child_type === 'ExtractClip';
 
   const [clipName, setClipName] = useState('');
   const [formalName, setFormalName] = useState('');
   const [draftExhibitNum, setDraftExhibitNum] = useState('');
   const [description, setDescription] = useState('');
-  const [mode, setMode] = useState('select'); // 'draw' or 'select'
+  const [mode, setMode] = useState('highlight');
   const [selectedColor, setSelectedColor] = useState(HIGHLIGHT_COLORS[0].hex);
-  const [selectedOpacity, setSelectedOpacity] = useState(1);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [startY, setStartY] = useState(0);
+  const [selectedOpacity, setSelectedOpacity] = useState(0.45);
   const [highlights, setHighlights] = useState([]);
   const [selectedHighlight, setSelectedHighlight] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [highlightPage, setHighlightPage] = useState(null);
+  const [draftHighlight, setDraftHighlight] = useState(null);
   const [warning, setWarning] = useState('');
+  const [showPageWarning, setShowPageWarning] = useState(false);
+  const [pendingPage, setPendingPage] = useState(null);
 
-  const createMutation = useMutation({
+  const { data: proofs = [] } = useQuery({
+    queryKey: ['proofs'],
+    queryFn: () => base44.entities.Proof.list(),
+  });
+
+  const actualParentExtract = isEditing
+    ? proofs.find((proof) => proof.id === parentExtract?.parent_proof_id) || parentExtract
+    : parentExtract;
+
+  const saveMutation = useMutation({
     mutationFn: async (data) => {
+      if (isEditing) {
+        return base44.entities.Proof.update(parentExtract.id, data);
+      }
       return base44.entities.Proof.create(data);
     },
-    onSuccess: (createdProof) => {
+    onSuccess: (savedProof) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
-      onSuccess?.(createdProof);
+      onSuccess?.(savedProof);
       resetForm();
       onClose();
     },
     onError: (error) => {
-      setWarning(`Error creating clip: ${error.message}`);
+      setWarning(`Error ${isEditing ? 'saving' : 'creating'} clip: ${error.message}`);
     },
   });
 
@@ -55,123 +82,133 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setFormalName('');
     setDraftExhibitNum('');
     setDescription('');
-    setMode('select');
+    setMode('highlight');
     setSelectedColor(HIGHLIGHT_COLORS[0].hex);
-    setSelectedOpacity(1);
+    setSelectedOpacity(0.45);
     setHighlights([]);
     setSelectedHighlight(null);
     setCurrentPage(1);
+    setHighlightPage(null);
+    setDraftHighlight(null);
     setWarning('');
+    setShowPageWarning(false);
+    setPendingPage(null);
   };
 
-  const handleCanvasMouseDown = (e) => {
-    if (mode !== 'draw') return;
+  useEffect(() => {
+    if (!open || !parentExtract) return;
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    setStartX(e.clientX - rect.left);
-    setStartY(e.clientY - rect.top);
-    setIsDrawing(true);
+    if (isEditing) {
+      setClipName(parentExtract.name || '');
+      setFormalName(parentExtract.formal_name || '');
+      setDraftExhibitNum(parentExtract.draft_exhibit_num || '');
+      setDescription(parentExtract.description || '');
+      setMode('highlight');
+      setSelectedColor(HIGHLIGHT_COLORS[0].hex);
+      setSelectedOpacity(0.45);
+      setHighlights(Array.isArray(parentExtract.highlights) ? parentExtract.highlights : []);
+      setSelectedHighlight(null);
+      setCurrentPage(parentExtract.clipped_page || 1);
+      setHighlightPage(parentExtract.clipped_page || 1);
+      setDraftHighlight(null);
+      setWarning('');
+      setShowPageWarning(false);
+      setPendingPage(null);
+      return;
+    }
+
+    resetForm();
+  }, [open, parentExtract, isEditing]);
+
+  const requestPageChange = (nextPage) => {
+    if (highlights.length > 0 && highlightPage && nextPage !== highlightPage) {
+      setPendingPage(nextPage);
+      setShowPageWarning(true);
+      return;
+    }
+    setCurrentPage(nextPage);
+    setSelectedHighlight(null);
   };
 
-  const handleCanvasMouseMove = (e) => {
-    if (!isDrawing || mode !== 'draw') return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
-
-    // Redraw canvas with all highlights and current preview
-    redrawCanvas([
-      ...highlights,
-      {
-        x: Math.min(startX, currentX),
-        y: Math.min(startY, currentY),
-        width: Math.abs(currentX - startX),
-        height: Math.abs(currentY - startY),
-        color: selectedColor,
-        opacity: selectedOpacity,
-        temp: true,
-      },
-    ]);
+  const confirmSwitchPage = () => {
+    setHighlights([]);
+    setSelectedHighlight(null);
+    setHighlightPage(null);
+    if (pendingPage) {
+      setCurrentPage(pendingPage);
+    }
+    setPendingPage(null);
+    setShowPageWarning(false);
   };
 
-  const handleCanvasMouseUp = (e) => {
-    if (!isDrawing || mode !== 'draw') return;
-    setIsDrawing(false);
+  const cancelSwitchPage = () => {
+    setPendingPage(null);
+    setShowPageWarning(false);
+  };
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    const endX = e.clientX - rect.left;
-    const endY = e.clientY - rect.top;
+  const getPoint = (event) => {
+    const rect = overlayRef.current?.getBoundingClientRect();
+    if (!rect) return null;
 
-    const newHighlight = {
-      x: Math.min(startX, endX),
-      y: Math.min(startY, endY),
-      width: Math.abs(endX - startX),
-      height: Math.abs(endY - startY),
+    return {
+      x: clamp(((event.clientX - rect.left) / rect.width) * 100),
+      y: clamp(((event.clientY - rect.top) / rect.height) * 100),
+    };
+  };
+
+  const handleOverlayMouseDown = (event) => {
+    if (mode !== 'highlight') return;
+    const point = getPoint(event);
+    if (!point) return;
+    dragStartRef.current = point;
+    setDraftHighlight({ x: point.x, y: point.y, width: 0, height: 0, color: selectedColor, opacity: selectedOpacity });
+    setSelectedHighlight(null);
+  };
+
+  const handleOverlayMouseMove = (event) => {
+    if (mode !== 'highlight' || !dragStartRef.current) return;
+    const point = getPoint(event);
+    if (!point) return;
+
+    const start = dragStartRef.current;
+    setDraftHighlight({
+      x: Math.min(start.x, point.x),
+      y: Math.min(start.y, point.y),
+      width: Math.abs(point.x - start.x),
+      height: Math.abs(point.y - start.y),
       color: selectedColor,
       opacity: selectedOpacity,
-    };
-
-    if (newHighlight.width > 5 && newHighlight.height > 5) {
-      setHighlights([...highlights, newHighlight]);
-    }
-
-    redrawCanvas(highlights);
-  };
-
-  const handleCanvasClick = (e) => {
-    if (mode !== 'select') return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    for (let i = highlights.length - 1; i >= 0; i--) {
-      const h = highlights[i];
-      if (
-        clickX >= h.x &&
-        clickX <= h.x + h.width &&
-        clickY >= h.y &&
-        clickY <= h.y + h.height
-      ) {
-        setSelectedHighlight(i);
-        redrawCanvas(highlights, i);
-        return;
-      }
-    }
-
-    setSelectedHighlight(null);
-    redrawCanvas(highlights);
-  };
-
-  const redrawCanvas = (highlightList, selectedIdx = null) => {
-    if (!canvasRef.current) return;
-
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-    highlightList.forEach((h, idx) => {
-      ctx.fillStyle = h.color + Math.round(h.opacity * 255).toString(16).padStart(2, '0');
-      ctx.fillRect(h.x, h.y, h.width, h.height);
-
-      if (selectedIdx === idx) {
-        ctx.strokeStyle = '#1F2937';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(h.x, h.y, h.width, h.height);
-      }
     });
+  };
+
+  const handleOverlayMouseUp = () => {
+    if (mode !== 'highlight' || !dragStartRef.current || !draftHighlight) return;
+
+    if (draftHighlight.width > 0.8 && draftHighlight.height > 0.8) {
+      setHighlights((prev) => [...prev, draftHighlight]);
+      setHighlightPage(currentPage);
+    }
+
+    dragStartRef.current = null;
+    setDraftHighlight(null);
+  };
+
+  const clearDraft = () => {
+    dragStartRef.current = null;
+    setDraftHighlight(null);
   };
 
   const deleteSelectedHighlight = () => {
     if (selectedHighlight === null) return;
-
-    const newHighlights = highlights.filter((_, idx) => idx !== selectedHighlight);
-    setHighlights(newHighlights);
+    const nextHighlights = highlights.filter((_, idx) => idx !== selectedHighlight);
+    setHighlights(nextHighlights);
     setSelectedHighlight(null);
-    redrawCanvas(newHighlights);
+    if (nextHighlights.length === 0) {
+      setHighlightPage(null);
+    }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!clipName.trim()) {
       setWarning('Clip Name is required');
       return;
@@ -180,34 +217,93 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setWarning('Formal Name is required');
       return;
     }
+    if (highlights.length === 0) {
+      setWarning('Add at least one highlight');
+      return;
+    }
 
     const clipData = {
-      proof_category: parentExtract.proof_category,
+      proof_category: actualParentExtract.proof_category,
       file_type: 'PDF',
       proof_child_type: 'ExtractClip',
       name: clipName.trim(),
       formal_name: formalName.trim(),
       description: description.trim() || null,
-      parent_proof_id: parentExtract.id,
-      party_id: parentExtract.party_id || null,
-      status: parentExtract.status,
-      category_id: parentExtract.category_id || null,
-      file_url: parentExtract.file_url,
-      clipped_page: currentPage,
-      highlights: highlights.length > 0 ? highlights : null,
+      parent_proof_id: isEditing ? parentExtract.parent_proof_id : actualParentExtract.id,
+      party_id: actualParentExtract.party_id || null,
+      status: actualParentExtract.status,
+      category_id: actualParentExtract.category_id || null,
+      proof_type_category_id: actualParentExtract.proof_type_category_id,
+      file_url: actualParentExtract.file_url,
+      clipped_page: highlightPage || currentPage,
+      highlights,
       draft_exhibit_num: draftExhibitNum.trim() || null,
     };
 
-    createMutation.mutate(clipData);
+    saveMutation.mutate(clipData);
   };
 
-  if (!parentExtract) return null;
+  if (!parentExtract || !actualParentExtract) return null;
+
+  const overlayHighlights = currentPage === highlightPage ? highlights : [];
+
+  const pageOverlay = (
+    <div
+      ref={overlayRef}
+      className={`absolute inset-0 ${mode === 'pan' ? 'pointer-events-none' : mode === 'highlight' ? 'cursor-crosshair' : 'cursor-default'}`}
+      onMouseDown={handleOverlayMouseDown}
+      onMouseMove={handleOverlayMouseMove}
+      onMouseUp={handleOverlayMouseUp}
+      onMouseLeave={clearDraft}
+      onClick={(event) => {
+        if (mode === 'select' && event.target === event.currentTarget) {
+          setSelectedHighlight(null);
+        }
+      }}
+    >
+      {overlayHighlights.map((highlight, idx) => (
+        <button
+          key={idx}
+          type="button"
+          className={`absolute rounded-sm ${mode === 'select' ? 'cursor-pointer' : 'pointer-events-none'} ${selectedHighlight === idx ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
+          style={{
+            left: `${highlight.x}%`,
+            top: `${highlight.y}%`,
+            width: `${highlight.width}%`,
+            height: `${highlight.height}%`,
+            background: highlight.color,
+            opacity: highlight.opacity,
+            mixBlendMode: 'multiply',
+          }}
+          onClick={(event) => {
+            if (mode !== 'select') return;
+            event.stopPropagation();
+            setSelectedHighlight(idx);
+          }}
+        />
+      ))}
+      {draftHighlight && (
+        <div
+          className="absolute rounded-sm pointer-events-none"
+          style={{
+            left: `${draftHighlight.x}%`,
+            top: `${draftHighlight.y}%`,
+            width: `${draftHighlight.width}%`,
+            height: `${draftHighlight.height}%`,
+            background: draftHighlight.color,
+            opacity: draftHighlight.opacity,
+            mixBlendMode: 'multiply',
+          }}
+        />
+      )}
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Extract Clip</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Extract Clip' : 'Create Extract Clip'}</DialogTitle>
         </DialogHeader>
 
         {warning && (
@@ -218,186 +314,142 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
         )}
 
         <div className="space-y-6">
-          {/* Parent info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2">
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-blue-900">
-                From: {parentExtract.formal_name || parentExtract.name}
+                {isEditing ? `Editing: ${parentExtract.formal_name || parentExtract.name}` : `From: ${actualParentExtract.formal_name || actualParentExtract.name}`}
               </p>
-              <p className="text-xs text-blue-700 mt-1">Extract of {parentExtract.proof_category}</p>
+              <p className="text-xs text-blue-700 mt-1">Extract of {actualParentExtract.proof_category}</p>
             </div>
           </div>
 
-          {/* PDF Viewer */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">PDF Page</label>
-            <div className="bg-slate-900 rounded-lg overflow-hidden h-96 border border-slate-200">
+          <div>
+            <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
+              <label className="text-sm font-medium text-slate-700">PDF Viewer</label>
+              <p className="text-xs text-slate-500">Use the PDF toolbar for search, thumbnails, page navigation, zoom, pinch, pan, and scroll.</p>
+            </div>
+            <div className="bg-slate-900 rounded-lg overflow-hidden h-[70vh] border border-slate-200">
               <PDFViewer
-                fileUrl={parentExtract.file_url}
-                mode="controlled"
+                fileUrl={actualParentExtract.file_url}
+                mode="controller"
                 currentPage={currentPage}
-                onPageChange={setCurrentPage}
+                onPageChange={requestPageChange}
+                allowPan={mode === 'pan'}
+                pageOverlay={pageOverlay}
               />
             </div>
           </div>
 
-          {/* Drawing Canvas - overlay on top of viewer */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Highlight & Annotations</label>
-            <div ref={containerRef} className="relative bg-slate-100 rounded-lg border border-slate-300 h-64 overflow-hidden">
-              <canvas
-                ref={canvasRef}
-                width={800}
-                height={600}
-                className="absolute inset-0 cursor-crosshair"
-                onMouseDown={handleCanvasMouseDown}
-                onMouseMove={handleCanvasMouseMove}
-                onMouseUp={handleCanvasMouseUp}
-                onMouseLeave={() => setIsDrawing(false)}
-                onClick={handleCanvasClick}
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 text-sm">
-                {mode === 'draw' ? 'Drag to highlight' : 'Click to select'}
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="space-y-4 bg-slate-50 rounded-lg p-4 border border-slate-200">
-            {/* Mode */}
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Mode</label>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setMode('draw')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                    mode === 'draw'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                  }`}
-                >
-                  🖊 Draw Highlight
-                </button>
-                <button
-                  onClick={() => setMode('select')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                    mode === 'select'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                  }`}
-                >
-                  ↖ Select Highlight
-                </button>
-              </div>
-            </div>
-
-            {/* Colors and Opacity */}
-            <div className="grid grid-cols-2 gap-4">
+          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Color</label>
-                <div className="flex gap-2">
-                  {HIGHLIGHT_COLORS.map((color) => (
-                    <button
-                      key={color.hex}
-                      onClick={() => setSelectedColor(color.hex)}
-                      className={`w-8 h-8 rounded border-2 transition ${
-                        selectedColor === color.hex
-                          ? 'border-slate-900 shadow-md'
-                          : 'border-slate-300 hover:border-slate-500'
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  ))}
+                <h3 className="text-sm font-semibold text-slate-900">Highlight & Clip Details</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {highlightPage ? `Highlights currently live on page ${highlightPage}.` : 'No highlights placed yet.'}
+                </p>
+              </div>
+              {selectedHighlight !== null && (
+                <Button variant="outline" onClick={deleteSelectedHighlight} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete Selected Highlight
+                </Button>
+              )}
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">Interaction Mode</label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant={mode === 'highlight' ? 'default' : 'outline'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                      Highlight
+                    </Button>
+                    <Button type="button" variant={mode === 'select' ? 'default' : 'outline'} onClick={() => setMode('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                      Select
+                    </Button>
+                    <Button type="button" variant={mode === 'pan' ? 'default' : 'outline'} onClick={() => setMode('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                      Move PDF
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">Highlight Color</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {HIGHLIGHT_COLORS.map((color) => (
+                      <button
+                        key={color.hex}
+                        type="button"
+                        onClick={() => setSelectedColor(color.hex)}
+                        className={`w-8 h-8 rounded border-2 transition ${selectedColor === color.hex ? 'border-slate-900 shadow-md' : 'border-slate-300 hover:border-slate-500'}`}
+                        style={{ backgroundColor: color.hex }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">Opacity: {Math.round(selectedOpacity * 100)}%</label>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={selectedOpacity}
+                    onChange={(e) => setSelectedOpacity(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Opacity: {Math.round(selectedOpacity * 100)}%
-                </label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.1"
-                  value={selectedOpacity}
-                  onChange={(e) => setSelectedOpacity(parseFloat(e.target.value))}
-                  className="w-full"
-                />
+              <div className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 mb-2 block">Clip Name (Internal) *</label>
+                    <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
+                    <Input value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} placeholder="e.g. A-1a" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name *</label>
+                  <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">Description (optional)</label>
+                  <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Additional notes" />
+                </div>
               </div>
             </div>
-
-            {/* Delete selected */}
-            {selectedHighlight !== null && (
-              <button
-                onClick={deleteSelectedHighlight}
-                className="w-full px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm font-medium hover:bg-red-100 transition flex items-center justify-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Selected Highlight
-              </button>
-            )}
-
-            {/* Highlight count */}
-            <p className="text-xs text-slate-600">
-              {highlights.length} highlight{highlights.length !== 1 ? 's' : ''} on page {currentPage}
-            </p>
           </div>
 
-          {/* Name fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Clip Name (Internal) *</label>
-              <Input
-                placeholder="e.g. Scene Close-up"
-                value={clipName}
-                onChange={(e) => setClipName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
-              <Input
-                placeholder="e.g. A-1a"
-                value={draftExhibitNum}
-                onChange={(e) => setDraftExhibitNum(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name *</label>
-            <Input
-              placeholder="e.g. Photograph - Intersection Close-up"
-              value={formalName}
-              onChange={(e) => setFormalName(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Description (optional)</label>
-            <Input
-              placeholder="Additional notes"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={createMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {createMutation.isPending ? 'Creating...' : 'Save Extract Clip'}
+          <div className="flex gap-3 justify-end pt-2 border-t border-slate-200">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={saveMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract Clip')}
             </Button>
           </div>
         </div>
+
+        <AlertDialog open={showPageWarning} onOpenChange={setShowPageWarning}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Move highlights to another page?</AlertDialogTitle>
+              <AlertDialogDescription className="text-base text-slate-700">
+                Highlights can only live on one page. Proceeding will remove highlights from page {highlightPage} so you can create new highlights on page {pendingPage}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-end gap-2">
+              <AlertDialogCancel onClick={cancelSwitchPage}>No</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmSwitchPage}>Yes, remove old highlights</AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
