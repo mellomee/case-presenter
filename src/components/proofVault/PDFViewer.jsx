@@ -291,7 +291,6 @@ export default function PDFViewer({
           >
             <RotateCcw className="w-3 h-3" />
           </Button>
-          <div className="flex-1" />
           <Button
             variant="ghost"
             size="icon"
@@ -300,6 +299,7 @@ export default function PDFViewer({
           >
             <Search className="w-3.5 h-3.5" />
           </Button>
+          <div className="flex-1" />
         </div>
       )}
 
