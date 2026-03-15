@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand } from 'lucide-react';
+import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand, Move } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
@@ -32,6 +32,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const queryClient = useQueryClient();
   const overlayRef = useRef(null);
   const dragStartRef = useRef(null);
+  const moveHighlightRef = useRef(null);
   const isEditing = parentExtract?.proof_child_type === 'ExtractClip';
 
   const [clipName, setClipName] = useState('');
@@ -157,18 +158,42 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   };
 
   const handleOverlayMouseDown = (event) => {
-    if (mode !== 'highlight') return;
     const point = getPoint(event);
     if (!point) return;
+
+    if (mode === 'move-highlight') {
+      if (selectedHighlight === null || !highlights[selectedHighlight]) return;
+      moveHighlightRef.current = {
+        startPoint: point,
+        startHighlight: { ...highlights[selectedHighlight] },
+      };
+      return;
+    }
+
+    if (mode !== 'highlight') return;
     dragStartRef.current = point;
     setDraftHighlight({ x: point.x, y: point.y, width: 0, height: 0, color: selectedColor, opacity: selectedOpacity });
     setSelectedHighlight(null);
   };
 
   const handleOverlayMouseMove = (event) => {
-    if (mode !== 'highlight' || !dragStartRef.current) return;
     const point = getPoint(event);
     if (!point) return;
+
+    if (mode === 'move-highlight' && moveHighlightRef.current && selectedHighlight !== null) {
+      const { startPoint, startHighlight } = moveHighlightRef.current;
+      const nextX = clamp(startHighlight.x + (point.x - startPoint.x), 0, 100 - startHighlight.width);
+      const nextY = clamp(startHighlight.y + (point.y - startPoint.y), 0, 100 - startHighlight.height);
+
+      setHighlights((prev) =>
+        prev.map((highlight, idx) =>
+          idx === selectedHighlight ? { ...highlight, x: nextX, y: nextY } : highlight
+        )
+      );
+      return;
+    }
+
+    if (mode !== 'highlight' || !dragStartRef.current) return;
 
     const start = dragStartRef.current;
     setDraftHighlight({
@@ -182,6 +207,11 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   };
 
   const handleOverlayMouseUp = () => {
+    if (mode === 'move-highlight') {
+      moveHighlightRef.current = null;
+      return;
+    }
+
     if (mode !== 'highlight' || !dragStartRef.current || !draftHighlight) return;
 
     if (draftHighlight.width > 0.8 && draftHighlight.height > 0.8) {
@@ -195,6 +225,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
   const clearDraft = () => {
     dragStartRef.current = null;
+    moveHighlightRef.current = null;
     setDraftHighlight(null);
   };
 
@@ -263,8 +294,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const pageOverlay = (
     <div
       ref={overlayRef}
-      className={`absolute inset-0 z-20 ${mode === 'pan' ? 'pointer-events-none' : 'pointer-events-auto'} ${mode === 'highlight' ? 'cursor-crosshair' : mode === 'select' ? 'cursor-pointer' : 'cursor-default'}`}
-      style={{ cursor: mode === 'highlight' ? 'crosshair' : mode === 'select' ? 'pointer' : 'default' }}
+      className={`absolute inset-0 z-20 ${mode === 'pan' ? 'pointer-events-none' : 'pointer-events-auto'} ${mode === 'highlight' ? 'cursor-crosshair' : mode === 'select' ? 'cursor-pointer' : mode === 'move-highlight' ? 'cursor-move' : 'cursor-default'}`}
+      style={{ cursor: mode === 'highlight' ? 'crosshair' : mode === 'select' ? 'pointer' : mode === 'move-highlight' ? 'move' : 'default' }}
       onMouseDown={handleOverlayMouseDown}
       onMouseMove={handleOverlayMouseMove}
       onMouseUp={handleOverlayMouseUp}
@@ -366,6 +397,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 <Button type="button" size="icon" variant={mode === 'select' ? 'default' : 'ghost'} onClick={() => setMode('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'} title="Select" aria-label="Select">
                   <MousePointer2 className="w-4 h-4" />
                 </Button>
+                <Button type="button" size="icon" variant={mode === 'move-highlight' ? 'default' : 'ghost'} onClick={() => setMode('move-highlight')} disabled={selectedHighlight === null} className={mode === 'move-highlight' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'} title="Move selected highlight" aria-label="Move selected highlight">
+                  <Move className="w-4 h-4" />
+                </Button>
                 <Button type="button" size="icon" variant={mode === 'pan' ? 'default' : 'ghost'} onClick={() => setMode('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'} title="Move PDF" aria-label="Move PDF">
                   <Hand className="w-4 h-4" />
                 </Button>
@@ -403,7 +437,13 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               </div>
 
               <div className="text-slate-500 shrink-0 whitespace-nowrap">
-                {mode === 'highlight' ? 'Drag on PDF to draw' : mode === 'select' ? 'Click highlight to select' : 'Pan with PDF controls'}
+                {mode === 'highlight'
+                  ? 'Drag on PDF to draw'
+                  : mode === 'select'
+                    ? 'Click highlight to select'
+                    : mode === 'move-highlight'
+                      ? 'Drag selected highlight to move'
+                      : 'Pan with PDF controls'}
               </div>
 
 
