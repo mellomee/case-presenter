@@ -358,10 +358,10 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               )}
             </div>
 
-            <div className="grid xl:grid-cols-[1.4fr_1fr_1fr_auto] gap-3 items-end">
-              <div>
+            <div className="flex flex-wrap xl:flex-nowrap items-end gap-3">
+              <div className="shrink-0">
                 <label className="text-xs font-medium text-slate-700 mb-1.5 block">Interaction</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2">
                   <Button type="button" size="sm" variant={mode === 'highlight' ? 'default' : 'outline'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700' : ''}>
                     Highlight
                   </Button>
@@ -374,9 +374,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 </div>
               </div>
 
-              <div>
+              <div className="shrink-0">
                 <label className="text-xs font-medium text-slate-700 mb-1.5 block">Color</label>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2">
                   {HIGHLIGHT_COLORS.map((color) => (
                     <button
                       key={color.hex}
@@ -390,7 +390,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 </div>
               </div>
 
-              <div>
+              <div className="min-w-[180px] flex-1 xl:max-w-[240px]">
                 <label className="text-xs font-medium text-slate-700 mb-1.5 block">Opacity {Math.round(selectedOpacity * 100)}%</label>
                 <input
                   type="range"
@@ -403,7 +403,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 />
               </div>
 
-              <div className="text-xs text-slate-500 pb-2">
+              <div className="text-xs text-slate-500 shrink-0 xl:pb-2">
                 {mode === 'highlight' ? 'Drag on PDF to draw' : mode === 'select' ? 'Click highlight to select' : 'Pan with PDF controls'}
               </div>
             </div>
