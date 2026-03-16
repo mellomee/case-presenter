@@ -53,6 +53,30 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
   }
 
   const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num;
+  const hasHighlightFocus = Array.isArray(proof.highlights) && proof.highlights.length > 0;
+  const isPublishedProof = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
+  const defaultPdfPage = proof.clipped_page || getPrimaryHighlightPage(proof.highlights || [], 1);
+  const activePdfPage = isPublishedProof ? (juryState?.pdf_page || defaultPdfPage) : defaultPdfPage;
+  const highlightBounds = getHighlightBounds(proof.highlights || [], activePdfPage, proof.clipped_page || 1);
+
+  const pdfSyncState = useMemo(() => {
+    if (!isPublishedProof && !hasHighlightFocus) return undefined;
+
+    const nextState = {
+      currentPage: activePdfPage,
+      focusOrigin: 'top center',
+    };
+
+    if (hasHighlightFocus && highlightBounds) {
+      const dominantSide = Math.max(highlightBounds.width, highlightBounds.height);
+      nextState.zoom = Math.min(3.5, Math.max(1.4, 55 / Math.max(dominantSide, 12)));
+      nextState.panX = 0;
+      nextState.panY = 0;
+      nextState.focusOrigin = `${highlightBounds.centerX}% ${highlightBounds.centerY}%`;
+    }
+
+    return nextState;
+  }, [activePdfPage, hasHighlightFocus, highlightBounds, isPublishedProof]);
 
   return (
     <div className="flex flex-col h-full">
