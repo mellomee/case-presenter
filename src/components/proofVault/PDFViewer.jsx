@@ -63,7 +63,7 @@ export default function PDFViewer({
   }, [controlledPage]);
 
   useEffect(() => {
-    if (mode !== 'viewer' || !syncState) return;
+    if (!syncState) return;
     if (syncState.currentPage) {
       setCurrentPage(syncState.currentPage);
       setPageInput(String(syncState.currentPage));
@@ -71,29 +71,8 @@ export default function PDFViewer({
     if (syncState.zoom !== undefined) setZoom(syncState.zoom);
     if (syncState.panX !== undefined) setPanX(syncState.panX);
     if (syncState.panY !== undefined) setPanY(syncState.panY);
-  }, [syncState, mode]);
-
-  useEffect(() => {
-    if (!shouldAutoFocusHighlights) {
-      setFocusOrigin('top center');
-      return;
-    }
-
-    if (!focusBounds) {
-      setFocusOrigin('top center');
-      setZoom(1);
-      setPanX(0);
-      setPanY(0);
-      return;
-    }
-
-    const dominantSide = Math.max(focusBounds.width, focusBounds.height);
-    const targetZoom = Math.min(3.5, Math.max(1.4, 55 / Math.max(dominantSide, 12)));
-    setFocusOrigin(`${focusBounds.centerX}% ${focusBounds.centerY}%`);
-    setZoom(targetZoom);
-    setPanX(0);
-    setPanY(0);
-  }, [focusBounds, shouldAutoFocusHighlights]);
+    if (syncState.focusOrigin !== undefined) setFocusOrigin(syncState.focusOrigin);
+  }, [syncState]);
 
   const goToPage = useCallback(
     (page) => {
