@@ -12,14 +12,31 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const parentExtract = allProofs.find((p) => p.id === proof.parent_proof_id);
   const originalPDF = parentExtract ? allProofs.find((p) => p.id === parentExtract.parent_proof_id) : null;
   const { url, isLoading } = useResolvedProofAsset(proof);
-  const initialPage = getInitialHighlightPage(proof.highlights, proof.clipped_page || 1);
   const visiblePages = parsePageRange(parentExtract?.extract_pages || '');
+  const getViewerPageIndex = (storedPage) => {
+    if (!visiblePages.length) return storedPage || 1;
+    const isWithinClipRange = storedPage >= 1 && storedPage <= visiblePages.length;
+    const matchingSourceIndex = visiblePages.indexOf(storedPage);
+    if (!isWithinClipRange && matchingSourceIndex >= 0) {
+      return matchingSourceIndex + 1;
+    }
+    return storedPage || 1;
+  };
+  const getSourcePage = (storedPage) => {
+    if (!visiblePages.length) return null;
+    if (storedPage >= 1 && storedPage <= visiblePages.length) {
+      return visiblePages[storedPage - 1] || null;
+    }
+    return visiblePages.includes(storedPage) ? storedPage : null;
+  };
+  const initialPage = getViewerPageIndex(getInitialHighlightPage(proof.highlights, proof.clipped_page || 1));
   const groupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
   const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
   const groups = useMemo(
     () => normalizeHighlightGroups(proof.highlights, proof.clipped_page || 1).map((group) => ({
       ...group,
-      sourcePage: visiblePages[group.page - 1] || null,
+      page: getViewerPageIndex(group.page),
+      sourcePage: getSourcePage(group.page),
     })),
     [proof.highlights, proof.clipped_page, visiblePages]
   );

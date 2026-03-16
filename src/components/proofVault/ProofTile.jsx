@@ -76,9 +76,26 @@ export default function ProofTile({
     ? allProofs.find((item) => item.id === proof.parent_proof_id)
     : null;
   const extractSourcePages = parsePageRange(parentExtract?.extract_pages || '');
+  const getClipPage = (storedPage) => {
+    if (!extractSourcePages.length) return storedPage || 1;
+    const isWithinClipRange = storedPage >= 1 && storedPage <= extractSourcePages.length;
+    const matchingSourceIndex = extractSourcePages.indexOf(storedPage);
+    if (!isWithinClipRange && matchingSourceIndex >= 0) {
+      return matchingSourceIndex + 1;
+    }
+    return storedPage || 1;
+  };
+  const getSourcePage = (storedPage) => {
+    if (!extractSourcePages.length) return null;
+    if (storedPage >= 1 && storedPage <= extractSourcePages.length) {
+      return extractSourcePages[storedPage - 1] || null;
+    }
+    return extractSourcePages.includes(storedPage) ? storedPage : null;
+  };
   const highlightGroups = normalizeHighlightGroups(proof.highlights, proof.clipped_page || 1).map((group) => ({
     ...group,
-    sourcePage: extractSourcePages[group.page - 1] || null,
+    page: getClipPage(group.page),
+    sourcePage: getSourcePage(group.page),
   }));
 
   const getPartyColor = () => {
