@@ -43,11 +43,11 @@ export default function HighlightWorkspaceSidebar({
   }
 
   return (
-    <aside className="w-80 max-w-full h-full min-h-0 border-r border-slate-200 bg-slate-50 flex flex-col">
-      <div className="p-3 border-b border-slate-200 flex items-center justify-between gap-2">
+    <aside className="w-72 max-w-full h-full min-h-0 overflow-hidden border-r border-slate-200 bg-slate-50 flex flex-col">
+      <div className="p-2.5 border-b border-slate-200 flex items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-slate-900">Highlight Workspace</div>
-          <div className="text-xs text-slate-500">
+          <div className="text-[11px] text-slate-500 leading-tight">
             {groupsOnCurrentPage.length > 0 ? `${groupsOnCurrentPage.length} group${groupsOnCurrentPage.length === 1 ? '' : 's'} on page ${currentPage}` : `No groups on page ${currentPage} yet`}
           </div>
         </div>
@@ -56,24 +56,24 @@ export default function HighlightWorkspaceSidebar({
         </Button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 pr-2 space-y-4">
-        <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 pr-1.5 space-y-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tools</div>
           <div className="flex flex-wrap gap-1">
-            <Button type="button" size="icon" variant={mode === 'highlight' ? 'default' : 'ghost'} onClick={() => onModeChange('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700 h-9 w-9' : 'h-9 w-9'}>
+            <Button type="button" size="icon" variant={mode === 'highlight' ? 'default' : 'ghost'} onClick={() => onModeChange('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700 h-8 w-8' : 'h-8 w-8'}>
               <Highlighter className="w-4 h-4" />
             </Button>
-            <Button type="button" size="icon" variant={mode === 'select' ? 'default' : 'ghost'} onClick={() => onModeChange('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700 h-9 w-9' : 'h-9 w-9'}>
+            <Button type="button" size="icon" variant={mode === 'select' ? 'default' : 'ghost'} onClick={() => onModeChange('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700 h-8 w-8' : 'h-8 w-8'}>
               <MousePointer2 className="w-4 h-4" />
             </Button>
-            <Button type="button" size="icon" variant={mode === 'move-highlight' ? 'default' : 'ghost'} onClick={() => onModeChange('move-highlight')} disabled={!selectedHighlight} className={mode === 'move-highlight' ? 'bg-blue-600 hover:bg-blue-700 h-9 w-9' : 'h-9 w-9'}>
+            <Button type="button" size="icon" variant={mode === 'move-highlight' ? 'default' : 'ghost'} onClick={() => onModeChange('move-highlight')} disabled={!selectedHighlight} className={mode === 'move-highlight' ? 'bg-blue-600 hover:bg-blue-700 h-8 w-8' : 'h-8 w-8'}>
               <Move className="w-4 h-4" />
             </Button>
-            <Button type="button" size="icon" variant={mode === 'pan' ? 'default' : 'ghost'} onClick={() => onModeChange('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700 h-9 w-9' : 'h-9 w-9'}>
+            <Button type="button" size="icon" variant={mode === 'pan' ? 'default' : 'ghost'} onClick={() => onModeChange('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700 h-8 w-8' : 'h-8 w-8'}>
               <Hand className="w-4 h-4" />
             </Button>
             {selectedHighlight && (
-              <Button type="button" size="icon" variant="ghost" onClick={onDeleteSelectedHighlight} className="h-9 w-9 text-red-600 hover:text-red-700 hover:bg-red-50">
+              <Button type="button" size="icon" variant="ghost" onClick={onDeleteSelectedHighlight} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4" />
               </Button>
             )}
@@ -89,7 +89,7 @@ export default function HighlightWorkspaceSidebar({
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Style</div>
           <div className="flex flex-wrap gap-2">
             {colors.map((color) => (
@@ -97,7 +97,7 @@ export default function HighlightWorkspaceSidebar({
                 key={color.hex}
                 type="button"
                 onClick={() => onSelectColor(color.hex)}
-                className={`w-8 h-8 rounded border-2 transition ${selectedColor === color.hex ? 'border-slate-900 shadow-md' : 'border-slate-300 hover:border-slate-500'}`}
+                className={`w-7 h-7 rounded border-2 transition ${selectedColor === color.hex ? 'border-slate-900 shadow-md' : 'border-slate-300 hover:border-slate-500'}`}
                 style={{ backgroundColor: color.hex }}
                 title={color.name}
               />
@@ -109,7 +109,7 @@ export default function HighlightWorkspaceSidebar({
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-slate-900">Highlight Groups</h4>
             <div className="flex gap-2">
@@ -124,7 +124,7 @@ export default function HighlightWorkspaceSidebar({
             </div>
           </div>
 
-          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
             {highlightGroups.length === 0 ? (
               <p className="text-xs text-slate-500">Draw on the PDF or create a group manually to begin.</p>
             ) : (
@@ -133,41 +133,41 @@ export default function HighlightWorkspaceSidebar({
                   key={group.id}
                   type="button"
                   onClick={() => onSelectGroup(group.id, group.page)}
-                  className={`w-full text-left rounded-lg border p-3 transition ${selectedGroupId === group.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}
+                  className={`w-full text-left rounded-lg border p-2.5 transition ${selectedGroupId === group.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <Input
                       value={group.name}
                       onChange={(e) => onRenameGroup(group.id, e.target.value)}
                       onClick={(e) => e.stopPropagation()}
-                      className="h-8"
+                      className="h-7 text-xs"
                     />
-                    <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap">Page {group.page}</span>
+                    <span className="text-[10px] font-mono text-slate-500 whitespace-nowrap">Pg {group.page}</span>
                   </div>
-                  <div className="text-xs text-slate-600">{group.highlights.length} highlight{group.highlights.length === 1 ? '' : 's'}</div>
+                  <div className="text-[11px] text-slate-600">{group.highlights.length} highlight{group.highlights.length === 1 ? '' : 's'}</div>
                 </button>
               ))
             )}
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Details</div>
           <div>
             <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
-            <Input value={clipName} onChange={(e) => onClipNameChange(e.target.value)} placeholder="e.g. Scene Close-up" />
+            <Input value={clipName} onChange={(e) => onClipNameChange(e.target.value)} placeholder="e.g. Scene Close-up" className="h-8" />
           </div>
           <div>
             <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name</label>
-            <Input value={formalName} onChange={(e) => onFormalNameChange(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
+            <Input value={formalName} onChange={(e) => onFormalNameChange(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" className="h-8" />
           </div>
           <div>
             <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
-            <Input value={draftExhibitNum} onChange={(e) => onDraftExhibitNumChange(e.target.value)} placeholder="e.g. A-1a" />
+            <Input value={draftExhibitNum} onChange={(e) => onDraftExhibitNumChange(e.target.value)} placeholder="e.g. A-1a" className="h-8" />
           </div>
           <div>
             <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
-            <Input value={description} onChange={(e) => onDescriptionChange(e.target.value)} placeholder="Additional notes" />
+            <Input value={description} onChange={(e) => onDescriptionChange(e.target.value)} placeholder="Additional notes" className="h-8" />
           </div>
         </div>
       </div>

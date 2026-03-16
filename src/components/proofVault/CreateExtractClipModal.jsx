@@ -407,7 +407,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
           </div>
 
           <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
-            <div className="flex min-h-[70vh] max-h-[70vh]">
+            <div className="flex h-[70vh] max-h-[70vh] min-h-0 overflow-hidden">
               <HighlightWorkspaceSidebar
                 isCollapsed={workspaceCollapsed}
                 onToggleCollapsed={() => setWorkspaceCollapsed((value) => !value)}
@@ -444,7 +444,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 }}
               />
 
-              <div className="flex-1 min-w-0 bg-slate-900">
+              <div className="flex-1 min-w-0 min-h-0 bg-slate-900">
                 {isResolvingParentUrl ? (
                   <div className="flex items-center gap-2 text-sm text-slate-500 h-full justify-center">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading extract PDF...
