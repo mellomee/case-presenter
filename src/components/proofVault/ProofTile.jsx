@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { prefetchResolvedProofAsset } from '@/hooks/useResolvedProofAsset';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
 import { countGroupedHighlights, countHighlightGroups } from './highlightGroupUtils';
@@ -29,11 +28,6 @@ export default function ProofTile({
   const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const cardRef = React.useRef(null);
-  const queryClient = useQueryClient();
-
-  const handlePrefetch = React.useCallback(() => {
-    prefetchResolvedProofAsset(queryClient, proof);
-  }, [queryClient, proof]);
 
   const hasHighlightedDescendant = React.useMemo(() => {
     if (!highlightedChildId) return false;
@@ -128,12 +122,7 @@ export default function ProofTile({
 
   return (
     <>
-      <Card
-        ref={cardRef}
-        onMouseEnter={handlePrefetch}
-        onFocus={handlePrefetch}
-        className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}
-      >
+      <Card ref={cardRef} className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}>
         <div className="p-4 flex items-start gap-3" onClick={() => setExpanded(!expanded)}>
           {hasChildren ? (
             <div className="mt-0.5">{expanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}</div>

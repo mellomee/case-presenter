@@ -7,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
-import { parsePageRange } from './pageRangeUtils';
 import {
   createHighlightGroup,
   flattenHighlightGroupsForPage,
@@ -58,12 +57,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     : parentExtract;
 
   const { url: resolvedParentUrl, isLoading: isResolvingParentUrl } = useResolvedProofAsset(actualParentExtract);
-  const extractPageNumbers = useMemo(() => parsePageRange(actualParentExtract?.extract_pages || ''), [actualParentExtract?.extract_pages]);
-  const currentViewerPage = extractPageNumbers.length > 0
-    ? Math.max(1, extractPageNumbers.indexOf(currentPage) + 1)
-    : currentPage;
-  const clipStatus = isEditing ? parentExtract?.status : actualParentExtract?.status;
-  const requiresFormalName = clipStatus && clipStatus !== 'Draft';
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -94,7 +87,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setHighlightGroups([]);
     setSelectedGroupId(null);
     setSelectedHighlight(null);
-    setCurrentPage(extractPageNumbers[0] || 1);
+    setCurrentPage(1);
     setDraftHighlight(null);
     setWarning('');
   };
@@ -121,14 +114,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     }
 
     resetForm();
-  }, [open, parentExtract, isEditing, extractPageNumbers]);
-
-  useEffect(() => {
-    if (extractPageNumbers.length === 0) return;
-    if (!extractPageNumbers.includes(currentPage)) {
-      setCurrentPage(extractPageNumbers[0]);
-    }
-  }, [extractPageNumbers, currentPage]);
+  }, [open, parentExtract, isEditing]);
 
   const groupsOnCurrentPage = useMemo(
     () => highlightGroups.filter((group) => group.page === currentPage),
@@ -300,8 +286,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setWarning('Clip Name is required');
       return;
     }
-    if (requiresFormalName && !formalName.trim()) {
-      setWarning('Formal Name is required when the clip is not in Draft status');
+    if (!formalName.trim()) {
+      setWarning('Formal Name is required');
       return;
     }
 
@@ -316,7 +302,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       file_type: 'PDF',
       proof_child_type: 'ExtractClip',
       name: clipName.trim(),
-      formal_name: formalName.trim() || null,
+      formal_name: formalName.trim(),
       description: description.trim() || null,
       parent_proof_id: isEditing ? parentExtract.parent_proof_id : actualParentExtract.id,
       party_id: actualParentExtract.party_id || null,
@@ -426,11 +412,10 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               <PDFViewer
                 fileUrl={resolvedParentUrl}
                 mode="controller"
-                currentPage={currentViewerPage}
-                onPageChange={(pageIndex) => setCurrentPage(extractPageNumbers[pageIndex - 1] || currentPage)}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
                 allowPan={mode === 'pan'}
                 pageOverlay={pageOverlay}
-                visiblePages={extractPageNumbers.length > 0 ? extractPageNumbers : null}
               />
             </div>
           )}
@@ -497,7 +482,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                   <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name {requiresFormalName ? '*' : '(optional)'}</label>
+                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name *</label>
                   <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
                 </div>
                 <div>

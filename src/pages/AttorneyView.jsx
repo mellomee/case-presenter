@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
@@ -11,7 +11,6 @@ import NextQuestionCard from '@/components/attorneyView/NextQuestionCard.jsx';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import OverviewPanel from '@/components/attorneyView/OverviewPanel.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
-import { prefetchResolvedProofAsset } from '@/hooks/useResolvedProofAsset';
 
 // Build a flat ordered list of top-level questions/blocks from buckets
 function buildFlatList(buckets, questions, admissionBlocks, proofs) {
@@ -116,21 +115,6 @@ export default function AttorneyView() {
   const currentItem = flatList[currentIndex] || null;
   const nextItem = flatList[currentIndex + 1] || null;
   const selectedParty = parties.find(p => p.id === selectedPartyId);
-
-  useEffect(() => {
-    const proofsToWarm = [
-      selectedProof,
-      currentItem?.blockProof,
-      ...(currentItem?.proofs || []),
-      nextItem?.blockProof,
-      ...(nextItem?.proofs || []),
-    ].filter(Boolean);
-
-    const uniqueProofs = Array.from(new Map(proofsToWarm.map((proof) => [proof.id, proof])).values());
-    uniqueProofs.forEach((proof) => {
-      prefetchResolvedProofAsset(queryClient, proof);
-    });
-  }, [queryClient, selectedProof, currentItem, nextItem]);
 
   const goNext = useCallback(() => {
     if (currentIndex < flatList.length - 1) setCurrentIndex(i => i + 1);
