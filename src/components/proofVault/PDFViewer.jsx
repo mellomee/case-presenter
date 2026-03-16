@@ -473,7 +473,7 @@ export default function PDFViewer({
                   customTextRenderer={textRenderer}
                   loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />}
                 />
-                {shouldDimInactiveArea && currentPageHighlights.length > 0 && (
+                {dimInactiveArea && currentPageHighlights.length > 0 && (
                   <div className="absolute inset-0 bg-black/35 pointer-events-none" />
                 )}
                 {currentPageHighlights.map((highlight, index) => (
@@ -490,7 +490,7 @@ export default function PDFViewer({
                       pointerEvents: 'none',
                       borderRadius: '2px',
                       mixBlendMode: 'multiply',
-                      border: shouldAutoFocusHighlights || shouldDimInactiveArea ? '2px solid rgba(251, 191, 36, 0.95)' : 'none',
+                      border: dimInactiveArea ? '2px solid rgba(251, 191, 36, 0.95)' : 'none',
                     }}
                   />
                 ))}
