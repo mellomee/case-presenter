@@ -4,7 +4,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2, Download } from 'lucide-react';
 import debounce from 'lodash/debounce';
 import { flattenHighlightGroupsForPage } from './highlightGroupUtils';
 
@@ -52,6 +52,7 @@ export default function PDFViewer({
     return Array.from({ length: numPages || 0 }, (_, index) => index + 1);
   }, [visiblePages, numPages]);
 
+  const hasOriginalPageMap = Array.isArray(visiblePages) && visiblePages.length > 0;
   const activePageNumber = pageNumbers[currentPage - 1] || clippedPage || 1;
   const activeHighlights = useMemo(
     () => flattenHighlightGroupsForPage(highlights, activePageNumber, clippedPage || activePageNumber),
@@ -311,6 +312,7 @@ export default function PDFViewer({
               className="w-10 h-6 text-center text-xs bg-zinc-700 border-zinc-600 px-1"
             />
             <span className="text-[11px] text-zinc-500 whitespace-nowrap">/ {pageNumbers.length || '…'}</span>
+            {hasOriginalPageMap && <span className="text-[11px] text-amber-400 whitespace-nowrap">Orig {activePageNumber}</span>}
           </div>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => goToPage(currentPage + 1)} disabled={!pageNumbers.length || currentPage >= pageNumbers.length}>
             <ChevronRight className="w-4 h-4" />
@@ -344,6 +346,12 @@ export default function PDFViewer({
               All
             </Button>
           )}
+          <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white">
+            <a href={fileUrl} target="_blank" rel="noopener noreferrer" download>
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </a>
+          </Button>
           <div className="flex-1" />
         </div>
       )}
@@ -426,7 +434,9 @@ export default function PDFViewer({
                     <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
                       <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
                     </div>
-                    <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>{pageNumber}</span>
+                    <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>
+                      {hasOriginalPageMap ? `Orig ${pageNumber}` : pageNumber}
+                    </span>
                   </div>
                 );
               })}

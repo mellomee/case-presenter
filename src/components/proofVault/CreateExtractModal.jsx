@@ -213,11 +213,12 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                 <input type="radio" name="extractSource" value="original" checked={extractSource === 'original'} onChange={(e) => setExtractSource(e.target.value)} disabled={!canChangeExtractSource} className="w-4 h-4" />
                 <span className="text-sm text-slate-700">Select pages from original PDF</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="extractSource" value="upload" checked={extractSource === 'upload'} onChange={(e) => setExtractSource(e.target.value)} disabled={!canChangeExtractSource} className="w-4 h-4" />
+              <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
+                <input type="radio" name="extractSource" value="upload" checked={extractSource === 'upload'} onChange={(e) => setExtractSource(e.target.value)} disabled className="w-4 h-4" />
                 <span className="text-sm text-slate-700">Upload new snippet</span>
               </label>
             </div>
+            <p className="text-xs text-slate-500 mt-2">Upload new snippet is temporarily disabled while we validate the page-selection extract flow.</p>
             {!canChangeExtractSource && <p className="text-xs text-amber-700 mt-2">Extract source is locked because this extract already has child clips attached.</p>}
           </div>
 
