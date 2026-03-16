@@ -61,6 +61,10 @@ export default function ApiManagementTab() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        Secret keys cannot be displayed back in-app on Base44. If you need to rotate Adobe secrets, replace them in your app secrets settings.
+      </div>
+
       <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-4">
         <div>
           <label className="text-sm font-medium text-slate-700 mb-2 block">Dropbox root folder</label>
