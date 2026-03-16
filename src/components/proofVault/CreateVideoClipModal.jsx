@@ -202,156 +202,53 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
             </div>
           </div>
 
-          {/* Video player */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Video</label>
-            <div className="bg-slate-900 rounded-lg overflow-hidden aspect-video border border-slate-200">
-              <ReactPlayer
-                ref={playerRef}
-                url={parentProof.video_url || parentProof.file_url}
-                width="100%"
-                height="100%"
-                controls
-                playing={false}
-                onDuration={setDuration}
-                onProgress={(state) => setCurrentTime(state.playedSeconds)}
-                config={{
-                  youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
-                }}
+          <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
+            <div className="flex h-[70vh] max-h-[70vh] min-h-0 overflow-hidden">
+              <VideoClipWorkspaceSidebar
+                isCollapsed={workspaceCollapsed}
+                onToggleCollapsed={() => setWorkspaceCollapsed((value) => !value)}
+                internalName={internalName}
+                onInternalNameChange={setInternalName}
+                formalName={formalName}
+                onFormalNameChange={setFormalName}
+                exhibitNum={exhibitNum}
+                onExhibitNumChange={setExhibitNum}
+                description={description}
+                onDescriptionChange={setDescription}
+                tempStartTime={tempStartTime}
+                onTempStartTimeChange={setTempStartTime}
+                tempEndTime={tempEndTime}
+                onTempEndTimeChange={setTempEndTime}
+                segmentLabel={segmentLabel}
+                onSegmentLabelChange={setSegmentLabel}
+                onMarkStart={handleMarkStart}
+                onMarkEnd={handleMarkEnd}
+                onAddSegment={handleAddSegment}
+                currentTimeLabel={secondsToTime(currentTime)}
+                durationLabel={secondsToTime(duration)}
+                segments={segments}
+                onDeleteSegment={handleDeleteSegment}
+                onDragEnd={handleDragEnd}
               />
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              Duration: {secondsToTime(duration)} · Current: {secondsToTime(currentTime)}
-            </p>
-          </div>
 
-          {/* Mark start/end controls */}
-          <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <div>
-              <label className="text-xs font-medium text-slate-600 block mb-2">Start (hh:mm:ss)</label>
-              <Input
-                type="text"
-                value={tempStartTime}
-                onChange={(e) => setTempStartTime(e.target.value)}
-                placeholder="00:00:00"
-                className="font-mono text-sm"
-              />
+              <div className="flex-1 min-w-0 min-h-0 bg-slate-900">
+                <div className="h-full overflow-hidden">
+                  <ReactPlayer
+                    ref={playerRef}
+                    url={parentProof.video_url || parentProof.file_url}
+                    width="100%"
+                    height="100%"
+                    controls
+                    playing={false}
+                    onDuration={setDuration}
+                    onProgress={(state) => setCurrentTime(state.playedSeconds)}
+                    config={{
+                      youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
+                    }}
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-slate-600 block mb-2">End (hh:mm:ss)</label>
-              <Input
-                type="text"
-                value={tempEndTime}
-                onChange={(e) => setTempEndTime(e.target.value)}
-                placeholder="00:00:00"
-                className="font-mono text-sm"
-              />
-            </div>
-            <div className="flex gap-2 items-end">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleMarkStart}
-                className="flex-1"
-              >
-                <Play className="w-3 h-3 mr-1" />
-                Mark Start
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleMarkEnd}
-                className="flex-1"
-              >
-                <Play className="w-3 h-3 mr-1" />
-                Mark End
-              </Button>
-            </div>
-          </div>
-
-          {/* Segments list */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-3 block">Segments (drag to reorder)</label>
-            {segments.length > 0 ? (
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="segments">
-                  {(provided, snapshot) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className={`space-y-2 ${snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg p-2' : ''}`}
-                    >
-                      {segments.map((segment, idx) => (
-                        <SegmentItem
-                          key={segment.id}
-                          segment={segment}
-                          index={idx}
-                          onDelete={handleDeleteSegment}
-                        />
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
-            ) : (
-              <p className="text-sm text-slate-500 italic">No segments yet</p>
-            )}
-          </div>
-
-          {/* Add segment button */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Segment Label (optional)</label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g. 'Testimony about accident'"
-                value={segmentLabel}
-                onChange={(e) => setSegmentLabel(e.target.value)}
-              />
-              <Button onClick={handleAddSegment} className="bg-green-600 hover:bg-green-700">
-                + Add Segment
-              </Button>
-            </div>
-          </div>
-
-          {/* Name fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Internal Name *</label>
-              <Input
-                placeholder="e.g. Witness testimony clip 1"
-                value={internalName}
-                onChange={(e) => setInternalName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name</label>
-              <Input
-                placeholder="e.g. Deposition Clip — Accident Account"
-                value={formalName}
-                onChange={(e) => setFormalName(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Exhibit number */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Exhibit # (optional)</label>
-            <Input
-              placeholder="e.g. A-1a"
-              value={exhibitNum}
-              onChange={(e) => setExhibitNum(e.target.value)}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Description (optional)</label>
-            <Input
-              placeholder="Additional notes about this clip"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
           </div>
 
           {/* Actions */}
