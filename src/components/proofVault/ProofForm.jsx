@@ -35,6 +35,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
   );
   const [uploadedFileName, setUploadedFileName] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState(null); // null | 'checking' | 'processing' | 'done'
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
