@@ -43,6 +43,7 @@ export default function PDFViewer({
   const containerRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
+  const selectionAnchorRef = useRef(null);
 
   const pageNumbers = useMemo(() => {
     if (Array.isArray(visiblePages) && visiblePages.length > 0) {
@@ -102,18 +103,40 @@ export default function PDFViewer({
     [pageNumbers.length, controlledPage, onPageChange, mode, debouncedPush, zoom]
   );
 
-  const toggleThumbnailSelection = useCallback(
-    (pageNumber) => {
+  const handleThumbnailSelection = useCallback(
+    (pageNumber, event) => {
       if (!selectableThumbnails || !onSelectedPagesChange) return;
 
-      const nextPages = selectedPages.includes(pageNumber)
-        ? selectedPages.filter((page) => page !== pageNumber)
-        : [...selectedPages, pageNumber].sort((a, b) => a - b);
+      const isToggleSelection = event?.metaKey || event?.ctrlKey;
+      const isRangeSelection = event?.shiftKey && selectionAnchorRef.current !== null;
+      let nextPages = [];
+
+      if (isRangeSelection) {
+        const anchorIndex = pageNumbers.indexOf(selectionAnchorRef.current);
+        const targetIndex = pageNumbers.indexOf(pageNumber);
+        const startIndex = Math.min(anchorIndex, targetIndex);
+        const endIndex = Math.max(anchorIndex, targetIndex);
+        nextPages = pageNumbers.slice(startIndex, endIndex + 1);
+      } else if (isToggleSelection) {
+        nextPages = selectedPages.includes(pageNumber)
+          ? selectedPages.filter((page) => page !== pageNumber)
+          : [...selectedPages, pageNumber].sort((a, b) => a - b);
+        selectionAnchorRef.current = pageNumber;
+      } else {
+        nextPages = [pageNumber];
+        selectionAnchorRef.current = pageNumber;
+      }
 
       onSelectedPagesChange(nextPages);
     },
-    [selectableThumbnails, onSelectedPagesChange, selectedPages]
+    [selectableThumbnails, onSelectedPagesChange, selectedPages, pageNumbers]
   );
+
+  const handleSelectAllPages = useCallback(() => {
+    if (!selectableThumbnails || !onSelectedPagesChange) return;
+    onSelectedPagesChange(pageNumbers);
+    selectionAnchorRef.current = pageNumbers[0] || null;
+  }, [selectableThumbnails, onSelectedPagesChange, pageNumbers]);
 
   const applyZoom = useCallback(
     (nextZoom) => {
@@ -316,6 +339,11 @@ export default function PDFViewer({
           <Button variant="ghost" size="icon" className={`h-7 w-7 ${showSearch ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`} onClick={() => setShowSearch((value) => !value)}>
             <Search className="w-3.5 h-3.5" />
           </Button>
+          {selectableThumbnails && pageNumbers.length > 0 && (
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white" onClick={handleSelectAllPages}>
+              All
+            </Button>
+          )}
           <div className="flex-1" />
         </div>
       )}
@@ -387,9 +415,9 @@ export default function PDFViewer({
                 return (
                   <div
                     key={`${pageNumber}-${pageIndex}`}
-                    onClick={() => {
+                    onClick={(event) => {
                       if (selectableThumbnails) {
-                        toggleThumbnailSelection(pageNumber);
+                        handleThumbnailSelection(pageNumber, event);
                       }
                       goToPage(pageIndex);
                     }}
