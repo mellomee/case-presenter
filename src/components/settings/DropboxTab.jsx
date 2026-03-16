@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 
 export default function DropboxTab() {
   const [dropboxSaveFolder, setDropboxSaveFolder] = useState('/Case Presenter/OCR');
+  const [dropboxBrowseFolder, setDropboxBrowseFolder] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const queryClient = useQueryClient();
 
@@ -17,12 +18,16 @@ export default function DropboxTab() {
   useEffect(() => {
     if (!settings.length) return;
     setDropboxSaveFolder(settings[0].dropbox_save_folder || '/Case Presenter/OCR');
+    setDropboxBrowseFolder(settings[0].dropbox_browse_folder || '');
     setHasChanges(false);
   }, [settings]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { dropbox_save_folder: dropboxSaveFolder.trim() || '/Case Presenter/OCR' };
+      const payload = {
+        dropbox_save_folder: dropboxSaveFolder.trim() || '/Case Presenter/OCR',
+        dropbox_browse_folder: dropboxBrowseFolder.trim(),
+      };
       if (settings.length > 0) {
         return base44.entities.AppSettings.update(settings[0].id, payload);
       }
@@ -57,7 +62,22 @@ export default function DropboxTab() {
             placeholder="/Case Presenter/OCR"
           />
           <p className="text-xs text-slate-500 mt-1">
-            OCR-processed Dropbox PDFs are saved here, and the Dropbox picker opens here by default.
+            OCR-processed Dropbox PDFs are saved here.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Default Dropbox Browse Folder</label>
+          <Input
+            value={dropboxBrowseFolder}
+            onChange={(e) => {
+              setDropboxBrowseFolder(e.target.value);
+              setHasChanges(true);
+            }}
+            placeholder="/PracticePanther/Lisa Chan"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Add Proof → Dropbox link opens here by default. Leave blank to keep using the save folder.
           </p>
         </div>
       </div>
