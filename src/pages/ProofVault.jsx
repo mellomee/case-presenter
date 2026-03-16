@@ -229,7 +229,7 @@ export default function ProofVault() {
         </div>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-5xl">
             <DialogHeader>
               <DialogTitle>{editingProof ? 'Edit Proof' : 'Add Proof'}</DialogTitle>
             </DialogHeader>
