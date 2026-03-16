@@ -46,10 +46,10 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const [currentPage, setCurrentPage] = useState(initialPage);
   const filteredHighlights = useMemo(() => {
     if (!showHighlights) return [];
-    if (selectedGroupId === 'all') return proof.highlights || [];
+    if (selectedGroupId === 'all') return groups;
     const selectedGroup = groups.find((group) => group.id === selectedGroupId);
     return selectedGroup ? [selectedGroup] : [];
-  }, [showHighlights, selectedGroupId, proof.highlights, groups]);
+  }, [showHighlights, selectedGroupId, groups]);
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
