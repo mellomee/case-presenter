@@ -497,7 +497,7 @@ export default function PDFViewer({
                   customTextRenderer={textRenderer}
                   loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />}
                 />
-                {dimInactiveArea && currentPageHighlights.length > 0 && (
+                {shouldDimInactiveArea && currentPageHighlights.length > 0 && (
                   <div className="absolute inset-0 bg-black/45 pointer-events-none" />
                 )}
                 {currentPageHighlights.map((highlight, index) => (
