@@ -134,6 +134,22 @@ export default function ProofTile({
     return '📎';
   };
 
+  const timeToSeconds = (timeStr) => {
+    if (!timeStr || typeof timeStr !== 'string') return 0;
+    const parts = timeStr.split(':').map(Number);
+    return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+  };
+
+  const formatDuration = (start, end) => {
+    const totalSeconds = Math.max(0, timeToSeconds(end) - timeToSeconds(start));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return hours > 0
+      ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
   const isParentProof = !proof.parent_proof_id && (proof.file_type === 'PDF' || proof.file_type === 'Video');
   const isExtract = proof.proof_child_type === 'Extract';
 
@@ -207,8 +223,17 @@ export default function ProofTile({
             )}
 
             {proof.proof_child_type === 'VideoClip' && proof.video_clips && Array.isArray(proof.video_clips) && proof.video_clips.length > 0 && (
-              <div className="text-xs text-slate-600 mb-2">
-                <span className="text-amber-600">• {proof.video_clips.length} segment{proof.video_clips.length !== 1 ? 's' : ''}</span>
+              <div className="text-xs text-slate-600 mb-2 space-y-1">
+                <div>
+                  <span className="text-amber-600">• {proof.video_clips.length} segment{proof.video_clips.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="space-y-1">
+                  {proof.video_clips.map((segment, index) => (
+                    <div key={`${segment.start}-${segment.end}-${index}`} className="text-[11px] text-slate-500">
+                      {segment.label || `Segment ${index + 1}`} — {segment.start} to {segment.end} · {formatDuration(segment.start, segment.end)}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
