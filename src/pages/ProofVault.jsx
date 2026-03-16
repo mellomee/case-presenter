@@ -195,11 +195,32 @@ export default function ProofVault() {
   // Get only top-level proofs for rendering
   const exhibitsTopLevel = allExhibits.filter((p) => !p.parent_proof_id);
   const depositionsTopLevel = allDepositions.filter((p) => !p.parent_proof_id);
+  const promotedExtracts = allExhibits.filter(
+    (p) =>
+      p.proof_child_type === 'Extract' &&
+      ['Joint', 'Admitted', 'Demonstrative'].includes(p.status)
+  );
 
-  // Filter top-level exhibits by status (but pass all exhibits to ProofTile)
-  const filteredExhibits = exhibitFilter === 'all' 
-    ? exhibitsTopLevel 
-    : exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
+  const filteredExhibits =
+    exhibitFilter === 'all'
+      ? exhibitsTopLevel
+      : ['Joint', 'Admitted', 'Demonstrative'].includes(exhibitFilter)
+        ? [
+            ...exhibitsTopLevel.filter((e) => e.status === exhibitFilter),
+            ...promotedExtracts.filter((e) => e.status === exhibitFilter),
+          ]
+        : exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
+
+  const getExhibitCount = (status) => {
+    if (status === 'all') return exhibitsTopLevel.length;
+    if (['Joint', 'Admitted', 'Demonstrative'].includes(status)) {
+      return (
+        exhibitsTopLevel.filter((e) => e.status === status).length +
+        promotedExtracts.filter((e) => e.status === status).length
+      );
+    }
+    return exhibitsTopLevel.filter((e) => e.status === status).length;
+  };
 
   const renderEmptyState = (title) => (
     <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
@@ -337,7 +358,7 @@ export default function ProofVault() {
                       onClick={() => setExhibitFilter(status)}
                       className={exhibitFilter === status ? 'bg-blue-600' : ''}
                     >
-                      {status === 'all' ? 'All' : status} ({exhibitsTopLevel.filter((e) => exhibitFilter === 'all' || e.status === status).length})
+                      {status === 'all' ? 'All' : status} ({getExhibitCount(status)})
                     </Button>
                   ))}
                 </div>

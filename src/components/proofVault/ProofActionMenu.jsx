@@ -84,6 +84,7 @@ export default function ProofActionMenu({
   const getAvailableActions = () => {
     const isTopLevel = !proof.parent_proof_id;
     const isExtract = proof.proof_child_type === 'Extract';
+    const behavesAsTopLevel = isTopLevel || isExtract;
     const isPDF = proof.file_type === 'PDF';
     const isVideo = proof.file_type === 'Video';
     const hasAttachment = proofHasLinkedFile(proof);
@@ -113,7 +114,7 @@ export default function ProofActionMenu({
       actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
     }
 
-    if ((currentTab === 'joint' || proof.status === 'Joint') && isTopLevel) {
+    if ((currentTab === 'joint' || proof.status === 'Joint') && behavesAsTopLevel) {
       actions.push({ id: 'admitAsExhibit', label: 'Admit as Exhibit', icon: CheckCircle, action: onAdmitAsExhibit, color: 'text-green-600' });
       actions.push({ id: 'admitAsDemonstrative', label: 'Mark as Demo', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
       actions.push({ id: 'removeFromJoint', label: 'Remove from Joint', icon: Circle, action: onRemoveFromJoint, color: 'text-slate-600' });

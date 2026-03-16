@@ -68,6 +68,7 @@ export default function ProofTile({
   });
 
   const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
+  const parentProof = proof.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
   const hasChildren = children.length > 0;
   const hasAttachment = proofHasLinkedFile(proof);
   const highlightGroupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
@@ -177,6 +178,11 @@ export default function ProofTile({
                 <h3 className="font-semibold text-slate-900 truncate">{proof.name}</h3>
                 {proof.formal_name && (
                   <div className="text-xs text-slate-500 truncate">Formal Name: {proof.formal_name}</div>
+                )}
+                {proof.proof_child_type === 'Extract' && parentProof && (
+                  <div className="text-[11px] text-slate-500 truncate mt-1">
+                    Source PDF: {parentProof.formal_name || parentProof.name}{parentProof.draft_exhibit_num ? ` · D: ${parentProof.draft_exhibit_num}` : ''}
+                  </div>
                 )}
                 {proof.file_source === 'dropbox' && proof.dropbox_file_name && (
                   <div className="text-xs text-slate-500 truncate">Source Filename: {proof.dropbox_file_name}</div>
