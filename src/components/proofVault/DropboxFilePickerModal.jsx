@@ -1,0 +1,133 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Folder, File, ChevronLeft, Link2, Loader2 } from 'lucide-react';
+
+function getParentPath(path) {
+  if (!path || path === '/') return '';
+  const segments = path.split('/').filter(Boolean);
+  return segments.length <= 1 ? '' : `/${segments.slice(0, -1).join('/')}`;
+}
+
+export default function DropboxFilePickerModal({ open, onClose, fileType, onSelect }) {
+  const [currentPath, setCurrentPath] = useState('');
+  const [search, setSearch] = useState('');
+
+  const { data: appSettings = [] } = useQuery({
+    queryKey: ['appSettings'],
+    queryFn: () => base44.entities.AppSettings.list(),
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    const rootPath = appSettings[0]?.dropbox_save_folder || '';
+    setCurrentPath(rootPath);
+    setSearch('');
+  }, [open, appSettings]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['browseDropboxFiles', currentPath, fileType],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('browseDropboxFiles', {
+        path: currentPath,
+        fileType,
+      });
+      return response.data;
+    },
+    enabled: open,
+  });
+
+  const filteredEntries = useMemo(() => {
+    const entries = data?.entries || [];
+    if (!search.trim()) return entries;
+    return entries.filter((entry) => entry.name.toLowerCase().includes(search.trim().toLowerCase()));
+  }, [data, search]);
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Select Dropbox {fileType}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPath(getParentPath(currentPath))}
+                disabled={!currentPath}
+                className="gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" /> Up
+              </Button>
+              <span className="font-mono text-xs break-all">{currentPath || '/'}</span>
+            </div>
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter files"
+              className="sm:max-w-xs"
+            />
+          </div>
+
+          <div className="rounded-lg border border-slate-200 max-h-[28rem] overflow-y-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12 text-slate-500">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Dropbox files...
+              </div>
+            ) : filteredEntries.length === 0 ? (
+              <div className="py-12 text-center text-sm text-slate-500">No matching files found.</div>
+            ) : (
+              filteredEntries.map((entry) => (
+                <div
+                  key={entry.id || entry.path_display}
+                  className="flex items-center justify-between gap-3 px-4 py-3 border-b last:border-b-0 border-slate-100"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (entry.type === 'folder') {
+                        setCurrentPath(entry.path_display || '');
+                      }
+                    }}
+                    className="flex items-center gap-3 min-w-0 text-left flex-1"
+                  >
+                    {entry.type === 'folder' ? (
+                      <Folder className="w-4 h-4 text-amber-500 shrink-0" />
+                    ) : (
+                      <File className="w-4 h-4 text-slate-400 shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-800">{entry.name}</div>
+                      <div className="truncate text-xs text-slate-500">{entry.path_display}</div>
+                    </div>
+                  </button>
+
+                  {entry.type === 'file' && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 gap-2"
+                      onClick={() => {
+                        onSelect?.(entry);
+                        onClose?.();
+                      }}
+                    >
+                      <Link2 className="w-4 h-4" /> Select
+                    </Button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
