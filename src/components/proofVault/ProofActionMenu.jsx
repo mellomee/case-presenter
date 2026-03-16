@@ -13,6 +13,7 @@ import {
   Eye,
   Link2,
   Scissors,
+  Highlighter,
   CheckCircle,
   Circle,
   Trash2,
@@ -99,7 +100,7 @@ export default function ProofActionMenu({
     }
 
     if ((isVideo && isTopLevel && hasAttachment) || (isExtract && hasAttachment)) {
-      actions.push({ id: 'clip', label: isExtract ? 'Highlight' : 'Clip', icon: Scissors, action: onClip, color: 'text-orange-600' });
+      actions.push({ id: 'clip', label: isExtract ? 'Highlight' : 'Clip', icon: isExtract ? Highlighter : Scissors, action: onClip, color: isExtract ? 'text-yellow-500' : 'text-orange-600' });
     }
 
     const isOriginalPdfProof = isPDF && isTopLevel && !proof.proof_child_type;
@@ -114,7 +115,7 @@ export default function ProofActionMenu({
 
     if ((currentTab === 'joint' || proof.status === 'Joint') && isTopLevel) {
       actions.push({ id: 'admitAsExhibit', label: 'Admit as Exhibit', icon: CheckCircle, action: onAdmitAsExhibit, color: 'text-green-600' });
-      actions.push({ id: 'admitAsDemonstrative', label: 'Admit as Demonstrative', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
+      actions.push({ id: 'admitAsDemonstrative', label: 'Mark as Demo', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
       actions.push({ id: 'removeFromJoint', label: 'Remove from Joint', icon: Circle, action: onRemoveFromJoint, color: 'text-slate-600' });
     }
 
