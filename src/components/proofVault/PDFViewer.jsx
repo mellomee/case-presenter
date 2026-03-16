@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2 } from 'lucide-react';
 import debounce from 'lodash/debounce';
+import { getHighlightBounds, getHighlightsForPage, getPrimaryHighlightPage, sortUniquePages } from '@/lib/proofPdfUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -20,27 +21,41 @@ export default function PDFViewer({
   onPageChange,
   allowPan = true,
   pageOverlay = null,
+  allowPageSelection = false,
+  selectedPages = [],
+  onSelectedPagesChange,
+  onDocumentLoad,
+  showHighlights = true,
+  autoFocusHighlights = false,
+  dimInactiveArea = false,
 }) {
+  const initialPage = controlledPage || clippedPage || getPrimaryHighlightPage(highlights, 1) || 1;
   const [numPages, setNumPages] = useState(null);
-  const [currentPage, setCurrentPage] = useState(controlledPage || clippedPage || 1);
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
-  const [pageInput, setPageInput] = useState(String(controlledPage || clippedPage || 1));
+  const [pageInput, setPageInput] = useState(String(initialPage));
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [searchMatchPages, setSearchMatchPages] = useState([]);
   const [searchIdx, setSearchIdx] = useState(0);
   const [searching, setSearching] = useState(false);
   const [showThumbs, setShowThumbs] = useState(true);
+  const [focusOrigin, setFocusOrigin] = useState('top center');
   const containerRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
+  const lastSelectedThumbRef = useRef(null);
 
   const debouncedPush = useCallback(
-    debounce((s) => onStateChange && onStateChange(s), 250),
+    debounce((state) => onStateChange && onStateChange(state), 250),
     [onStateChange]
   );
+
+  const currentPageHighlights = showHighlights
+    ? getHighlightsForPage(highlights, currentPage, clippedPage || 1)
+    : [];
 
   useEffect(() => {
     if (controlledPage === undefined) return;
@@ -59,110 +74,166 @@ export default function PDFViewer({
     if (syncState.panY !== undefined) setPanY(syncState.panY);
   }, [syncState, mode]);
 
+  useEffect(() => {
+    if (!autoFocusHighlights) {
+      setFocusOrigin('top center');
+      return;
+    }
+
+    const bounds = getHighlightBounds(highlights, currentPage, clippedPage || 1);
+    if (!bounds) {
+      setFocusOrigin('top center');
+      return;
+    }
+
+    const dominantSize = Math.max(bounds.width, bounds.height);
+    const targetZoom = Math.min(3.5, Math.max(1.4, 55 / Math.max(dominantSize, 12)));
+
+    setFocusOrigin(`${bounds.centerX}% ${bounds.centerY}%`);
+    setZoom(targetZoom);
+    setPanX(0);
+    setPanY(0);
+  }, [autoFocusHighlights, highlights, currentPage, clippedPage]);
+
   const goToPage = useCallback(
-    (p) => {
-      if (clippedPage && p !== clippedPage) return;
-      const target = Math.min(Math.max(1, p), numPages || 1);
+    (page) => {
+      const target = Math.min(Math.max(1, page), numPages || 1);
       if (controlledPage === undefined) {
         setCurrentPage(target);
         setPageInput(String(target));
-        setPanX(0);
-        setPanY(0);
+        if (!autoFocusHighlights) {
+          setPanX(0);
+          setPanY(0);
+        }
       }
       onPageChange?.(target);
       if (mode === 'controller') debouncedPush({ currentPage: target, zoom, panX: 0, panY: 0 });
     },
-    [numPages, zoom, mode, debouncedPush, clippedPage, controlledPage, onPageChange]
+    [numPages, zoom, mode, debouncedPush, controlledPage, onPageChange, autoFocusHighlights]
   );
 
   const applyZoom = useCallback(
-    (nz) => {
-      const z = Math.min(Math.max(nz, 0.2), 5);
-      setZoom(z);
-      if (mode === 'controller') debouncedPush({ currentPage, zoom: z, panX, panY });
+    (nextZoom) => {
+      const zoomValue = Math.min(Math.max(nextZoom, 0.2), 5);
+      setZoom(zoomValue);
+      if (mode === 'controller') debouncedPush({ currentPage, zoom: zoomValue, panX, panY });
     },
     [currentPage, panX, panY, mode, debouncedPush]
   );
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const onWheel = (e) => {
-      e.preventDefault();
-      if (e.ctrlKey || e.metaKey) {
-        applyZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1));
-      } else if (allowPan) {
-        const ny = panY - e.deltaY * 0.5;
-        setPanY(ny);
-        if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY: ny });
-      }
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, numPages]);
+  const handleThumbClick = (page, event) => {
+    if (!allowPageSelection) {
+      goToPage(page);
+      return;
+    }
+
+    const currentSelection = sortUniquePages(selectedPages);
+    let nextSelection = [];
+
+    if (event.shiftKey && lastSelectedThumbRef.current) {
+      const start = Math.min(lastSelectedThumbRef.current, page);
+      const end = Math.max(lastSelectedThumbRef.current, page);
+      const rangePages = Array.from({ length: end - start + 1 }, (_, index) => start + index);
+      nextSelection = sortUniquePages([...(event.metaKey || event.ctrlKey ? currentSelection : []), ...rangePages]);
+    } else if (event.metaKey || event.ctrlKey) {
+      nextSelection = currentSelection.includes(page)
+        ? currentSelection.filter((selectedPage) => selectedPage !== page)
+        : sortUniquePages([...currentSelection, page]);
+    } else {
+      nextSelection = [page];
+    }
+
+    lastSelectedThumbRef.current = page;
+    onSelectedPagesChange?.(nextSelection);
+    goToPage(page);
+  };
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const onTouchStart = (e) => {
-      if (e.touches.length === 2) {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const onWheel = (event) => {
+      event.preventDefault();
+      if (event.ctrlKey || event.metaKey) {
+        applyZoom(zoom + (event.deltaY < 0 ? 0.1 : -0.1));
+      } else if (allowPan) {
+        const nextPanY = panY - event.deltaY * 0.5;
+        setPanY(nextPanY);
+        if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY: nextPanY });
+      }
+    };
+
+    element.addEventListener('wheel', onWheel, { passive: false });
+    return () => element.removeEventListener('wheel', onWheel);
+  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, allowPan]);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const onTouchStart = (event) => {
+      if (event.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
           dist: Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
+            event.touches[0].clientX - event.touches[1].clientX,
+            event.touches[0].clientY - event.touches[1].clientY
           ),
           initZoom: zoom,
         };
       } else if (allowPan) {
-        touchRef.current = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
+        touchRef.current = { mode: 'pan', x: event.touches[0].clientX, y: event.touches[0].clientY };
       }
     };
-    const onTouchMove = (e) => {
-      e.preventDefault();
-      if (touchRef.current.mode === 'pinch' && e.touches.length === 2) {
+
+    const onTouchMove = (event) => {
+      event.preventDefault();
+      if (touchRef.current.mode === 'pinch' && event.touches.length === 2) {
         const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
+          event.touches[0].clientX - event.touches[1].clientX,
+          event.touches[0].clientY - event.touches[1].clientY
         );
         applyZoom(touchRef.current.initZoom * (dist / touchRef.current.dist));
-      } else if (touchRef.current.mode === 'pan' && e.touches.length === 1) {
-        const dx = e.touches[0].clientX - touchRef.current.x;
-        const dy = e.touches[0].clientY - touchRef.current.y;
-        touchRef.current.x = e.touches[0].clientX;
-        touchRef.current.y = e.touches[0].clientY;
-        setPanX((px) => {
-          const nx = px + dx;
-          setPanY((py) => {
-            const ny = py + dy;
-            if (mode === 'controller') debouncedPush({ currentPage, zoom, panX: nx, panY: ny });
-            return ny;
+      } else if (touchRef.current.mode === 'pan' && event.touches.length === 1) {
+        const dx = event.touches[0].clientX - touchRef.current.x;
+        const dy = event.touches[0].clientY - touchRef.current.y;
+        touchRef.current.x = event.touches[0].clientX;
+        touchRef.current.y = event.touches[0].clientY;
+        setPanX((previousPanX) => {
+          const nextPanX = previousPanX + dx;
+          setPanY((previousPanY) => {
+            const nextPanY = previousPanY + dy;
+            if (mode === 'controller') debouncedPush({ currentPage, zoom, panX: nextPanX, panY: nextPanY });
+            return nextPanY;
           });
-          return nx;
+          return nextPanX;
         });
       }
     };
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-    };
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, numPages]);
 
-  const handleMouseDown = (e) => {
+    element.addEventListener('touchstart', onTouchStart, { passive: true });
+    element.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => {
+      element.removeEventListener('touchstart', onTouchStart);
+      element.removeEventListener('touchmove', onTouchMove);
+    };
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan]);
+
+  const handleMouseDown = (event) => {
     if (!allowPan) return;
-    if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
+    if (event.button === 0) dragRef.current = { dragging: true, x: event.clientX, y: event.clientY };
   };
-  const handleMouseMove = (e) => {
+
+  const handleMouseMove = (event) => {
     if (!dragRef.current.dragging) return;
-    const dx = e.clientX - dragRef.current.x;
-    const dy = e.clientY - dragRef.current.y;
-    dragRef.current.x = e.clientX;
-    dragRef.current.y = e.clientY;
-    setPanX((px) => px + dx);
-    setPanY((py) => py + dy);
+    const dx = event.clientX - dragRef.current.x;
+    const dy = event.clientY - dragRef.current.y;
+    dragRef.current.x = event.clientX;
+    dragRef.current.y = event.clientY;
+    setPanX((previousPanX) => previousPanX + dx);
+    setPanY((previousPanY) => previousPanY + dy);
   };
+
   const handleMouseUp = () => {
     if (dragRef.current.dragging) {
       dragRef.current.dragging = false;
@@ -175,11 +246,11 @@ export default function PDFViewer({
     setSearching(true);
     const pdf = await pdfjs.getDocument(fileUrl).promise;
     const matches = [];
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const tc = await page.getTextContent();
-      const text = tc.items.map((item) => item.str).join(' ');
-      if (text.toLowerCase().includes(searchText.toLowerCase())) matches.push(i);
+    for (let index = 1; index <= pdf.numPages; index += 1) {
+      const page = await pdf.getPage(index);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map((item) => item.str).join(' ');
+      if (text.toLowerCase().includes(searchText.toLowerCase())) matches.push(index);
     }
     setSearchMatchPages(matches);
     setSearchIdx(0);
@@ -187,8 +258,8 @@ export default function PDFViewer({
     setSearching(false);
   }, [searchText, fileUrl, goToPage]);
 
-  const searchNav = (dir) => {
-    const next = (searchIdx + dir + searchMatchPages.length) % searchMatchPages.length;
+  const searchNav = (direction) => {
+    const next = (searchIdx + direction + searchMatchPages.length) % searchMatchPages.length;
     setSearchIdx(next);
     goToPage(searchMatchPages[next]);
   };
@@ -225,7 +296,7 @@ export default function PDFViewer({
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-zinc-400 hover:text-white"
-            onClick={() => setShowThumbs((s) => !s)}
+            onClick={() => setShowThumbs((state) => !state)}
           >
             {showThumbs ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
           </Button>
@@ -242,9 +313,9 @@ export default function PDFViewer({
           <div className="flex items-center gap-1">
             <Input
               value={pageInput}
-              onChange={(e) => setPageInput(e.target.value)}
-              onBlur={() => goToPage(parseInt(pageInput) || 1)}
-              onKeyDown={(e) => e.key === 'Enter' && goToPage(parseInt(pageInput) || 1)}
+              onChange={(event) => setPageInput(event.target.value)}
+              onBlur={() => goToPage(parseInt(pageInput, 10) || 1)}
+              onKeyDown={(event) => event.key === 'Enter' && goToPage(parseInt(pageInput, 10) || 1)}
               className="w-10 h-6 text-center text-xs bg-zinc-700 border-zinc-600 px-1"
             />
             <span className="text-[11px] text-zinc-500 whitespace-nowrap">/ {numPages || '…'}</span>
@@ -284,6 +355,7 @@ export default function PDFViewer({
               setZoom(1);
               setPanX(0);
               setPanY(0);
+              setFocusOrigin('top center');
               debouncedPush({ currentPage, zoom: 1, panX: 0, panY: 0 });
             }}
           >
@@ -293,7 +365,7 @@ export default function PDFViewer({
             variant="ghost"
             size="icon"
             className={`h-7 w-7 ${showSearch ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`}
-            onClick={() => setShowSearch((s) => !s)}
+            onClick={() => setShowSearch((state) => !state)}
           >
             <Search className="w-3.5 h-3.5" />
           </Button>
@@ -305,8 +377,8 @@ export default function PDFViewer({
         <div className="flex items-center gap-2 px-2 py-1.5 bg-zinc-800/80 border-b border-zinc-700 shrink-0">
           <Input
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onChange={(event) => setSearchText(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
             placeholder="Search text in PDF…"
             className="flex-1 h-7 text-sm bg-zinc-700 border-zinc-600"
             autoFocus
@@ -346,9 +418,13 @@ export default function PDFViewer({
       <div className="flex flex-1 overflow-hidden">
         <Document
           file={fileUrl}
-          onLoadSuccess={({ numPages: n }) => {
-            setNumPages(n);
-            if (clippedPage) setCurrentPage(clippedPage);
+          onLoadSuccess={({ numPages: documentPages }) => {
+            setNumPages(documentPages);
+            onDocumentLoad?.({ numPages: documentPages });
+            if (clippedPage && controlledPage === undefined) {
+              setCurrentPage(clippedPage);
+              setPageInput(String(clippedPage));
+            }
           }}
           loading={
             <div className="flex items-center justify-center w-full h-full">
@@ -364,28 +440,31 @@ export default function PDFViewer({
           }
           className="flex flex-1 overflow-hidden w-full"
         >
-          {showThumbs && numPages && mode === 'controller' && (
+          {showThumbs && numPages && (mode === 'controller' || allowPageSelection) && (
             <div className="w-[88px] bg-zinc-950 overflow-y-auto shrink-0 border-r border-zinc-700 py-1">
-              {Array.from({ length: Math.min(numPages, 100) }, (_, i) => i + 1).map((p) => (
-                <div
-                  key={p}
-                  onClick={() => goToPage(p)}
-                  className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${
-                    currentPage === p ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''
-                  }`}
-                >
-                  <div className="w-[62px] overflow-hidden rounded border border-zinc-700 bg-white">
-                    <Page
-                      pageNumber={p}
-                      width={62}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                      loading={<div className="h-[80px] bg-zinc-700" />}
-                    />
+              {Array.from({ length: Math.min(numPages, 100) }, (_, index) => index + 1).map((page) => {
+                const isSelected = allowPageSelection && selectedPages.includes(page);
+                const isCurrent = currentPage === page;
+
+                return (
+                  <div
+                    key={page}
+                    onClick={(event) => handleThumbClick(page, event)}
+                    className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${isCurrent ? 'bg-zinc-700' : ''} ${isSelected ? 'ring-1 ring-inset ring-blue-500/70 bg-blue-500/10' : ''}`}
+                  >
+                    <div className="w-[62px] overflow-hidden rounded border border-zinc-700 bg-white">
+                      <Page
+                        pageNumber={page}
+                        width={62}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        loading={<div className="h-[80px] bg-zinc-700" />}
+                      />
+                    </div>
+                    <span className="text-[9px] text-zinc-500 mt-1">{page}</span>
                   </div>
-                  <span className="text-[9px] text-zinc-500 mt-1">{p}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -403,7 +482,7 @@ export default function PDFViewer({
             <div
               style={{
                 transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-                transformOrigin: 'top center',
+                transformOrigin: focusOrigin,
                 userSelect: 'none',
               }}
             >
@@ -411,25 +490,29 @@ export default function PDFViewer({
                 <Page
                   pageNumber={currentPage}
                   width={600}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
+                  renderTextLayer
+                  renderAnnotationLayer
                   customTextRenderer={textRenderer}
                   loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />}
                 />
-                {highlights.map((h, i) => (
+                {dimInactiveArea && currentPageHighlights.length > 0 && (
+                  <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+                )}
+                {currentPageHighlights.map((highlight, index) => (
                   <div
-                    key={i}
+                    key={`${currentPage}-${index}-${highlight.x}-${highlight.y}`}
                     style={{
                       position: 'absolute',
-                      left: `${h.x}%`,
-                      top: `${h.y}%`,
-                      width: `${h.width}%`,
-                      height: `${h.height}%`,
-                      background: h.color || '#fbbf24',
-                      opacity: h.opacity ?? 0.4,
+                      left: `${highlight.x}%`,
+                      top: `${highlight.y}%`,
+                      width: `${highlight.width}%`,
+                      height: `${highlight.height}%`,
+                      background: highlight.color || '#fbbf24',
+                      opacity: highlight.opacity ?? 0.45,
                       pointerEvents: 'none',
-                      borderRadius: '2px',
+                      borderRadius: '3px',
                       mixBlendMode: 'multiply',
+                      border: autoFocusHighlights || dimInactiveArea ? '2px solid rgba(250, 204, 21, 0.95)' : 'none',
                     }}
                   />
                 ))}

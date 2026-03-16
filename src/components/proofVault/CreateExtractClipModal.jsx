@@ -1,20 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand, Move } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
+import { getHighlightPages, getPrimaryHighlightPage } from '@/lib/proofPdfUtils';
 
 const HIGHLIGHT_COLORS = [
   { name: 'Yellow', hex: '#FEF3C7' },
@@ -45,11 +37,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const [highlights, setHighlights] = useState([]);
   const [selectedHighlight, setSelectedHighlight] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [highlightPage, setHighlightPage] = useState(null);
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [warning, setWarning] = useState('');
-  const [showPageWarning, setShowPageWarning] = useState(false);
-  const [pendingPage, setPendingPage] = useState(null);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -89,17 +78,19 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setHighlights([]);
     setSelectedHighlight(null);
     setCurrentPage(1);
-    setHighlightPage(null);
     setDraftHighlight(null);
     setWarning('');
-    setShowPageWarning(false);
-    setPendingPage(null);
   };
 
   useEffect(() => {
     if (!open || !parentExtract) return;
 
     if (isEditing) {
+      const normalizedHighlights = (Array.isArray(parentExtract.highlights) ? parentExtract.highlights : []).map((highlight) => ({
+        ...highlight,
+        page: Number.isInteger(highlight?.page) ? highlight.page : (parentExtract.clipped_page || 1),
+      }));
+
       setClipName(parentExtract.name || '');
       setFormalName(parentExtract.formal_name || '');
       setDraftExhibitNum(parentExtract.draft_exhibit_num || '');
@@ -107,44 +98,29 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setMode('highlight');
       setSelectedColor(HIGHLIGHT_COLORS[0].hex);
       setSelectedOpacity(0.45);
-      setHighlights(Array.isArray(parentExtract.highlights) ? parentExtract.highlights : []);
+      setHighlights(normalizedHighlights);
       setSelectedHighlight(null);
-      setCurrentPage(parentExtract.clipped_page || 1);
-      setHighlightPage(parentExtract.clipped_page || 1);
+      setCurrentPage(getPrimaryHighlightPage(normalizedHighlights, parentExtract.clipped_page || 1));
       setDraftHighlight(null);
       setWarning('');
-      setShowPageWarning(false);
-      setPendingPage(null);
       return;
     }
 
     resetForm();
   }, [open, parentExtract, isEditing]);
 
+  const overlayHighlights = useMemo(
+    () => highlights
+      .map((highlight, index) => ({ ...highlight, index }))
+      .filter((highlight) => (Number.isInteger(highlight.page) ? highlight.page : currentPage) === currentPage),
+    [highlights, currentPage]
+  );
+
+  const highlightPages = getHighlightPages(highlights, currentPage);
+
   const requestPageChange = (nextPage) => {
-    if (highlights.length > 0 && highlightPage && nextPage !== highlightPage) {
-      setPendingPage(nextPage);
-      setShowPageWarning(true);
-      return;
-    }
     setCurrentPage(nextPage);
     setSelectedHighlight(null);
-  };
-
-  const confirmSwitchPage = () => {
-    setHighlights([]);
-    setSelectedHighlight(null);
-    setHighlightPage(null);
-    if (pendingPage) {
-      setCurrentPage(pendingPage);
-    }
-    setPendingPage(null);
-    setShowPageWarning(false);
-  };
-
-  const cancelSwitchPage = () => {
-    setPendingPage(null);
-    setShowPageWarning(false);
   };
 
   const getPoint = (event) => {
@@ -172,7 +148,15 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
     if (mode !== 'highlight') return;
     dragStartRef.current = point;
-    setDraftHighlight({ x: point.x, y: point.y, width: 0, height: 0, color: selectedColor, opacity: selectedOpacity });
+    setDraftHighlight({
+      page: currentPage,
+      x: point.x,
+      y: point.y,
+      width: 0,
+      height: 0,
+      color: selectedColor,
+      opacity: selectedOpacity,
+    });
     setSelectedHighlight(null);
   };
 
@@ -185,11 +169,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       const nextX = clamp(startHighlight.x + (point.x - startPoint.x), 0, 100 - startHighlight.width);
       const nextY = clamp(startHighlight.y + (point.y - startPoint.y), 0, 100 - startHighlight.height);
 
-      setHighlights((prev) =>
-        prev.map((highlight, idx) =>
-          idx === selectedHighlight ? { ...highlight, x: nextX, y: nextY } : highlight
-        )
-      );
+      setHighlights((previous) => previous.map((highlight, index) => (
+        index === selectedHighlight ? { ...highlight, x: nextX, y: nextY } : highlight
+      )));
       return;
     }
 
@@ -197,6 +179,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
     const start = dragStartRef.current;
     setDraftHighlight({
+      page: currentPage,
       x: Math.min(start.x, point.x),
       y: Math.min(start.y, point.y),
       width: Math.abs(point.x - start.x),
@@ -215,8 +198,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     if (mode !== 'highlight' || !dragStartRef.current || !draftHighlight) return;
 
     if (draftHighlight.width > 0.8 && draftHighlight.height > 0.8) {
-      setHighlights((prev) => [...prev, draftHighlight]);
-      setHighlightPage(currentPage);
+      setHighlights((previous) => [...previous, draftHighlight]);
     }
 
     dragStartRef.current = null;
@@ -231,12 +213,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
   const deleteSelectedHighlight = () => {
     if (selectedHighlight === null) return;
-    const nextHighlights = highlights.filter((_, idx) => idx !== selectedHighlight);
-    setHighlights(nextHighlights);
+    setHighlights((previous) => previous.filter((_, index) => index !== selectedHighlight));
     setSelectedHighlight(null);
-    if (nextHighlights.length === 0) {
-      setHighlightPage(null);
-    }
   };
 
   const handleOpacityChange = (value) => {
@@ -244,11 +222,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setSelectedOpacity(nextOpacity);
 
     if (selectedHighlight !== null) {
-      setHighlights((prev) =>
-        prev.map((highlight, idx) =>
-          idx === selectedHighlight ? { ...highlight, opacity: nextOpacity } : highlight
-        )
-      );
+      setHighlights((previous) => previous.map((highlight, index) => (
+        index === selectedHighlight ? { ...highlight, opacity: nextOpacity } : highlight
+      )));
     }
   };
 
@@ -266,6 +242,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       return;
     }
 
+    const clippedPage = getPrimaryHighlightPage(highlights, currentPage);
+
     const clipData = {
       proof_category: actualParentExtract.proof_category,
       file_type: 'PDF',
@@ -279,7 +257,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       category_id: actualParentExtract.category_id || null,
       proof_type_category_id: actualParentExtract.proof_type_category_id,
       file_url: actualParentExtract.file_url,
-      clipped_page: highlightPage || currentPage,
+      clipped_page: clippedPage,
       highlights,
       draft_exhibit_num: draftExhibitNum.trim() || null,
     };
@@ -288,8 +266,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   };
 
   if (!parentExtract || !actualParentExtract) return null;
-
-  const overlayHighlights = currentPage === highlightPage ? highlights : [];
 
   const pageOverlay = (
     <div
@@ -306,11 +282,11 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
         }
       }}
     >
-      {overlayHighlights.map((highlight, idx) => (
+      {overlayHighlights.map((highlight) => (
         <button
-          key={idx}
+          key={highlight.index}
           type="button"
-          className={`absolute rounded-sm ${mode === 'select' ? 'cursor-pointer' : 'pointer-events-none'} ${selectedHighlight === idx ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
+          className={`absolute rounded-sm ${mode === 'select' ? 'cursor-pointer' : 'pointer-events-none'} ${selectedHighlight === highlight.index ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
           style={{
             left: `${highlight.x}%`,
             top: `${highlight.y}%`,
@@ -324,7 +300,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
           onClick={(event) => {
             if (mode !== 'select') return;
             event.stopPropagation();
-            setSelectedHighlight(idx);
+            setSelectedHighlight(highlight.index);
             setSelectedOpacity(highlight.opacity ?? 0.45);
           }}
         />
@@ -387,7 +363,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
           <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 space-y-3">
             <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 text-xs">
               <div className="text-slate-500 shrink-0 mr-1 whitespace-nowrap">
-                {highlightPage ? `Highlights on page ${highlightPage}.` : 'No highlights placed yet.'}
+                {highlights.length > 0
+                  ? `${highlights.length} highlight${highlights.length === 1 ? '' : 's'} across ${highlightPages.length} page${highlightPages.length === 1 ? '' : 's'}.`
+                  : 'No highlights placed yet.'}
               </div>
 
               <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shrink-0">
@@ -431,7 +409,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                   max="1"
                   step="0.05"
                   value={selectedOpacity}
-                  onChange={(e) => handleOpacityChange(e.target.value)}
+                  onChange={(event) => handleOpacityChange(event.target.value)}
                   className="w-full"
                 />
               </div>
@@ -445,26 +423,24 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                       ? 'Drag selected highlight to move'
                       : 'Pan with PDF controls'}
               </div>
-
-
             </div>
 
             <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
               <div>
                 <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
-                <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
+                <Input value={clipName} onChange={(event) => setClipName(event.target.value)} placeholder="e.g. Scene Close-up" />
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name *</label>
-                <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
+                <Input value={formalName} onChange={(event) => setFormalName(event.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
-                <Input value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} placeholder="e.g. A-1a" />
+                <Input value={draftExhibitNum} onChange={(event) => setDraftExhibitNum(event.target.value)} placeholder="e.g. A-1a" />
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
-                <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Additional notes" />
+                <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Additional notes" />
               </div>
             </div>
           </div>
@@ -476,21 +452,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
             </Button>
           </div>
         </div>
-
-        <AlertDialog open={showPageWarning} onOpenChange={setShowPageWarning}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Move highlights to another page?</AlertDialogTitle>
-              <AlertDialogDescription className="text-base text-slate-700">
-                Highlights can only live on one page. Proceeding will remove highlights from page {highlightPage} so you can create new highlights on page {pendingPage}.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="flex justify-end gap-2">
-              <AlertDialogCancel onClick={cancelSwitchPage}>No</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmSwitchPage}>Yes, remove old highlights</AlertDialogAction>
-            </div>
-          </AlertDialogContent>
-        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

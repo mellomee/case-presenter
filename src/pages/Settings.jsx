@@ -8,6 +8,7 @@ import AdmissionTemplatesTab from '@/components/settings/AdmissionTemplatesTab';
 import RolesTab from '@/components/settings/RolesTab';
 import CredentialsTab from '@/components/settings/CredentialsTab';
 import TrialPointCategoriesTab from '@/components/settings/TrialPointCategoriesTab';
+import ApiManagementTab from '@/components/settings/ApiManagementTab';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
@@ -72,6 +73,9 @@ export default function Settings() {
               <TabsTrigger value="trialPointCategories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
                 Trial Point Categories
               </TabsTrigger>
+              <TabsTrigger value="apiManagement" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
+                API & Storage
+              </TabsTrigger>
             </TabsList>
 
             <div className="p-4 sm:p-8">
@@ -95,6 +99,9 @@ export default function Settings() {
               </TabsContent>
               <TabsContent value="trialPointCategories" className="mt-0">
                 <TrialPointCategoriesTab />
+              </TabsContent>
+              <TabsContent value="apiManagement" className="mt-0">
+                <ApiManagementTab />
               </TabsContent>
             </div>
           </Tabs>
