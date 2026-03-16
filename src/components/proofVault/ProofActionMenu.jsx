@@ -99,7 +99,7 @@ export default function ProofActionMenu({
     }
 
     if ((isVideo && isTopLevel && hasAttachment) || (isExtract && hasAttachment)) {
-      actions.push({ id: 'clip', label: isExtract ? 'Highlight' : 'Clip', icon: Scissors, action: onClip, color: 'text-orange-600' });
+      actions.push({ id: 'clip', label: 'Clip', icon: Scissors, action: onClip, color: 'text-orange-600' });
     }
 
     const isOriginalPdfProof = isPDF && isTopLevel && !proof.proof_child_type;
