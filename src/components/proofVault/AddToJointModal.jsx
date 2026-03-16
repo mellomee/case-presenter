@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,11 +11,19 @@ export default function AddToJointModal({ open, onClose, proof }) {
   const queryClient = useQueryClient();
   const [jointExhibitNum, setJointExhibitNum] = useState('');
   const [jointBy, setJointBy] = useState('');
+  const [formalName, setFormalName] = useState('');
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
   });
+
+  useEffect(() => {
+    if (!open) return;
+    setJointExhibitNum('');
+    setJointBy('');
+    setFormalName(proof?.formal_name || '');
+  }, [open, proof]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
@@ -36,6 +44,7 @@ export default function AddToJointModal({ open, onClose, proof }) {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       setJointExhibitNum('');
       setJointBy('');
+      setFormalName('');
       onClose();
     },
     onError: (error) => {
@@ -44,7 +53,7 @@ export default function AddToJointModal({ open, onClose, proof }) {
   });
 
   const handleSubmit = () => {
-    if (!proof?.formal_name?.trim()) {
+    if (!formalName.trim()) {
       alert('Formal Name is required before moving an exhibit out of Draft.');
       return;
     }
@@ -59,6 +68,7 @@ export default function AddToJointModal({ open, onClose, proof }) {
 
     updateMutation.mutate({
       status: 'Joint',
+      formal_name: formalName.trim(),
       joint_exhibit_num: jointExhibitNum.trim(),
       joint_by: jointBy,
       joint_date: new Date().toISOString().split('T')[0],
@@ -79,6 +89,21 @@ export default function AddToJointModal({ open, onClose, proof }) {
               <p className="text-xs text-blue-700 mt-1">Current: Draft</p>
             </div>
           </div>
+
+          {!proof?.formal_name?.trim() && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Formal Name *
+              </label>
+              <Input
+                placeholder="Enter formal name"
+                value={formalName}
+                onChange={(e) => setFormalName(e.target.value)}
+                className="text-sm"
+              />
+              <p className="text-xs text-slate-500 mt-1">A Formal Name is required for Joint proofs.</p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
