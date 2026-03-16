@@ -21,26 +21,24 @@ function preloadProofAsset(url, fileType) {
   });
 }
 
-export function getResolvedProofAssetQueryOptions(proof) {
-  return {
-    queryKey: ['resolvedProofAsset', proof?.id, proof?.dropbox_file_id, proof?.dropbox_path, proof?.updated_date],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getDropboxTemporaryLink', {
-        fileId: proof?.dropbox_file_id,
-        path: proof?.dropbox_path,
-      });
+export const getResolvedProofAssetQueryOptions = (proof) => ({
+  queryKey: ['resolvedProofAsset', proof?.id, proof?.dropbox_file_id, proof?.dropbox_path, proof?.updated_date],
+  queryFn: async () => {
+    const response = await base44.functions.invoke('getDropboxTemporaryLink', {
+      fileId: proof?.dropbox_file_id,
+      path: proof?.dropbox_path,
+    });
 
-      const url = response.data?.url || '';
-      preloadProofAsset(url, proof?.file_type);
-      return url;
-    },
-    enabled: isDropboxProof(proof),
-    staleTime: 1000 * 60 * 30,
-    gcTime: 1000 * 60 * 60,
-  };
-}
+    const url = response.data?.url || '';
+    preloadProofAsset(url, proof?.file_type);
+    return url;
+  },
+  enabled: isDropboxProof(proof),
+  staleTime: 1000 * 60 * 30,
+  gcTime: 1000 * 60 * 60,
+});
 
-export async function prefetchResolvedProofAsset(queryClient, proof) {
+export const prefetchResolvedProofAsset = async (queryClient, proof) => {
   if (!proof) return '';
 
   if (!isDropboxProof(proof)) {
@@ -55,7 +53,7 @@ export async function prefetchResolvedProofAsset(queryClient, proof) {
   const url = await queryClient.fetchQuery(getResolvedProofAssetQueryOptions(proof));
   preloadProofAsset(url, proof?.file_type);
   return url;
-}
+};
 
 export default function useResolvedProofAsset(proof) {
   const isDropbox = isDropboxProof(proof);
