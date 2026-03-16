@@ -203,6 +203,7 @@ Deno.serve(async (req) => {
       ocr_applied: true,
     });
   } catch (error) {
+    console.error('prepareDropboxProof failed', error?.message || error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
