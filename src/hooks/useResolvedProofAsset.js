@@ -59,22 +59,20 @@ export async function prefetchResolvedProofAsset(queryClient, proof) {
 
 export default function useResolvedProofAsset(proof) {
   const isDropbox = isDropboxProof(proof);
+  const directUrl = proof?.file_type === 'Video'
+    ? (proof?.video_url || proof?.file_url || '')
+    : (proof?.file_url || proof?.video_url || '');
 
-  const query = useQuery({
-    queryKey: ['resolvedProofAsset', proof?.id, proof?.dropbox_file_id, proof?.dropbox_path, proof?.updated_date],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getDropboxTemporaryLink', {
-        fileId: proof?.dropbox_file_id,
-        path: proof?.dropbox_path,
-      });
-      return response.data?.url || '';
-    },
-    enabled: isDropbox,
-    staleTime: 1000 * 60 * 3,
-  });
+  const query = useQuery(getResolvedProofAssetQueryOptions(proof));
+
+  useEffect(() => {
+    if (!isDropbox && directUrl) {
+      preloadProofAsset(directUrl, proof?.file_type);
+    }
+  }, [isDropbox, directUrl, proof?.file_type]);
 
   return {
-    url: isDropbox ? (query.data || '') : (proof?.video_url || proof?.file_url || ''),
+    url: isDropbox ? (query.data || '') : directUrl,
     isLoading: isDropbox ? query.isLoading : false,
     isDropbox,
     error: query.error,
