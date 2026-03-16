@@ -122,7 +122,7 @@ export default function PDFViewer({
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, allowPan]);
+  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -171,7 +171,7 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   const handleMouseDown = (e) => {
     if (!allowPan) return;
