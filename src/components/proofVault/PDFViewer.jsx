@@ -22,6 +22,10 @@ export default function PDFViewer({
   allowPan = true,
   pageOverlay = null,
   visiblePages = null,
+  selectableThumbnails = false,
+  selectedPages = [],
+  onSelectedPagesChange,
+  thumbnailWidth = 62,
 }) {
   const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
@@ -96,6 +100,19 @@ export default function PDFViewer({
       if (mode === 'controller') debouncedPush({ currentPage: target, zoom, panX: 0, panY: 0 });
     },
     [pageNumbers.length, controlledPage, onPageChange, mode, debouncedPush, zoom]
+  );
+
+  const toggleThumbnailSelection = useCallback(
+    (pageNumber) => {
+      if (!selectableThumbnails || !onSelectedPagesChange) return;
+
+      const nextPages = selectedPages.includes(pageNumber)
+        ? selectedPages.filter((page) => page !== pageNumber)
+        : [...selectedPages, pageNumber].sort((a, b) => a - b);
+
+      onSelectedPagesChange(nextPages);
+    },
+    [selectableThumbnails, onSelectedPagesChange, selectedPages]
   );
 
   const applyZoom = useCallback(
@@ -358,19 +375,30 @@ export default function PDFViewer({
           className="flex flex-1 overflow-hidden w-full"
         >
           {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
-            <div className="w-[88px] bg-zinc-950 overflow-y-auto shrink-0 border-r border-zinc-700 py-1">
+            <div
+              className="bg-zinc-950 overflow-y-auto shrink-0 border-r border-zinc-700 py-1"
+              style={{ width: selectableThumbnails ? 76 : 88 }}
+            >
               {pageNumbers.slice(0, 100).map((pageNumber, index) => {
                 const pageIndex = index + 1;
+                const isCurrentPage = currentPage === pageIndex;
+                const isSelected = selectedPages.includes(pageNumber);
+
                 return (
                   <div
                     key={`${pageNumber}-${pageIndex}`}
-                    onClick={() => goToPage(pageIndex)}
-                    className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${currentPage === pageIndex ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
+                    onClick={() => {
+                      if (selectableThumbnails) {
+                        toggleThumbnailSelection(pageNumber);
+                      }
+                      goToPage(pageIndex);
+                    }}
+                    className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-400/70' : isCurrentPage ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
                   >
-                    <div className="w-[62px] overflow-hidden rounded border border-zinc-700 bg-white">
-                      <Page pageNumber={pageNumber} width={62} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
+                    <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
+                      <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
                     </div>
-                    <span className="text-[9px] text-zinc-500 mt-1">{pageNumber}</span>
+                    <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>{pageNumber}</span>
                   </div>
                 );
               })}

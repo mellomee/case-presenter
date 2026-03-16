@@ -14,7 +14,6 @@ import { AlertCircle, Upload, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
-import PDFPageSelector from './PDFPageSelector';
 import { compressPageRange, parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
@@ -245,22 +244,28 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
 
           {previewUrl && (
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">PDF Preview</label>
-                <div className="bg-slate-900 rounded-lg overflow-hidden h-72 border border-slate-200">
-                  <PDFViewer fileUrl={previewUrl} mode="viewer" />
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-1 block">PDF Preview</label>
+                  {extractSource === 'original' && (
+                    <p className="text-xs text-slate-500">Use the thumbnail rail to select original pages while keeping search, zoom, gestures, and page jump controls.</p>
+                  )}
                 </div>
+                {extractSource === 'original' && (
+                  <span className="text-xs font-mono text-blue-700 whitespace-nowrap pt-1">{selectedOriginalRange || 'No pages selected'}</span>
+                )}
               </div>
 
-              {extractSource === 'original' && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-slate-700">Select Original Pages *</label>
-                    <span className="text-xs font-mono text-blue-700">{selectedOriginalRange || 'No pages selected'}</span>
-                  </div>
-                  <PDFPageSelector fileUrl={previewUrl} selectedPages={selectedOriginalPages} onChange={setSelectedOriginalPages} />
-                </div>
-              )}
+              <div className="bg-slate-900 rounded-lg overflow-hidden h-[32rem] border border-slate-200">
+                <PDFViewer
+                  fileUrl={previewUrl}
+                  mode="controller"
+                  selectableThumbnails={extractSource === 'original'}
+                  selectedPages={selectedOriginalPages}
+                  onSelectedPagesChange={setSelectedOriginalPages}
+                  thumbnailWidth={54}
+                />
+              </div>
             </div>
           )}
 
