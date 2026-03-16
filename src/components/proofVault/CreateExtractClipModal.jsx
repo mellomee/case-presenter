@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand, Move, Plus, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
+import HighlightWorkspaceSidebar from './HighlightWorkspaceSidebar.jsx';
 import { parsePageRange } from './pageRangeUtils';
 import {
   createHighlightGroup,
@@ -47,6 +47,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const [currentPage, setCurrentPage] = useState(1);
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [warning, setWarning] = useState('');
+  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -91,6 +92,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setCurrentPage(1);
     setDraftHighlight(null);
     setWarning('');
+    setWorkspaceCollapsed(false);
   };
 
   useEffect(() => {
@@ -383,7 +385,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Extract Clip' : 'Create Extract Clip'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Highlights' : 'Add Highlights'}</DialogTitle>
         </DialogHeader>
 
         {warning && (
@@ -404,146 +406,62 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
             </div>
           </div>
 
-          {isResolvingParentUrl ? (
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading extract PDF...
-            </div>
-          ) : (
-            <div className="bg-slate-900 rounded-lg overflow-hidden h-[70vh] border border-slate-200">
-              <PDFViewer
-                fileUrl={resolvedParentUrl}
-                mode="controller"
+          <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
+            <div className="flex min-h-[70vh] max-h-[70vh]">
+              <HighlightWorkspaceSidebar
+                isCollapsed={workspaceCollapsed}
+                onToggleCollapsed={() => setWorkspaceCollapsed((value) => !value)}
+                groupsOnCurrentPage={groupsOnCurrentPage}
                 currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                allowPan={mode === 'pan'}
-                pageOverlay={pageOverlay}
-                visiblePages={visibleExtractPages.length > 0 ? visibleExtractPages : null}
+                mode={mode}
+                onModeChange={setMode}
+                selectedHighlight={selectedHighlight}
+                onDeleteSelectedHighlight={deleteSelectedHighlight}
+                colors={HIGHLIGHT_COLORS}
+                selectedColor={selectedColor}
+                onSelectColor={setSelectedColor}
+                selectedOpacity={selectedOpacity}
+                onOpacityChange={handleOpacityChange}
+                clipName={clipName}
+                onClipNameChange={setClipName}
+                formalName={formalName}
+                onFormalNameChange={setFormalName}
+                draftExhibitNum={draftExhibitNum}
+                onDraftExhibitNumChange={setDraftExhibitNum}
+                description={description}
+                onDescriptionChange={setDescription}
+                onCreateGroup={() => createGroupForCurrentPage()}
+                selectedGroupId={selectedGroupId}
+                onDeleteSelectedGroup={deleteSelectedGroup}
+                highlightGroups={highlightGroups}
+                onSelectGroup={(groupId, page) => {
+                  setSelectedGroupId(groupId);
+                  setCurrentPage(page);
+                  setSelectedHighlight(null);
+                }}
+                onRenameGroup={(groupId, nextName) => {
+                  setHighlightGroups((prev) => prev.map((item) => item.id === groupId ? { ...item, name: nextName } : item));
+                }}
               />
-            </div>
-          )}
 
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 space-y-4">
-            <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 text-xs">
-              <div className="text-slate-500 shrink-0 mr-1 whitespace-nowrap">
-                {groupsOnCurrentPage.length > 0 ? `${groupsOnCurrentPage.length} group${groupsOnCurrentPage.length === 1 ? '' : 's'} on page ${currentPage}.` : `No groups on page ${currentPage} yet.`}
-              </div>
-
-              <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shrink-0">
-                <Button type="button" size="icon" variant={mode === 'highlight' ? 'default' : 'ghost'} onClick={() => setMode('highlight')} className={mode === 'highlight' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'}>
-                  <Highlighter className="w-4 h-4" />
-                </Button>
-                <Button type="button" size="icon" variant={mode === 'select' ? 'default' : 'ghost'} onClick={() => setMode('select')} className={mode === 'select' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'}>
-                  <MousePointer2 className="w-4 h-4" />
-                </Button>
-                <Button type="button" size="icon" variant={mode === 'move-highlight' ? 'default' : 'ghost'} onClick={() => setMode('move-highlight')} disabled={!selectedHighlight} className={mode === 'move-highlight' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'}>
-                  <Move className="w-4 h-4" />
-                </Button>
-                <Button type="button" size="icon" variant={mode === 'pan' ? 'default' : 'ghost'} onClick={() => setMode('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700 h-7 w-7' : 'h-7 w-7'}>
-                  <Hand className="w-4 h-4" />
-                </Button>
-                {selectedHighlight && (
-                  <Button type="button" size="icon" variant="ghost" onClick={deleteSelectedHighlight} className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                {HIGHLIGHT_COLORS.map((color) => (
-                  <button
-                    key={color.hex}
-                    type="button"
-                    onClick={() => setSelectedColor(color.hex)}
-                    className={`w-7 h-7 rounded border-2 transition ${selectedColor === color.hex ? 'border-slate-900 shadow-md' : 'border-slate-300 hover:border-slate-500'}`}
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 min-w-[170px] flex-1 xl:max-w-[260px]">
-                <span className="text-slate-600 whitespace-nowrap">Opacity {Math.round(selectedOpacity * 100)}%</span>
-                <input type="range" min="0.1" max="1" step="0.05" value={selectedOpacity} onChange={(e) => handleOpacityChange(e.target.value)} className="w-full" />
-              </div>
-
-              <div className="text-slate-500 shrink-0 whitespace-nowrap">
-                {mode === 'highlight'
-                  ? 'Draw to add to the selected group, or start a new one on this page.'
-                  : mode === 'select'
-                    ? 'Click a highlight to select it.'
-                    : mode === 'move-highlight'
-                      ? 'Drag the selected highlight to reposition it.'
-                      : 'Pan the PDF with the viewer controls.'}
-              </div>
-            </div>
-
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
-              <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
-                  <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name</label>
-                  <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
-                  <Input value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} placeholder="e.g. A-1a" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
-                  <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Additional notes" />
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-900">Highlight Groups</h4>
-                  <div className="flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => createGroupForCurrentPage()} className="gap-2">
-                      <Plus className="w-4 h-4" /> New Group
-                    </Button>
-                    {selectedGroupId && (
-                      <Button type="button" size="sm" variant="ghost" onClick={deleteSelectedGroup} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                        Delete
-                      </Button>
-                    )}
+              <div className="flex-1 min-w-0 bg-slate-900">
+                {isResolvingParentUrl ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 h-full justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading extract PDF...
                   </div>
-                </div>
-
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  {highlightGroups.length === 0 ? (
-                    <p className="text-xs text-slate-500">Draw on the PDF or create a group manually to begin.</p>
-                  ) : (
-                    highlightGroups.map((group) => (
-                      <button
-                        key={group.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedGroupId(group.id);
-                          setCurrentPage(group.page);
-                          setSelectedHighlight(null);
-                        }}
-                        className={`w-full text-left rounded-lg border p-3 transition ${selectedGroupId === group.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <Input
-                            value={group.name}
-                            onChange={(e) => {
-                              const nextName = e.target.value;
-                              setHighlightGroups((prev) => prev.map((item) => item.id === group.id ? { ...item, name: nextName } : item));
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-8"
-                          />
-                          <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap">Page {group.page}</span>
-                        </div>
-                        <div className="text-xs text-slate-600">{group.highlights.length} highlight{group.highlights.length === 1 ? '' : 's'}</div>
-                      </button>
-                    ))
-                  )}
-                </div>
+                ) : (
+                  <div className="h-full overflow-hidden">
+                    <PDFViewer
+                      fileUrl={resolvedParentUrl}
+                      mode="controller"
+                      currentPage={currentPage}
+                      onPageChange={setCurrentPage}
+                      allowPan={mode === 'pan'}
+                      pageOverlay={pageOverlay}
+                      visiblePages={visibleExtractPages.length > 0 ? visibleExtractPages : null}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
