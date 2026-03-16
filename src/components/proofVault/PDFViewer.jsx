@@ -48,6 +48,8 @@ export default function PDFViewer({
   const dragRef = useRef({});
   const lastSelectedPageRef = useRef(null);
 
+  const shouldAutoFocusHighlights = autoFocusHighlights || (showHighlights && Array.isArray(highlights) && highlights.length > 0);
+  const shouldDimInactiveArea = dimInactiveArea || shouldAutoFocusHighlights;
   const currentPageHighlights = showHighlights
     ? getHighlightsForPage(highlights, currentPage, clippedPage || 1)
     : [];
@@ -76,7 +78,7 @@ export default function PDFViewer({
   }, [syncState, mode]);
 
   useEffect(() => {
-    if (!autoFocusHighlights) {
+    if (!shouldAutoFocusHighlights) {
       setFocusOrigin('top center');
       return;
     }
@@ -95,7 +97,7 @@ export default function PDFViewer({
     setZoom(targetZoom);
     setPanX(0);
     setPanY(0);
-  }, [autoFocusHighlights, focusBounds]);
+  }, [focusBounds, shouldAutoFocusHighlights]);
 
   const goToPage = useCallback(
     (page) => {
@@ -496,7 +498,7 @@ export default function PDFViewer({
                   customTextRenderer={textRenderer}
                   loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />}
                 />
-                {dimInactiveArea && currentPageHighlights.length > 0 && (
+                {shouldDimInactiveArea && currentPageHighlights.length > 0 && (
                   <div className="absolute inset-0 bg-black/35 pointer-events-none" />
                 )}
                 {currentPageHighlights.map((highlight, index) => (
@@ -513,7 +515,7 @@ export default function PDFViewer({
                       pointerEvents: 'none',
                       borderRadius: '2px',
                       mixBlendMode: 'multiply',
-                      border: autoFocusHighlights || dimInactiveArea ? '2px solid rgba(251, 191, 36, 0.95)' : 'none',
+                      border: shouldAutoFocusHighlights || shouldDimInactiveArea ? '2px solid rgba(251, 191, 36, 0.95)' : 'none',
                     }}
                   />
                 ))}
