@@ -27,6 +27,15 @@ function clamp(value, min = 0, max = 100) {
   return Math.min(Math.max(value, min), max);
 }
 
+function isValidHighlight(highlight) {
+  return Number.isFinite(highlight?.x)
+    && Number.isFinite(highlight?.y)
+    && Number.isFinite(highlight?.width)
+    && Number.isFinite(highlight?.height)
+    && highlight.width > 0
+    && highlight.height > 0;
+}
+
 export default function CreateExtractClipModal({ open, onClose, parentExtract, onSuccess }) {
   const queryClient = useQueryClient();
   const overlayRef = useRef(null);
@@ -220,18 +229,23 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       return;
     }
 
-    if (mode !== 'highlight' || !dragStartRef.current || !draftHighlight) return;
+    const nextHighlight = draftHighlight;
+    if (mode !== 'highlight' || !dragStartRef.current || !nextHighlight) return;
 
-    if (draftHighlight.width > 0.8 && draftHighlight.height > 0.8) {
-      const targetGroup = selectedGroup && selectedGroup.page === currentPage ? selectedGroup : createGroupForCurrentPage();
-      setHighlightGroups((prev) =>
-        prev.map((group) =>
-          group.id === targetGroup.id
-            ? { ...group, highlights: [...group.highlights, draftHighlight] }
-            : group
-        )
-      );
-      setSelectedGroupId(targetGroup.id);
+    if (isValidHighlight(nextHighlight) && nextHighlight.width > 0.8 && nextHighlight.height > 0.8) {
+      if (selectedGroup && selectedGroup.page === currentPage) {
+        setHighlightGroups((prev) =>
+          prev.map((group) =>
+            group.id === selectedGroup.id
+              ? { ...group, highlights: [...group.highlights, nextHighlight] }
+              : group
+          )
+        );
+        setSelectedGroupId(selectedGroup.id);
+      } else {
+        const targetGroup = createGroupForCurrentPage(nextHighlight);
+        setSelectedGroupId(targetGroup.id);
+      }
     }
 
     dragStartRef.current = null;
@@ -292,7 +306,12 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setWarning('Clip Name is required');
       return;
     }
-    const cleanedGroups = highlightGroups.filter((group) => group.highlights.length > 0);
+    const cleanedGroups = highlightGroups
+      .map((group) => ({
+        ...group,
+        highlights: group.highlights.filter(isValidHighlight),
+      }))
+      .filter((group) => group.highlights.length > 0);
     if (cleanedGroups.length === 0) {
       setWarning('Add at least one highlight group');
       return;

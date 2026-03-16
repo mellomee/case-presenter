@@ -1,21 +1,35 @@
+function isValidHighlight(highlight) {
+  return Number.isFinite(highlight?.x)
+    && Number.isFinite(highlight?.y)
+    && Number.isFinite(highlight?.width)
+    && Number.isFinite(highlight?.height)
+    && highlight.width > 0
+    && highlight.height > 0;
+}
+
 export function normalizeHighlightGroups(highlights, clippedPage = 1) {
   if (!Array.isArray(highlights) || highlights.length === 0) return [];
 
   if (Array.isArray(highlights[0]?.highlights)) {
-    return highlights.map((group, index) => ({
-      id: group.id || `group-${index + 1}`,
-      name: group.name || `Group ${index + 1}`,
-      page: Number(group.page) || clippedPage || 1,
-      highlights: Array.isArray(group.highlights) ? group.highlights : [],
-    }));
+    return highlights
+      .map((group, index) => ({
+        id: group.id || `group-${index + 1}`,
+        name: group.name || `Group ${index + 1}`,
+        page: Number(group.page) || clippedPage || 1,
+        highlights: (Array.isArray(group.highlights) ? group.highlights : []).filter(isValidHighlight),
+      }))
+      .filter((group) => group.highlights.length > 0);
   }
+
+  const validHighlights = highlights.filter(isValidHighlight);
+  if (validHighlights.length === 0) return [];
 
   return [
     {
       id: 'group-1',
       name: 'Group 1',
       page: clippedPage || 1,
-      highlights,
+      highlights: validHighlights,
     },
   ];
 }
