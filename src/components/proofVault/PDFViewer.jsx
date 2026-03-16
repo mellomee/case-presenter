@@ -26,9 +26,11 @@ export default function PDFViewer({
   onSelectedPagesChange,
   onDocumentLoad,
   showHighlights = true,
-  autoFocusHighlights = false,
-  dimInactiveArea = false,
+  autoFocusHighlights,
+  dimInactiveArea,
 }) {
+  const shouldAutoFocusHighlights = autoFocusHighlights ?? (Array.isArray(highlights) && highlights.length > 0);
+  const shouldDimInactiveArea = dimInactiveArea ?? shouldAutoFocusHighlights;
   const initialPage = controlledPage || clippedPage || getPrimaryHighlightPage(highlights, 1) || 1;
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(initialPage);
