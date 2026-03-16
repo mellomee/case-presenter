@@ -69,6 +69,9 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
 
+  const clipStatus = parentProof?.status;
+  const requiresFormalName = clipStatus && clipStatus !== 'Draft';
+
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (isEditing) {
@@ -189,8 +192,8 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setShowWarning(true);
       return;
     }
-    if (!formalName.trim()) {
-      setWarningMsg('Formal Name is required');
+    if (requiresFormalName && !formalName.trim()) {
+      setWarningMsg('Formal Name is required when the clip is not in Draft status');
       setShowWarning(true);
       return;
     }
@@ -205,7 +208,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       file_type: 'Video',
       proof_child_type: 'VideoClip',
       name: internalName.trim(),
-      formal_name: formalName.trim(),
+      formal_name: formalName.trim() || null,
       parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
       party_id: parentProof.party_id || null,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
@@ -365,7 +368,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name *</label>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name {requiresFormalName ? '*' : '(optional)'}</label>
               <Input
                 placeholder="e.g. Deposition Clip — Accident Account"
                 value={formalName}
