@@ -46,7 +46,7 @@ export default function ApiManagementTab() {
             <h3 className="font-semibold text-slate-900">Adobe PDF Services</h3>
           </div>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Adobe extraction and OCR use the app credentials already configured for this app.
+            Adobe extraction and OCR use app secrets. Base44 keeps secret values write-only, so they can be replaced but not shown inside the app.
           </p>
         </div>
 
