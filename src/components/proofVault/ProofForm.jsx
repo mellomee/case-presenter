@@ -69,7 +69,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       ? {
           id: proof.dropbox_file_id,
           path_display: proof.dropbox_path,
-          name: proof.dropbox_file_name || proof.formal_name,
+          name: proof.dropbox_file_name || proof.name,
         }
       : null
   );
@@ -239,7 +239,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       proof_category: proofCategory,
       file_type: fileType,
       name: formData.name.trim(),
-      formal_name: sourceType === 'dropbox' ? dropboxFileName : formData.formal_name.trim(),
+      formal_name: formData.formal_name.trim(),
       description: formData.description?.trim() || '',
       video_url: sourceType === 'url' ? formData.video_url.trim() : '',
     };
@@ -249,7 +249,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         ? {
             id: proof.dropbox_file_id,
             path_display: proof.dropbox_path,
-            name: proof.dropbox_file_name || proof.formal_name,
+            name: proof.dropbox_file_name || proof.name,
           }
         : null);
 
@@ -540,7 +540,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
                           setSelectedDropboxFile(null);
                           setFormData({
                             ...formData,
-                            formal_name: '',
                             dropbox_file_id: '',
                             dropbox_path: '',
                             dropbox_file_name: '',
