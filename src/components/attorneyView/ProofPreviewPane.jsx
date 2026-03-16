@@ -137,9 +137,12 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
               <PDFViewer
                 fileUrl={proof.file_url}
                 mode="controller"
+                syncState={pdfSyncState}
                 onStateChange={handlePdfStateChange}
                 highlights={proof.highlights || []}
                 clippedPage={proof.clipped_page || null}
+                showHighlights={hasHighlightFocus}
+                dimInactiveArea={hasHighlightFocus && !!highlightBounds}
               />
             )}
           </div>
