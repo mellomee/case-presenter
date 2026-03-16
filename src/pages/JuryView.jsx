@@ -2,53 +2,13 @@ import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import PDFViewer from '@/components/proofVault/PDFViewer';
+import { parsePageRange } from '@/components/proofVault/pageRangeUtils';
+import { getInitialHighlightPage } from '@/components/proofVault/highlightGroupUtils';
+import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { Loader2, Scale, Maximize } from 'lucide-react';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
-
-// ─── Sub-components ────────────────────────────────────────────────────────────
-
-function JuryPDF({ fileUrl, page, highlights = [] }) {
-  return (
-    <Document
-      file={fileUrl}
-      loading={<Loader2 className="w-10 h-10 animate-spin text-white/30" />}
-      className="flex items-center justify-center w-full h-full"
-    >
-      <div className="relative">
-        <Page
-          pageNumber={page || 1}
-          width={Math.min(window.innerWidth * 0.9, 1200)}
-          renderTextLayer={false}
-          renderAnnotationLayer={false}
-          loading={<div className="w-64 h-96 bg-zinc-800 animate-pulse rounded" />}
-        />
-        {highlights.map((h, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              left: `${h.x}%`,
-              top: `${h.y}%`,
-              width: `${h.width}%`,
-              height: `${h.height}%`,
-              background: h.color || '#fbbf24',
-              opacity: h.opacity ?? 0.4,
-              pointerEvents: 'none',
-              borderRadius: '2px',
-              mixBlendMode: 'multiply',
-            }}
-          />
-        ))}
-      </div>
-    </Document>
-  );
-}
-
-function JuryVideo({ proof, videoTime, isPlaying }) {
+function JuryVideo({ src, videoTime, isPlaying }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -67,12 +27,10 @@ function JuryVideo({ proof, videoTime, isPlaying }) {
 
   return (
     <div className="flex items-center justify-center w-full h-full bg-black">
-      <video ref={videoRef} src={proof.video_url || proof.file_url} className="max-w-full max-h-full" />
+      <video ref={videoRef} src={src} className="max-w-full max-h-full" />
     </div>
   );
 }
-
-// ─── Overlay badges ────────────────────────────────────────────────────────────
 
 function TopRightBadges({ proof, demoLabel }) {
   const isDemo = proof.status === 'Demonstrative';
@@ -93,8 +51,6 @@ function TopRightBadges({ proof, demoLabel }) {
     </div>
   );
 }
-
-// ─── Fullscreen button ─────────────────────────────────────────────────────────
 
 function FullscreenButton() {
   const handleFullscreen = () => {
@@ -117,8 +73,6 @@ function FullscreenButton() {
   );
 }
 
-// ─── Blank screen ──────────────────────────────────────────────────────────────
-
 function BlankScreen({ caseName }) {
   return (
     <div className="flex items-center justify-center w-full h-screen bg-black group">
@@ -133,30 +87,28 @@ function BlankScreen({ caseName }) {
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
-
 export default function JuryView() {
   const { juryState } = useJurySync('jury');
 
   const { data: proof } = useQuery({
     queryKey: ['juryProof', juryState?.published_proof_id],
-    queryFn: () => base44.entities.Proof.filter({ id: juryState.published_proof_id }).then(r => r[0]),
+    queryFn: () => base44.entities.Proof.filter({ id: juryState.published_proof_id }).then((r) => r[0]),
     enabled: !!juryState?.published_proof_id && !juryState?.is_blank,
   });
 
   const { data: settings } = useQuery({
     queryKey: ['appSettings'],
-    queryFn: () => base44.entities.AppSettings.list().then(r => r[0] || {}),
+    queryFn: () => base44.entities.AppSettings.list().then((r) => r[0] || {}),
   });
 
-  // Enter fullscreen automatically on load (best-effort)
+  const { url: resolvedAssetUrl, isLoading: isAssetLoading } = useResolvedProofAsset(proof);
+
   useEffect(() => {
     const tryFs = () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen?.().catch(() => {});
       }
     };
-    // Requires user gesture — attach to first click instead
     document.addEventListener('click', tryFs, { once: true });
     return () => document.removeEventListener('click', tryFs);
   }, []);
@@ -164,8 +116,11 @@ export default function JuryView() {
   const caseName = settings?.case_name || 'Case Presenter';
   const demoLabel = settings?.jury_demonstrative_label || 'For illustrative purposes only';
   const isBlank = !juryState || juryState.is_blank || !juryState.published_proof_id;
+  const visiblePages = proof?.proof_child_type === 'Extract' ? parsePageRange(proof.extract_pages || '') : null;
+  const initialClipPage = proof?.proof_child_type === 'ExtractClip'
+    ? getInitialHighlightPage(proof.highlights, proof.clipped_page || 1)
+    : null;
 
-  // Loading state (before JuryState record arrives)
   if (!juryState) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
@@ -178,8 +133,7 @@ export default function JuryView() {
     return <BlankScreen caseName={caseName} />;
   }
 
-  // Proof loading
-  if (!proof) {
+  if (!proof || isAssetLoading) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
         <Loader2 className="w-8 h-8 animate-spin text-white/15" />
@@ -189,38 +143,35 @@ export default function JuryView() {
 
   return (
     <div className="relative flex flex-col w-full h-screen bg-black overflow-hidden group">
-
-      {/* Top-right: Exhibit # + Demo label */}
       <TopRightBadges proof={proof} demoLabel={demoLabel} />
 
-      {/* Proof content */}
       <div className="flex-1 overflow-hidden flex items-center justify-center">
         {proof.file_type === 'Image' ? (
           <div className="flex items-center justify-center w-full h-full p-6">
-            <img
-              src={proof.file_url}
-              alt={proof.formal_name || proof.name}
-              className="max-w-full max-h-full object-contain"
-            />
+            <img src={resolvedAssetUrl || proof.file_url} alt={proof.formal_name || proof.name} className="max-w-full max-h-full object-contain" />
           </div>
         ) : proof.file_type === 'Video' ? (
-          <JuryVideo
-            proof={proof}
-            videoTime={juryState.video_time}
-            isPlaying={juryState.is_playing}
-          />
-        ) : proof.file_url ? (
-          <JuryPDF
-            fileUrl={proof.file_url}
-            page={juryState.pdf_page || 1}
+          <JuryVideo src={resolvedAssetUrl || proof.video_url || proof.file_url} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
+        ) : (resolvedAssetUrl || proof.file_url) ? (
+          <PDFViewer
+            fileUrl={resolvedAssetUrl || proof.file_url}
+            mode="viewer"
+            syncState={{
+              currentPage: juryState.pdf_page || 1,
+              zoom: juryState.zoom || 1,
+              panX: juryState.panX || 0,
+              panY: juryState.panY || 0,
+            }}
+            allowPan={false}
+            visiblePages={visiblePages?.length ? visiblePages : null}
             highlights={proof.highlights || []}
+            clippedPage={initialClipPage}
           />
         ) : (
           <p className="text-white/20 text-lg">No file attached</p>
         )}
       </div>
 
-      {/* Fullscreen toggle (visible on hover) */}
       <FullscreenButton />
     </div>
   );

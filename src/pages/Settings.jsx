@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import GeneralTab from '@/components/settings/GeneralTab';
+import DropboxTab from '@/components/settings/DropboxTab';
 import CategoriesTab from '@/components/settings/CategoriesTab';
 import ProofTypeCategoriesTab from '@/components/settings/ProofTypeCategoriesTab';
 import AdmissionTemplatesTab from '@/components/settings/AdmissionTemplatesTab';
@@ -28,10 +29,7 @@ export default function Settings() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h3 className="font-semibold text-red-900">Error loading Settings</h3>
             <p className="text-red-700 text-sm mt-2">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
+            <button onClick={() => setError(null)} className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
               Dismiss
             </button>
           </div>
@@ -51,51 +49,25 @@ export default function Settings() {
         <div className="bg-white rounded-lg shadow-sm border border-slate-200">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start rounded-none border-b border-slate-200 bg-transparent p-0 h-auto overflow-x-auto flex-nowrap">
-              <TabsTrigger value="general" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
-                General
-              </TabsTrigger>
-              <TabsTrigger value="categories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
-                Proof Categories
-              </TabsTrigger>
-              <TabsTrigger value="proofTypes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
-                Proof Types
-              </TabsTrigger>
-              <TabsTrigger value="templates" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
-                Admission Templates
-              </TabsTrigger>
-              <TabsTrigger value="roles" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
-                Roles
-              </TabsTrigger>
-              <TabsTrigger value="credentials" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
-                Credentials
-              </TabsTrigger>
-              <TabsTrigger value="trialPointCategories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">
-                Trial Point Categories
-              </TabsTrigger>
+              <TabsTrigger value="general" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">General</TabsTrigger>
+              <TabsTrigger value="dropbox" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Dropbox</TabsTrigger>
+              <TabsTrigger value="categories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Proof Categories</TabsTrigger>
+              <TabsTrigger value="proofTypes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Proof Types</TabsTrigger>
+              <TabsTrigger value="templates" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Admission Templates</TabsTrigger>
+              <TabsTrigger value="roles" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Roles</TabsTrigger>
+              <TabsTrigger value="credentials" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Credentials</TabsTrigger>
+              <TabsTrigger value="trialPointCategories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Trial Point Categories</TabsTrigger>
             </TabsList>
 
             <div className="p-4 sm:p-8">
-              <TabsContent value="general" className="mt-0">
-                <GeneralTab />
-              </TabsContent>
-              <TabsContent value="categories" className="mt-0">
-                <CategoriesTab />
-              </TabsContent>
-              <TabsContent value="proofTypes" className="mt-0">
-                <ProofTypeCategoriesTab />
-              </TabsContent>
-              <TabsContent value="templates" className="mt-0">
-                <AdmissionTemplatesTab />
-              </TabsContent>
-              <TabsContent value="roles" className="mt-0">
-                <RolesTab />
-              </TabsContent>
-              <TabsContent value="credentials" className="mt-0">
-                <CredentialsTab />
-              </TabsContent>
-              <TabsContent value="trialPointCategories" className="mt-0">
-                <TrialPointCategoriesTab />
-              </TabsContent>
+              <TabsContent value="general" className="mt-0"><GeneralTab /></TabsContent>
+              <TabsContent value="dropbox" className="mt-0"><DropboxTab /></TabsContent>
+              <TabsContent value="categories" className="mt-0"><CategoriesTab /></TabsContent>
+              <TabsContent value="proofTypes" className="mt-0"><ProofTypeCategoriesTab /></TabsContent>
+              <TabsContent value="templates" className="mt-0"><AdmissionTemplatesTab /></TabsContent>
+              <TabsContent value="roles" className="mt-0"><RolesTab /></TabsContent>
+              <TabsContent value="credentials" className="mt-0"><CredentialsTab /></TabsContent>
+              <TabsContent value="trialPointCategories" className="mt-0"><TrialPointCategoriesTab /></TabsContent>
             </div>
           </Tabs>
         </div>

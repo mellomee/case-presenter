@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { compressPageRange } from './pageRangeUtils';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
+import { countGroupedHighlights, countHighlightGroups } from './highlightGroupUtils';
+import { proofHasLinkedFile } from './proofAssetUtils';
 
-export default function ProofTile({ 
-  proof, 
-  allProofs = [], 
+export default function ProofTile({
+  proof,
+  allProofs = [],
   currentTab = 'draft',
-  onEdit, 
+  onEdit,
   onDelete,
   onExtract,
   onClip,
@@ -56,23 +56,22 @@ export default function ProofTile({
 
   const { data: party } = useQuery({
     queryKey: ['party', proof.party_id],
-    queryFn: () =>
-      proof.party_id ? base44.entities.Party.list().then((parties) => parties.find((p) => p.id === proof.party_id)) : null,
+    queryFn: () => proof.party_id ? base44.entities.Party.list().then((parties) => parties.find((p) => p.id === proof.party_id)) : null,
     enabled: !!proof.party_id,
   });
 
   const { data: category } = useQuery({
     queryKey: ['category', proof.category_id],
-    queryFn: () =>
-      proof.category_id ? base44.entities.Category.list().then((cats) => cats.find((c) => c.id === proof.category_id)) : null,
+    queryFn: () => proof.category_id ? base44.entities.Category.list().then((cats) => cats.find((c) => c.id === proof.category_id)) : null,
     enabled: !!proof.category_id,
   });
 
-  // Get children proofs
   const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
   const hasChildren = children.length > 0;
+  const hasAttachment = proofHasLinkedFile(proof);
+  const highlightGroupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
+  const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
 
-  // Determine party color label
   const getPartyColor = () => {
     if (!party) return 'bg-slate-100 text-slate-700';
     switch (party.side) {
@@ -109,144 +108,73 @@ export default function ProofTile({
     return '📎';
   };
 
-  const hasAttachment = proof.file_url || proof.video_url;
   const isParentProof = !proof.parent_proof_id && (proof.file_type === 'PDF' || proof.file_type === 'Video');
   const isExtract = proof.proof_child_type === 'Extract';
 
   const renderExhibitHistory = () => {
     const pills = [];
-    if (proof.draft_exhibit_num) {
-      pills.push(
-        <span key="draft" className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 font-mono">
-          D: {proof.draft_exhibit_num}
-        </span>
-      );
-    }
-    if (proof.joint_exhibit_num) {
-      pills.push(
-        <span key="joint" className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 font-mono">
-          J: {proof.joint_exhibit_num}
-        </span>
-      );
-    }
-    if (proof.admitted_exhibit_num) {
-      pills.push(
-        <span key="admitted" className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 font-mono">
-          Adm: {proof.admitted_exhibit_num}
-        </span>
-      );
-    } else if (proof.demonstrative_exhibit_num) {
-      pills.push(
-        <span key="demo" className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 font-mono">
-          Demo: {proof.demonstrative_exhibit_num}
-        </span>
-      );
-    }
+    if (proof.draft_exhibit_num) pills.push(<span key="draft" className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 font-mono">D: {proof.draft_exhibit_num}</span>);
+    if (proof.joint_exhibit_num) pills.push(<span key="joint" className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 font-mono">J: {proof.joint_exhibit_num}</span>);
+    if (proof.admitted_exhibit_num) pills.push(<span key="admitted" className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 font-mono">Adm: {proof.admitted_exhibit_num}</span>);
+    else if (proof.demonstrative_exhibit_num) pills.push(<span key="demo" className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 font-mono">Demo: {proof.demonstrative_exhibit_num}</span>);
     return pills.length > 0 ? pills : null;
   };
 
   return (
     <>
-      <Card
-        ref={cardRef}
-        className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}
-      >
-        {/* Header Row */}
-        <div
-          className="p-4 flex items-start gap-3"
-          onClick={() => setExpanded(!expanded)}
-        >
-          {hasChildren && (
-            <div className="mt-0.5">
-              {expanded ? (
-                <ChevronDown className="w-5 h-5 text-slate-400" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-slate-400" />
-              )}
-            </div>
-          )}
-          {!hasChildren && <div className="w-5" />}
+      <Card ref={cardRef} className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}>
+        <div className="p-4 flex items-start gap-3" onClick={() => setExpanded(!expanded)}>
+          {hasChildren ? (
+            <div className="mt-0.5">{expanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}</div>
+          ) : <div className="w-5" />}
 
-          {/* Name & Type */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{getFileTypeIcon()}</span>
               <h3 className="font-semibold text-slate-900 truncate">{proof.name}</h3>
-              {proof.formal_name && (
-                <span className="text-xs text-slate-500 italic truncate">({proof.formal_name})</span>
-              )}
+              {proof.formal_name && <span className="text-xs text-slate-500 italic truncate">({proof.formal_name})</span>}
             </div>
 
-            {/* Badges Row 1: Type, Party, Category, Attachment Status */}
             <div className="flex gap-2 mb-2 flex-wrap items-center">
-              <Badge variant="outline" className="text-xs">
-                {proof.file_type}
-              </Badge>
-              {party && (
-                <Badge className={`text-xs ${getPartyColor()}`}>
-                  {party.first_name} {party.last_name}
-                </Badge>
-              )}
+              <Badge variant="outline" className="text-xs">{proof.file_type}</Badge>
+              {proof.file_source === 'dropbox' && <Badge className="bg-blue-50 text-blue-700 text-xs">Dropbox</Badge>}
+              {party && <Badge className={`text-xs ${getPartyColor()}`}>{party.first_name} {party.last_name}</Badge>}
               {category && <Badge className="bg-slate-100 text-slate-700 text-xs">{category.name}</Badge>}
               {(isParentProof || isExtract) && (
                 hasAttachment ? (
-                  <div className="flex items-center gap-1 text-xs text-green-600">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Attached</span>
-                  </div>
+                  <div className="flex items-center gap-1 text-xs text-green-600"><CheckCircle2 className="w-3.5 h-3.5" /><span>Attached</span></div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs text-amber-600">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>No File</span>
-                  </div>
+                  <div className="flex items-center gap-1 text-xs text-amber-600"><AlertCircle className="w-3.5 h-3.5" /><span>No File</span></div>
                 )
               )}
             </div>
 
-            {/* Exhibit # History (for Exhibits) */}
-            {proof.proof_category === 'Exhibit' && renderExhibitHistory() && (
-              <div className="flex gap-1 mb-2 flex-wrap">{renderExhibitHistory()}</div>
-            )}
+            {proof.proof_category === 'Exhibit' && renderExhibitHistory() && <div className="flex gap-1 mb-2 flex-wrap">{renderExhibitHistory()}</div>}
 
-            {/* Extract Pages (for Extract child) */}
             {proof.proof_child_type === 'Extract' && proof.extract_pages && (
-              <div className="text-xs text-slate-600 mb-2">
-                Pages: <span className="font-mono font-semibold">{compressPageRange(proof.extract_pages.split(',').map(Number))}</span>
-              </div>
+              <div className="text-xs text-slate-600 mb-2">Pages: <span className="font-mono font-semibold">{proof.extract_pages}</span></div>
             )}
 
-            {/* Clipped Page (for ExtractClip grandchild) */}
-            {proof.proof_child_type === 'ExtractClip' && proof.clipped_page && (
+            {proof.proof_child_type === 'ExtractClip' && (
               <div className="text-xs text-slate-600 mb-2">
                 Page: <span className="font-mono font-semibold">{proof.clipped_page}</span>
-                {proof.highlights && Array.isArray(proof.highlights) && proof.highlights.length > 0 && (
-                  <span className="ml-2 text-amber-600">• {proof.highlights.length} highlight{proof.highlights.length !== 1 ? 's' : ''}</span>
-                )}
+                {highlightGroupCount > 0 && <span className="ml-2 text-amber-600">• {highlightGroupCount} group{highlightGroupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>}
               </div>
             )}
 
-            {/* Video Clips (for VideoClip child) */}
             {proof.proof_child_type === 'VideoClip' && proof.video_clips && Array.isArray(proof.video_clips) && proof.video_clips.length > 0 && (
               <div className="text-xs text-slate-600 mb-2">
                 <span className="text-amber-600">• {proof.video_clips.length} segment{proof.video_clips.length !== 1 ? 's' : ''}</span>
-                {proof.video_clips.length <= 2 && (
-                  <span className="ml-2 text-slate-500">
-                    {proof.video_clips.map((clip) => `${clip.start}–${clip.end}`).join(', ')}
-                  </span>
-                )}
               </div>
             )}
 
-            {/* Status Pill (for Exhibits) */}
-            {proof.proof_category === 'Exhibit' && (
+            {proof.proof_category === 'Exhibit' ? (
               <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
-            )}
-            {proof.proof_category === 'Deposition' && (
+            ) : (
               <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
             )}
           </div>
 
-          {/* Action Menu */}
           <div onClick={(e) => e.stopPropagation()}>
             <ProofActionMenu
               proof={proof}
@@ -266,7 +194,6 @@ export default function ProofTile({
           </div>
         </div>
 
-        {/* Children Accordion */}
         {expanded && hasChildren && (
           <div className="border-t border-slate-200 bg-slate-50">
             {children.map((child) => (

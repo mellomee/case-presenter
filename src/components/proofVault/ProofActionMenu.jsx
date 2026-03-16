@@ -21,7 +21,6 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogHeader,
@@ -29,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { proofHasLinkedFile } from './proofAssetUtils';
 
 export default function ProofActionMenu({
   proof,
@@ -48,13 +48,11 @@ export default function ProofActionMenu({
   const [deleteError, setDeleteError] = useState(null);
   const [deleteErrorOpen, setDeleteErrorOpen] = useState(false);
 
-  // Fetch child proofs
   const { data: childProofs = [] } = useQuery({
     queryKey: ['childProofs', proof.id],
     queryFn: () => allProofs.filter((p) => p.parent_proof_id === proof.id),
   });
 
-  // Fetch questions using this proof
   const { data: attachedQuestions = [] } = useQuery({
     queryKey: ['questionsWithProof', proof.id],
     queryFn: async () => {
@@ -64,158 +62,67 @@ export default function ProofActionMenu({
     },
   });
 
-  // Determine which actions to show based on tab and proof type
-  const getAvailableActions = () => {
-    const isTopLevel = !proof.parent_proof_id;
-    const isExtract = proof.proof_child_type === 'Extract';
-    const isExtractClip = proof.proof_child_type === 'ExtractClip';
-    const isVideoClip = proof.proof_child_type === 'VideoClip';
-    const isPDF = proof.file_type === 'PDF';
-    const isImage = proof.file_type === 'Image';
-    const isVideo = proof.file_type === 'Video';
-
-    const actions = [];
-
-    // EDIT - always available
-    actions.push({
-      id: 'edit',
-      label: 'Edit',
-      icon: Pencil,
-      action: onEdit,
-      color: 'text-blue-600',
-    });
-
-    // VIEW - always available if file exists
-    if (proof.file_url || proof.video_url) {
-      actions.push({
-        id: 'view',
-        label: 'View',
-        icon: Eye,
-        action: onView,
-        color: 'text-slate-600',
-      });
-    }
-
-    // EXTRACT - PDF top-level only
-    if (isPDF && isTopLevel && proof.file_url) {
-      actions.push({
-        id: 'extract',
-        label: 'Extract',
-        icon: Scissors,
-        action: onExtract,
-        color: 'text-orange-600',
-      });
-    }
-
-    // CLIP - Video top-level (file or video_url) or Extract only (with file)
-    if ((isVideo && isTopLevel && (proof.file_url || proof.video_url)) || (isExtract && proof.file_url)) {
-      actions.push({
-        id: 'clip',
-        label: 'Clip',
-        icon: Scissors,
-        action: onClip,
-        color: 'text-orange-600',
-      });
-    }
-
-    // DRAFT TAB
-    if ((currentTab === 'draft' || proof.status === 'Draft') && (proof.file_url || proof.video_url)) {
-      if (isTopLevel) {
-        actions.push({
-          id: 'addToJoint',
-          label: 'Add to Joint',
-          icon: Link2,
-          action: onAddToJoint,
-          color: 'text-blue-600',
-        });
-      }
-    }
-
-    // JOINT TAB
-    if (currentTab === 'joint' || proof.status === 'Joint') {
-      if (isTopLevel) {
-        actions.push({
-          id: 'admitAsExhibit',
-          label: 'Admit as Exhibit',
-          icon: CheckCircle,
-          action: onAdmitAsExhibit,
-          color: 'text-green-600',
-        });
-        actions.push({
-          id: 'admitAsDemonstrative',
-          label: 'Admit as Demonstrative',
-          icon: Copy,
-          action: onAdmitAsDemonstrative,
-          color: 'text-purple-600',
-        });
-        actions.push({
-          id: 'removeFromJoint',
-          label: 'Remove from Joint',
-          icon: Circle,
-          action: onRemoveFromJoint,
-          color: 'text-slate-600',
-        });
-      }
-    }
-
-    // ADMITTED TAB
-    if (currentTab === 'admitted' || proof.status === 'Admitted') {
-      actions.push({
-        id: 'unAdmit',
-        label: 'Un-Admit',
-        icon: Circle,
-        action: onUnAdmit,
-        color: 'text-slate-600',
-      });
-    }
-
-    // DEMONSTRATIVE TAB
-    if (currentTab === 'demonstrative' || proof.status === 'Demonstrative') {
-      actions.push({
-        id: 'unAdmit',
-        label: 'Un-Admit',
-        icon: Circle,
-        action: onUnAdmit,
-        color: 'text-slate-600',
-      });
-    }
-
-    // DELETE - always last with separator
-    actions.push({
-      id: 'delete',
-      label: 'Delete',
-      icon: Trash2,
-      action: handleDelete,
-      color: 'text-red-600',
-      separator: true,
-    });
-
-    return actions;
-  };
-
   const handleDelete = () => {
-    // Check for child proofs
     if (childProofs.length > 0) {
-      setDeleteError(
-        `This proof has ${childProofs.length} child proof${childProofs.length > 1 ? 's' : ''}. Delete all children first.`
-      );
+      setDeleteError(`This proof has ${childProofs.length} child proof${childProofs.length > 1 ? 's' : ''}. Delete all children first.`);
       setDeleteErrorOpen(true);
       return;
     }
 
-    // Check for attached questions
     if (attachedQuestions.length > 0) {
-      setDeleteError(
-        `This proof is attached to ${attachedQuestions.length} question${attachedQuestions.length > 1 ? 's' : ''}. Remove from all questions first.`
-      );
+      setDeleteError(`This proof is attached to ${attachedQuestions.length} question${attachedQuestions.length > 1 ? 's' : ''}. Remove from all questions first.`);
       setDeleteErrorOpen(true);
       return;
     }
 
-    // Safe to delete
     if (confirm('Are you sure you want to delete this proof?')) {
       onDelete(proof.id);
     }
+  };
+
+  const getAvailableActions = () => {
+    const isTopLevel = !proof.parent_proof_id;
+    const isExtract = proof.proof_child_type === 'Extract';
+    const isPDF = proof.file_type === 'PDF';
+    const isVideo = proof.file_type === 'Video';
+    const hasAttachment = proofHasLinkedFile(proof);
+    const actions = [];
+
+    actions.push({ id: 'edit', label: 'Edit', icon: Pencil, action: onEdit, color: 'text-blue-600' });
+
+    if (hasAttachment) {
+      actions.push({ id: 'view', label: 'View', icon: Eye, action: onView, color: 'text-slate-600' });
+    }
+
+    if (isPDF && isTopLevel && hasAttachment) {
+      actions.push({ id: 'extract', label: 'Extract', icon: Scissors, action: onExtract, color: 'text-orange-600' });
+    }
+
+    if ((isVideo && isTopLevel && hasAttachment) || (isExtract && hasAttachment)) {
+      actions.push({ id: 'clip', label: 'Clip', icon: Scissors, action: onClip, color: 'text-orange-600' });
+    }
+
+    if ((currentTab === 'draft' || proof.status === 'Draft') && hasAttachment && isTopLevel) {
+      actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
+    }
+
+    if ((currentTab === 'joint' || proof.status === 'Joint') && isTopLevel) {
+      actions.push({ id: 'admitAsExhibit', label: 'Admit as Exhibit', icon: CheckCircle, action: onAdmitAsExhibit, color: 'text-green-600' });
+      actions.push({ id: 'admitAsDemonstrative', label: 'Admit as Demonstrative', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
+      actions.push({ id: 'removeFromJoint', label: 'Remove from Joint', icon: Circle, action: onRemoveFromJoint, color: 'text-slate-600' });
+    }
+
+    if (currentTab === 'admitted' || proof.status === 'Admitted') {
+      actions.push({ id: 'unAdmit', label: 'Un-Admit', icon: Circle, action: onUnAdmit, color: 'text-slate-600' });
+    }
+
+    if (currentTab === 'demonstrative' || proof.status === 'Demonstrative') {
+      actions.push({ id: 'unAdmitDemo', label: 'Un-Admit', icon: Circle, action: onUnAdmit, color: 'text-slate-600' });
+    }
+
+    actions.push({ id: 'delete', label: 'Delete', icon: Trash2, action: handleDelete, color: 'text-red-600', separator: true });
+
+    return actions;
   };
 
   const actions = getAvailableActions();
@@ -229,7 +136,7 @@ export default function ProofActionMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          {actions.map((action, idx) => {
+          {actions.map((action) => {
             const Icon = action.icon;
             return (
               <div key={action.id}>
@@ -244,18 +151,13 @@ export default function ProofActionMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Delete Error Dialog */}
       <AlertDialog open={deleteErrorOpen} onOpenChange={setDeleteErrorOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cannot Delete Proof</AlertDialogTitle>
-            <AlertDialogDescription className="text-base text-slate-700">
-              {deleteError}
-            </AlertDialogDescription>
+            <AlertDialogDescription className="text-base text-slate-700">{deleteError}</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogAction onClick={() => setDeleteErrorOpen(false)}>
-            Understood
-          </AlertDialogAction>
+          <AlertDialogAction onClick={() => setDeleteErrorOpen(false)}>Understood</AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>
     </>
