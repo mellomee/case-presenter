@@ -47,12 +47,9 @@ export default function PDFViewer({
   const dragRef = useRef({});
   const lastSelectedPageRef = useRef(null);
 
-  const shouldAutoFocusHighlights = autoFocusHighlights || (showHighlights && Array.isArray(highlights) && highlights.length > 0);
-  const shouldDimInactiveArea = dimInactiveArea || shouldAutoFocusHighlights;
   const currentPageHighlights = showHighlights
     ? getHighlightsForPage(highlights, currentPage, clippedPage || 1)
     : [];
-  const focusBounds = getHighlightBounds(highlights, currentPage, clippedPage || 1);
 
   const debouncedPush = useCallback(
     debounce((nextState) => onStateChange && onStateChange(nextState), 250),
