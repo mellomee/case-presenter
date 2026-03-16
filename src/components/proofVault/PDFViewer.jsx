@@ -95,7 +95,7 @@ export default function PDFViewer({
     setZoom(targetZoom);
     setPanX(0);
     setPanY(0);
-  }, [autoFocusHighlights, highlights, currentPage, clippedPage]);
+  }, [shouldAutoFocusHighlights, highlights, currentPage, clippedPage]);
 
   const goToPage = useCallback(
     (page) => {
