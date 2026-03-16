@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2 } from 'lucide-react';
 import debounce from 'lodash/debounce';
+import { flattenHighlightGroupsForPage } from './highlightGroupUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -20,13 +21,15 @@ export default function PDFViewer({
   onPageChange,
   allowPan = true,
   pageOverlay = null,
+  visiblePages = null,
 }) {
+  const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
-  const [currentPage, setCurrentPage] = useState(controlledPage || clippedPage || 1);
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
-  const [pageInput, setPageInput] = useState(String(controlledPage || clippedPage || 1));
+  const [pageInput, setPageInput] = useState(String(initialPage));
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [searchMatchPages, setSearchMatchPages] = useState([]);
@@ -36,6 +39,19 @@ export default function PDFViewer({
   const containerRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
+
+  const pageNumbers = useMemo(() => {
+    if (Array.isArray(visiblePages) && visiblePages.length > 0) {
+      return visiblePages;
+    }
+    return Array.from({ length: numPages || 0 }, (_, index) => index + 1);
+  }, [visiblePages, numPages]);
+
+  const activePageNumber = pageNumbers[currentPage - 1] || clippedPage || 1;
+  const activeHighlights = useMemo(
+    () => flattenHighlightGroupsForPage(highlights, activePageNumber, clippedPage || activePageNumber),
+    [highlights, activePageNumber, clippedPage]
+  );
 
   const debouncedPush = useCallback(
     debounce((s) => onStateChange && onStateChange(s), 250),
@@ -59,10 +75,17 @@ export default function PDFViewer({
     if (syncState.panY !== undefined) setPanY(syncState.panY);
   }, [syncState, mode]);
 
+  useEffect(() => {
+    if (pageNumbers.length === 0) return;
+    if (currentPage > pageNumbers.length) {
+      setCurrentPage(1);
+      setPageInput('1');
+    }
+  }, [pageNumbers, currentPage]);
+
   const goToPage = useCallback(
-    (p) => {
-      if (clippedPage && p !== clippedPage) return;
-      const target = Math.min(Math.max(1, p), numPages || 1);
+    (pageIndex) => {
+      const target = Math.min(Math.max(1, pageIndex), pageNumbers.length || 1);
       if (controlledPage === undefined) {
         setCurrentPage(target);
         setPageInput(String(target));
@@ -72,12 +95,12 @@ export default function PDFViewer({
       onPageChange?.(target);
       if (mode === 'controller') debouncedPush({ currentPage: target, zoom, panX: 0, panY: 0 });
     },
-    [numPages, zoom, mode, debouncedPush, clippedPage, controlledPage, onPageChange]
+    [pageNumbers.length, controlledPage, onPageChange, mode, debouncedPush, zoom]
   );
 
   const applyZoom = useCallback(
-    (nz) => {
-      const z = Math.min(Math.max(nz, 0.2), 5);
+    (nextZoom) => {
+      const z = Math.min(Math.max(nextZoom, 0.2), 5);
       setZoom(z);
       if (mode === 'controller') debouncedPush({ currentPage, zoom: z, panX, panY });
     },
@@ -92,14 +115,14 @@ export default function PDFViewer({
       if (e.ctrlKey || e.metaKey) {
         applyZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1));
       } else if (allowPan) {
-        const ny = panY - e.deltaY * 0.5;
-        setPanY(ny);
-        if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY: ny });
+        const nextPanY = panY - e.deltaY * 0.5;
+        setPanY(nextPanY);
+        if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY: nextPanY });
       }
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, numPages]);
+  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, allowPan]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -132,13 +155,13 @@ export default function PDFViewer({
         touchRef.current.x = e.touches[0].clientX;
         touchRef.current.y = e.touches[0].clientY;
         setPanX((px) => {
-          const nx = px + dx;
+          const nextX = px + dx;
           setPanY((py) => {
-            const ny = py + dy;
-            if (mode === 'controller') debouncedPush({ currentPage, zoom, panX: nx, panY: ny });
-            return ny;
+            const nextY = py + dy;
+            if (mode === 'controller') debouncedPush({ currentPage, zoom, panX: nextX, panY: nextY });
+            return nextY;
           });
-          return nx;
+          return nextX;
         });
       }
     };
@@ -148,12 +171,13 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, numPages]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan]);
 
   const handleMouseDown = (e) => {
     if (!allowPan) return;
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
   };
+
   const handleMouseMove = (e) => {
     if (!dragRef.current.dragging) return;
     const dx = e.clientX - dragRef.current.x;
@@ -163,6 +187,7 @@ export default function PDFViewer({
     setPanX((px) => px + dx);
     setPanY((py) => py + dy);
   };
+
   const handleMouseUp = () => {
     if (dragRef.current.dragging) {
       dragRef.current.dragging = false;
@@ -174,23 +199,32 @@ export default function PDFViewer({
     if (!searchText.trim() || !fileUrl) return;
     setSearching(true);
     const pdf = await pdfjs.getDocument(fileUrl).promise;
+    const pagesToSearch = pageNumbers.length > 0 ? pageNumbers : Array.from({ length: pdf.numPages }, (_, index) => index + 1);
     const matches = [];
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const tc = await page.getTextContent();
-      const text = tc.items.map((item) => item.str).join(' ');
-      if (text.toLowerCase().includes(searchText.toLowerCase())) matches.push(i);
+
+    for (const pageNumber of pagesToSearch) {
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map((item) => item.str).join(' ');
+      if (text.toLowerCase().includes(searchText.toLowerCase())) {
+        matches.push(pageNumber);
+      }
     }
+
     setSearchMatchPages(matches);
     setSearchIdx(0);
-    if (matches.length > 0) goToPage(matches[0]);
+    if (matches.length > 0) {
+      const nextPageIndex = pageNumbers.indexOf(matches[0]) + 1;
+      goToPage(nextPageIndex || matches[0]);
+    }
     setSearching(false);
-  }, [searchText, fileUrl, goToPage]);
+  }, [searchText, fileUrl, goToPage, pageNumbers]);
 
   const searchNav = (dir) => {
     const next = (searchIdx + dir + searchMatchPages.length) % searchMatchPages.length;
     setSearchIdx(next);
-    goToPage(searchMatchPages[next]);
+    const nextPageIndex = pageNumbers.indexOf(searchMatchPages[next]) + 1;
+    goToPage(nextPageIndex || 1);
   };
 
   const textRenderer = useCallback(
@@ -221,59 +255,32 @@ export default function PDFViewer({
     <div className="flex flex-col h-full bg-zinc-900 select-none overflow-hidden">
       {mode === 'controller' && (
         <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-zinc-400 hover:text-white"
-            onClick={() => setShowThumbs((s) => !s)}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => setShowThumbs((value) => !value)}>
             {showThumbs ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
           </Button>
           <div className="w-px h-4 bg-zinc-600 mx-1" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-zinc-400 hover:text-white"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage <= 1}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-1">
             <Input
               value={pageInput}
               onChange={(e) => setPageInput(e.target.value)}
-              onBlur={() => goToPage(parseInt(pageInput) || 1)}
-              onKeyDown={(e) => e.key === 'Enter' && goToPage(parseInt(pageInput) || 1)}
+              onBlur={() => goToPage(parseInt(pageInput, 10) || 1)}
+              onKeyDown={(e) => e.key === 'Enter' && goToPage(parseInt(pageInput, 10) || 1)}
               className="w-10 h-6 text-center text-xs bg-zinc-700 border-zinc-600 px-1"
             />
-            <span className="text-[11px] text-zinc-500 whitespace-nowrap">/ {numPages || '…'}</span>
+            <span className="text-[11px] text-zinc-500 whitespace-nowrap">/ {pageNumbers.length || '…'}</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-zinc-400 hover:text-white"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={!numPages || currentPage >= numPages}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => goToPage(currentPage + 1)} disabled={!pageNumbers.length || currentPage >= pageNumbers.length}>
             <ChevronRight className="w-4 h-4" />
           </Button>
           <div className="w-px h-4 bg-zinc-600 mx-1" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-zinc-400 hover:text-white"
-            onClick={() => applyZoom(zoom - 0.15)}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => applyZoom(zoom - 0.15)}>
             <ZoomOut className="w-3.5 h-3.5" />
           </Button>
           <span className="text-[11px] text-zinc-400 w-9 text-center">{Math.round(zoom * 100)}%</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-zinc-400 hover:text-white"
-            onClick={() => applyZoom(zoom + 0.15)}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => applyZoom(zoom + 0.15)}>
             <ZoomIn className="w-3.5 h-3.5" />
           </Button>
           <Button
@@ -289,12 +296,7 @@ export default function PDFViewer({
           >
             <RotateCcw className="w-3 h-3" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-7 w-7 ${showSearch ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`}
-            onClick={() => setShowSearch((s) => !s)}
-          >
+          <Button variant="ghost" size="icon" className={`h-7 w-7 ${showSearch ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`} onClick={() => setShowSearch((value) => !value)}>
             <Search className="w-3.5 h-3.5" />
           </Button>
           <div className="flex-1" />
@@ -316,9 +318,7 @@ export default function PDFViewer({
           </Button>
           {searchMatchPages.length > 0 && (
             <>
-              <span className="text-xs text-zinc-400 whitespace-nowrap">
-                {searchIdx + 1} / {searchMatchPages.length}
-              </span>
+              <span className="text-xs text-zinc-400 whitespace-nowrap">{searchIdx + 1} / {searchMatchPages.length}</span>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400" onClick={() => searchNav(-1)}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -346,46 +346,34 @@ export default function PDFViewer({
       <div className="flex flex-1 overflow-hidden">
         <Document
           file={fileUrl}
-          onLoadSuccess={({ numPages: n }) => {
-            setNumPages(n);
-            if (clippedPage) setCurrentPage(clippedPage);
+          onLoadSuccess={({ numPages: nextPageCount }) => {
+            setNumPages(nextPageCount);
+            if (clippedPage && !visiblePages) {
+              setCurrentPage(clippedPage);
+              setPageInput(String(clippedPage));
+            }
           }}
-          loading={
-            <div className="flex items-center justify-center w-full h-full">
-              <Loader2 className="w-8 h-8 animate-spin text-zinc-500" />
-            </div>
-          }
-          error={
-            <div className="text-red-400 text-sm p-8 text-center">
-              Failed to load PDF.
-              <br />
-              Check file URL.
-            </div>
-          }
+          loading={<div className="flex items-center justify-center w-full h-full"><Loader2 className="w-8 h-8 animate-spin text-zinc-500" /></div>}
+          error={<div className="text-red-400 text-sm p-8 text-center">Failed to load PDF.<br />Check file URL.</div>}
           className="flex flex-1 overflow-hidden w-full"
         >
-          {showThumbs && numPages && mode === 'controller' && (
+          {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
             <div className="w-[88px] bg-zinc-950 overflow-y-auto shrink-0 border-r border-zinc-700 py-1">
-              {Array.from({ length: Math.min(numPages, 100) }, (_, i) => i + 1).map((p) => (
-                <div
-                  key={p}
-                  onClick={() => goToPage(p)}
-                  className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${
-                    currentPage === p ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''
-                  }`}
-                >
-                  <div className="w-[62px] overflow-hidden rounded border border-zinc-700 bg-white">
-                    <Page
-                      pageNumber={p}
-                      width={62}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                      loading={<div className="h-[80px] bg-zinc-700" />}
-                    />
+              {pageNumbers.slice(0, 100).map((pageNumber, index) => {
+                const pageIndex = index + 1;
+                return (
+                  <div
+                    key={`${pageNumber}-${pageIndex}`}
+                    onClick={() => goToPage(pageIndex)}
+                    className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${currentPage === pageIndex ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
+                  >
+                    <div className="w-[62px] overflow-hidden rounded border border-zinc-700 bg-white">
+                      <Page pageNumber={pageNumber} width={62} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
+                    </div>
+                    <span className="text-[9px] text-zinc-500 mt-1">{pageNumber}</span>
                   </div>
-                  <span className="text-[9px] text-zinc-500 mt-1">{p}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -400,33 +388,20 @@ export default function PDFViewer({
               if (dragRef.current.dragging) dragRef.current.dragging = false;
             }}
           >
-            <div
-              style={{
-                transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-                transformOrigin: 'top center',
-                userSelect: 'none',
-              }}
-            >
+            <div style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})`, transformOrigin: 'top center', userSelect: 'none' }}>
               <div className="relative shadow-2xl">
-                <Page
-                  pageNumber={currentPage}
-                  width={600}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                  customTextRenderer={textRenderer}
-                  loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />}
-                />
-                {highlights.map((h, i) => (
+                <Page pageNumber={activePageNumber} width={600} renderTextLayer={true} renderAnnotationLayer={true} customTextRenderer={textRenderer} loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />} />
+                {activeHighlights.map((highlight) => (
                   <div
-                    key={i}
+                    key={`${highlight.__groupId || 'legacy'}-${highlight.__highlightIndex ?? `${highlight.x}-${highlight.y}`}`}
                     style={{
                       position: 'absolute',
-                      left: `${h.x}%`,
-                      top: `${h.y}%`,
-                      width: `${h.width}%`,
-                      height: `${h.height}%`,
-                      background: h.color || '#fbbf24',
-                      opacity: h.opacity ?? 0.4,
+                      left: `${highlight.x}%`,
+                      top: `${highlight.y}%`,
+                      width: `${highlight.width}%`,
+                      height: `${highlight.height}%`,
+                      background: highlight.color || '#fbbf24',
+                      opacity: highlight.opacity ?? 0.4,
                       pointerEvents: 'none',
                       borderRadius: '2px',
                       mixBlendMode: 'multiply',
