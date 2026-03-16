@@ -514,7 +514,7 @@ export default function PDFViewer({
                       pointerEvents: 'none',
                       borderRadius: '3px',
                       mixBlendMode: 'multiply',
-                      border: autoFocusHighlights || dimInactiveArea ? '2px solid rgba(250, 204, 21, 0.95)' : 'none',
+                      border: shouldAutoFocusHighlights || shouldDimInactiveArea ? '2px solid rgba(250, 204, 21, 0.95)' : 'none',
                     }}
                   />
                 ))}
