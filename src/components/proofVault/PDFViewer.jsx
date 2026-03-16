@@ -77,7 +77,7 @@ export default function PDFViewer({
   }, [syncState, mode]);
 
   useEffect(() => {
-    if (!autoFocusHighlights) {
+    if (!shouldAutoFocusHighlights) {
       setFocusOrigin('top center');
       return;
     }
