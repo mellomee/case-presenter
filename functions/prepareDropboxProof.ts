@@ -156,7 +156,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'A Dropbox file is required.' }, { status: 400 });
     }
 
-    const sourceReference = fileId ? `id:${fileId}` : originalPath;
+    const sourceReference = fileId
+      ? (String(fileId).startsWith('id:') ? fileId : `id:${fileId}`)
+      : originalPath;
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
 
     if (!fileName?.toLowerCase().endsWith('.pdf')) {

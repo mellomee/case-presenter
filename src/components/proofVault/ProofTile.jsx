@@ -129,10 +129,17 @@ export default function ProofTile({
           ) : <div className="w-5" />}
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">{getFileTypeIcon()}</span>
-              <h3 className="font-semibold text-slate-900 truncate">{proof.name}</h3>
-              {proof.formal_name && <span className="text-xs text-slate-500 italic truncate">({proof.formal_name})</span>}
+            <div className="flex items-start gap-2 mb-2">
+              <span className="text-lg mt-0.5">{getFileTypeIcon()}</span>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-slate-900 truncate">{proof.name}</h3>
+                {proof.formal_name && (
+                  <div className="text-xs text-slate-500 truncate">Formal Name: {proof.formal_name}</div>
+                )}
+                {proof.file_source === 'dropbox' && proof.dropbox_file_name && (
+                  <div className="text-xs text-slate-500 truncate">Source Filename: {proof.dropbox_file_name}</div>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-2 mb-2 flex-wrap items-center">

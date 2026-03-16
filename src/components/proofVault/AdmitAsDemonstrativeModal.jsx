@@ -52,7 +52,7 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
           <div className="bg-purple-50 border border-purple-200 rounded-md p-3 flex gap-2">
             <CheckCircle2 className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-purple-900">Proof: {proof?.formal_name}</p>
+              <p className="text-sm font-medium text-purple-900">Proof: {proof?.name}</p>
               <p className="text-xs text-purple-700 mt-1">Current: Joint (Ex. {proof?.joint_exhibit_num})</p>
             </div>
           </div>

@@ -69,7 +69,7 @@ export default function UnAdmitModal({ open, onClose, proof }) {
           <div className="bg-orange-50 border border-orange-200 rounded-md p-3 flex gap-2">
             <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-orange-900">Proof: {proof?.formal_name}</p>
+              <p className="text-sm font-medium text-orange-900">Proof: {proof?.name}</p>
               <p className="text-xs text-orange-700 mt-1">
                 Current: {statusLabel} (Ex. {exhibitNum})
               </p>

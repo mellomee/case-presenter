@@ -44,6 +44,10 @@ export default function AddToJointModal({ open, onClose, proof }) {
   });
 
   const handleSubmit = () => {
+    if (!proof?.formal_name?.trim()) {
+      alert('Formal Name is required before moving an exhibit out of Draft.');
+      return;
+    }
     if (!jointExhibitNum.trim()) {
       alert('Joint Exhibit # is required.');
       return;
@@ -71,7 +75,7 @@ export default function AddToJointModal({ open, onClose, proof }) {
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex gap-2">
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-blue-900">Proof: {proof?.formal_name}</p>
+              <p className="text-sm font-medium text-blue-900">Proof: {proof?.name}</p>
               <p className="text-xs text-blue-700 mt-1">Current: Draft</p>
             </div>
           </div>

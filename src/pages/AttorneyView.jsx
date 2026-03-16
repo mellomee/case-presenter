@@ -61,7 +61,7 @@ function buildChildren(parentId, questions) {
 
 function buildBlockText(block, proofs) {
   const proof = proofs.find(p => p.id === block.proof_id);
-  return proof ? `[Admission Block] ${proof.formal_name || proof.name}` : '[Admission Block]';
+  return proof ? `[Admission Block] ${proof.name}` : '[Admission Block]';
 }
 
 export default function AttorneyView() {

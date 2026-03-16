@@ -66,9 +66,13 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
             )}
             <Badge className={`text-xs ${statusPill(proof)}`}>{proof.status}</Badge>
           </div>
-          <p className="text-sm font-semibold text-white leading-tight truncate">
-            {proof.formal_name || proof.name}
-          </p>
+          <p className="text-sm font-semibold text-white leading-tight truncate">{proof.name}</p>
+          {proof.formal_name && (
+            <p className="text-xs text-slate-400 truncate mt-1">Formal Name: {proof.formal_name}</p>
+          )}
+          {proof.file_source === 'dropbox' && proof.dropbox_file_name && (
+            <p className="text-xs text-slate-500 truncate mt-1">Source Filename: {proof.dropbox_file_name}</p>
+          )}
         </div>
         <div className="flex gap-1 flex-shrink-0">
           {proof.file_url && (
@@ -92,7 +96,7 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
               <div className="flex items-center justify-center h-full p-4">
                 <img
                   src={proof.file_url}
-                  alt={proof.formal_name || proof.name}
+                  alt={proof.name}
                   className="max-w-full max-h-full object-contain rounded"
                 />
               </div>

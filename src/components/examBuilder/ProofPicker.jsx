@@ -13,7 +13,8 @@ function ProofItem({ proof, selected, onToggle }) {
         className="mt-0.5"
       />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800 leading-snug">{proof.formal_name || proof.name}</p>
+        <p className="text-sm font-medium text-slate-800 leading-snug">{proof.name}</p>
+        {proof.formal_name && <p className="text-xs text-slate-500 mt-0.5">Formal Name: {proof.formal_name}</p>}
         <div className="flex gap-2 mt-0.5 flex-wrap">
           {proof.joint_exhibit_num && (
             <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">J: {proof.joint_exhibit_num}</span>

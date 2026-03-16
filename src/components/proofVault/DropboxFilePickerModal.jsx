@@ -48,14 +48,14 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="w-[min(96vw,64rem)] max-w-4xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>Select Dropbox {fileType}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-slate-600">
               <Button
                 type="button"
                 variant="outline"
@@ -66,17 +66,17 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
               >
                 <ChevronLeft className="w-4 h-4" /> Up
               </Button>
-              <span className="font-mono text-xs break-all">{currentPath || '/'}</span>
+              <span className="min-w-0 truncate font-mono text-xs">{currentPath || '/'}</span>
             </div>
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filter files"
-              className="sm:max-w-xs"
+              className="w-full sm:w-72 sm:flex-none"
             />
           </div>
 
-          <div className="rounded-lg border border-slate-200 max-h-[28rem] overflow-y-auto">
+          <div className="rounded-lg border border-slate-200 max-h-[28rem] overflow-y-auto overflow-x-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center py-12 text-slate-500">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Dropbox files...
@@ -87,7 +87,7 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
               filteredEntries.map((entry) => (
                 <div
                   key={entry.id || entry.path_display}
-                  className="flex items-center justify-between gap-3 px-4 py-3 border-b last:border-b-0 border-slate-100"
+                  className="flex flex-col items-start gap-3 px-4 py-3 border-b last:border-b-0 border-slate-100 sm:flex-row sm:items-center"
                 >
                   <button
                     type="button"
@@ -113,7 +113,7 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
                     <Button
                       type="button"
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 gap-2"
+                      className="bg-blue-600 hover:bg-blue-700 gap-2 self-end shrink-0 sm:self-auto"
                       onClick={() => {
                         onSelect?.(entry);
                         onClose?.();

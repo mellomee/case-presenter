@@ -45,6 +45,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       proof_category: 'Exhibit',
       file_type: 'PDF',
       proof_child_type: null,
+      status: 'Draft',
       name: '',
       formal_name: '',
       description: '',
@@ -201,15 +202,18 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     setSelectedDropboxFile(file);
     setUploadedFileName(null);
     setSourceType('dropbox');
-    setFormData((current) => ({
-      ...current,
-      formal_name: file.name,
-      file_source: 'dropbox',
-      file_url: '',
-      dropbox_file_id: file.id,
-      dropbox_path: file.path_display,
-      dropbox_file_name: file.name,
-    }));
+    setFormData((current) => {
+      const shouldSyncInternalName = !current.name?.trim() || current.name === current.dropbox_file_name;
+      return {
+        ...current,
+        name: shouldSyncInternalName ? file.name : current.name,
+        file_source: 'dropbox',
+        file_url: '',
+        dropbox_file_id: file.id,
+        dropbox_path: file.path_display,
+        dropbox_file_name: file.name,
+      };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -266,7 +270,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         nextPayload = {
           ...nextPayload,
           ...response.data,
-          formal_name: response.data.dropbox_file_name || dropboxSelection.name,
           file_url: '',
           video_url: '',
         };
@@ -277,7 +280,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           dropbox_file_id: dropboxSelection.id,
           dropbox_path: dropboxSelection.path_display,
           dropbox_file_name: dropboxSelection.name,
-          formal_name: dropboxSelection.name,
           file_url: '',
           video_url: '',
         };
@@ -301,8 +303,9 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       };
     }
 
-    if (!nextPayload.formal_name?.trim()) {
-      alert('Formal Name is required.');
+    const currentStatus = nextPayload.status || proof?.status || 'Draft';
+    if (proofCategory === 'Exhibit' && currentStatus !== 'Draft' && !nextPayload.formal_name?.trim()) {
+      alert('Formal Name is required once an exhibit leaves Draft.');
       return;
     }
 
@@ -362,28 +365,45 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className={sourceType === 'dropbox' ? 'grid gap-4 md:grid-cols-3' : 'grid gap-4 md:grid-cols-2'}>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Internal Name *</label>
-            <Input
-              placeholder="e.g., Scene Photo 1"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
+            <div className="relative">
+              <Input
+                placeholder="e.g., Scene Photo 1"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className={formData.name ? 'pr-10' : ''}
+                required
+              />
+              {formData.name && (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, name: '' })}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  aria-label="Clear internal name"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Formal Name {sourceType === 'dropbox' ? '' : '*'}</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Formal Name</label>
             <Input
-              placeholder={sourceType === 'dropbox' ? 'Will use the Dropbox filename' : 'e.g., Photograph of Intersection'}
-              value={sourceType === 'dropbox' ? dropboxFileName : formData.formal_name}
+              placeholder="e.g., Photograph of Intersection"
+              value={formData.formal_name}
               onChange={(e) => setFormData({ ...formData, formal_name: e.target.value })}
-              readOnly={sourceType === 'dropbox'}
             />
-            {sourceType === 'dropbox' && (
-              <p className="text-xs text-slate-500 mt-1">Filled automatically from the Dropbox filename.</p>
-            )}
+            <p className="text-xs text-slate-500 mt-1">Required before an exhibit is moved out of Draft.</p>
           </div>
+          {sourceType === 'dropbox' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Source Filename</label>
+              <Input value={dropboxFileName} readOnly />
+              <p className="text-xs text-slate-500 mt-1">Pulled directly from Dropbox.</p>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -505,6 +525,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
               {selectedDropboxFile ? (
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
+                    <div className="text-[11px] uppercase tracking-wide text-slate-400 mb-0.5">Source Filename</div>
                     <div className="text-sm font-medium text-slate-800 truncate">{selectedDropboxFile.name}</div>
                     <div className="text-xs text-slate-500 truncate">{selectedDropboxFile.path_display}</div>
                   </div>
