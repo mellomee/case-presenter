@@ -448,7 +448,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         <>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Video URL (YouTube, Dropbox, etc.)
+              Video URL or Dropbox shared link
             </label>
             <Input
               placeholder="https://..."
