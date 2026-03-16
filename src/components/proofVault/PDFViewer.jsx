@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2 } from 'lucide-react';
 import debounce from 'lodash/debounce';
-import { getHighlightBounds, getHighlightsForPage, getPrimaryHighlightPage, sortUniquePages } from '@/lib/proofPdfUtils';
+import { getHighlightsForPage, getPrimaryHighlightPage, sortUniquePages } from '@/lib/proofPdfUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
