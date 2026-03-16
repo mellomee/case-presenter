@@ -43,7 +43,7 @@ export default function HighlightWorkspaceSidebar({
   }
 
   return (
-    <aside className="w-80 max-w-full h-full border-r border-slate-200 bg-slate-50 flex flex-col">
+    <aside className="w-80 max-w-full h-full min-h-0 border-r border-slate-200 bg-slate-50 flex flex-col">
       <div className="p-3 border-b border-slate-200 flex items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-slate-900">Highlight Workspace</div>
@@ -56,7 +56,7 @@ export default function HighlightWorkspaceSidebar({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 pr-2 space-y-4">
         <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tools</div>
           <div className="flex flex-wrap gap-1">
@@ -110,26 +110,6 @@ export default function HighlightWorkspaceSidebar({
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Details</div>
-          <div>
-            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
-            <Input value={clipName} onChange={(e) => onClipNameChange(e.target.value)} placeholder="e.g. Scene Close-up" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name</label>
-            <Input value={formalName} onChange={(e) => onFormalNameChange(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
-            <Input value={draftExhibitNum} onChange={(e) => onDraftExhibitNumChange(e.target.value)} placeholder="e.g. A-1a" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
-            <Input value={description} onChange={(e) => onDescriptionChange(e.target.value)} placeholder="Additional notes" />
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-slate-900">Highlight Groups</h4>
             <div className="flex gap-2">
@@ -168,6 +148,26 @@ export default function HighlightWorkspaceSidebar({
                 </button>
               ))
             )}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Details</div>
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
+            <Input value={clipName} onChange={(e) => onClipNameChange(e.target.value)} placeholder="e.g. Scene Close-up" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name</label>
+            <Input value={formalName} onChange={(e) => onFormalNameChange(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
+            <Input value={draftExhibitNum} onChange={(e) => onDraftExhibitNumChange(e.target.value)} placeholder="e.g. A-1a" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
+            <Input value={description} onChange={(e) => onDescriptionChange(e.target.value)} placeholder="Additional notes" />
           </div>
         </div>
       </div>
