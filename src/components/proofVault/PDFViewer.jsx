@@ -103,7 +103,7 @@ export default function PDFViewer({
       if (controlledPage === undefined) {
         setCurrentPage(target);
         setPageInput(String(target));
-        if (!autoFocusHighlights) {
+        if (!shouldAutoFocusHighlights) {
           setPanX(0);
           setPanY(0);
         }
