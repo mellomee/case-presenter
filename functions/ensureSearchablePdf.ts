@@ -93,6 +93,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const contentType = req.headers.get('content-type') || '';
+    if (!contentType.includes('multipart/form-data')) {
+      return Response.json({ error: 'A PDF file upload is required.' }, { status: 400 });
+    }
+
     const formData = await req.formData();
     const file = formData.get('file');
 
