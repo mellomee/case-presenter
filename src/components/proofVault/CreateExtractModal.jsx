@@ -10,11 +10,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Download, Upload } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertCircle, Upload, FileText } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
-import { formatPageSelection, parsePageSelection } from '@/lib/proofPdfUtils';
 
 export default function CreateExtractModal({ open, onClose, parentProof, onWarning, onSuccess }) {
   const queryClient = useQueryClient();
@@ -22,10 +22,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
   const [extractSource, setExtractSource] = useState('original');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [extractingPages, setExtractingPages] = useState(false);
   const [pageRange, setPageRange] = useState('');
-  const [selectedPages, setSelectedPages] = useState([]);
-  const [sourceTotalPages, setSourceTotalPages] = useState(0);
   const [internalName, setInternalName] = useState('');
   const [formalName, setFormalName] = useState('');
   const [draftExhibitNum, setDraftExhibitNum] = useState('');
@@ -60,11 +57,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
   const resetForm = () => {
     setExtractSource('original');
     setUploadedFile(null);
-    setUploadingFile(false);
-    setExtractingPages(false);
     setPageRange('');
-    setSelectedPages([]);
-    setSourceTotalPages(0);
     setInternalName('');
     setFormalName('');
     setDraftExhibitNum('');
@@ -82,17 +75,15 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     : [];
 
   const canChangeExtractSource = !isEditing || childClips.length === 0;
-  const selectedPageLabel = formatPageSelection(selectedPages);
 
   useEffect(() => {
     if (!open || !parentProof) return;
 
     if (isEditing) {
-      setExtractSource('original');
-      setUploadedFile(parentProof.file_url || null);
+      const usingOriginal = parentProof.file_url === actualParentProof?.file_url;
+      setExtractSource(usingOriginal ? 'original' : 'upload');
+      setUploadedFile(usingOriginal ? null : parentProof.file_url || null);
       setPageRange(parentProof.extract_pages || '');
-      setSelectedPages(parsePageSelection(parentProof.extract_pages || ''));
-      setSourceTotalPages(0);
       setInternalName(parentProof.name || '');
       setFormalName(parentProof.formal_name || '');
       setDraftExhibitNum(parentProof.draft_exhibit_num || '');
@@ -103,8 +94,9 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     }
 
     resetForm();
-  }, [open, parentProof, isEditing]);
+  }, [open, parentProof, isEditing, actualParentProof]);
 
+  // Validate page range format (e.g. "1-3, 5, 13-18")
   const validatePageRange = (range) => {
     if (!range.trim()) {
       setPageRangeError('Page range is required');
@@ -119,8 +111,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     return true;
   };
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
     if (!file) return;
 
     setUploadingFile(true);
@@ -142,63 +134,16 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       setShowWarning(true);
       return;
     }
-
     if (!formalName.trim()) {
       setWarningMsg('Formal Name is required');
       setShowWarning(true);
       return;
     }
-
-    if (extractSource === 'original' && selectedPages.length === 0) {
-      setWarningMsg('Select at least one page from the original PDF');
-      setShowWarning(true);
+    if (extractSource === 'upload' && !validatePageRange(pageRange)) {
       return;
     }
 
-    if (extractSource === 'original' && !sourceTotalPages) {
-      setWarningMsg('Wait for the original PDF to finish loading before saving');
-      setShowWarning(true);
-      return;
-    }
-
-    if (extractSource === 'upload') {
-      if (!uploadedFile) {
-        setWarningMsg('Upload a PDF first');
-        setShowWarning(true);
-        return;
-      }
-      if (!validatePageRange(pageRange)) {
-        return;
-      }
-    }
-
-    let fileUrl = uploadedFile;
-    let extractPagesValue = pageRange.trim();
-    let dropboxFileId = null;
-    let dropboxFilePath = null;
-
-    if (extractSource === 'original') {
-      setExtractingPages(true);
-      try {
-        const response = await base44.functions.invoke('extractPdfPages', {
-          sourceFileUrl: actualParentProof.file_url,
-          selectedPages,
-          totalPages: sourceTotalPages,
-          fileName: formalName.trim() || internalName.trim(),
-        });
-
-        fileUrl = response.data.file_url;
-        extractPagesValue = response.data.extract_pages;
-        dropboxFileId = response.data.dropbox_file_id || null;
-        dropboxFilePath = response.data.dropbox_file_path || null;
-      } catch (error) {
-        setWarningMsg(`Page extraction failed: ${error.message}`);
-        setShowWarning(true);
-        setExtractingPages(false);
-        return;
-      }
-      setExtractingPages(false);
-    }
+    const fileUrl = extractSource === 'original' ? actualParentProof.file_url : uploadedFile;
 
     const extractData = {
       proof_category: parentProof.proof_category,
@@ -212,25 +157,24 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       category_id: parentProof.category_id || null,
       proof_type_category_id: parentProof.proof_type_category_id,
       file_url: fileUrl,
-      extract_pages: extractPagesValue,
+      extract_pages: pageRange.trim(),
       draft_exhibit_num: draftExhibitNum.trim() || null,
-      dropbox_file_id: dropboxFileId,
-      dropbox_file_path: dropboxFilePath,
     };
 
     saveMutation.mutate(extractData);
   };
 
-  if (!parentProof || !actualParentProof) return null;
+  if (!parentProof) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Extract' : 'Create Extract'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Parent info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2">
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
@@ -243,20 +187,21 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             </div>
           </div>
 
+          {/* Extract source selection */}
           <div>
             <label className="text-sm font-medium text-slate-700 mb-3 block">Extract Source</label>
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="extractSource"
                   value="original"
                   checked={extractSource === 'original'}
-                  onChange={(event) => setExtractSource(event.target.value)}
+                  onChange={(e) => setExtractSource(e.target.value)}
                   disabled={!canChangeExtractSource}
                   className="w-4 h-4"
                 />
-                <span className="text-sm text-slate-700">Select Pages from Original PDF</span>
+                <span className="text-sm text-slate-700">Use Original PDF</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -264,7 +209,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                   name="extractSource"
                   value="upload"
                   checked={extractSource === 'upload'}
-                  onChange={(event) => setExtractSource(event.target.value)}
+                  onChange={(e) => setExtractSource(e.target.value)}
                   disabled={!canChangeExtractSource}
                   className="w-4 h-4"
                 />
@@ -278,6 +223,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             )}
           </div>
 
+          {/* Conditional upload section */}
           {extractSource === 'upload' && (
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Upload Shortened PDF</label>
@@ -300,68 +246,56 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                 >
                   {uploadingFile ? 'Uploading...' : 'Select PDF'}
                 </Button>
-                {uploadedFile && <p className="text-xs text-green-600 mt-2">✓ File uploaded</p>}
+                {uploadedFile && (
+                  <p className="text-xs text-green-600 mt-2">✓ File uploaded</p>
+                )}
               </div>
             </div>
           )}
 
-          {extractSource === 'original' && actualParentProof.file_url && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                  <label className="text-sm font-medium text-slate-700 block">Select pages to extract</label>
-                  <p className="text-xs text-slate-500 mt-1">Click thumbnails to select pages. Ctrl/Cmd adds pages, Shift selects a range.</p>
-                </div>
-                <div className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-1.5">
-                  {selectedPages.length ? `${selectedPages.length} selected · ${selectedPageLabel}` : 'No pages selected'}
-                </div>
-              </div>
-              <div className="bg-slate-900 rounded-lg overflow-hidden h-[420px] border border-slate-200">
+          {/* PDF viewer for page selection */}
+          {(extractSource === 'original' ? actualParentProof.file_url : uploadedFile) && (
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">PDF Preview</label>
+              <div className="bg-slate-900 rounded-lg overflow-hidden h-64 border border-slate-200">
                 <PDFViewer
-                  fileUrl={actualParentProof.file_url}
+                  fileUrl={extractSource === 'original' ? actualParentProof.file_url : uploadedFile}
                   mode="viewer"
-                  allowPageSelection
-                  selectedPages={selectedPages}
-                  onSelectedPagesChange={setSelectedPages}
-                  onDocumentLoad={({ numPages }) => setSourceTotalPages(numPages)}
                 />
               </div>
             </div>
           )}
 
-          {extractSource === 'upload' && uploadedFile && (
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">PDF Preview</label>
-              <div className="bg-slate-900 rounded-lg overflow-hidden h-64 border border-slate-200">
-                <PDFViewer fileUrl={uploadedFile} mode="viewer" />
-              </div>
-            </div>
-          )}
-
+          {/* Page range input - only for upload */}
           {extractSource === 'upload' && (
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Pages from Original PDF (required)</label>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">
+                Pages from Original PDF (required)
+              </label>
               <Input
                 placeholder="e.g. 1-3, 5, 13-18"
                 value={pageRange}
-                onChange={(event) => {
-                  setPageRange(event.target.value);
+                onChange={(e) => {
+                  setPageRange(e.target.value);
                   if (pageRangeError) setPageRangeError('');
                 }}
                 className={pageRangeError ? 'border-red-500' : ''}
               />
-              {pageRangeError && <p className="text-xs text-red-600 mt-1">{pageRangeError}</p>}
+              {pageRangeError && (
+                <p className="text-xs text-red-600 mt-1">{pageRangeError}</p>
+              )}
               <p className="text-xs text-slate-500 mt-1">Format: 1-3, 5, 13-18 (comma-separated ranges or single pages)</p>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Name fields */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Internal Name *</label>
               <Input
                 placeholder="e.g. Scene Photo Extract - Pages 1-3"
                 value={internalName}
-                onChange={(event) => setInternalName(event.target.value)}
+                onChange={(e) => setInternalName(e.target.value)}
               />
             </div>
             <div>
@@ -369,43 +303,37 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
               <Input
                 placeholder="e.g. Photograph Pages 1-3"
                 value={formalName}
-                onChange={(event) => setFormalName(event.target.value)}
+                onChange={(e) => setFormalName(e.target.value)}
               />
             </div>
           </div>
 
+          {/* Draft exhibit number */}
           {parentProof.proof_category === 'Exhibit' && (
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">
+                Draft Exhibit # (optional)
+              </label>
               <Input
                 placeholder="e.g. A-1a"
                 value={draftExhibitNum}
-                onChange={(event) => setDraftExhibitNum(event.target.value)}
+                onChange={(e) => setDraftExhibitNum(e.target.value)}
               />
             </div>
           )}
 
-          <div className="flex gap-3 justify-between pt-4 border-t border-slate-200 flex-wrap">
-            <div>
-              {isEditing && parentProof.file_url && (
-                <a href={parentProof.file_url} download>
-                  <Button variant="outline" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Download Current Extract
-                  </Button>
-                </a>
-              )}
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={saveMutation.isPending || extractingPages}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {extractingPages ? 'Extracting Pages...' : saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract')}
-              </Button>
-            </div>
+          {/* Actions */}
+          <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={saveMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract')}
+            </Button>
           </div>
         </div>
 
@@ -416,7 +344,9 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                 <AlertCircle className="w-5 h-5 text-amber-600" />
                 Warning
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-base text-slate-700">{warningMsg}</AlertDialogDescription>
+              <AlertDialogDescription className="text-base text-slate-700">
+                {warningMsg}
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogAction>OK</AlertDialogAction>
           </AlertDialogContent>

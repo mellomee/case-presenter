@@ -2,27 +2,49 @@ import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
-import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
-import { getPrimaryHighlightPage } from '@/lib/proofPdfUtils';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2, Scale, Maximize } from 'lucide-react';
 
-function JuryPDF({ proof, page }) {
-  const startingPage = getPrimaryHighlightPage(proof.highlights || [], proof.clipped_page || 1);
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+function JuryPDF({ fileUrl, page, highlights = [] }) {
   return (
-    <div className="w-full h-full">
-      <PDFViewer
-        fileUrl={proof.file_url}
-        mode="viewer"
-        syncState={{ currentPage: page || startingPage }}
-        highlights={proof.highlights || []}
-        clippedPage={startingPage}
-        showHighlights={Array.isArray(proof.highlights) && proof.highlights.length > 0}
-        autoFocusHighlights={Array.isArray(proof.highlights) && proof.highlights.length > 0}
-        dimInactiveArea={Array.isArray(proof.highlights) && proof.highlights.length > 0}
-        allowPan={false}
-      />
-    </div>
+    <Document
+      file={fileUrl}
+      loading={<Loader2 className="w-10 h-10 animate-spin text-white/30" />}
+      className="flex items-center justify-center w-full h-full"
+    >
+      <div className="relative">
+        <Page
+          pageNumber={page || 1}
+          width={Math.min(window.innerWidth * 0.9, 1200)}
+          renderTextLayer={false}
+          renderAnnotationLayer={false}
+          loading={<div className="w-64 h-96 bg-zinc-800 animate-pulse rounded" />}
+        />
+        {highlights.map((h, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: `${h.x}%`,
+              top: `${h.y}%`,
+              width: `${h.width}%`,
+              height: `${h.height}%`,
+              background: h.color || '#fbbf24',
+              opacity: h.opacity ?? 0.4,
+              pointerEvents: 'none',
+              borderRadius: '2px',
+              mixBlendMode: 'multiply',
+            }}
+          />
+        ))}
+      </div>
+    </Document>
   );
 }
 
@@ -30,17 +52,17 @@ function JuryVideo({ proof, videoTime, isPlaying }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const element = videoRef.current;
-    if (!element) return;
-    const nextTime = videoTime ?? 0;
-    if (Math.abs(element.currentTime - nextTime) > 1.5) element.currentTime = nextTime;
+    const el = videoRef.current;
+    if (!el) return;
+    const newTime = videoTime ?? 0;
+    if (Math.abs(el.currentTime - newTime) > 1.5) el.currentTime = newTime;
   }, [videoTime]);
 
   useEffect(() => {
-    const element = videoRef.current;
-    if (!element) return;
-    if (isPlaying && element.paused) element.play().catch(() => {});
-    else if (!isPlaying && !element.paused) element.pause();
+    const el = videoRef.current;
+    if (!el) return;
+    if (isPlaying && el.paused) el.play().catch(() => {});
+    else if (!isPlaying && !el.paused) el.pause();
   }, [isPlaying]);
 
   return (
@@ -49,6 +71,8 @@ function JuryVideo({ proof, videoTime, isPlaying }) {
     </div>
   );
 }
+
+// ─── Overlay badges ────────────────────────────────────────────────────────────
 
 function TopRightBadges({ proof, demoLabel }) {
   const isDemo = proof.status === 'Demonstrative';
@@ -70,11 +94,13 @@ function TopRightBadges({ proof, demoLabel }) {
   );
 }
 
+// ─── Fullscreen button ─────────────────────────────────────────────────────────
+
 function FullscreenButton() {
   const handleFullscreen = () => {
-    const element = document.documentElement;
+    const el = document.documentElement;
     if (!document.fullscreenElement) {
-      element.requestFullscreen?.();
+      el.requestFullscreen?.();
     } else {
       document.exitFullscreen?.();
     }
@@ -91,6 +117,8 @@ function FullscreenButton() {
   );
 }
 
+// ─── Blank screen ──────────────────────────────────────────────────────────────
+
 function BlankScreen({ caseName }) {
   return (
     <div className="flex items-center justify-center w-full h-screen bg-black group">
@@ -105,34 +133,39 @@ function BlankScreen({ caseName }) {
   );
 }
 
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function JuryView() {
   const { juryState } = useJurySync('jury');
 
   const { data: proof } = useQuery({
     queryKey: ['juryProof', juryState?.published_proof_id],
-    queryFn: () => base44.entities.Proof.filter({ id: juryState.published_proof_id }).then((rows) => rows[0]),
+    queryFn: () => base44.entities.Proof.filter({ id: juryState.published_proof_id }).then(r => r[0]),
     enabled: !!juryState?.published_proof_id && !juryState?.is_blank,
   });
 
   const { data: settings } = useQuery({
     queryKey: ['appSettings'],
-    queryFn: () => base44.entities.AppSettings.list().then((rows) => rows[0] || {}),
+    queryFn: () => base44.entities.AppSettings.list().then(r => r[0] || {}),
   });
 
+  // Enter fullscreen automatically on load (best-effort)
   useEffect(() => {
-    const tryFullscreen = () => {
+    const tryFs = () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen?.().catch(() => {});
       }
     };
-    document.addEventListener('click', tryFullscreen, { once: true });
-    return () => document.removeEventListener('click', tryFullscreen);
+    // Requires user gesture — attach to first click instead
+    document.addEventListener('click', tryFs, { once: true });
+    return () => document.removeEventListener('click', tryFs);
   }, []);
 
   const caseName = settings?.case_name || 'Case Presenter';
   const demoLabel = settings?.jury_demonstrative_label || 'For illustrative purposes only';
   const isBlank = !juryState || juryState.is_blank || !juryState.published_proof_id;
 
+  // Loading state (before JuryState record arrives)
   if (!juryState) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
@@ -145,6 +178,7 @@ export default function JuryView() {
     return <BlankScreen caseName={caseName} />;
   }
 
+  // Proof loading
   if (!proof) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
@@ -155,8 +189,11 @@ export default function JuryView() {
 
   return (
     <div className="relative flex flex-col w-full h-screen bg-black overflow-hidden group">
+
+      {/* Top-right: Exhibit # + Demo label */}
       <TopRightBadges proof={proof} demoLabel={demoLabel} />
 
+      {/* Proof content */}
       <div className="flex-1 overflow-hidden flex items-center justify-center">
         {proof.file_type === 'Image' ? (
           <div className="flex items-center justify-center w-full h-full p-6">
@@ -167,14 +204,23 @@ export default function JuryView() {
             />
           </div>
         ) : proof.file_type === 'Video' ? (
-          <JuryVideo proof={proof} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
+          <JuryVideo
+            proof={proof}
+            videoTime={juryState.video_time}
+            isPlaying={juryState.is_playing}
+          />
         ) : proof.file_url ? (
-          <JuryPDF proof={proof} page={juryState.pdf_page || proof.clipped_page || 1} />
+          <JuryPDF
+            fileUrl={proof.file_url}
+            page={juryState.pdf_page || 1}
+            highlights={proof.highlights || []}
+          />
         ) : (
           <p className="text-white/20 text-lg">No file attached</p>
         )}
       </div>
 
+      {/* Fullscreen toggle (visible on hover) */}
       <FullscreenButton />
     </div>
   );

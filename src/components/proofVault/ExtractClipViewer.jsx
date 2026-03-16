@@ -1,7 +1,6 @@
 import React from 'react';
 import PDFViewer from './PDFViewer';
 import { FileText, Layers, Scissors } from 'lucide-react';
-import { formatPageSelection, getHighlightPages, getPrimaryHighlightPage } from '@/lib/proofPdfUtils';
 
 export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange }) {
   if (!proof) return null;
@@ -9,12 +8,10 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const parentExtract = allProofs.find((p) => p.id === proof.parent_proof_id);
   const originalPDF = parentExtract ? allProofs.find((p) => p.id === parentExtract.parent_proof_id) : null;
   const fileUrl = proof.file_url;
-  const highlightPages = getHighlightPages(proof.highlights || [], proof.clipped_page || 1);
-  const pageLabel = highlightPages.length ? formatPageSelection(highlightPages) : null;
-  const startingPage = getPrimaryHighlightPage(proof.highlights || [], proof.clipped_page || 1);
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
+      {/* Metadata chain banner */}
       <div className="shrink-0 bg-zinc-800 border-b border-zinc-700 px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
         {originalPDF && (
           <>
@@ -51,9 +48,9 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
           {proof.formal_name && proof.formal_name !== proof.name && (
             <span className="text-zinc-500 italic">"{proof.formal_name}"</span>
           )}
-          {pageLabel && (
+          {proof.clipped_page && (
             <span className="ml-1 bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] px-1.5 py-0.5 rounded font-mono">
-              Pages {pageLabel}
+              Page {proof.clipped_page}
             </span>
           )}
         </div>
@@ -74,10 +71,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
             syncState={syncState}
             onStateChange={onStateChange}
             highlights={proof.highlights || []}
-            clippedPage={startingPage}
-            showHighlights={Array.isArray(proof.highlights) && proof.highlights.length > 0}
-            autoFocusHighlights={Array.isArray(proof.highlights) && proof.highlights.length > 0}
-            dimInactiveArea={Array.isArray(proof.highlights) && proof.highlights.length > 0}
+            clippedPage={proof.clipped_page || 1}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>
