@@ -6,8 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
-import { countGroupedHighlights, countHighlightGroups } from './highlightGroupUtils';
+import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups } from './highlightGroupUtils';
 import { proofHasLinkedFile } from './proofAssetUtils';
+import { parsePageRange } from './pageRangeUtils';
 
 export default function ProofTile({
   proof,
@@ -71,6 +72,14 @@ export default function ProofTile({
   const hasAttachment = proofHasLinkedFile(proof);
   const highlightGroupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
   const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
+  const parentExtract = proof.proof_child_type === 'ExtractClip'
+    ? allProofs.find((item) => item.id === proof.parent_proof_id)
+    : null;
+  const extractSourcePages = parsePageRange(parentExtract?.extract_pages || '');
+  const highlightGroups = normalizeHighlightGroups(proof.highlights, proof.clipped_page || 1).map((group) => ({
+    ...group,
+    sourcePage: extractSourcePages[group.page - 1] || null,
+  }));
 
   const getPartyColor = () => {
     if (!party) return 'bg-slate-100 text-slate-700';
@@ -163,9 +172,20 @@ export default function ProofTile({
             )}
 
             {proof.proof_child_type === 'ExtractClip' && (
-              <div className="text-xs text-slate-600 mb-2">
-                Page: <span className="font-mono font-semibold">{proof.clipped_page}</span>
-                {highlightGroupCount > 0 && <span className="ml-2 text-amber-600">• {highlightGroupCount} group{highlightGroupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>}
+              <div className="text-xs text-slate-600 mb-2 space-y-1">
+                <div>
+                  Page: <span className="font-mono font-semibold">{proof.clipped_page}</span>
+                  {highlightGroupCount > 0 && <span className="ml-2 text-amber-600">• {highlightGroupCount} group{highlightGroupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>}
+                </div>
+                {highlightGroups.length > 0 && (
+                  <div className="space-y-1">
+                    {highlightGroups.map((group) => (
+                      <div key={group.id} className="text-[11px] text-slate-500">
+                        {group.name} — Pg {group.page}{group.sourcePage ? ` · Source Pg ${group.sourcePage}` : ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

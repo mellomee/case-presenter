@@ -102,7 +102,9 @@ export default function ProofActionMenu({
       actions.push({ id: 'clip', label: 'Clip', icon: Scissors, action: onClip, color: 'text-orange-600' });
     }
 
-    if ((currentTab === 'draft' || proof.status === 'Draft') && hasAttachment && isTopLevel) {
+    const isParentPdfProof = isPDF && isTopLevel && childProofs.length > 0;
+
+    if ((currentTab === 'draft' || proof.status === 'Draft') && hasAttachment && isTopLevel && !isParentPdfProof) {
       actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
     }
 

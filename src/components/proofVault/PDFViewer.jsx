@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2, Download } from 'lucide-react';
 import debounce from 'lodash/debounce';
-import { flattenHighlightGroupsForPage } from './highlightGroupUtils';
+import { normalizeHighlightGroups } from './highlightGroupUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -54,9 +54,22 @@ export default function PDFViewer({
 
   const hasOriginalPageMap = Array.isArray(visiblePages) && visiblePages.length > 0;
   const activePageNumber = pageNumbers[currentPage - 1] || clippedPage || 1;
+  const normalizedHighlightGroups = useMemo(
+    () => normalizeHighlightGroups(highlights, clippedPage || activePageNumber),
+    [highlights, clippedPage, activePageNumber]
+  );
   const activeHighlights = useMemo(
-    () => flattenHighlightGroupsForPage(highlights, activePageNumber, clippedPage || activePageNumber),
-    [highlights, activePageNumber, clippedPage]
+    () => normalizedHighlightGroups
+      .filter((group) => group.page === currentPage || group.page === activePageNumber)
+      .flatMap((group) =>
+        group.highlights.map((highlight, index) => ({
+          ...highlight,
+          __groupId: group.id,
+          __groupName: group.name,
+          __highlightIndex: index,
+        }))
+      ),
+    [normalizedHighlightGroups, currentPage, activePageNumber]
   );
 
   const debouncedPush = useCallback(

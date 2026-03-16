@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import PDFViewer from './PDFViewer';
 import { FileText, Layers, Scissors, Loader2 } from 'lucide-react';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
-import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage } from './highlightGroupUtils';
+import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage, normalizeHighlightGroups } from './highlightGroupUtils';
 import { parsePageRange } from './pageRangeUtils';
+import HighlightGroupPanel from './HighlightGroupPanel.jsx';
 
 export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange }) {
   if (!proof) return null;
@@ -15,6 +16,23 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const visiblePages = parsePageRange(parentExtract?.extract_pages || '');
   const groupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
   const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
+  const groups = useMemo(
+    () => normalizeHighlightGroups(proof.highlights, proof.clipped_page || 1).map((group) => ({
+      ...group,
+      sourcePage: visiblePages[group.page - 1] || null,
+    })),
+    [proof.highlights, proof.clipped_page, visiblePages]
+  );
+  const [selectedGroupId, setSelectedGroupId] = useState('all');
+  const [showHighlights, setShowHighlights] = useState(true);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const filteredHighlights = useMemo(() => {
+    if (!showHighlights) return [];
+    if (selectedGroupId === 'all') return proof.highlights || [];
+    const selectedGroup = groups.find((group) => group.id === selectedGroupId);
+    return selectedGroup ? [selectedGroup] : [];
+  }, [showHighlights, selectedGroupId, proof.highlights, groups]);
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
@@ -50,25 +68,50 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full text-zinc-500 text-sm">
-            <Loader2 className="w-5 h-5 animate-spin" />
-          </div>
-        ) : url ? (
-          <PDFViewer
-            key={proof.id}
-            fileUrl={url}
-            mode={mode}
-            syncState={syncState}
-            onStateChange={onStateChange}
-            highlights={proof.highlights || []}
-            clippedPage={initialPage}
-            visiblePages={visiblePages.length > 0 ? visiblePages : null}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>
-        )}
+      <div className="flex-1 overflow-hidden flex min-h-0">
+        <HighlightGroupPanel
+          isCollapsed={panelCollapsed}
+          onToggleCollapsed={() => setPanelCollapsed((value) => !value)}
+          groups={groups}
+          selectedGroupId={selectedGroupId}
+          onSelectGroup={(groupId) => {
+            setSelectedGroupId(groupId);
+            setShowHighlights(true);
+            const selectedGroup = groups.find((group) => group.id === groupId);
+            if (selectedGroup) {
+              setCurrentPage(selectedGroup.page);
+            }
+          }}
+          onShowAll={() => {
+            setSelectedGroupId('all');
+            setShowHighlights(true);
+          }}
+          showHighlights={showHighlights}
+          onToggleHighlights={() => setShowHighlights((value) => !value)}
+        />
+
+        <div className="flex-1 overflow-hidden min-w-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full text-zinc-500 text-sm">
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </div>
+          ) : url ? (
+            <PDFViewer
+              key={proof.id}
+              fileUrl={url}
+              mode={mode}
+              syncState={syncState}
+              onStateChange={onStateChange}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              highlights={filteredHighlights}
+              clippedPage={initialPage}
+              visiblePages={visiblePages.length > 0 ? visiblePages : null}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>
+          )}
+        </div>
       </div>
     </div>
   );
