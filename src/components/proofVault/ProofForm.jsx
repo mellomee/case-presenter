@@ -11,7 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, Link as LinkIcon } from 'lucide-react';
+
+function normalizeDropboxUrl(value) {
+  if (!value) return '';
+
+  try {
+    const url = new URL(value.trim());
+    if (!url.hostname.includes('dropbox.com')) return value.trim();
+    url.searchParams.delete('dl');
+    url.searchParams.set('raw', '1');
+    return url.toString();
+  } catch {
+    return value.trim();
+  }
+}
 
 export default function ProofForm({ proof, onSubmit, onCancel }) {
   const [proofCategory, setProofCategory] = useState(proof?.proof_category || 'Exhibit');
