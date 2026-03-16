@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand, Move, Plus, Loader2 } from 'lucide-react';
+import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand, Move, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { parsePageRange } from './pageRangeUtils';
+import HighlightGroupEditorSidebar from './HighlightGroupEditorSidebar.jsx';
 import {
   createHighlightGroup,
   flattenHighlightGroupsForPage,
@@ -47,6 +48,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const [currentPage, setCurrentPage] = useState(1);
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [warning, setWarning] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -383,7 +385,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Extract Clip' : 'Create Extract Clip'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Highlights' : 'Add Highlights'}</DialogTitle>
         </DialogHeader>
 
         {warning && (
@@ -409,15 +411,33 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               <Loader2 className="w-4 h-4 animate-spin" /> Loading extract PDF...
             </div>
           ) : (
-            <div className="bg-slate-900 rounded-lg overflow-hidden h-[70vh] border border-slate-200">
-              <PDFViewer
-                fileUrl={resolvedParentUrl}
-                mode="controller"
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                allowPan={mode === 'pan'}
-                pageOverlay={pageOverlay}
-                visiblePages={visibleExtractPages.length > 0 ? visibleExtractPages : null}
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
+              <div className="bg-slate-900 rounded-lg overflow-hidden h-[70vh] border border-slate-200">
+                <PDFViewer
+                  fileUrl={resolvedParentUrl}
+                  mode="controller"
+                  currentPage={currentPage}
+                  onPageChange={setCurrentPage}
+                  allowPan={mode === 'pan'}
+                  pageOverlay={pageOverlay}
+                  visiblePages={visibleExtractPages.length > 0 ? visibleExtractPages : null}
+                />
+              </div>
+              <HighlightGroupEditorSidebar
+                isCollapsed={sidebarCollapsed}
+                onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
+                groups={highlightGroups}
+                selectedGroupId={selectedGroupId}
+                onSelectGroup={(group) => {
+                  setSelectedGroupId(group.id);
+                  setCurrentPage(group.page);
+                  setSelectedHighlight(null);
+                }}
+                onCreateGroup={() => createGroupForCurrentPage()}
+                onDeleteSelectedGroup={deleteSelectedGroup}
+                onRenameGroup={(groupId, nextName) => {
+                  setHighlightGroups((prev) => prev.map((item) => item.id === groupId ? { ...item, name: nextName } : item));
+                }}
               />
             </div>
           )}
@@ -477,73 +497,22 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               </div>
             </div>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
-              <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
-                  <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name</label>
-                  <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
-                  <Input value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} placeholder="e.g. A-1a" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
-                  <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Additional notes" />
-                </div>
+            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Internal Name *</label>
+                <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
               </div>
-
-              <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-900">Highlight Groups</h4>
-                  <div className="flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => createGroupForCurrentPage()} className="gap-2">
-                      <Plus className="w-4 h-4" /> New Group
-                    </Button>
-                    {selectedGroupId && (
-                      <Button type="button" size="sm" variant="ghost" onClick={deleteSelectedGroup} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  {highlightGroups.length === 0 ? (
-                    <p className="text-xs text-slate-500">Draw on the PDF or create a group manually to begin.</p>
-                  ) : (
-                    highlightGroups.map((group) => (
-                      <button
-                        key={group.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedGroupId(group.id);
-                          setCurrentPage(group.page);
-                          setSelectedHighlight(null);
-                        }}
-                        className={`w-full text-left rounded-lg border p-3 transition ${selectedGroupId === group.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <Input
-                            value={group.name}
-                            onChange={(e) => {
-                              const nextName = e.target.value;
-                              setHighlightGroups((prev) => prev.map((item) => item.id === group.id ? { ...item, name: nextName } : item));
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-8"
-                          />
-                          <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap">Page {group.page}</span>
-                        </div>
-                        <div className="text-xs text-slate-600">{group.highlights.length} highlight{group.highlights.length === 1 ? '' : 's'}</div>
-                      </button>
-                    ))
-                  )}
-                </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name</label>
+                <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Draft Exhibit #</label>
+                <Input value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} placeholder="e.g. A-1a" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
+                <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Additional notes" />
               </div>
             </div>
           </div>
@@ -551,7 +520,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
           <div className="flex gap-3 justify-end pt-2 border-t border-slate-200">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={saveMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
-              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract Clip')}
+              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Highlights')}
             </Button>
           </div>
         </div>
