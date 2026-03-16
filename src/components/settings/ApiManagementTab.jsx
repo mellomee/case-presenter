@@ -46,7 +46,7 @@ export default function ApiManagementTab() {
             <h3 className="font-semibold text-slate-900">Adobe PDF Services</h3>
           </div>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Adobe extraction and OCR use app secrets. Base44 keeps secret values write-only, so they can be replaced but not shown inside the app.
+            Adobe extraction and OCR use the app credentials already configured for this app.
           </p>
         </div>
 
@@ -59,10 +59,6 @@ export default function ApiManagementTab() {
             Extracted PDFs will still work in the app, and a copy will also be uploaded to Dropbox when a folder path is set here.
           </p>
         </div>
-      </div>
-
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Secret keys cannot be displayed back in-app on Base44. If you need to rotate Adobe secrets, replace them in your app secrets settings.
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-4">

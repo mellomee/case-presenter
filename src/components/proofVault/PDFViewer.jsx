@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2 } from 'lucide-react';
 import debounce from 'lodash/debounce';
-import { getHighlightsForPage, getPrimaryHighlightPage, sortUniquePages } from '@/lib/proofPdfUtils';
+import { getHighlightBounds, getHighlightsForPage, getPrimaryHighlightPage, sortUniquePages } from '@/lib/proofPdfUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -26,6 +26,7 @@ export default function PDFViewer({
   onSelectedPagesChange,
   onDocumentLoad,
   showHighlights = true,
+  autoFocusHighlights = false,
   dimInactiveArea = false,
 }) {
   const initialPage = controlledPage || clippedPage || getPrimaryHighlightPage(highlights, 1);
@@ -47,9 +48,12 @@ export default function PDFViewer({
   const dragRef = useRef({});
   const lastSelectedPageRef = useRef(null);
 
+  const shouldAutoFocusHighlights = autoFocusHighlights || (showHighlights && Array.isArray(highlights) && highlights.length > 0);
+  const shouldDimInactiveArea = dimInactiveArea || shouldAutoFocusHighlights;
   const currentPageHighlights = showHighlights
     ? getHighlightsForPage(highlights, currentPage, clippedPage || 1)
     : [];
+  const focusBounds = getHighlightBounds(highlights, currentPage, clippedPage || 1);
 
   const debouncedPush = useCallback(
     debounce((nextState) => onStateChange && onStateChange(nextState), 250),
@@ -63,7 +67,7 @@ export default function PDFViewer({
   }, [controlledPage]);
 
   useEffect(() => {
-    if (!syncState) return;
+    if (mode !== 'viewer' || !syncState) return;
     if (syncState.currentPage) {
       setCurrentPage(syncState.currentPage);
       setPageInput(String(syncState.currentPage));
@@ -71,8 +75,29 @@ export default function PDFViewer({
     if (syncState.zoom !== undefined) setZoom(syncState.zoom);
     if (syncState.panX !== undefined) setPanX(syncState.panX);
     if (syncState.panY !== undefined) setPanY(syncState.panY);
-    if (syncState.focusOrigin !== undefined) setFocusOrigin(syncState.focusOrigin);
-  }, [syncState]);
+  }, [syncState, mode]);
+
+  useEffect(() => {
+    if (!shouldAutoFocusHighlights) {
+      setFocusOrigin('top center');
+      return;
+    }
+
+    if (!focusBounds) {
+      setFocusOrigin('top center');
+      setZoom(1);
+      setPanX(0);
+      setPanY(0);
+      return;
+    }
+
+    const dominantSide = Math.max(focusBounds.width, focusBounds.height);
+    const targetZoom = Math.min(3.5, Math.max(1.4, 55 / Math.max(dominantSide, 12)));
+    setFocusOrigin(`${focusBounds.centerX}% ${focusBounds.centerY}%`);
+    setZoom(targetZoom);
+    setPanX(0);
+    setPanY(0);
+  }, [focusBounds, shouldAutoFocusHighlights]);
 
   const goToPage = useCallback(
     (page) => {
@@ -473,7 +498,7 @@ export default function PDFViewer({
                   customTextRenderer={textRenderer}
                   loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />}
                 />
-                {dimInactiveArea && currentPageHighlights.length > 0 && (
+                {shouldDimInactiveArea && currentPageHighlights.length > 0 && (
                   <div className="absolute inset-0 bg-black/35 pointer-events-none" />
                 )}
                 {currentPageHighlights.map((highlight, index) => (
@@ -490,7 +515,7 @@ export default function PDFViewer({
                       pointerEvents: 'none',
                       borderRadius: '2px',
                       mixBlendMode: 'multiply',
-                      border: dimInactiveArea ? '2px solid rgba(251, 191, 36, 0.95)' : 'none',
+                      border: shouldAutoFocusHighlights || shouldDimInactiveArea ? '2px solid rgba(251, 191, 36, 0.95)' : 'none',
                     }}
                   />
                 ))}

@@ -11,21 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X, Upload, Link as LinkIcon } from 'lucide-react';
-
-function normalizeDropboxUrl(value) {
-  if (!value) return '';
-
-  try {
-    const url = new URL(value.trim());
-    if (!url.hostname.includes('dropbox.com')) return value.trim();
-    url.searchParams.delete('dl');
-    url.searchParams.set('raw', '1');
-    return url.toString();
-  } catch {
-    return value.trim();
-  }
-}
+import { X, Upload } from 'lucide-react';
 
 export default function ProofForm({ proof, onSubmit, onCancel }) {
   const [proofCategory, setProofCategory] = useState(proof?.proof_category || 'Exhibit');
@@ -323,122 +309,84 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
       {/* PDF Upload */}
       {fileType === 'PDF' && (
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              PDF URL or Dropbox shared link {!proof && !formData.file_url && '*'}
-            </label>
-            <div className="relative">
-              <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <Input
-                placeholder="https://..."
-                value={uploadedFileName ? '' : formData.file_url}
-                onChange={(e) => {
-                  setUploadedFileName(null);
-                  setFormData({ ...formData, file_url: normalizeDropboxUrl(e.target.value) });
-                }}
-                className="pl-9"
-              />
-            </div>
-            <p className="text-xs text-slate-500 mt-1">Paste a hosted PDF URL or a Dropbox shared link, or upload a file below.</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Or upload PDF {!proof && !formData.file_url && '*'}
-            </label>
-            <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
-              {uploadedFileName ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-700">{uploadedFileName}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUploadedFileName(null);
-                      setFormData({ ...formData, file_url: '' });
-                    }}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center cursor-pointer">
-                  <Upload className="w-6 h-6 text-slate-400 mb-2" />
-                  <span className="text-sm font-medium text-slate-700">
-                    Click to upload or drag & drop
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Upload PDF {!proof && '*'}
+          </label>
+          <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
+            {uploadedFileName || formData.file_url ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-700">
+                  {uploadedFileName || formData.file_url.split('/').pop()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadedFileName(null);
+                    setFormData({ ...formData, file_url: '' });
+                  }}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center cursor-pointer">
+                <Upload className="w-6 h-6 text-slate-400 mb-2" />
+                <span className="text-sm font-medium text-slate-700">
+                  Click to upload or drag & drop
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
         </div>
       )}
 
       {/* Image Upload */}
       {fileType === 'Image' && (
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Image URL or Dropbox shared link {!proof && !formData.file_url && '*'}
-            </label>
-            <div className="relative">
-              <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <Input
-                placeholder="https://..."
-                value={uploadedFileName ? '' : formData.file_url}
-                onChange={(e) => {
-                  setUploadedFileName(null);
-                  setFormData({ ...formData, file_url: normalizeDropboxUrl(e.target.value) });
-                }}
-                className="pl-9"
-              />
-            </div>
-            <p className="text-xs text-slate-500 mt-1">Paste a hosted image URL or a Dropbox shared link, or upload a file below.</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Or upload Image {!proof && !formData.file_url && '*'}
-            </label>
-            <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
-              {uploadedFileName ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-700">{uploadedFileName}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUploadedFileName(null);
-                      setFormData({ ...formData, file_url: '' });
-                    }}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center cursor-pointer">
-                  <Upload className="w-6 h-6 text-slate-400 mb-2" />
-                  <span className="text-sm font-medium text-slate-700">
-                    Click to upload or drag & drop
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Upload Image {!proof && '*'}
+          </label>
+          <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
+            {uploadedFileName || formData.file_url ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-700">
+                  {uploadedFileName || formData.file_url.split('/').pop()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadedFileName(null);
+                    setFormData({ ...formData, file_url: '' });
+                  }}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center cursor-pointer">
+                <Upload className="w-6 h-6 text-slate-400 mb-2" />
+                <span className="text-sm font-medium text-slate-700">
+                  Click to upload or drag & drop
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
         </div>
       )}
@@ -448,12 +396,12 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         <>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Video URL or Dropbox shared link
+              Video URL (YouTube, Dropbox, etc.)
             </label>
             <Input
               placeholder="https://..."
               value={formData.video_url}
-              onChange={(e) => setFormData({ ...formData, video_url: normalizeDropboxUrl(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
             />
           </div>
 
