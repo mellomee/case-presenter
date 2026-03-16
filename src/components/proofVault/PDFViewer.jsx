@@ -195,25 +195,23 @@ export default function PDFViewer({
 
   const textRenderer = useCallback(
     ({ str }) => {
-      if (!searchText || !str) return <>{str}</>;
+      if (!searchText || !str) return str;
+
+      const escapeHtml = (value) => value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
       try {
-        const escaped = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const parts = str.split(new RegExp(`(${escaped})`, 'gi'));
-        return (
-          <>
-            {parts.map((part, i) =>
-              part.toLowerCase() === searchText.toLowerCase() ? (
-                <mark key={i} style={{ background: '#f59e0b', color: '#1a1a1a', padding: '0 1px', borderRadius: '2px' }}>
-                  {part}
-                </mark>
-              ) : (
-                part
-              )
-            )}
-          </>
+        const escapedSearch = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return escapeHtml(str).replace(
+          new RegExp(escapedSearch.replace(/&/g, '&amp;'), 'gi'),
+          (match) => `<mark style="background:#f59e0b;color:#1a1a1a;padding:0 1px;border-radius:2px;">${match}</mark>`
         );
       } catch {
-        return <>{str}</>;
+        return escapeHtml(str);
       }
     },
     [searchText]
