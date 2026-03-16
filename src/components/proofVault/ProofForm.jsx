@@ -484,8 +484,8 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-          {proof ? 'Update Proof' : 'Save Proof'}
+        <Button type="submit" disabled={isUploading || ocrStatus === 'checking' || ocrStatus === 'processing'} className="bg-blue-600 hover:bg-blue-700">
+          {(ocrStatus === 'checking' || ocrStatus === 'processing') ? 'Processing PDF…' : proof ? 'Update Proof' : 'Save Proof'}
         </Button>
       </div>
     </form>
