@@ -86,6 +86,8 @@ export default function ProofActionMenu({
     const isPDF = proof.file_type === 'PDF';
     const isVideo = proof.file_type === 'Video';
     const hasAttachment = proofHasLinkedFile(proof);
+    const isTopLevelPdfParent = isTopLevel && isPDF && !proof.proof_child_type;
+    const canAddToJoint = proof.proof_category === 'Exhibit' && hasAttachment && isTopLevel && !isTopLevelPdfParent;
     const actions = [];
 
     actions.push({ id: 'edit', label: 'Edit', icon: Pencil, action: onEdit, color: 'text-blue-600' });
@@ -102,7 +104,7 @@ export default function ProofActionMenu({
       actions.push({ id: 'clip', label: 'Clip', icon: Scissors, action: onClip, color: 'text-orange-600' });
     }
 
-    if ((currentTab === 'draft' || proof.status === 'Draft') && hasAttachment && isTopLevel) {
+    if ((currentTab === 'draft' || proof.status === 'Draft') && canAddToJoint) {
       actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
     }
 

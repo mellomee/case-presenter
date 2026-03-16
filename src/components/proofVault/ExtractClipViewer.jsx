@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PDFViewer from './PDFViewer';
-import { FileText, Layers, Scissors, Loader2 } from 'lucide-react';
+import { FileText, Layers, Scissors, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
-import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage } from './highlightGroupUtils';
+import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage, normalizeHighlightGroups } from './highlightGroupUtils';
 import { parsePageRange } from './pageRangeUtils';
+import HighlightGroupPanel from './HighlightGroupPanel';
 
 export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange }) {
   if (!proof) return null;
@@ -13,8 +15,53 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const { url, isLoading } = useResolvedProofAsset(proof);
   const initialPage = getInitialHighlightPage(proof.highlights, proof.clipped_page || 1);
   const visiblePages = parsePageRange(parentExtract?.extract_pages || '');
+  const highlightGroups = useMemo(
+    () => normalizeHighlightGroups(proof.highlights, proof.clipped_page || 1),
+    [proof.highlights, proof.clipped_page]
+  );
   const groupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
   const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
+  const initialViewerPage = useMemo(() => {
+    if (visiblePages.length > 0) {
+      const sourceIndex = visiblePages.indexOf(initialPage);
+      return sourceIndex >= 0 ? sourceIndex + 1 : 1;
+    }
+    return initialPage;
+  }, [visiblePages, initialPage]);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [selectedGroupId, setSelectedGroupId] = useState(highlightGroups[0]?.id || null);
+  const [viewMode, setViewMode] = useState('all');
+  const [currentPage, setCurrentPage] = useState(initialViewerPage);
+
+  useEffect(() => {
+    setSelectedGroupId(highlightGroups[0]?.id || null);
+    setViewMode('all');
+    setCurrentPage(initialViewerPage);
+  }, [proof.id, highlightGroups, initialViewerPage]);
+
+  useEffect(() => {
+    if (mode === 'viewer' && syncState?.currentPage) {
+      setCurrentPage(syncState.currentPage);
+    }
+  }, [mode, syncState?.currentPage]);
+
+  const selectedGroup = highlightGroups.find((group) => group.id === selectedGroupId) || null;
+  const visibleHighlightGroups = useMemo(() => {
+    if (viewMode === 'hidden') return [];
+    if (viewMode === 'selected') return selectedGroup ? [selectedGroup] : [];
+    return highlightGroups;
+  }, [viewMode, selectedGroup, highlightGroups]);
+
+  const handleSelectGroup = (group) => {
+    setSelectedGroupId(group.id);
+    setViewMode('selected');
+    if (visiblePages.length > 0) {
+      const sourceIndex = visiblePages.indexOf(group.page);
+      setCurrentPage(sourceIndex >= 0 ? sourceIndex + 1 : 1);
+      return;
+    }
+    setCurrentPage(group.page);
+  };
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
@@ -48,26 +95,49 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
           <span className="ml-1 bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] px-1.5 py-0.5 rounded font-mono">Page {initialPage}</span>
           <span className="ml-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>
         </div>
+
+        <div className="ml-auto">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white" onClick={() => setPanelOpen((value) => !value)}>
+            {panelOpen ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+            {panelOpen ? 'Hide Panel' : 'Show Panel'}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden flex">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full text-zinc-500 text-sm">
+          <div className="flex items-center justify-center h-full w-full text-zinc-500 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : url ? (
-          <PDFViewer
-            key={proof.id}
-            fileUrl={url}
-            mode={mode}
-            syncState={syncState}
-            onStateChange={onStateChange}
-            highlights={proof.highlights || []}
-            clippedPage={initialPage}
-            visiblePages={visiblePages.length > 0 ? visiblePages : null}
-          />
+          <>
+            <div className="flex-1 overflow-hidden">
+              <PDFViewer
+                key={proof.id}
+                fileUrl={url}
+                mode={mode}
+                syncState={syncState}
+                onStateChange={onStateChange}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                highlights={visibleHighlightGroups}
+                clippedPage={initialPage}
+                visiblePages={visiblePages.length > 0 ? visiblePages : null}
+              />
+            </div>
+            {panelOpen && (
+              <HighlightGroupPanel
+                groups={highlightGroups}
+                selectedGroupId={selectedGroupId}
+                selectedGroup={selectedGroup}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                onSelectGroup={handleSelectGroup}
+              />
+            )}
+          </>
         ) : (
-          <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>
+          <div className="flex items-center justify-center h-full w-full text-zinc-500 text-sm">No file attached to this clip</div>
         )}
       </div>
     </div>
