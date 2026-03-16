@@ -57,7 +57,10 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
   const isPublishedProof = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
   const defaultPdfPage = proof.clipped_page || getPrimaryHighlightPage(proof.highlights || [], 1);
   const activePdfPage = isPublishedProof ? (juryState?.pdf_page || defaultPdfPage) : defaultPdfPage;
-  const highlightBounds = getHighlightBounds(proof.highlights || [], activePdfPage, proof.clipped_page || 1);
+  const highlightBounds = useMemo(
+    () => getHighlightBounds(proof.highlights || [], activePdfPage, proof.clipped_page || 1),
+    [activePdfPage, proof.clipped_page, proof.highlights]
+  );
 
   const pdfSyncState = useMemo(() => {
     if (!isPublishedProof && !hasHighlightFocus) return undefined;
