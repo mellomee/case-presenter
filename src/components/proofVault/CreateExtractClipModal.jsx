@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { AlertCircle, Trash2, Highlighter, MousePointer2, Hand, Move } from 'luc
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
-import { getHighlightPages, getPrimaryHighlightPage } from '@/lib/proofPdfUtils';
+import { getHighlightPages, getHighlightsForPage, getPrimaryHighlightPage } from '@/lib/proofPdfUtils';
 
 const HIGHLIGHT_COLORS = [
   { name: 'Yellow', hex: '#FEF3C7' },
@@ -86,10 +86,12 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     if (!open || !parentExtract) return;
 
     if (isEditing) {
-      const normalizedHighlights = (Array.isArray(parentExtract.highlights) ? parentExtract.highlights : []).map((highlight) => ({
-        ...highlight,
-        page: Number.isInteger(highlight?.page) ? highlight.page : (parentExtract.clipped_page || 1),
-      }));
+      const normalizedHighlights = Array.isArray(parentExtract.highlights)
+        ? parentExtract.highlights.map((highlight) => ({
+            ...highlight,
+            page: Number.isInteger(highlight?.page) ? highlight.page : (parentExtract.clipped_page || 1),
+          }))
+        : [];
 
       setClipName(parentExtract.name || '');
       setFormalName(parentExtract.formal_name || '');
@@ -108,20 +110,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
     resetForm();
   }, [open, parentExtract, isEditing]);
-
-  const overlayHighlights = useMemo(
-    () => highlights
-      .map((highlight, index) => ({ ...highlight, index }))
-      .filter((highlight) => (Number.isInteger(highlight.page) ? highlight.page : currentPage) === currentPage),
-    [highlights, currentPage]
-  );
-
-  const highlightPages = getHighlightPages(highlights, currentPage);
-
-  const requestPageChange = (nextPage) => {
-    setCurrentPage(nextPage);
-    setSelectedHighlight(null);
-  };
 
   const getPoint = (event) => {
     const rect = overlayRef.current?.getBoundingClientRect();
@@ -169,7 +157,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       const nextX = clamp(startHighlight.x + (point.x - startPoint.x), 0, 100 - startHighlight.width);
       const nextY = clamp(startHighlight.y + (point.y - startPoint.y), 0, 100 - startHighlight.height);
 
-      setHighlights((previous) => previous.map((highlight, index) => (
+      setHighlights((previousHighlights) => previousHighlights.map((highlight, index) => (
         index === selectedHighlight ? { ...highlight, x: nextX, y: nextY } : highlight
       )));
       return;
@@ -198,7 +186,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     if (mode !== 'highlight' || !dragStartRef.current || !draftHighlight) return;
 
     if (draftHighlight.width > 0.8 && draftHighlight.height > 0.8) {
-      setHighlights((previous) => [...previous, draftHighlight]);
+      setHighlights((previousHighlights) => [...previousHighlights, draftHighlight]);
     }
 
     dragStartRef.current = null;
@@ -213,7 +201,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
   const deleteSelectedHighlight = () => {
     if (selectedHighlight === null) return;
-    setHighlights((previous) => previous.filter((_, index) => index !== selectedHighlight));
+    setHighlights((previousHighlights) => previousHighlights.filter((_, index) => index !== selectedHighlight));
     setSelectedHighlight(null);
   };
 
@@ -222,7 +210,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setSelectedOpacity(nextOpacity);
 
     if (selectedHighlight !== null) {
-      setHighlights((previous) => previous.map((highlight, index) => (
+      setHighlights((previousHighlights) => previousHighlights.map((highlight, index) => (
         index === selectedHighlight ? { ...highlight, opacity: nextOpacity } : highlight
       )));
     }
@@ -242,8 +230,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       return;
     }
 
-    const clippedPage = getPrimaryHighlightPage(highlights, currentPage);
-
     const clipData = {
       proof_category: actualParentExtract.proof_category,
       file_type: 'PDF',
@@ -257,7 +243,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       category_id: actualParentExtract.category_id || null,
       proof_type_category_id: actualParentExtract.proof_type_category_id,
       file_url: actualParentExtract.file_url,
-      clipped_page: clippedPage,
+      clipped_page: getPrimaryHighlightPage(highlights, currentPage),
       highlights,
       draft_exhibit_num: draftExhibitNum.trim() || null,
     };
@@ -266,6 +252,11 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   };
 
   if (!parentExtract || !actualParentExtract) return null;
+
+  const highlightPages = getHighlightPages(highlights, currentPage);
+  const overlayHighlights = highlights
+    .map((highlight, index) => ({ ...highlight, _index: index }))
+    .filter((highlight) => getHighlightsForPage([highlight], currentPage, currentPage).length > 0);
 
   const pageOverlay = (
     <div
@@ -284,9 +275,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     >
       {overlayHighlights.map((highlight) => (
         <button
-          key={highlight.index}
+          key={highlight._index}
           type="button"
-          className={`absolute rounded-sm ${mode === 'select' ? 'cursor-pointer' : 'pointer-events-none'} ${selectedHighlight === highlight.index ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
+          className={`absolute rounded-sm ${mode === 'select' ? 'cursor-pointer' : 'pointer-events-none'} ${selectedHighlight === highlight._index ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
           style={{
             left: `${highlight.x}%`,
             top: `${highlight.y}%`,
@@ -300,12 +291,12 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
           onClick={(event) => {
             if (mode !== 'select') return;
             event.stopPropagation();
-            setSelectedHighlight(highlight.index);
+            setSelectedHighlight(highlight._index);
             setSelectedOpacity(highlight.opacity ?? 0.45);
           }}
         />
       ))}
-      {draftHighlight && (
+      {draftHighlight && draftHighlight.page === currentPage && (
         <div
           className="absolute rounded-sm pointer-events-none"
           style={{
@@ -353,7 +344,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 fileUrl={actualParentExtract.file_url}
                 mode="controller"
                 currentPage={currentPage}
-                onPageChange={requestPageChange}
+                onPageChange={setCurrentPage}
                 allowPan={mode === 'pan'}
                 pageOverlay={pageOverlay}
               />
@@ -364,7 +355,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
             <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 text-xs">
               <div className="text-slate-500 shrink-0 mr-1 whitespace-nowrap">
                 {highlights.length > 0
-                  ? `${highlights.length} highlight${highlights.length === 1 ? '' : 's'} across ${highlightPages.length} page${highlightPages.length === 1 ? '' : 's'}.`
+                  ? `${highlights.length} highlight${highlights.length === 1 ? '' : 's'} across ${highlightPages.length} page${highlightPages.length === 1 ? '' : 's'}. Viewing page ${currentPage}.`
                   : 'No highlights placed yet.'}
               </div>
 

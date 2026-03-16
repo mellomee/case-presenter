@@ -2,25 +2,45 @@ import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
-import { Loader2, Scale, Maximize } from 'lucide-react';
 import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
 import { getPrimaryHighlightPage } from '@/lib/proofPdfUtils';
+import { Loader2, Scale, Maximize } from 'lucide-react';
+
+function JuryPDF({ proof, page }) {
+  const startingPage = getPrimaryHighlightPage(proof.highlights || [], proof.clipped_page || 1);
+
+  return (
+    <div className="w-full h-full">
+      <PDFViewer
+        fileUrl={proof.file_url}
+        mode="viewer"
+        syncState={{ currentPage: page || startingPage }}
+        highlights={proof.highlights || []}
+        clippedPage={startingPage}
+        showHighlights={Array.isArray(proof.highlights) && proof.highlights.length > 0}
+        autoFocusHighlights={Array.isArray(proof.highlights) && proof.highlights.length > 0}
+        dimInactiveArea={Array.isArray(proof.highlights) && proof.highlights.length > 0}
+        allowPan={false}
+      />
+    </div>
+  );
+}
 
 function JuryVideo({ proof, videoTime, isPlaying }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    const newTime = videoTime ?? 0;
-    if (Math.abs(el.currentTime - newTime) > 1.5) el.currentTime = newTime;
+    const element = videoRef.current;
+    if (!element) return;
+    const nextTime = videoTime ?? 0;
+    if (Math.abs(element.currentTime - nextTime) > 1.5) element.currentTime = nextTime;
   }, [videoTime]);
 
   useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    if (isPlaying && el.paused) el.play().catch(() => {});
-    else if (!isPlaying && !el.paused) el.pause();
+    const element = videoRef.current;
+    if (!element) return;
+    if (isPlaying && element.paused) element.play().catch(() => {});
+    else if (!isPlaying && !element.paused) element.pause();
   }, [isPlaying]);
 
   return (
@@ -52,9 +72,9 @@ function TopRightBadges({ proof, demoLabel }) {
 
 function FullscreenButton() {
   const handleFullscreen = () => {
-    const el = document.documentElement;
+    const element = document.documentElement;
     if (!document.fullscreenElement) {
-      el.requestFullscreen?.();
+      element.requestFullscreen?.();
     } else {
       document.exitFullscreen?.();
     }
@@ -112,7 +132,6 @@ export default function JuryView() {
   const caseName = settings?.case_name || 'Case Presenter';
   const demoLabel = settings?.jury_demonstrative_label || 'For illustrative purposes only';
   const isBlank = !juryState || juryState.is_blank || !juryState.published_proof_id;
-  const clipStartPage = getPrimaryHighlightPage(proof?.highlights || [], proof?.clipped_page || 1);
 
   if (!juryState) {
     return (
@@ -148,21 +167,9 @@ export default function JuryView() {
             />
           </div>
         ) : proof.file_type === 'Video' ? (
-          <JuryVideo
-            proof={proof}
-            videoTime={juryState.video_time}
-            isPlaying={juryState.is_playing}
-          />
+          <JuryVideo proof={proof} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
         ) : proof.file_url ? (
-          <PDFViewer
-            fileUrl={proof.file_url}
-            mode="viewer"
-            syncState={{ currentPage: juryState.pdf_page || clipStartPage }}
-            highlights={proof.highlights || []}
-            clippedPage={clipStartPage}
-            autoFocusHighlights={Array.isArray(proof.highlights) && proof.highlights.length > 0}
-            dimInactiveArea={Array.isArray(proof.highlights) && proof.highlights.length > 0}
-          />
+          <JuryPDF proof={proof} page={juryState.pdf_page || proof.clipped_page || 1} />
         ) : (
           <p className="text-white/20 text-lg">No file attached</p>
         )}

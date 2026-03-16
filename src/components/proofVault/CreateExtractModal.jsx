@@ -22,7 +22,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
   const [extractSource, setExtractSource] = useState('original');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [savingExtract, setSavingExtract] = useState(false);
+  const [extractingPages, setExtractingPages] = useState(false);
   const [pageRange, setPageRange] = useState('');
   const [selectedPages, setSelectedPages] = useState([]);
   const [sourceTotalPages, setSourceTotalPages] = useState(0);
@@ -61,7 +61,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     setExtractSource('original');
     setUploadedFile(null);
     setUploadingFile(false);
-    setSavingExtract(false);
+    setExtractingPages(false);
     setPageRange('');
     setSelectedPages([]);
     setSourceTotalPages(0);
@@ -82,16 +82,17 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     : [];
 
   const canChangeExtractSource = !isEditing || childClips.length === 0;
-  const selectedPagesLabel = formatPageSelection(selectedPages);
+  const selectedPageLabel = formatPageSelection(selectedPages);
 
   useEffect(() => {
     if (!open || !parentProof) return;
 
     if (isEditing) {
       setExtractSource('original');
-      setUploadedFile(null);
+      setUploadedFile(parentProof.file_url || null);
       setPageRange(parentProof.extract_pages || '');
       setSelectedPages(parsePageSelection(parentProof.extract_pages || ''));
+      setSourceTotalPages(0);
       setInternalName(parentProof.name || '');
       setFormalName(parentProof.formal_name || '');
       setDraftExhibitNum(parentProof.draft_exhibit_num || '');
@@ -149,34 +150,35 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     }
 
     if (extractSource === 'original' && selectedPages.length === 0) {
-      setWarningMsg('Select at least one page from the thumbnail strip.');
+      setWarningMsg('Select at least one page from the original PDF');
       setShowWarning(true);
       return;
     }
 
     if (extractSource === 'original' && !sourceTotalPages) {
-      setWarningMsg('Wait for the PDF to finish loading before saving the extract.');
+      setWarningMsg('Wait for the original PDF to finish loading before saving');
       setShowWarning(true);
       return;
     }
 
-    if (extractSource === 'upload' && !uploadedFile) {
-      setWarningMsg('Upload a PDF snippet first.');
-      setShowWarning(true);
-      return;
+    if (extractSource === 'upload') {
+      if (!uploadedFile) {
+        setWarningMsg('Upload a PDF first');
+        setShowWarning(true);
+        return;
+      }
+      if (!validatePageRange(pageRange)) {
+        return;
+      }
     }
 
-    if (extractSource === 'upload' && !validatePageRange(pageRange)) {
-      return;
-    }
-
-    let extractedFileUrl = extractSource === 'upload' ? uploadedFile : null;
-    let extractPagesValue = extractSource === 'upload' ? pageRange.trim() : selectedPagesLabel;
+    let fileUrl = uploadedFile;
+    let extractPagesValue = pageRange.trim();
     let dropboxFileId = null;
     let dropboxFilePath = null;
 
     if (extractSource === 'original') {
-      setSavingExtract(true);
+      setExtractingPages(true);
       try {
         const response = await base44.functions.invoke('extractPdfPages', {
           sourceFileUrl: actualParentProof.file_url,
@@ -185,17 +187,17 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
           fileName: formalName.trim() || internalName.trim(),
         });
 
-        extractedFileUrl = response.data.file_url;
-        extractPagesValue = response.data.extract_pages || selectedPagesLabel;
+        fileUrl = response.data.file_url;
+        extractPagesValue = response.data.extract_pages;
         dropboxFileId = response.data.dropbox_file_id || null;
         dropboxFilePath = response.data.dropbox_file_path || null;
       } catch (error) {
-        setWarningMsg(error.message || 'Unable to create extract from selected pages.');
+        setWarningMsg(`Page extraction failed: ${error.message}`);
         setShowWarning(true);
-        setSavingExtract(false);
+        setExtractingPages(false);
         return;
       }
-      setSavingExtract(false);
+      setExtractingPages(false);
     }
 
     const extractData = {
@@ -209,7 +211,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
       proof_type_category_id: parentProof.proof_type_category_id,
-      file_url: extractedFileUrl,
+      file_url: fileUrl,
       extract_pages: extractPagesValue,
       draft_exhibit_num: draftExhibitNum.trim() || null,
       dropbox_file_id: dropboxFileId,
@@ -223,7 +225,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Extract' : 'Create Extract'}</DialogTitle>
         </DialogHeader>
@@ -303,27 +305,35 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             </div>
           )}
 
-          {(extractSource === 'original' ? actualParentProof.file_url : uploadedFile) && (
+          {extractSource === 'original' && actualParentProof.file_url && (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <label className="text-sm font-medium text-slate-700">PDF Preview</label>
-                {extractSource === 'original' && (
-                  <div className="text-xs text-slate-600">
-                    {selectedPages.length > 0
-                      ? `Selected pages: ${selectedPagesLabel}`
-                      : 'Click thumbnails to choose pages. Use Ctrl/Cmd or Shift for multi-select.'}
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block">Select pages to extract</label>
+                  <p className="text-xs text-slate-500 mt-1">Click thumbnails to select pages. Ctrl/Cmd adds pages, Shift selects a range.</p>
+                </div>
+                <div className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-1.5">
+                  {selectedPages.length ? `${selectedPages.length} selected · ${selectedPageLabel}` : 'No pages selected'}
+                </div>
               </div>
-              <div className="bg-slate-900 rounded-lg overflow-hidden h-[30rem] border border-slate-200">
+              <div className="bg-slate-900 rounded-lg overflow-hidden h-[420px] border border-slate-200">
                 <PDFViewer
-                  fileUrl={extractSource === 'original' ? actualParentProof.file_url : uploadedFile}
+                  fileUrl={actualParentProof.file_url}
                   mode="viewer"
-                  allowPageSelection={extractSource === 'original'}
+                  allowPageSelection
                   selectedPages={selectedPages}
                   onSelectedPagesChange={setSelectedPages}
                   onDocumentLoad={({ numPages }) => setSourceTotalPages(numPages)}
                 />
+              </div>
+            </div>
+          )}
+
+          {extractSource === 'upload' && uploadedFile && (
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">PDF Preview</label>
+              <div className="bg-slate-900 rounded-lg overflow-hidden h-64 border border-slate-200">
+                <PDFViewer fileUrl={uploadedFile} mode="viewer" />
               </div>
             </div>
           )}
@@ -345,7 +355,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             </div>
           )}
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Internal Name *</label>
               <Input
@@ -390,12 +400,10 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
               <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button
                 onClick={handleSubmit}
-                disabled={saveMutation.isPending || savingExtract}
+                disabled={saveMutation.isPending || extractingPages}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {saveMutation.isPending || savingExtract
-                  ? (isEditing ? 'Saving...' : 'Creating...')
-                  : (isEditing ? 'Save Changes' : 'Save Extract')}
+                {extractingPages ? 'Extracting Pages...' : saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract')}
               </Button>
             </div>
           </div>
@@ -408,9 +416,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                 <AlertCircle className="w-5 h-5 text-amber-600" />
                 Warning
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-base text-slate-700">
-                {warningMsg}
-              </AlertDialogDescription>
+              <AlertDialogDescription className="text-base text-slate-700">{warningMsg}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogAction>OK</AlertDialogAction>
           </AlertDialogContent>
