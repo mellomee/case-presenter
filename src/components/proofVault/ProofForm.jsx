@@ -57,13 +57,26 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     if (!file) return;
 
     setIsUploading(true);
+    setOcrStatus(null);
     try {
-      const response = await base44.integrations.Core.UploadFile({ file });
+      const uploadResponse = await base44.integrations.Core.UploadFile({ file });
+      let finalUrl = uploadResponse.file_url;
       setUploadedFileName(file.name);
-      setFormData({ ...formData, file_url: response.file_url });
+
+      // For PDFs, check and apply OCR if needed
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        setOcrStatus('checking');
+        const ocrResponse = await base44.functions.invoke('ocrPdf', { file_url: finalUrl });
+        finalUrl = ocrResponse.data.file_url;
+        setOcrStatus(ocrResponse.data.ocr_applied ? 'processing' : 'done');
+        setTimeout(() => setOcrStatus('done'), 1000);
+      }
+
+      setFormData((prev) => ({ ...prev, file_url: finalUrl }));
     } catch (error) {
       console.error('Upload failed:', error);
       alert('File upload failed. Please try again.');
+      setOcrStatus(null);
     } finally {
       setIsUploading(false);
     }
