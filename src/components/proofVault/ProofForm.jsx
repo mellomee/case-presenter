@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, Link2 } from 'lucide-react';
+import DropboxFilePickerModal from '@/components/proofVault/DropboxFilePickerModal';
 
 export default function ProofForm({ proof, onSubmit, onCancel }) {
   const [proofCategory, setProofCategory] = useState(proof?.proof_category || 'Exhibit');
   const [fileType, setFileType] = useState(proof?.file_type || 'PDF');
+  const [sourceType, setSourceType] = useState(proof?.file_source === 'dropbox' ? 'dropbox' : 'upload');
   const [formData, setFormData] = useState(
     proof || {
       proof_category: 'Exhibit',
@@ -29,11 +31,25 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       proof_type_category_id: '',
       file_url: '',
       video_url: '',
+      file_source: 'base44',
+      dropbox_file_id: '',
+      dropbox_path: '',
+      dropbox_file_name: '',
       draft_exhibit_num: '',
     }
   );
   const [uploadedFileName, setUploadedFileName] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showDropboxPicker, setShowDropboxPicker] = useState(false);
+  const [selectedDropboxFile, setSelectedDropboxFile] = useState(
+    proof?.file_source === 'dropbox'
+      ? {
+          id: proof.dropbox_file_id,
+          path_display: proof.dropbox_path,
+          name: proof.dropbox_file_name || proof.formal_name,
+        }
+      : null
+  );
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
@@ -50,6 +66,20 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
+  const { data: proofs = [] } = useQuery({
+    queryKey: ['proofs'],
+    queryFn: () => base44.entities.Proof.list(),
+    enabled: !!proof?.id,
+  });
+
+  const childProofCount = useMemo(
+    () => (proof?.id ? proofs.filter((item) => item.parent_proof_id === proof.id).length : 0),
+    [proof?.id, proofs]
+  );
+
+  const fileSourceLocked = Boolean(proof?.id && childProofCount > 0);
+  const dropboxFileName = selectedDropboxFile?.name || formData.dropbox_file_name || '';
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -62,9 +92,17 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         : (await base44.integrations.Core.UploadFile({ file })).file_url;
 
       setUploadedFileName(file.name);
-      setFormData((current) => ({ ...current, file_url: fileUrl }));
+      setSelectedDropboxFile(null);
+      setSourceType('upload');
+      setFormData((current) => ({
+        ...current,
+        file_source: 'base44',
+        file_url: fileUrl,
+        dropbox_file_id: '',
+        dropbox_path: '',
+        dropbox_file_name: '',
+      }));
     } catch (error) {
-      console.error('Upload failed:', error);
       alert('File upload failed. Please try again.');
     } finally {
       setIsUploading(false);
@@ -73,24 +111,65 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
   const handleProofCategoryChange = (newCategory) => {
     setProofCategory(newCategory);
-    setFormData({
-      ...formData,
+    setFormData((current) => ({
+      ...current,
       proof_category: newCategory,
-      party_id: newCategory === 'Deposition' ? formData.party_id : '',
-    });
+      party_id: newCategory === 'Deposition' ? current.party_id : '',
+      file_type: newCategory === 'Deposition' && current.file_type === 'Image' ? 'PDF' : current.file_type,
+    }));
+    if (newCategory === 'Deposition' && fileType === 'Image') {
+      setFileType('PDF');
+    }
   };
 
   const handleFileTypeChange = (newType) => {
     setFileType(newType);
-    setFormData({ ...formData, file_type: newType });
+    setFormData((current) => ({ ...current, file_type: newType }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSourceTypeChange = (nextSourceType) => {
+    if (fileSourceLocked) return;
+
+    setSourceType(nextSourceType);
+    if (nextSourceType === 'upload') {
+      setSelectedDropboxFile(null);
+      setFormData((current) => ({
+        ...current,
+        file_source: 'base44',
+        dropbox_file_id: '',
+        dropbox_path: '',
+        dropbox_file_name: '',
+      }));
+      return;
+    }
+
+    setUploadedFileName(null);
+    setFormData((current) => ({
+      ...current,
+      file_url: '',
+    }));
+  };
+
+  const handleSelectDropboxFile = (file) => {
+    setSelectedDropboxFile(file);
+    setUploadedFileName(null);
+    setSourceType('dropbox');
+    setFormData((current) => ({
+      ...current,
+      formal_name: file.name,
+      file_source: 'dropbox',
+      file_url: '',
+      dropbox_file_id: file.id,
+      dropbox_path: file.path_display,
+      dropbox_file_name: file.name,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.name || !formData.formal_name) {
-      alert('Internal Name and Formal Name are required.');
+    if (!formData.name.trim()) {
+      alert('Internal Name is required.');
       return;
     }
 
@@ -104,357 +183,350 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       return;
     }
 
-    if (fileType === 'PDF' && !formData.file_url && !proof) {
+    let nextPayload = {
+      ...formData,
+      proof_category: proofCategory,
+      file_type: fileType,
+      name: formData.name.trim(),
+      description: formData.description?.trim() || '',
+    };
+
+    if (sourceType === 'dropbox') {
+      const dropboxSelection = selectedDropboxFile || (proof?.file_source === 'dropbox' ? {
+        id: proof.dropbox_file_id,
+        path_display: proof.dropbox_path,
+        name: proof.dropbox_file_name || proof.formal_name,
+      } : null);
+
+      if (!dropboxSelection) {
+        alert('Select a Dropbox file first.');
+        return;
+      }
+
+      const fileChanged = !proof || proof.file_source !== 'dropbox' || proof.dropbox_file_id !== dropboxSelection.id || proof.dropbox_path !== dropboxSelection.path_display;
+
+      if (fileChanged && fileType === 'PDF') {
+        const response = await base44.functions.invoke('prepareDropboxProof', {
+          fileId: dropboxSelection.id,
+          path: dropboxSelection.path_display,
+          name: dropboxSelection.name,
+        });
+
+        nextPayload = {
+          ...nextPayload,
+          ...response.data,
+          formal_name: response.data.dropbox_file_name || dropboxSelection.name,
+          file_url: '',
+          video_url: fileType === 'Video' ? nextPayload.video_url : '',
+        };
+      } else {
+        nextPayload = {
+          ...nextPayload,
+          file_source: 'dropbox',
+          dropbox_file_id: dropboxSelection.id,
+          dropbox_path: dropboxSelection.path_display,
+          dropbox_file_name: dropboxSelection.name,
+          formal_name: dropboxSelection.name,
+          file_url: '',
+          video_url: fileType === 'Video' ? nextPayload.video_url : '',
+        };
+      }
+    } else {
+      nextPayload = {
+        ...nextPayload,
+        file_source: 'base44',
+        dropbox_file_id: '',
+        dropbox_path: '',
+        dropbox_file_name: '',
+      };
+    }
+
+    if (sourceType !== 'dropbox' && !nextPayload.formal_name?.trim()) {
+      alert('Formal Name is required.');
+      return;
+    }
+
+    if (fileType === 'PDF' && sourceType !== 'dropbox' && !nextPayload.file_url && !proof) {
       alert('PDF file is required.');
       return;
     }
 
-    if (fileType === 'Image' && !formData.file_url && !proof) {
+    if (fileType === 'Image' && sourceType !== 'dropbox' && !nextPayload.file_url && !proof) {
       alert('Image file is required.');
       return;
     }
 
-    if (fileType === 'Video' && !formData.video_url && !formData.file_url && !proof) {
-      alert('Video URL or file is required.');
+    if (fileType === 'Video' && !nextPayload.video_url && sourceType !== 'dropbox' && !nextPayload.file_url && !proof) {
+      alert('Video URL, Dropbox file, or uploaded video is required.');
       return;
     }
 
-    onSubmit(formData);
+    onSubmit(nextPayload);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto pr-2">
-      {/* Proof Category */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Proof Category</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              checked={proofCategory === 'Exhibit'}
-              onChange={() => handleProofCategoryChange('Exhibit')}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-slate-700">Exhibit</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              checked={proofCategory === 'Deposition'}
-              onChange={() => handleProofCategoryChange('Deposition')}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-slate-700">Deposition</span>
-          </label>
-        </div>
-      </div>
-
-      {/* File Type */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">File Type</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              checked={fileType === 'PDF'}
-              onChange={() => handleFileTypeChange('PDF')}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-slate-700">PDF</span>
-          </label>
-          <label
-            className={`flex items-center gap-2 cursor-pointer ${
-              proofCategory === 'Deposition' ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            <input
-              type="radio"
-              checked={fileType === 'Image'}
-              onChange={() => handleFileTypeChange('Image')}
-              disabled={proofCategory === 'Deposition'}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-slate-700">Image</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              checked={fileType === 'Video'}
-              onChange={() => handleFileTypeChange('Video')}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-slate-700">Video</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Internal Name */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
-          Internal Name *
-        </label>
-        <Input
-          placeholder="e.g., Scene Photo 1"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </div>
-
-      {/* Formal Name */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
-          Formal Name *
-        </label>
-        <Input
-          placeholder="e.g., Photograph of Intersection"
-          value={formData.formal_name}
-          onChange={(e) => setFormData({ ...formData, formal_name: e.target.value })}
-          required
-        />
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
-          Description (optional)
-        </label>
-        <Textarea
-          placeholder="Additional details"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="h-16"
-        />
-      </div>
-
-      {/* Party (Mandatory for Deposition) */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
-          Assign to Party {proofCategory === 'Deposition' && '*'}
-        </label>
-        <Select
-          value={formData.party_id}
-          onValueChange={(value) => setFormData({ ...formData, party_id: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select party (optional)" />
-          </SelectTrigger>
-          <SelectContent>
-            {parties.map((party) => (
-              <SelectItem key={party.id} value={party.id}>
-                {party.first_name} {party.last_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Category */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
-          Category (optional)
-        </label>
-        <Select
-          value={formData.category_id}
-          onValueChange={(value) => setFormData({ ...formData, category_id: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Proof Type */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
-          Proof Type *
-        </label>
-        <Select
-          value={formData.proof_type_category_id}
-          onValueChange={(value) => setFormData({ ...formData, proof_type_category_id: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select proof type" />
-          </SelectTrigger>
-          <SelectContent>
-            {proofTypes.map((type) => (
-              <SelectItem key={type.id} value={type.id}>
-                {type.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Draft Exhibit # (Exhibit only) */}
-      {proofCategory === 'Exhibit' && (
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[34rem] overflow-y-auto pr-2">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Draft Exhibit # (optional)
-          </label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Proof Category</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={proofCategory === 'Exhibit'} onChange={() => handleProofCategoryChange('Exhibit')} className="w-4 h-4" />
+              <span className="text-sm text-slate-700">Exhibit</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={proofCategory === 'Deposition'} onChange={() => handleProofCategoryChange('Deposition')} className="w-4 h-4" />
+              <span className="text-sm text-slate-700">Deposition</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">File Type</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={fileType === 'PDF'} onChange={() => handleFileTypeChange('PDF')} className="w-4 h-4" />
+              <span className="text-sm text-slate-700">PDF</span>
+            </label>
+            <label className={`flex items-center gap-2 cursor-pointer ${proofCategory === 'Deposition' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <input type="radio" checked={fileType === 'Image'} onChange={() => handleFileTypeChange('Image')} disabled={proofCategory === 'Deposition'} className="w-4 h-4" />
+              <span className="text-sm text-slate-700">Image</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={fileType === 'Video'} onChange={() => handleFileTypeChange('Video')} className="w-4 h-4" />
+              <span className="text-sm text-slate-700">Video</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">File Source</label>
+          <div className="flex flex-wrap gap-4">
+            <label className={`flex items-center gap-2 ${fileSourceLocked ? 'opacity-70' : 'cursor-pointer'}`}>
+              <input type="radio" checked={sourceType === 'upload'} onChange={() => handleSourceTypeChange('upload')} disabled={fileSourceLocked} className="w-4 h-4" />
+              <span className="text-sm text-slate-700">Upload to app</span>
+            </label>
+            <label className={`flex items-center gap-2 ${fileSourceLocked ? 'opacity-70' : 'cursor-pointer'}`}>
+              <input type="radio" checked={sourceType === 'dropbox'} onChange={() => handleSourceTypeChange('dropbox')} disabled={fileSourceLocked} className="w-4 h-4" />
+              <span className="text-sm text-slate-700">Link Dropbox file</span>
+            </label>
+          </div>
+          {fileSourceLocked && (
+            <p className="text-xs text-amber-700 mt-2">
+              File source is locked because this proof has {childProofCount} child proof{childProofCount === 1 ? '' : 's'}.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Internal Name *</label>
+          <Input placeholder="e.g., Scene Photo 1" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Formal Name {sourceType === 'dropbox' ? '' : '*'}</label>
           <Input
-            placeholder="e.g., A-1"
-            value={formData.draft_exhibit_num}
-            onChange={(e) => setFormData({ ...formData, draft_exhibit_num: e.target.value })}
+            placeholder={sourceType === 'dropbox' ? 'Will use the Dropbox filename' : 'e.g., Photograph of Intersection'}
+            value={sourceType === 'dropbox' ? dropboxFileName : formData.formal_name}
+            onChange={(e) => setFormData({ ...formData, formal_name: e.target.value })}
+            readOnly={sourceType === 'dropbox'}
           />
+          {sourceType === 'dropbox' && <p className="text-xs text-slate-500 mt-1">Formal Name is filled automatically from the Dropbox filename.</p>}
         </div>
-      )}
 
-      {/* PDF Upload */}
-      {fileType === 'PDF' && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Upload PDF {!proof && '*'}
-          </label>
-          <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
-            {uploadedFileName || formData.file_url ? (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-700">
-                  {uploadedFileName || formData.file_url.split('/').pop()}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUploadedFileName(null);
-                    setFormData({ ...formData, file_url: '' });
-                  }}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center cursor-pointer">
-                <Upload className="w-6 h-6 text-slate-400 mb-2" />
-                <span className="text-sm font-medium text-slate-700">
-                  Click to upload or drag & drop
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileUpload}
-                  disabled={isUploading}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Description (optional)</label>
+          <Textarea placeholder="Additional details" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="h-16" />
         </div>
-      )}
 
-      {/* Image Upload */}
-      {fileType === 'Image' && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Upload Image {!proof && '*'}
-          </label>
-          <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
-            {uploadedFileName || formData.file_url ? (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-700">
-                  {uploadedFileName || formData.file_url.split('/').pop()}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUploadedFileName(null);
-                    setFormData({ ...formData, file_url: '' });
-                  }}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center cursor-pointer">
-                <Upload className="w-6 h-6 text-slate-400 mb-2" />
-                <span className="text-sm font-medium text-slate-700">
-                  Click to upload or drag & drop
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  disabled={isUploading}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Assign to Party {proofCategory === 'Deposition' && '*'}</label>
+          <Select value={formData.party_id} onValueChange={(value) => setFormData({ ...formData, party_id: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select party (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              {parties.map((party) => (
+                <SelectItem key={party.id} value={party.id}>{party.first_name} {party.last_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      )}
 
-      {/* Video */}
-      {fileType === 'Video' && (
-        <>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Category (optional)</label>
+          <Select value={formData.category_id} onValueChange={(value) => setFormData({ ...formData, category_id: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Proof Type *</label>
+          <Select value={formData.proof_type_category_id} onValueChange={(value) => setFormData({ ...formData, proof_type_category_id: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select proof type" />
+            </SelectTrigger>
+            <SelectContent>
+              {proofTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {proofCategory === 'Exhibit' && (
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Video URL (YouTube, Dropbox, etc.)
-            </label>
-            <Input
-              placeholder="https://..."
-              value={formData.video_url}
-              onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-1">Draft Exhibit # (optional)</label>
+            <Input placeholder="e.g., A-1" value={formData.draft_exhibit_num} onChange={(e) => setFormData({ ...formData, draft_exhibit_num: e.target.value })} />
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              or Upload Video File (optional)
-            </label>
-            <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
-              {uploadedFileName || formData.file_url ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-700">
-                    {uploadedFileName || formData.file_url.split('/').pop()}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUploadedFileName(null);
-                      setFormData({ ...formData, file_url: '' });
-                    }}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+        {sourceType === 'dropbox' ? (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Dropbox File {!proof && '*'} </label>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              {selectedDropboxFile ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-800 truncate">{selectedDropboxFile.name}</div>
+                    <div className="text-xs text-slate-500 truncate">{selectedDropboxFile.path_display}</div>
+                  </div>
+                  {!fileSourceLocked && (
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setShowDropboxPicker(true)}>Change</Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedDropboxFile(null);
+                          setFormData({
+                            ...formData,
+                            formal_name: '',
+                            dropbox_file_id: '',
+                            dropbox_path: '',
+                            dropbox_file_name: '',
+                          });
+                        }}
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center cursor-pointer">
-                  <Upload className="w-6 h-6 text-slate-400 mb-2" />
-                  <span className="text-sm font-medium text-slate-700">
-                    Click to upload
-                  </span>
-                  <input
-                    type="file"
-                    accept="video/*"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                    className="hidden"
-                  />
-                </label>
+                <Button type="button" variant="outline" onClick={() => setShowDropboxPicker(true)} className="gap-2" disabled={fileSourceLocked}>
+                  <Link2 className="w-4 h-4" /> Choose Dropbox File
+                </Button>
               )}
+              {fileType === 'PDF' && <p className="text-xs text-slate-500 mt-2">Dropbox PDFs are OCR-checked automatically and saved back to the Dropbox folder set in Settings.</p>}
             </div>
           </div>
-        </>
-      )}
+        ) : (
+          <>
+            {fileType === 'PDF' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Upload PDF {!proof && '*'} </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
+                  {uploadedFileName || formData.file_url ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-700">{uploadedFileName || formData.file_url.split('/').pop()}</span>
+                      <button type="button" onClick={() => {
+                        setUploadedFileName(null);
+                        setFormData({ ...formData, file_url: '' });
+                      }} className="text-red-600 hover:text-red-700">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center cursor-pointer">
+                      <Upload className="w-6 h-6 text-slate-400 mb-2" />
+                      <span className="text-sm font-medium text-slate-700">Click to upload or drag & drop</span>
+                      <input type="file" accept=".pdf" onChange={handleFileUpload} disabled={isUploading} className="hidden" />
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
 
-      {/* Buttons */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-          {proof ? 'Update Proof' : 'Save Proof'}
-        </Button>
-      </div>
-    </form>
+            {fileType === 'Image' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Upload Image {!proof && '*'} </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
+                  {uploadedFileName || formData.file_url ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-700">{uploadedFileName || formData.file_url.split('/').pop()}</span>
+                      <button type="button" onClick={() => {
+                        setUploadedFileName(null);
+                        setFormData({ ...formData, file_url: '' });
+                      }} className="text-red-600 hover:text-red-700">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center cursor-pointer">
+                      <Upload className="w-6 h-6 text-slate-400 mb-2" />
+                      <span className="text-sm font-medium text-slate-700">Click to upload or drag & drop</span>
+                      <input type="file" accept="image/*" onChange={handleFileUpload} disabled={isUploading} className="hidden" />
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {fileType === 'Video' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Upload Video File</label>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
+                  {uploadedFileName || formData.file_url ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-700">{uploadedFileName || formData.file_url.split('/').pop()}</span>
+                      <button type="button" onClick={() => {
+                        setUploadedFileName(null);
+                        setFormData({ ...formData, file_url: '' });
+                      }} className="text-red-600 hover:text-red-700">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center cursor-pointer">
+                      <Upload className="w-6 h-6 text-slate-400 mb-2" />
+                      <span className="text-sm font-medium text-slate-700">Click to upload</span>
+                      <input type="file" accept="video/*" onChange={handleFileUpload} disabled={isUploading} className="hidden" />
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {fileType === 'Video' && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Video URL (optional)</label>
+            <Input placeholder="https://..." value={formData.video_url} onChange={(e) => setFormData({ ...formData, video_url: e.target.value })} />
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">{proof ? 'Update Proof' : 'Save Proof'}</Button>
+        </div>
+      </form>
+
+      <DropboxFilePickerModal
+        open={showDropboxPicker}
+        onClose={() => setShowDropboxPicker(false)}
+        fileType={fileType}
+        onSelect={handleSelectDropboxFile}
+      />
+    </>
   );
 }
