@@ -56,9 +56,13 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
     setIsUploading(true);
     try {
-      const response = await base44.integrations.Core.UploadFile({ file });
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const fileUrl = isPdf
+        ? (await base44.functions.invoke('ensureSearchablePdf', { file })).data.file_url
+        : (await base44.integrations.Core.UploadFile({ file })).file_url;
+
       setUploadedFileName(file.name);
-      setFormData({ ...formData, file_url: response.file_url });
+      setFormData((current) => ({ ...current, file_url: fileUrl }));
     } catch (error) {
       console.error('Upload failed:', error);
       alert('File upload failed. Please try again.');

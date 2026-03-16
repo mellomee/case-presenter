@@ -117,8 +117,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
 
     setUploadingFile(true);
     try {
-      const response = await base44.integrations.Core.UploadFile({ file });
-      setUploadedFile(response.file_url);
+      const response = await base44.functions.invoke('ensureSearchablePdf', { file });
+      setUploadedFile(response.data.file_url);
       setPageRangeError('');
     } catch (error) {
       setWarningMsg(`File upload failed: ${error.message}`);
