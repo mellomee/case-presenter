@@ -1,8 +1,9 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 import { FileText, X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
+import { getHighlightBounds, getPrimaryHighlightPage } from '@/lib/proofPdfUtils';
 import JuryPublishBar from './JuryPublishBar.jsx';
 
 function statusPill(proof) {
