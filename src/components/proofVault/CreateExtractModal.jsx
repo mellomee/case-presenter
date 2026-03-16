@@ -143,11 +143,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       return;
     }
 
-    if (!formalName.trim()) {
-      setWarningMsg('Formal Name is required');
-      setShowWarning(true);
-      return;
-    }
 
     if (extractSource === 'original' && selectedOriginalPages.length === 0) {
       setWarningMsg('Select at least one page from the original PDF');
@@ -292,7 +287,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
               <Input placeholder="e.g. Scene Photo Extract - Pages 1-3" value={internalName} onChange={(e) => setInternalName(e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name *</label>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name</label>
               <Input placeholder="e.g. Photograph Pages 1-3" value={formalName} onChange={(e) => setFormalName(e.target.value)} />
             </div>
           </div>
