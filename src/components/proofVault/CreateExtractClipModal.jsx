@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
+import { parsePageRange } from './pageRangeUtils';
 import {
   createHighlightGroup,
   flattenHighlightGroupsForPage,
@@ -115,6 +116,11 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
 
     resetForm();
   }, [open, parentExtract, isEditing]);
+
+  const visibleExtractPages = useMemo(
+    () => parsePageRange(actualParentExtract?.extract_pages || ''),
+    [actualParentExtract?.extract_pages]
+  );
 
   const groupsOnCurrentPage = useMemo(
     () => highlightGroups.filter((group) => group.page === currentPage),
@@ -286,11 +292,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setWarning('Clip Name is required');
       return;
     }
-    if (!formalName.trim()) {
-      setWarning('Formal Name is required');
-      return;
-    }
-
     const cleanedGroups = highlightGroups.filter((group) => group.highlights.length > 0);
     if (cleanedGroups.length === 0) {
       setWarning('Add at least one highlight group');
@@ -416,6 +417,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 onPageChange={setCurrentPage}
                 allowPan={mode === 'pan'}
                 pageOverlay={pageOverlay}
+                visiblePages={visibleExtractPages.length > 0 ? visibleExtractPages : null}
               />
             </div>
           )}
@@ -482,7 +484,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                   <Input value={clipName} onChange={(e) => setClipName(e.target.value)} placeholder="e.g. Scene Close-up" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name *</label>
+                  <label className="text-xs font-medium text-slate-700 mb-1.5 block">Formal Name</label>
                   <Input value={formalName} onChange={(e) => setFormalName(e.target.value)} placeholder="e.g. Photograph - Intersection Close-up" />
                 </div>
                 <div>

@@ -3,6 +3,7 @@ import PDFViewer from './PDFViewer';
 import { FileText, Layers, Scissors, Loader2 } from 'lucide-react';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage } from './highlightGroupUtils';
+import { parsePageRange } from './pageRangeUtils';
 
 export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange }) {
   if (!proof) return null;
@@ -11,6 +12,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const originalPDF = parentExtract ? allProofs.find((p) => p.id === parentExtract.parent_proof_id) : null;
   const { url, isLoading } = useResolvedProofAsset(proof);
   const initialPage = getInitialHighlightPage(proof.highlights, proof.clipped_page || 1);
+  const visiblePages = parsePageRange(parentExtract?.extract_pages || '');
   const groupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
   const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
 
@@ -62,6 +64,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
             onStateChange={onStateChange}
             highlights={proof.highlights || []}
             clippedPage={initialPage}
+            visiblePages={visiblePages.length > 0 ? visiblePages : null}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>

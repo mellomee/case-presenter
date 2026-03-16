@@ -189,11 +189,6 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setShowWarning(true);
       return;
     }
-    if (!formalName.trim()) {
-      setWarningMsg('Formal Name is required');
-      setShowWarning(true);
-      return;
-    }
     if (segments.length === 0) {
       setWarningMsg('Add at least one segment');
       setShowWarning(true);
@@ -365,7 +360,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name *</label>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Formal Name</label>
               <Input
                 placeholder="e.g. Deposition Clip — Accident Account"
                 value={formalName}
