@@ -111,7 +111,7 @@ export default function PDFViewer({
       onPageChange?.(target);
       if (mode === 'controller') debouncedPush({ currentPage: target, zoom, panX: 0, panY: 0 });
     },
-    [numPages, zoom, mode, debouncedPush, controlledPage, onPageChange, autoFocusHighlights]
+    [numPages, zoom, mode, debouncedPush, controlledPage, onPageChange, shouldAutoFocusHighlights]
   );
 
   const applyZoom = useCallback(
