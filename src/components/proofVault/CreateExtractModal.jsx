@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Upload, FileText, Loader2 } from 'lucide-react';
+import { AlertCircle, Upload, FileText } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
@@ -22,7 +22,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
   const [extractSource, setExtractSource] = useState('original');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [ocrStatus, setOcrStatus] = useState(null);
   const [pageRange, setPageRange] = useState('');
   const [internalName, setInternalName] = useState('');
   const [formalName, setFormalName] = useState('');
@@ -58,7 +57,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
   const resetForm = () => {
     setExtractSource('original');
     setUploadedFile(null);
-    setOcrStatus(null);
     setPageRange('');
     setInternalName('');
     setFormalName('');
@@ -118,23 +116,13 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
     if (!file) return;
 
     setUploadingFile(true);
-    setOcrStatus(null);
     try {
       const response = await base44.integrations.Core.UploadFile({ file });
-      let finalUrl = response.file_url;
-
-      setOcrStatus('checking');
-      const ocrResponse = await base44.functions.invoke('ocrPdf', { file_url: finalUrl });
-      finalUrl = ocrResponse.data.file_url;
-      setOcrStatus(ocrResponse.data.ocr_applied ? 'processing' : 'done');
-      setTimeout(() => setOcrStatus('done'), 1000);
-
-      setUploadedFile(finalUrl);
+      setUploadedFile(response.file_url);
       setPageRangeError('');
     } catch (error) {
       setWarningMsg(`File upload failed: ${error.message}`);
       setShowWarning(true);
-      setOcrStatus(null);
     } finally {
       setUploadingFile(false);
     }
@@ -240,11 +228,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Upload Shortened PDF</label>
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-slate-400 transition">
-                {uploadingFile || ocrStatus === 'checking' || ocrStatus === 'processing' ? (
-                  <Loader2 className="w-8 h-8 text-slate-400 mx-auto mb-2 animate-spin" />
-                ) : (
-                  <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                )}
+                <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-sm text-slate-600 mb-2">Click to upload or drag & drop</p>
                 <input
                   type="file"
@@ -258,18 +242,12 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
                   variant="outline"
                   size="sm"
                   onClick={() => document.getElementById('extractFileUpload').click()}
-                  disabled={uploadingFile || ocrStatus === 'checking' || ocrStatus === 'processing'}
+                  disabled={uploadingFile}
                 >
-                  {uploadingFile ? 'Uploading...' : ocrStatus === 'checking' || ocrStatus === 'processing' ? 'Processing PDF...' : 'Select PDF'}
+                  {uploadingFile ? 'Uploading...' : 'Select PDF'}
                 </Button>
-                {ocrStatus === 'checking' && (
-                  <p className="text-xs text-blue-600 mt-2">Checking for searchable text…</p>
-                )}
-                {ocrStatus === 'processing' && (
-                  <p className="text-xs text-amber-600 mt-2">Running OCR to make PDF searchable…</p>
-                )}
-                {uploadedFile && ocrStatus === 'done' && (
-                  <p className="text-xs text-green-600 mt-2">PDF is searchable ✓</p>
+                {uploadedFile && (
+                  <p className="text-xs text-green-600 mt-2">✓ File uploaded</p>
                 )}
               </div>
             </div>
@@ -351,14 +329,10 @@ export default function CreateExtractModal({ open, onClose, parentProof, onWarni
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={saveMutation.isPending || uploadingFile || ocrStatus === 'checking' || ocrStatus === 'processing'}
+              disabled={saveMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {ocrStatus === 'checking' || ocrStatus === 'processing'
-                ? 'Processing PDF...'
-                : saveMutation.isPending
-                  ? (isEditing ? 'Saving...' : 'Creating...')
-                  : (isEditing ? 'Save Changes' : 'Save Extract')}
+              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract')}
             </Button>
           </div>
         </div>

@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X, Upload, Loader2 } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 
 export default function ProofForm({ proof, onSubmit, onCancel }) {
   const [proofCategory, setProofCategory] = useState(proof?.proof_category || 'Exhibit');
@@ -34,7 +34,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
   );
   const [uploadedFileName, setUploadedFileName] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [ocrStatus, setOcrStatus] = useState(null); // null | 'checking' | 'processing' | 'done'
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
@@ -56,26 +55,13 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     if (!file) return;
 
     setIsUploading(true);
-    setOcrStatus(null);
     try {
-      const uploadResponse = await base44.integrations.Core.UploadFile({ file });
-      let finalUrl = uploadResponse.file_url;
+      const response = await base44.integrations.Core.UploadFile({ file });
       setUploadedFileName(file.name);
-
-      // For PDFs, check and apply OCR if needed
-      if (file.name.toLowerCase().endsWith('.pdf')) {
-        setOcrStatus('checking');
-        const ocrResponse = await base44.functions.invoke('ocrPdf', { file_url: finalUrl });
-        finalUrl = ocrResponse.data.file_url;
-        setOcrStatus(ocrResponse.data.ocr_applied ? 'processing' : 'done');
-        setTimeout(() => setOcrStatus('done'), 1000);
-      }
-
-      setFormData((prev) => ({ ...prev, file_url: finalUrl }));
+      setFormData({ ...formData, file_url: response.file_url });
     } catch (error) {
       console.error('Upload failed:', error);
       alert('File upload failed. Please try again.');
-      setOcrStatus(null);
     } finally {
       setIsUploading(false);
     }
@@ -325,48 +311,26 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           </label>
           <div className="border-2 border-dashed border-slate-300 rounded-lg p-4">
             {uploadedFileName || formData.file_url ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-700">
-                    {uploadedFileName || formData.file_url.split('/').pop()}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUploadedFileName(null);
-                      setOcrStatus(null);
-                      setFormData({ ...formData, file_url: '' });
-                    }}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                {ocrStatus === 'checking' && (
-                  <div className="flex items-center gap-2 text-xs text-blue-600">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Checking for searchable text…
-                  </div>
-                )}
-                {ocrStatus === 'processing' && (
-                  <div className="flex items-center gap-2 text-xs text-amber-600">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Running OCR to make PDF searchable…
-                  </div>
-                )}
-                {ocrStatus === 'done' && (
-                  <div className="text-xs text-green-600">PDF is searchable ✓</div>
-                )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-700">
+                  {uploadedFileName || formData.file_url.split('/').pop()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadedFileName(null);
+                    setFormData({ ...formData, file_url: '' });
+                  }}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center cursor-pointer">
-                {isUploading ? (
-                  <Loader2 className="w-6 h-6 text-slate-400 mb-2 animate-spin" />
-                ) : (
-                  <Upload className="w-6 h-6 text-slate-400 mb-2" />
-                )}
+                <Upload className="w-6 h-6 text-slate-400 mb-2" />
                 <span className="text-sm font-medium text-slate-700">
-                  {isUploading ? 'Uploading…' : 'Click to upload or drag & drop'}
+                  Click to upload or drag & drop
                 </span>
                 <input
                   type="file"
@@ -483,8 +447,8 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isUploading || ocrStatus === 'checking' || ocrStatus === 'processing'} className="bg-blue-600 hover:bg-blue-700">
-          {(ocrStatus === 'checking' || ocrStatus === 'processing') ? 'Processing PDF…' : proof ? 'Update Proof' : 'Save Proof'}
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+          {proof ? 'Update Proof' : 'Save Proof'}
         </Button>
       </div>
     </form>
