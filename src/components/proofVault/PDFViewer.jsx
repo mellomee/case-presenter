@@ -434,9 +434,20 @@ export default function PDFViewer({
                     <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
                       <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
                     </div>
-                    <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>
-                      {hasOriginalPageMap ? `Orig ${pageNumber}` : pageNumber}
-                    </span>
+                    {hasOriginalPageMap ? (
+                      <div className="mt-1 flex flex-col items-center leading-tight">
+                        <span className={`text-[11px] font-semibold ${isSelected ? 'text-blue-300' : 'text-amber-300'}`}>
+                          {pageIndex}
+                        </span>
+                        <span className="text-[9px] text-zinc-500">
+                          Source Pg: {pageNumber}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>
+                        {pageNumber}
+                      </span>
+                    )}
                   </div>
                 );
               })}
