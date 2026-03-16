@@ -453,7 +453,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
             <Input
               placeholder="https://..."
               value={formData.video_url}
-              onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, video_url: normalizeDropboxUrl(e.target.value) })}
             />
           </div>
 
