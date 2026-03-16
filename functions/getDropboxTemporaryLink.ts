@@ -10,7 +10,9 @@ Deno.serve(async (req) => {
     }
 
     const payload = req.method === 'POST' ? await req.json() : {};
-    const fileReference = payload.fileId ? `id:${payload.fileId}` : payload.path;
+    const fileReference = payload.fileId
+      ? (String(payload.fileId).startsWith('id:') ? payload.fileId : `id:${payload.fileId}`)
+      : payload.path;
 
     if (!fileReference) {
       return Response.json({ error: 'A Dropbox file reference is required.' }, { status: 400 });
