@@ -145,9 +145,14 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
   const { data: proofTypeCategories = [] } = useQuery({ queryKey: ['proofTypeCategories'], queryFn: () => base44.entities.ProofTypeCategory.list() });
   const { data: admissionTemplates = [] } = useQuery({ queryKey: ['admissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list() });
 
-  const jointExhibits = proofs.filter(p =>
-    p.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(p.status)
-  );
+  const admissionBlockProofs = proofs
+    .filter((p) => {
+      const isTopLevelProof = !p.parent_proof_id && !p.proof_child_type;
+      const isEligibleStatus = ['Joint', 'Admitted', 'Demonstrative'].includes(p.status);
+      const isVideoExhibit = p.proof_category === 'Exhibit' && p.file_type === 'Video';
+      return isTopLevelProof && p.proof_category === 'Exhibit' && (isEligibleStatus || isVideoExhibit);
+    })
+    .sort((a, b) => (a.formal_name || a.name || '').localeCompare(b.formal_name || b.name || ''));
 
   useEffect(() => {
     if (block) {
@@ -216,20 +221,21 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
         <label className="text-sm font-medium text-slate-700">
           Proof to Admit <span className="text-red-500">*</span>
         </label>
-        {jointExhibits.length === 0 ? (
-          <p className="text-sm text-slate-500 italic">No Joint, Admitted, or Demonstrative exhibits available.</p>
+        {admissionBlockProofs.length === 0 ? (
+          <p className="text-sm text-slate-500 italic">No eligible exhibits or video proofs available.</p>
         ) : (
           <Select value={selectedProofId} onValueChange={handleSelectProof}>
             <SelectTrigger>
               <SelectValue placeholder="Select a proof…" />
             </SelectTrigger>
             <SelectContent>
-              {jointExhibits.map(p => (
+              {admissionBlockProofs.map(p => (
                 <SelectItem key={p.id} value={p.id}>
                   <span className="font-medium">{p.formal_name || p.name}</span>
-                  {(p.joint_exhibit_num || p.admitted_exhibit_num) && (
+                  <span className="ml-2 text-xs text-slate-400">{p.file_type}</span>
+                  {(p.admitted_exhibit_num || p.demonstrative_exhibit_num || p.joint_exhibit_num) && (
                     <span className="ml-2 text-xs text-slate-400 font-mono">
-                      [{p.admitted_exhibit_num || p.joint_exhibit_num}]
+                      [{p.admitted_exhibit_num || p.demonstrative_exhibit_num || p.joint_exhibit_num}]
                     </span>
                   )}
                 </SelectItem>
