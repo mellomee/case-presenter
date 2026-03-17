@@ -35,6 +35,8 @@ export default function RemoveFromJointModal({ open, onClose, proof }) {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
+      if (!activeProofId) return;
+
       // Update parent proof
       const updateData = {
         status: 'Draft',
@@ -42,10 +44,10 @@ export default function RemoveFromJointModal({ open, onClose, proof }) {
         joint_by: null,
         joint_date: null,
       };
-      await base44.entities.Proof.update(proof.id, updateData);
+      await base44.entities.Proof.update(activeProofId, updateData);
 
       // Update all children
-      const children = proofs.filter((p) => p.parent_proof_id === proof.id);
+      const children = proofs.filter((p) => p.parent_proof_id === activeProofId);
       for (const child of children) {
         await base44.entities.Proof.update(child.id, updateData);
       }
@@ -55,13 +57,13 @@ export default function RemoveFromJointModal({ open, onClose, proof }) {
         for (const q of attachedQuestions) {
           const proofIds = Array.isArray(q.proof_ids) ? q.proof_ids : [];
           const childProofIds = proofs
-            .filter((p) => p.parent_proof_id === proof.id)
+            .filter((p) => p.parent_proof_id === activeProofId)
             .map((p) => p.id);
-          
+
           const updatedProofIds = proofIds.filter(
-            (pid) => pid !== proof.id && !childProofIds.includes(pid)
+            (pid) => pid !== activeProofId && !childProofIds.includes(pid)
           );
-          
+
           await base44.entities.Question.update(q.id, {
             proof_ids: updatedProofIds,
           });
