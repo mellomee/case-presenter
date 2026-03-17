@@ -290,6 +290,10 @@ export default function AttorneyView() {
     ? branchItems[activeBlockFlow.branchIndex + 1] || nextTopLevelItem || null
     : nextTopLevelItem;
 
+  const admittedPathCount = currentItem?.type === 'block'
+    ? (currentItem.pathQuestionSets?.admitted?.length || 0)
+    : 0;
+
   const startBranch = useCallback((branchKey) => {
     if (currentItem?.type !== 'block') return;
 
@@ -355,11 +359,11 @@ export default function AttorneyView() {
     if (!currentBlockStep) return false;
 
     if (currentBlockStep.key === '5' && (activeBlockFlow?.decision === 'admit' || activeBlockFlow?.decision === 'demo')) {
-      return branchItems.length > 0 || currentIndex < flatList.length - 1;
+      return admittedPathCount > 0 || currentIndex < flatList.length - 1;
     }
 
     return (activeBlockFlow?.stepIndex || 0) < visibleBlockSteps.length - 1;
-  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, branchItems.length, currentBlockStep, visibleBlockSteps.length]);
+  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, admittedPathCount, currentBlockStep, visibleBlockSteps.length]);
 
   const goNext = useCallback(() => {
     if (!currentItem) return;
