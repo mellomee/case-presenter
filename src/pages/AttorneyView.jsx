@@ -12,6 +12,34 @@ import OverviewPanel from '@/components/attorneyView/OverviewPanel.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 
 // Build a flat ordered list of top-level questions/blocks from buckets
+function normalizeProofIds(proofIds) {
+  if (!proofIds) return [];
+  if (Array.isArray(proofIds)) return proofIds.filter(Boolean);
+
+  if (typeof proofIds === 'string') {
+    try {
+      return normalizeProofIds(JSON.parse(proofIds));
+    } catch {
+      return proofIds.split(',').map(id => id.trim()).filter(Boolean);
+    }
+  }
+
+  if (typeof proofIds === 'object') {
+    if (Array.isArray(proofIds.ids)) return proofIds.ids.filter(Boolean);
+
+    const entries = Object.entries(proofIds);
+    if (entries.every(([, value]) => typeof value === 'boolean')) {
+      return entries.filter(([, value]) => value).map(([key]) => key);
+    }
+
+    return Object.values(proofIds)
+      .filter((value) => typeof value === 'string' && value)
+      .map((value) => value.trim());
+  }
+
+  return [];
+}
+
 function buildFlatList(buckets, questions, admissionBlocks, proofs) {
   const allItems = [];
 
