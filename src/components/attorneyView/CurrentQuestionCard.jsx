@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, StickyNote, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdmissionEndActions from './AdmissionEndActions.jsx';
+import AdmissionBlockDetails from './AdmissionBlockDetails.jsx';
 
 function ChildItem({ item, depth = 0 }) {
   const [open, setOpen] = useState(false);
@@ -38,7 +39,15 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
 
   if (!item) return null;
 
-  const { data: q, bucket, children = [], proofs: attachedProofs = [], blockProof } = item;
+  const {
+    data: q,
+    bucket,
+    children = [],
+    proofs: attachedProofs = [],
+    blockProof,
+    blockSteps = [],
+    pathQuestionSets = { admitted: [], not_admitted: [] },
+  } = item;
 
   const isBlock = q.block_type === 'AdmissionBlock';
   const accentClass = examType === 'Direct' ? 'border-green-500' : 'border-red-500';
@@ -59,10 +68,9 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
         <p className="text-2xl font-bold text-white leading-snug">{q.text}</p>
       </div>
 
-      {/* Attached Proofs */}
-      {attachedProofs.length > 0 && (
+      {!isBlock && attachedProofs.length > 0 && (
         <div className="px-5 pb-3 flex flex-wrap gap-2">
-          {attachedProofs.map(proof => (
+          {attachedProofs.map((proof) => (
             <button
               key={proof.id}
               onClick={() => onSelectProof(proof)}
@@ -78,20 +86,18 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
         </div>
       )}
 
-      {/* Child Questions Accordion */}
-      {children.length > 0 && (
+      {!isBlock && children.length > 0 && (
         <div className="px-5 pb-3">
           <div className="bg-slate-900/50 rounded-lg p-3 space-y-0.5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Follow-up Questions</p>
-            {children.map(child => (
+            {children.map((child) => (
               <ChildItem key={child.data.id} item={child} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Expected Answer + Notes toggles */}
-      {(q.expected_answer || q.notes) && (
+      {!isBlock && (q.expected_answer || q.notes) && (
         <div className="px-5 pb-4 flex flex-col gap-2 border-t border-slate-700/50 pt-3">
           {q.expected_answer && (
             <div>
@@ -107,7 +113,7 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
           {q.notes && (
             <div>
               <button
-                onClick={() => setShowNotes(n => !n)}
+                onClick={() => setShowNotes((notesOpen) => !notesOpen)}
                 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors"
               >
                 <StickyNote className="w-3.5 h-3.5" />
@@ -123,7 +129,15 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
         </div>
       )}
 
-      {/* Admission End Actions — only for Admission Blocks */}
+      {isBlock && (
+        <AdmissionBlockDetails
+          blockProof={blockProof}
+          blockSteps={blockSteps}
+          pathQuestionSets={pathQuestionSets}
+          onSelectProof={onSelectProof}
+        />
+      )}
+
       {isBlock && blockProof && (
         <AdmissionEndActions
           proof={blockProof}

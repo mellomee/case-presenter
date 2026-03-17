@@ -6,22 +6,73 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Check, X, RotateCcw, Eye } from 'lucide-react';
+import { ADMISSION_STEPS, fillExhibitPlaceholder } from '@/lib/admissionSteps';
+import AdmissionPathQuestionsEditor from './AdmissionPathQuestionsEditor.jsx';
 
-const STEPS = [
-  { key: '1',   label: 'Step 1',   title: 'Mark the Exhibit',          sub: false },
-  { key: '2',   label: 'Step 2',   title: 'Request Witness Review',     sub: false },
-  { key: '3',   label: 'Step 3',   title: 'Authenticate (Intro)',       sub: false },
-  { key: '3.1', label: 'Step 3.1', title: 'Identification',             sub: true  },
-  { key: '3.2', label: 'Step 3.2', title: 'Description',                sub: true  },
-  { key: '3.3', label: 'Step 3.3', title: 'Authentication',             sub: true  },
-  { key: '3.4', label: 'Step 3.4', title: 'Accuracy',                   sub: true  },
-  { key: '3.5', label: 'Step 3.5', title: 'Helpfulness / Relevance',    sub: true  },
-  { key: '4',   label: 'Step 4',   title: 'Move for Admission',         sub: false },
-  { key: '5',   label: 'Step 5',   title: 'Publish to Jury',            sub: false },
-];
+function parseJsonValue(value, fallback) {
+  if (!value) return fallback;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return value;
+}
 
-function fillExhibitNum(text, exhibitNum) {
-  return text.replace(/\{\{exhibit_num\}\}/g, exhibitNum || '[Exhibit #]');
+function normalizeIdList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') return [value].filter(Boolean);
+  if (typeof value === 'object' && Array.isArray(value.ids)) return value.ids.filter(Boolean);
+  return [];
+}
+
+function decorateQuestionNode(node, defaultPartyId) {
+  const nodeId = node?.id || `path-q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return {
+    id: nodeId,
+    local_id: `${nodeId}-${Math.random().toString(36).slice(2, 6)}`,
+    text: node?.text || '',
+    expected_answer: node?.expected_answer || '',
+    notes: node?.notes || '',
+    proof_ids: normalizeIdList(node?.proof_ids),
+    party_ids: normalizeIdList(node?.party_ids).length ? normalizeIdList(node?.party_ids) : (defaultPartyId ? [defaultPartyId] : []),
+    admission_path: node?.admission_path || null,
+    isEditing: false,
+    children: Array.isArray(node?.children) ? node.children.map((child) => decorateQuestionNode(child, defaultPartyId)) : [],
+  };
+}
+
+function decoratePathQuestionSets(value, defaultPartyId) {
+  const parsed = parseJsonValue(value, { admitted: [], not_admitted: [] }) || { admitted: [], not_admitted: [] };
+  return {
+    admitted: (parsed.admitted || []).map((node) => decorateQuestionNode({ ...node, admission_path: 'admitted' }, defaultPartyId)),
+    not_admitted: (parsed.not_admitted || []).map((node) => decorateQuestionNode({ ...node, admission_path: 'not_admitted' }, defaultPartyId)),
+  };
+}
+
+function sanitizeQuestionNodes(nodes, pathKey) {
+  return (Array.isArray(nodes) ? nodes : [])
+    .map((node) => ({
+      id: node.id,
+      text: (node.text || '').trim(),
+      expected_answer: (node.expected_answer || '').trim() || null,
+      notes: (node.notes || '').trim() || null,
+      proof_ids: normalizeIdList(node.proof_ids),
+      party_ids: normalizeIdList(node.party_ids),
+      admission_path: pathKey,
+      children: sanitizeQuestionNodes(node.children || [], pathKey),
+    }))
+    .filter((node) => node.text);
+}
+
+function sanitizePathQuestionSets(value) {
+  return {
+    admitted: sanitizeQuestionNodes(value?.admitted || [], 'admitted'),
+    not_admitted: sanitizeQuestionNodes(value?.not_admitted || [], 'not_admitted'),
+  };
 }
 
 function StepRow({ stepKey, label, title, sub, templateText, override, onSaveOverride, exhibitNum }) {
@@ -32,7 +83,7 @@ function StepRow({ stepKey, label, title, sub, templateText, override, onSaveOve
   const isOverridden = override !== null && override !== undefined;
   const hasTemplate = !!templateText;
 
-  const preview = activeText ? fillExhibitNum(activeText, exhibitNum) : null;
+  const preview = activeText ? fillExhibitPlaceholder(activeText, exhibitNum) : null;
 
   const startEdit = () => {
     setDraftText(activeText);
@@ -112,7 +163,7 @@ function StepRow({ stepKey, label, title, sub, templateText, override, onSaveOve
               <div className="flex items-start gap-1.5 bg-blue-50 rounded p-2">
                 <Eye className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-800 italic leading-snug">
-                  {fillExhibitNum(draftText, exhibitNum)}
+                  {fillExhibitPlaceholder(draftText, exhibitNum)}
                 </p>
               </div>
             )}
@@ -140,10 +191,12 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
   const [selectedProofId, setSelectedProofId] = useState('');
   const [proofTypeCategoryId, setProofTypeCategoryId] = useState('');
   const [stepOverrides, setStepOverrides] = useState({});
+  const [pathQuestionSets, setPathQuestionSets] = useState({ admitted: [], not_admitted: [] });
 
   const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list() });
   const { data: proofTypeCategories = [] } = useQuery({ queryKey: ['proofTypeCategories'], queryFn: () => base44.entities.ProofTypeCategory.list() });
   const { data: admissionTemplates = [] } = useQuery({ queryKey: ['admissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list() });
+  const { data: parties = [] } = useQuery({ queryKey: ['parties'], queryFn: () => base44.entities.Party.list() });
 
   const jointExhibits = proofs.filter(p =>
     p.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(p.status)
@@ -154,12 +207,14 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
       setSelectedProofId(block.proof_id || '');
       setProofTypeCategoryId(block.proof_type_category_id || '');
       setStepOverrides(block.step_overrides || {});
+      setPathQuestionSets(decoratePathQuestionSets(block.path_question_sets, partyId));
     } else {
       setSelectedProofId('');
       setProofTypeCategoryId('');
       setStepOverrides({});
+      setPathQuestionSets({ admitted: [], not_admitted: [] });
     }
-  }, [block]);
+  }, [block, partyId]);
 
   const handleSelectProof = (proofId) => {
     setSelectedProofId(proofId);
@@ -205,6 +260,7 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
       party_id: partyId,
       bucket_id: bucketId,
       step_overrides: stepOverrides,
+      path_question_sets: sanitizePathQuestionSets(pathQuestionSets),
       sort_order: block?.sort_order ?? 999,
     });
   };
@@ -297,7 +353,7 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
             )}
           </div>
           <div className="space-y-2">
-            {STEPS.map(step => (
+            {ADMISSION_STEPS.map((step) => (
               <StepRow
                 key={step.key}
                 stepKey={step.key}
@@ -313,6 +369,22 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
           </div>
         </div>
       )}
+
+      <div className="space-y-2">
+        <div>
+          <p className="text-sm font-semibold text-slate-700">Post-Ruling Paths</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Add the extra question trees the attorney should use after the court either admits or rejects this proof.
+          </p>
+        </div>
+        <AdmissionPathQuestionsEditor
+          value={pathQuestionSets}
+          onChange={setPathQuestionSets}
+          proofs={proofs}
+          parties={parties}
+          defaultPartyId={partyId}
+        />
+      </div>
 
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-2 border-t border-slate-200">

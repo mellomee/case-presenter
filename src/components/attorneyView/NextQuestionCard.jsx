@@ -10,8 +10,13 @@ export default function NextQuestionCard({ item, examType, onClick }) {
     );
   }
 
-  const { data: q, bucket } = item;
+  const { data: q, bucket, blockProof, pathQuestionSets } = item;
   const borderClass = examType === 'Direct' ? 'border-green-800/50' : 'border-red-800/50';
+  const isBlock = q.block_type === 'AdmissionBlock';
+  const branchCount = (pathQuestionSets?.admitted?.length || 0) + (pathQuestionSets?.not_admitted?.length || 0);
+  const previewText = isBlock
+    ? `Admission block for ${blockProof?.formal_name || blockProof?.name || 'selected proof'}`
+    : q.text;
 
   return (
     <button
@@ -20,8 +25,15 @@ export default function NextQuestionCard({ item, examType, onClick }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">{bucket?.name} · Next</p>
-          <p className="text-base text-slate-400 group-hover:text-slate-300 transition-colors leading-snug line-clamp-2">{q.text}</p>
+          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+            {bucket?.name} · Next{isBlock ? ' · Admission Block' : ''}
+          </p>
+          <p className="text-base text-slate-400 group-hover:text-slate-300 transition-colors leading-snug line-clamp-2">
+            {previewText}
+          </p>
+          {isBlock && (
+            <p className="text-xs text-slate-500 mt-2">5 scripted steps + {branchCount} branch question{branchCount !== 1 ? 's' : ''}</p>
+          )}
         </div>
         <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 flex-shrink-0 mt-1 transition-colors" />
       </div>

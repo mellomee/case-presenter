@@ -10,8 +10,21 @@ import NextQuestionCard from '@/components/attorneyView/NextQuestionCard.jsx';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import OverviewPanel from '@/components/attorneyView/OverviewPanel.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
+import { buildAdmissionSteps } from '@/lib/admissionSteps';
 
 // Build a flat ordered list of top-level questions/blocks from buckets
+function parseObjectValue(value, fallback) {
+  if (!value) return fallback;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return value;
+}
+
 function normalizeProofIds(proofIds) {
   if (!proofIds) return [];
   if (Array.isArray(proofIds)) return proofIds.filter(Boolean);
@@ -20,7 +33,7 @@ function normalizeProofIds(proofIds) {
     try {
       return normalizeProofIds(JSON.parse(proofIds));
     } catch {
-      return proofIds.split(',').map(id => id.trim()).filter(Boolean);
+      return proofIds.split(',').map((id) => id.trim()).filter(Boolean);
     }
   }
 
@@ -40,54 +53,97 @@ function normalizeProofIds(proofIds) {
   return [];
 }
 
-function buildFlatList(buckets, questions, admissionBlocks, proofs) {
+function normalizePartyIds(partyIds) {
+  if (!partyIds) return [];
+  if (Array.isArray(partyIds)) return partyIds.filter(Boolean);
+  if (typeof partyIds === 'string') return [partyIds].filter(Boolean);
+  if (typeof partyIds === 'object' && Array.isArray(partyIds.ids)) return partyIds.ids.filter(Boolean);
+  return [];
+}
+
+function hydratePathNodes(nodes, proofs, parties) {
+  return (Array.isArray(nodes) ? nodes : []).map((node, index) => ({
+    ...node,
+    id: node.id || `${node.admission_path || 'path'}-${index + 1}`,
+    attachedProofs: normalizeProofIds(node.proof_ids)
+      .map((proofId) => proofs.find((proof) => proof.id === proofId))
+      .filter(Boolean),
+    attachedParties: normalizePartyIds(node.party_ids)
+      .map((partyId) => parties.find((party) => party.id === partyId))
+      .filter(Boolean),
+    children: hydratePathNodes(node.children || [], proofs, parties),
+  }));
+}
+
+function hydratePathQuestionSets(value, proofs, parties) {
+  const parsed = parseObjectValue(value, { admitted: [], not_admitted: [] }) || { admitted: [], not_admitted: [] };
+
+  return {
+    admitted: hydratePathNodes(parsed.admitted || [], proofs, parties),
+    not_admitted: hydratePathNodes(parsed.not_admitted || [], proofs, parties),
+  };
+}
+
+function buildFlatList(buckets, questions, admissionBlocks, proofs, parties, admissionTemplates) {
   const allItems = [];
 
   for (const bucket of buckets) {
     const bucketQuestions = questions
-      .filter(q => q.bucket_id === bucket.id && !q.parent_question_id)
+      .filter((q) => q.bucket_id === bucket.id && !q.parent_question_id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
     const bucketBlocks = admissionBlocks
-      .filter(ab => ab.bucket_id === bucket.id)
+      .filter((ab) => ab.bucket_id === bucket.id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
     const merged = [
-      ...bucketQuestions.map(q => ({ type: 'question', data: q, bucket })),
-      ...bucketBlocks.map(ab => ({ type: 'block', data: { ...ab, block_type: 'AdmissionBlock', text: buildBlockText(ab, proofs) }, bucket })),
+      ...bucketQuestions.map((q) => ({ type: 'question', data: q, bucket })),
+      ...bucketBlocks.map((ab) => ({ type: 'block', data: { ...ab, block_type: 'AdmissionBlock', text: buildBlockText(ab, proofs) }, bucket })),
     ].sort((a, b) => (a.data.sort_order || 0) - (b.data.sort_order || 0));
 
     allItems.push(...merged);
   }
 
-  return allItems.map(item => {
+  return allItems.map((item) => {
     const children = item.type === 'question'
       ? buildChildren(item.data.id, questions)
       : [];
 
     const attachedProofs = item.type === 'question'
       ? normalizeProofIds(item.data.proof_ids)
-          .map(pid => proofs.find(p => p.id === pid))
+          .map((proofId) => proofs.find((proof) => proof.id === proofId))
           .filter(Boolean)
       : [];
 
     const blockProof = item.type === 'block'
-      ? proofs.find(p => p.id === item.data.proof_id) || null
+      ? proofs.find((proof) => proof.id === item.data.proof_id) || null
       : null;
 
-    return { ...item, children, proofs: attachedProofs, blockProof };
+    const exhibitNum = blockProof
+      ? blockProof.admitted_exhibit_num || blockProof.demonstrative_exhibit_num || blockProof.joint_exhibit_num || ''
+      : '';
+
+    return {
+      ...item,
+      children,
+      proofs: attachedProofs,
+      blockProof,
+      blockSteps: item.type === 'block' ? buildAdmissionSteps(item.data, admissionTemplates, exhibitNum) : [],
+      pathQuestionSets: item.type === 'block' ? hydratePathQuestionSets(item.data.path_question_sets, proofs, parties) : { admitted: [], not_admitted: [] },
+    };
   });
 }
 
 function buildChildren(parentId, questions) {
   const children = questions
-    .filter(q => q.parent_question_id === parentId)
+    .filter((q) => q.parent_question_id === parentId)
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-  return children.map(c => ({ data: c, children: buildChildren(c.id, questions) }));
+
+  return children.map((child) => ({ data: child, children: buildChildren(child.id, questions) }));
 }
 
 function buildBlockText(block, proofs) {
-  const proof = proofs.find(p => p.id === block.proof_id);
+  const proof = proofs.find((item) => item.id === block.proof_id);
   return proof ? `[Admission Block] ${proof.name}` : '[Admission Block]';
 }
 
@@ -111,6 +167,7 @@ export default function AttorneyView() {
   const { data: allQuestions = [] } = useQuery({ queryKey: ['allQuestions'], queryFn: () => base44.entities.Question.list() });
   const { data: admissionBlocks = [] } = useQuery({ queryKey: ['admissionBlocks'], queryFn: () => base44.entities.AdmissionBlock.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list() });
+  const { data: admissionTemplates = [] } = useQuery({ queryKey: ['admissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list() });
 
   const { juryState, update: updateJury } = useJurySync('attorney');
 
@@ -142,8 +199,8 @@ export default function AttorneyView() {
   }, [admissionBlocks, selectedPartyId]);
 
   const flatList = useMemo(
-    () => buildFlatList(buckets, questions, blocksForParty, proofs),
-    [buckets, questions, blocksForParty, proofs]
+    () => buildFlatList(buckets, questions, blocksForParty, proofs, parties, admissionTemplates),
+    [buckets, questions, blocksForParty, proofs, parties, admissionTemplates]
   );
 
   const currentItem = flatList[currentIndex] || null;
