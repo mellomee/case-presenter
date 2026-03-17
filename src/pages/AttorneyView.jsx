@@ -10,6 +10,7 @@ import NextQuestionCard from '@/components/attorneyView/NextQuestionCard.jsx';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import OverviewPanel from '@/components/attorneyView/OverviewPanel.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
+import AdmissionBlockTrialPanel from '@/components/attorneyView/AdmissionBlockTrialPanel.jsx';
 import { buildAdmissionSteps } from '@/lib/admissionSteps';
 
 // Build a flat ordered list of top-level questions/blocks from buckets
@@ -147,6 +148,36 @@ function buildBlockText(block, proofs) {
   return proof ? `[Admission Block] ${proof.name}` : '[Admission Block]';
 }
 
+function buildPathChildTree(nodes = []) {
+  return nodes.map((node) => ({
+    data: {
+      id: node.id,
+      text: node.text,
+      expected_answer: node.expected_answer || '',
+      notes: node.notes || '',
+    },
+    children: buildPathChildTree(node.children || []),
+  }));
+}
+
+function buildPathQuestionItem(node, bucket, pathKey, parentBlockId) {
+  return {
+    type: 'path-question',
+    bucket,
+    pathKey,
+    parentBlockId,
+    data: {
+      id: `${parentBlockId}-${pathKey}-${node.id}`,
+      text: node.text,
+      expected_answer: node.expected_answer || '',
+      notes: node.notes || '',
+      block_type: 'Question',
+    },
+    children: buildPathChildTree(node.children || []),
+    proofs: node.attachedProofs || [],
+  };
+}
+
 export default function AttorneyView() {
   const queryClient = useQueryClient();
   const [selectedPartyId, setSelectedPartyId] = useState('');
@@ -160,6 +191,7 @@ export default function AttorneyView() {
     const saved = Number(window.localStorage.getItem('attorney-proof-pane-width'));
     return Number.isFinite(saved) && saved > 0 ? saved : 420;
   });
+  const [blockFlow, setBlockFlow] = useState(null);
   const proofResizeRef = useRef(null);
 
   const { data: parties = [] } = useQuery({ queryKey: ['parties'], queryFn: () => base44.entities.Party.list() });
@@ -204,16 +236,204 @@ export default function AttorneyView() {
   );
 
   const currentItem = flatList[currentIndex] || null;
-  const nextItem = flatList[currentIndex + 1] || null;
+  const nextTopLevelItem = flatList[currentIndex + 1] || null;
   const selectedParty = parties.find(p => p.id === selectedPartyId);
 
+  useEffect(() => {
+    if (currentItem?.type === 'block') {
+      setBlockFlow((prev) => (
+        prev?.blockId === currentItem.data.id
+          ? prev
+          : {
+              blockId: currentItem.data.id,
+              phase: 'sequence',
+              stepIndex: 0,
+              decision: null,
+              branchKey: null,
+              branchIndex: 0,
+            }
+      ));
+    } else {
+      setBlockFlow(null);
+    }
+  }, [currentItem?.type, currentItem?.data?.id]);
+
+  const activeBlockFlow = currentItem?.type === 'block' && blockFlow?.blockId === currentItem.data.id
+    ? blockFlow
+    : null;
+
+  const visibleBlockSteps = useMemo(() => {
+    if (currentItem?.type !== 'block') return [];
+    const steps = currentItem.blockSteps || [];
+    return activeBlockFlow?.decision === 'admit' || activeBlockFlow?.decision === 'demo'
+      ? steps
+      : steps.filter((step) => step.key !== '5');
+  }, [currentItem, activeBlockFlow]);
+
+  const currentBlockStep = activeBlockFlow?.phase === 'sequence'
+    ? visibleBlockSteps[activeBlockFlow.stepIndex] || visibleBlockSteps[0] || null
+    : null;
+
+  const branchItems = useMemo(() => {
+    if (currentItem?.type !== 'block' || activeBlockFlow?.phase !== 'branch') return [];
+    const pathKey = activeBlockFlow.branchKey === 'not_admitted' ? 'not_admitted' : 'admitted';
+    return (currentItem.pathQuestionSets?.[pathKey] || []).map((node) =>
+      buildPathQuestionItem(node, currentItem.bucket, pathKey, currentItem.data.id)
+    );
+  }, [currentItem, activeBlockFlow]);
+
+  const displayCurrentItem = activeBlockFlow?.phase === 'branch'
+    ? branchItems[activeBlockFlow.branchIndex] || null
+    : currentItem;
+
+  const displayNextItem = activeBlockFlow?.phase === 'branch'
+    ? branchItems[activeBlockFlow.branchIndex + 1] || nextTopLevelItem || null
+    : nextTopLevelItem;
+
+  const startBranch = useCallback((branchKey) => {
+    if (currentItem?.type !== 'block') return;
+
+    const nextBranchItems = (currentItem.pathQuestionSets?.[branchKey] || []).map((node) =>
+      buildPathQuestionItem(node, currentItem.bucket, branchKey, currentItem.data.id)
+    );
+
+    if (nextBranchItems.length === 0) {
+      if (currentIndex < flatList.length - 1) {
+        setCurrentIndex((value) => value + 1);
+        setSelectedProof(null);
+        setBlockFlow(null);
+      }
+      return;
+    }
+
+    setBlockFlow((prev) => ({
+      ...(prev || {}),
+      blockId: currentItem.data.id,
+      phase: 'branch',
+      branchKey,
+      branchIndex: 0,
+    }));
+  }, [currentItem, currentIndex, flatList.length]);
+
+  const handleBlockDecision = useCallback((action) => {
+    if (currentItem?.type !== 'block') return;
+
+    if (action === 'not_admitted') {
+      startBranch('not_admitted');
+      return;
+    }
+
+    const publishStepIndex = (currentItem.blockSteps || []).findIndex((step) => step.key === '5');
+    setBlockFlow((prev) => ({
+      ...(prev || {}),
+      blockId: currentItem.data.id,
+      phase: 'sequence',
+      decision: action,
+      stepIndex: publishStepIndex >= 0 ? publishStepIndex : (prev?.stepIndex || 0),
+      branchKey: null,
+      branchIndex: 0,
+    }));
+  }, [currentItem, startBranch]);
+
+  const canGoPrev = useMemo(() => {
+    if (!currentItem) return false;
+    if (currentItem.type !== 'block') return currentIndex > 0;
+    if (activeBlockFlow?.phase === 'branch') {
+      return activeBlockFlow.branchIndex > 0 || !!activeBlockFlow.decision || currentIndex > 0;
+    }
+    return (activeBlockFlow?.stepIndex || 0) > 0 || currentIndex > 0;
+  }, [currentItem, currentIndex, activeBlockFlow]);
+
+  const canGoNext = useMemo(() => {
+    if (!currentItem) return false;
+    if (currentItem.type !== 'block') return currentIndex < flatList.length - 1;
+
+    if (activeBlockFlow?.phase === 'branch') {
+      return activeBlockFlow.branchIndex < branchItems.length - 1 || currentIndex < flatList.length - 1;
+    }
+
+    if (!currentBlockStep) return false;
+
+    if (currentBlockStep.key === '5' && (activeBlockFlow?.decision === 'admit' || activeBlockFlow?.decision === 'demo')) {
+      return branchItems.length > 0 || currentIndex < flatList.length - 1;
+    }
+
+    return (activeBlockFlow?.stepIndex || 0) < visibleBlockSteps.length - 1;
+  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, branchItems.length, currentBlockStep, visibleBlockSteps.length]);
+
   const goNext = useCallback(() => {
-    if (currentIndex < flatList.length - 1) setCurrentIndex(i => i + 1);
-  }, [currentIndex, flatList.length]);
+    if (!currentItem) return;
+
+    if (currentItem.type !== 'block') {
+      if (currentIndex < flatList.length - 1) {
+        setCurrentIndex((value) => value + 1);
+        setSelectedProof(null);
+      }
+      return;
+    }
+
+    if (!activeBlockFlow) return;
+
+    if (activeBlockFlow.phase === 'branch') {
+      if (activeBlockFlow.branchIndex < branchItems.length - 1) {
+        setBlockFlow((prev) => ({ ...prev, branchIndex: prev.branchIndex + 1 }));
+      } else if (currentIndex < flatList.length - 1) {
+        setCurrentIndex((value) => value + 1);
+        setSelectedProof(null);
+        setBlockFlow(null);
+      }
+      return;
+    }
+
+    if (currentBlockStep?.key === '5' && (activeBlockFlow.decision === 'admit' || activeBlockFlow.decision === 'demo')) {
+      startBranch('admitted');
+      return;
+    }
+
+    if (activeBlockFlow.stepIndex < visibleBlockSteps.length - 1) {
+      setBlockFlow((prev) => ({ ...prev, stepIndex: prev.stepIndex + 1 }));
+    }
+  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, branchItems.length, currentBlockStep, visibleBlockSteps.length, startBranch]);
 
   const goPrev = useCallback(() => {
-    if (currentIndex > 0) setCurrentIndex(i => i - 1);
-  }, [currentIndex]);
+    if (!currentItem) return;
+
+    if (currentItem.type !== 'block') {
+      if (currentIndex > 0) {
+        setCurrentIndex((value) => value - 1);
+        setSelectedProof(null);
+      }
+      return;
+    }
+
+    if (!activeBlockFlow) return;
+
+    if (activeBlockFlow.phase === 'branch') {
+      if (activeBlockFlow.branchIndex > 0) {
+        setBlockFlow((prev) => ({ ...prev, branchIndex: prev.branchIndex - 1 }));
+        return;
+      }
+
+      const targetStepKey = activeBlockFlow.branchKey === 'admitted' ? '5' : '4';
+      const targetStepIndex = visibleBlockSteps.findIndex((step) => step.key === targetStepKey);
+      setBlockFlow((prev) => ({
+        ...prev,
+        phase: 'sequence',
+        stepIndex: targetStepIndex >= 0 ? targetStepIndex : 0,
+      }));
+      return;
+    }
+
+    if (activeBlockFlow.stepIndex > 0) {
+      setBlockFlow((prev) => ({ ...prev, stepIndex: prev.stepIndex - 1 }));
+      return;
+    }
+
+    if (currentIndex > 0) {
+      setCurrentIndex((value) => value - 1);
+      setSelectedProof(null);
+    }
+  }, [currentItem, currentIndex, activeBlockFlow, visibleBlockSteps]);
 
   const jumpToBucket = useCallback((bucketId) => {
     const idx = flatList.findIndex(item => item.bucket.id === bucketId);
@@ -429,33 +649,59 @@ export default function AttorneyView() {
           <div className="flex-1 flex gap-4 p-6 min-h-0 overflow-hidden">
             {/* Questions column */}
             <div className="flex-1 flex flex-col gap-4 min-w-0 overflow-y-auto">
-              <CurrentQuestionCard
-                item={currentItem}
-                index={currentIndex}
-                total={flatList.length}
-                examType={selectedExamType}
-                onSelectProof={setSelectedProof}
-                onRuling={handleRuling}
-                isRulingLoading={rulingMutation.isPending}
-              />
+              {currentItem?.type === 'block' && activeBlockFlow?.phase !== 'branch' ? (
+                <AdmissionBlockTrialPanel
+                  item={currentItem}
+                  index={currentIndex}
+                  total={flatList.length}
+                  visibleSteps={visibleBlockSteps}
+                  currentStepIndex={activeBlockFlow?.stepIndex || 0}
+                  decision={activeBlockFlow?.decision || null}
+                  canGoPrev={(activeBlockFlow?.stepIndex || 0) > 0}
+                  canGoNext={canGoNext}
+                  onPrevStep={() => {
+                    if ((activeBlockFlow?.stepIndex || 0) > 0) {
+                      setBlockFlow((prev) => ({ ...prev, stepIndex: prev.stepIndex - 1 }));
+                    }
+                  }}
+                  onNextStep={goNext}
+                  onSelectProof={setSelectedProof}
+                  onRuling={handleRuling}
+                  onDecision={handleBlockDecision}
+                  isRulingLoading={rulingMutation.isPending}
+                  onStartPath={() => startBranch('admitted')}
+                />
+              ) : (
+                <>
+                  <CurrentQuestionCard
+                    item={displayCurrentItem}
+                    index={currentIndex}
+                    total={flatList.length}
+                    examType={selectedExamType}
+                    onSelectProof={setSelectedProof}
+                    onRuling={handleRuling}
+                    isRulingLoading={rulingMutation.isPending}
+                  />
 
-              <div>
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Up Next</p>
-                <NextQuestionCard item={nextItem} examType={selectedExamType} onClick={goNext} />
-              </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Up Next</p>
+                    <NextQuestionCard item={displayNextItem} examType={selectedExamType} onClick={goNext} />
+                  </div>
+                </>
+              )}
 
               <div className="flex items-center gap-3 mt-2">
                 <Button
                   variant="outline"
                   onClick={goPrev}
-                  disabled={currentIndex === 0}
+                  disabled={!canGoPrev}
                   className="gap-2 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 shrink-0"
                 >
                   <ChevronLeft className="w-4 h-4" /> Previous
                 </Button>
                 <Button
                   onClick={goNext}
-                  disabled={currentIndex >= flatList.length - 1}
+                  disabled={!canGoNext}
                   className="gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 shrink-0"
                 >
                   Next <ChevronRight className="w-4 h-4" />
