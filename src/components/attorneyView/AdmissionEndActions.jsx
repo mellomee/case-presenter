@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Star, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, Star, XCircle, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,25 @@ export default function AdmissionEndActions({ proof, onRuling, onDecision, isLoa
   const handleNotAdmitted = () => {
     onRuling({ action: 'not_admitted', proofId: proof.id, data: null });
     onDecision?.('not_admitted');
+    setMode(null);
+  };
+
+  const handleUnAdmit = () => {
+    onRuling({
+      action: 'unadmit',
+      proofId: proof.id,
+      data: currentStatus === 'Admitted'
+        ? {
+            status: 'Joint',
+            admitted_exhibit_num: null,
+            admitted_by: null,
+            admit_date: null,
+          }
+        : {
+            status: 'Joint',
+            demonstrative_exhibit_num: null,
+          },
+    });
     setMode(null);
   };
 
@@ -199,6 +218,17 @@ export default function AdmissionEndActions({ proof, onRuling, onDecision, isLoa
               >
                 <XCircle className="w-3.5 h-3.5" /> Not Admitted
               </Button>
+              {alreadyRuled && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleUnAdmit}
+                  disabled={isLoading}
+                  className="gap-1.5 border-blue-800 text-blue-400 hover:bg-blue-950/30 h-8 text-xs"
+                >
+                  {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Un-Admit to Joint
+                </Button>
+              )}
             </div>
           )}
         </div>
