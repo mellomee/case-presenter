@@ -6,12 +6,51 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Upload, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
+function normalizeValue(value) {
+  return value?.toString().trim() || '';
+}
+
+function parseCredentialInput(value) {
+  const raw = normalizeValue(value);
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map((item) => normalizeValue(item)).filter(Boolean);
+  } catch {}
+
+  return raw.split(',').map((item) => normalizeValue(item)).filter(Boolean);
+}
+
+function buildReferenceRows(roles, credentials) {
+  return [
+    ['Type', 'Value', 'ID / Notes'],
+    ['Side', 'Plaintiff', 'Allowed value'],
+    ['Side', 'Defense', 'Allowed value'],
+    ['Side', 'Neutral', 'Allowed value'],
+    ...roles.map((role) => ['Role', role.name || '', role.id || '']),
+    ...credentials.map((credential) => ['Credential', credential.name || '', credential.id || '']),
+  ];
+}
+
 export default function PartyImportModal({ isOpen, onClose, onImportComplete }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [importing, setImporting] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState(null);
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => base44.entities.Role.list(),
+    enabled: isOpen,
+  });
+
+  const { data: credentials = [] } = useQuery({
+    queryKey: ['credentials'],
+    queryFn: () => base44.entities.Credential.list(),
+    enabled: isOpen,
+  });
 
   const handleFileSelect = async (e) => {
     const selectedFile = e.target.files?.[0];
@@ -73,16 +112,28 @@ export default function PartyImportModal({ isOpen, onClose, onImportComplete }) 
 
     setImporting(true);
     try {
-      const roles = await base44.entities.Role.list();
-      const roleMap = Object.fromEntries(roles.map((r) => [r.name, r.id]));
+      const allRoles = await base44.entities.Role.list();
+      const allCredentials = await base44.entities.Credential.list();
 
-      const parties = preview.rows.map((row) => ({
-        first_name: row.first_name?.toString().trim() || '',
-        last_name: row.last_name?.toString().trim() || '',
-        side: row.side?.toString().trim() || '',
-        role_id: row.role ? roleMap[row.role?.toString().trim()] || null : null,
-        credentials: row.credentials ? JSON.parse(row.credentials) : [],
-      }));
+      const roleIdMap = Object.fromEntries(allRoles.map((item) => [item.id, item.id]));
+      const roleNameMap = Object.fromEntries(allRoles.map((item) => [normalizeValue(item.name).toLowerCase(), item.id]));
+      const credentialIdMap = Object.fromEntries(allCredentials.map((item) => [item.id, item.id]));
+      const credentialNameMap = Object.fromEntries(allCredentials.map((item) => [normalizeValue(item.name).toLowerCase(), item.id]));
+
+      const parties = preview.rows.map((row) => {
+        const roleValue = normalizeValue(row.role);
+        const credentialValues = parseCredentialInput(row.credentials);
+
+        return {
+          first_name: normalizeValue(row.first_name),
+          last_name: normalizeValue(row.last_name),
+          side: normalizeValue(row.side),
+          role_id: roleValue ? roleIdMap[roleValue] || roleNameMap[roleValue.toLowerCase()] || null : null,
+          credentials: credentialValues
+            .map((value) => credentialIdMap[value] || credentialNameMap[value.toLowerCase()] || null)
+            .filter(Boolean),
+        };
+      });
 
       const validParties = parties.filter((p) => p.first_name && p.last_name && ['Plaintiff', 'Defense', 'Neutral'].includes(p.side));
 
@@ -104,18 +155,25 @@ export default function PartyImportModal({ isOpen, onClose, onImportComplete }) 
   };
 
   const handleDownloadTemplate = () => {
-    const templateCSV = `first_name,last_name,side,role,credentials
-Jane,Smith,Plaintiff,Expert Witness,"MD, PhD"
-John,Doe,Defense,Expert Witness,CPA
-Sarah,Johnson,Plaintiff,Fact Witness,`;
+    const workbook = XLSX.utils.book_new();
 
-    const blob = new Blob([templateCSV], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'party_import_template.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
+    const templateRows = [
+      ['first_name', 'last_name', 'side', 'role', 'credentials'],
+      ['Jane', 'Smith', 'Plaintiff', roles[0]?.name || '', credentials.slice(0, 2).map((item) => item.name).join(', ')],
+      ['John', 'Doe', 'Defense', roles[1]?.name || roles[0]?.name || '', credentials[2]?.name || credentials[0]?.name || ''],
+      ['Sarah', 'Johnson', 'Neutral', '', ''],
+    ];
+
+    const referenceRows = buildReferenceRows(roles, credentials);
+
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(templateRows), 'Template');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(referenceRows), 'Reference');
+
+    const data = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    link.download = 'party_import_template.xlsx';
+    link.click();
   };
 
   return (
@@ -163,8 +221,15 @@ Sarah,Johnson,Plaintiff,Fact Witness,`;
               </div>
             )}
 
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1.5">
+              <p><strong>Required for every row:</strong> <code>first_name</code>, <code>last_name</code>, <code>side</code></p>
+              <p><strong>Optional:</strong> <code>role</code>, <code>credentials</code></p>
+              <p><strong>Dropdown options list:</strong> <code>side</code> must be <code>Plaintiff</code>, <code>Defense</code>, or <code>Neutral</code></p>
+              <p><strong>Reference sheet:</strong> the downloaded template includes a separate <code>Reference</code> sheet with valid <code>role</code> and <code>credential</code> options. You can use names or IDs for roles, and credential names separated by commas.</p>
+            </div>
+
             <Button variant="outline" onClick={handleDownloadTemplate} className="w-full">
-              Download Excel Template
+              Download Template with Reference Sheet
             </Button>
           </div>
         ) : (
