@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import ReactPlayer from 'react-player';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import PDFViewer from '@/components/proofVault/PDFViewer';
@@ -9,25 +10,31 @@ import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { Loader2, Scale, Maximize } from 'lucide-react';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
-  const videoRef = useRef(null);
+  const playerRef = useRef(null);
 
   useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
+    const player = playerRef.current;
+    if (!player) return;
     const newTime = videoTime ?? 0;
-    if (Math.abs(el.currentTime - newTime) > 1.5) el.currentTime = newTime;
-  }, [videoTime]);
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    if (isPlaying && el.paused) el.play().catch(() => {});
-    else if (!isPlaying && !el.paused) el.pause();
-  }, [isPlaying]);
+    const currentTime = player.getCurrentTime?.() ?? 0;
+    if (Math.abs(currentTime - newTime) > 1.5) {
+      player.seekTo?.(newTime, 'seconds');
+    }
+  }, [videoTime, src]);
 
   return (
     <div className="flex items-center justify-center w-full h-full bg-black">
-      <video ref={videoRef} src={src} className="max-w-full max-h-full" />
+      <div className="w-full h-full max-w-full max-h-full">
+        <ReactPlayer
+          ref={playerRef}
+          url={src}
+          playing={isPlaying}
+          controls={false}
+          width="100%"
+          height="100%"
+          playsinline
+        />
+      </div>
     </div>
   );
 }
