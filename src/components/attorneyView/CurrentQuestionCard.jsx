@@ -34,7 +34,6 @@ function ChildItem({ item, depth = 0 }) {
 }
 
 export default function CurrentQuestionCard({ item, index, total, examType, onSelectProof, onRuling, isRulingLoading }) {
-  const [showAnswer, setShowAnswer] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
   if (!item) return null;
