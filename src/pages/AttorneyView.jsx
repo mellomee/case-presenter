@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tv, ChevronLeft, ChevronRight, ExternalLink, User, LayoutList } from 'lucide-react';
@@ -181,7 +180,7 @@ export default function AttorneyView() {
         </div>
 
         <div className="px-3 py-3 border-t border-slate-700">
-          <a href={createPageUrl('JuryView')} target="_blank" rel="noopener noreferrer">
+          <a href="/present/jury" target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700">
               <ExternalLink className="w-3 h-3" /> Jury View
             </Button>

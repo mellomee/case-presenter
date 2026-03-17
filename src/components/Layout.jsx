@@ -15,7 +15,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Pages that should hide the chat button
-  const hideChatPages = ['/JuryView'];
+  const hideChatPages = ['/present/jury', '/JuryView'];
   const showChat = !hideChatPages.some(p => location.pathname.includes(p));
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function Layout() {
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
     { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
-    { label: 'Present', path: '/AttorneyView', icon: Tv },
+    { label: 'Present', path: '/present/attorney', icon: Tv },
     { label: 'Settings', path: '/Settings', icon: Settings },
   ];
 

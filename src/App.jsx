@@ -51,6 +51,8 @@ const AuthenticatedApp = () => {
         <Route path="/Settings" element={<Settings />} />
       </Route>
       
+      <Route path="/AttorneyView" element={<Navigate to="/present/attorney" replace />} />
+      <Route path="/JuryView" element={<Navigate to="/present/jury" replace />} />
       <Route path="/present/attorney" element={<AttorneyView />} />
       <Route path="/present/jury" element={<JuryView />} />
       
