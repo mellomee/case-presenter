@@ -14,6 +14,7 @@ import Parties from '@/pages/Parties';
 import ExamBuilder from '@/pages/ExamBuilder';
 import AttorneyView from '@/pages/AttorneyView';
 import JuryView from '@/pages/JuryView';
+import AttorneyViewShell from '@/components/present/AttorneyViewShell';
 import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
@@ -53,7 +54,7 @@ const AuthenticatedApp = () => {
       
       <Route path="/AttorneyView" element={<Navigate to="/present/attorney" replace />} />
       <Route path="/JuryView" element={<Navigate to="/present/jury" replace />} />
-      <Route path="/present/attorney" element={<AttorneyView />} />
+      <Route path="/present/attorney" element={<AttorneyViewShell />} />
       <Route path="/present/jury" element={<JuryView />} />
       
       <Route path="*" element={<PageNotFound />} />

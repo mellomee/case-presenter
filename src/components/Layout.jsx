@@ -46,7 +46,15 @@ export default function Layout() {
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
     { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
-    { label: 'Present', path: '/present/attorney', icon: Tv },
+    {
+      label: 'Present',
+      path: '/present',
+      icon: Tv,
+      children: [
+        { label: 'Attorney View', path: '/present/attorney' },
+        { label: 'Jury View', path: '/present/jury' },
+      ],
+    },
     { label: 'Settings', path: '/Settings', icon: Settings },
   ];
 
@@ -74,6 +82,44 @@ export default function Layout() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
+
+            if (item.children) {
+              return (
+                <li key={item.path} className="space-y-1">
+                  <div
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md min-h-[44px] ${
+                      active
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 pl-2'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </div>
+
+                  <div className="ml-6 space-y-1">
+                    {item.children.map((child) => {
+                      const childActive = isActive(child.path);
+                      return (
+                        <Link
+                          key={child.path}
+                          to={child.path}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] ${
+                            childActive
+                              ? 'bg-blue-50 text-blue-600 font-medium'
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </li>
+              );
+            }
+
             return (
               <li key={item.path}>
                 <Link
