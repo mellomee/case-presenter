@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, StickyNote, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import FollowupGroupTabs from './FollowupGroupTabs.jsx';
 import AdmissionEndActions from './AdmissionEndActions.jsx';
 import AdmissionBlockDetails from './AdmissionBlockDetails.jsx';
 
@@ -88,12 +89,7 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
 
       {!isBlock && children.length > 0 && (
         <div className="px-5 pb-3">
-          <div className="bg-slate-900/50 rounded-lg p-3 space-y-0.5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Follow-up Questions</p>
-            {children.map((child) => (
-              <ChildItem key={child.data.id} item={child} />
-            ))}
-          </div>
+          <FollowupGroupTabs children={children} />
         </div>
       )}
 

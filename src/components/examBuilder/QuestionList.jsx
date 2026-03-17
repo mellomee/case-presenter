@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Pencil, Trash2, GripVertical, Plus, MessageSquare } from 'lucide-react';
 import AdmissionBlockPathsAccordion, { parseBlockPathQuestionSets } from './AdmissionBlockPathsAccordion.jsx';
+import QuestionFollowupGroupsPanel from './QuestionFollowupGroupsPanel.jsx';
 
 function getProofIds(value) {
   if (Array.isArray(value)) return value;
@@ -24,9 +25,10 @@ function getQuestionDepth(question, questionMap) {
   return depth;
 }
 
-function QuestionRow({ question, proofs, examType, depth, onEdit, onDelete, onAddChild, dragHandleProps }) {
+function QuestionRow({ question, questions, proofs, examType, depth, onEdit, onDelete, onAddChild, dragHandleProps }) {
   const proofIds = getProofIds(question.proof_ids);
   const attachedProofs = proofs.filter((p) => proofIds.includes(p.id));
+  const hasFollowups = questions.some((item) => item.parent_question_id === question.id);
 
   return (
     <div className="border border-slate-200 rounded-lg bg-white hover:shadow-sm transition-all" style={{ marginLeft: depth * 20 }}>
@@ -87,6 +89,17 @@ function QuestionRow({ question, proofs, examType, depth, onEdit, onDelete, onAd
           </Button>
         </div>
       </div>
+      <div className="border-t border-slate-100 bg-slate-50/70 p-3">
+        <QuestionFollowupGroupsPanel
+          parentQuestion={question}
+          questions={questions}
+          proofs={proofs}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddChild={onAddChild}
+          isNested={depth > 0 || hasFollowups}
+        />
+      </div>
     </div>
   );
 }
@@ -111,6 +124,19 @@ export default function QuestionList({
   const updateBlockPathsMutation = useMutation({
     mutationFn: ({ blockId, pathQuestionSets }) => base44.entities.AdmissionBlock.update(blockId, { path_question_sets: pathQuestionSets }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admissionBlocks'] }),
+  });
+
+  const reorderFollowupsMutation = useMutation({
+    mutationFn: (questionsInOrder) =>
+      Promise.all(
+        questionsInOrder.map((question, index) =>
+          base44.entities.Question.update(question.id, {
+            sort_order: index,
+            follow_up_group: question.follow_up_group || null,
+          })
+        )
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['questions'] }),
   });
 
   const sanitizeNodes = (nodes) =>
@@ -179,7 +205,7 @@ export default function QuestionList({
   };
 
   const items = [
-    ...questions.map((question) => ({
+    ...questions.filter((question) => !question.parent_question_id).map((question) => ({
       type: 'question',
       data: question,
       depth: getQuestionDepth(question, questionMap),
@@ -200,6 +226,20 @@ export default function QuestionList({
       const [moved] = reordered.splice(source.index, 1);
       reordered.splice(destination.index, 0, moved);
       onReorder(reordered);
+      return;
+    }
+
+    if (source.droppableId.startsWith('followup::')) {
+      if (source.droppableId !== destination.droppableId) return;
+      const [, parentId, groupKey] = source.droppableId.split('::');
+      const groupValue = groupKey === 'Other' ? null : groupKey;
+      const followups = questions
+        .filter((question) => question.parent_question_id === parentId && (question.follow_up_group || null) === groupValue)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const reordered = Array.from(followups);
+      const [moved] = reordered.splice(source.index, 1);
+      reordered.splice(destination.index, 0, moved);
+      reorderFollowupsMutation.mutate(reordered);
       return;
     }
 
@@ -286,6 +326,7 @@ export default function QuestionList({
                     ) : (
                       <QuestionRow
                         question={item.data}
+                        questions={questions}
                         proofs={proofs}
                         examType={examType}
                         depth={item.depth}

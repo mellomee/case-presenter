@@ -25,6 +25,7 @@ export default function QuestionModal({
   const [expectedAnswer, setExpectedAnswer] = useState('');
   const [notes, setNotes] = useState('');
   const [proofIds, setProofIds] = useState([]);
+  const [followUpGroup, setFollowUpGroup] = useState('');
 
   useEffect(() => {
     if (question) {
@@ -32,11 +33,13 @@ export default function QuestionModal({
       setExpectedAnswer(question.expected_answer || '');
       setNotes(question.notes || '');
       setProofIds(getProofIds(question.proof_ids));
+      setFollowUpGroup(question.follow_up_group || parentQuestion?.follow_up_group || '');
     } else {
       setText('');
       setExpectedAnswer('');
       setNotes('');
       setProofIds([]);
+      setFollowUpGroup(parentQuestion?.follow_up_group || '');
     }
   }, [question]);
 
@@ -46,8 +49,11 @@ export default function QuestionModal({
     );
   };
 
+  const isChild = !!parentQuestion || !!question?.parent_question_id;
+
   const handleSubmit = () => {
     if (!text.trim()) return;
+    if (isChild && !followUpGroup) return;
     onSubmit({
       text: text.trim(),
       expected_answer: expectedAnswer.trim() || null,
@@ -57,11 +63,12 @@ export default function QuestionModal({
       party_id: partyId,
       bucket_id: bucketId,
       block_type: 'Question',
-      parent_question_id: parentQuestion?.id || null,
+      parent_question_id: parentQuestion?.id || question?.parent_question_id || null,
+      follow_up_group: isChild ? followUpGroup : null,
     });
   };
 
-  const isChild = !!parentQuestion;
+  const parentLabel = parentQuestion?.text || 'Follow-up Question';
   const typeColor = examType === 'Direct'
     ? 'bg-green-100 text-green-700 border-green-200'
     : 'bg-red-100 text-red-700 border-red-200';
@@ -75,7 +82,7 @@ export default function QuestionModal({
         </span>
         {isChild && (
           <span className="text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-semibold">
-            Follow-up to: {parentQuestion.text.length > 50 ? parentQuestion.text.slice(0, 50) + '…' : parentQuestion.text}
+            Follow-up to: {parentLabel.length > 50 ? parentLabel.slice(0, 50) + '…' : parentLabel}
           </span>
         )}
       </div>
@@ -123,6 +130,24 @@ export default function QuestionModal({
         />
       </div>
 
+      {isChild && (
+        <div className="space-y-1.5">
+          <Label htmlFor="qgroup" className="text-sm font-medium text-slate-700">
+            Follow-up Group <span className="text-red-500">*</span>
+          </Label>
+          <select
+            id="qgroup"
+            value={followUpGroup}
+            onChange={(e) => setFollowUpGroup(e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+          >
+            <option value="">Select group…</option>
+            <option value="Forgot">Forgot</option>
+            <option value="Deny">Deny</option>
+          </select>
+        </div>
+      )}
+
       {/* Proof Picker */}
       <ProofPicker selectedProofIds={proofIds} onToggle={handleToggleProof} />
 
@@ -131,7 +156,7 @@ export default function QuestionModal({
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
         <Button
           onClick={handleSubmit}
-          disabled={!text.trim() || isLoading}
+          disabled={!text.trim() || (isChild && !followUpGroup) || isLoading}
           className="bg-blue-600 hover:bg-blue-700"
         >
           {isLoading ? 'Saving…' : question ? 'Save Changes' : 'Add Question'}
