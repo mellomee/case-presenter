@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronRight, FileCheck, GripVertical, Pencil, Trash2 } from 'lucide-react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
+const createLocalId = () => `path-q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 function parseObjectValue(value, fallback) {
   if (!value) return fallback;
   if (typeof value === 'string') {
@@ -45,7 +47,17 @@ export function parseBlockPathQuestionSets(block, proofs = []) {
   };
 }
 
-function PathQuestionCard({ node, depth = 0, dragHandleProps, proofs }) {
+function PathQuestionCard({ node, depth = 0, dragHandleProps, proofs, onAddFollowUp }) {
+  const [isAddingChild, setIsAddingChild] = useState(false);
+  const [draftChildText, setDraftChildText] = useState('');
+
+  const handleSaveChild = () => {
+    if (!draftChildText.trim()) return;
+    onAddFollowUp?.(node.pathKey, node.id, draftChildText.trim());
+    setDraftChildText('');
+    setIsAddingChild(false);
+  };
+
   return (
     <div className={`${depth > 0 ? 'ml-4 pl-4 border-l border-slate-200' : ''}`}>
       <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
@@ -84,6 +96,43 @@ function PathQuestionCard({ node, depth = 0, dragHandleProps, proofs }) {
                 </span>
               )}
             </div>
+
+            <div className="flex gap-2 mt-3">
+              <Button type="button" size="sm" variant="outline" onClick={() => setIsAddingChild((value) => !value)} className="h-8 text-xs">
+                + Add Follow-up
+              </Button>
+            </div>
+
+            {isAddingChild && (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <Input
+                  value={draftChildText}
+                  onChange={(event) => setDraftChildText(event.target.value)}
+                  placeholder="Type the follow-up question..."
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') handleSaveChild();
+                  }}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" onClick={handleSaveChild} disabled={!draftChildText.trim()} className="bg-blue-600 hover:bg-blue-700 h-8 text-xs">
+                    Save Follow-up
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setDraftChildText('');
+                      setIsAddingChild(false);
+                    }}
+                    className="h-8 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -97,6 +146,7 @@ function PathQuestionCard({ node, depth = 0, dragHandleProps, proofs }) {
             parentId={node.id}
             depth={depth + 1}
             proofs={proofs}
+            onAddFollowUp={onAddFollowUp}
           />
         </div>
       )}
@@ -104,7 +154,7 @@ function PathQuestionCard({ node, depth = 0, dragHandleProps, proofs }) {
   );
 }
 
-function PathNodeList({ nodes, blockId, pathKey, parentId = 'root', depth = 0, proofs }) {
+function PathNodeList({ nodes, blockId, pathKey, parentId = 'root', depth = 0, proofs, onAddFollowUp }) {
   return (
     <Droppable droppableId={`${blockId}::${pathKey}::${parentId}`} type="block-path-question">
       {(provided, snapshot) => (
@@ -126,6 +176,7 @@ function PathNodeList({ nodes, blockId, pathKey, parentId = 'root', depth = 0, p
                     depth={depth}
                     dragHandleProps={dragProvided.dragHandleProps}
                     proofs={proofs}
+                    onAddFollowUp={onAddFollowUp}
                   />
                 </div>
               )}
@@ -138,7 +189,7 @@ function PathNodeList({ nodes, blockId, pathKey, parentId = 'root', depth = 0, p
   );
 }
 
-function PathSection({ title, toneClass, pathKey, nodes, blockId, proofs, onAddQuestion }) {
+function PathSection({ title, toneClass, pathKey, nodes, blockId, proofs, onAddQuestion, onAddFollowUp }) {
   const [isOpen, setIsOpen] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [draftText, setDraftText] = useState('');
@@ -208,7 +259,7 @@ function PathSection({ title, toneClass, pathKey, nodes, blockId, proofs, onAddQ
               No questions in this path yet.
             </div>
           ) : (
-            <PathNodeList nodes={nodes} blockId={blockId} pathKey={pathKey} proofs={proofs} />
+            <PathNodeList nodes={nodes} blockId={blockId} pathKey={pathKey} proofs={proofs} onAddFollowUp={onAddFollowUp} />
           )}
         </div>
       )}
@@ -223,6 +274,7 @@ export default function AdmissionBlockPathsAccordion({
   onEditBlock,
   onDeleteBlock,
   onAddPathQuestion,
+  onAddPathFollowUp,
   dragHandleProps,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -291,6 +343,7 @@ export default function AdmissionBlockPathsAccordion({
             blockId={block.id}
             proofs={proofs}
             onAddQuestion={(pathKey, text) => onAddPathQuestion?.(block, pathKey, text)}
+            onAddFollowUp={(pathKey, parentId, text) => onAddPathFollowUp?.(block, pathKey, parentId, text)}
           />
           <PathSection
             title="Path 2 — Not Admitted"
@@ -300,6 +353,7 @@ export default function AdmissionBlockPathsAccordion({
             blockId={block.id}
             proofs={proofs}
             onAddQuestion={(pathKey, text) => onAddPathQuestion?.(block, pathKey, text)}
+            onAddFollowUp={(pathKey, parentId, text) => onAddPathFollowUp?.(block, pathKey, parentId, text)}
           />
         </div>
       )}

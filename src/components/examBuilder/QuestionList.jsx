@@ -113,6 +113,12 @@ export default function QuestionList({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admissionBlocks'] }),
   });
 
+  const sanitizeNodes = (nodes) =>
+    (Array.isArray(nodes) ? nodes : []).map(({ attachedProofs, children, ...node }) => ({
+      ...node,
+      children: sanitizeNodes(children || []),
+    }));
+
   const handleAddPathQuestion = (block, pathKey, text) => {
     const parsed = parseBlockPathQuestionSets(block);
     const nextQuestion = {
@@ -130,7 +136,44 @@ export default function QuestionList({
       blockId: block.id,
       pathQuestionSets: {
         ...parsed,
-        [pathKey]: [...(parsed[pathKey] || []), nextQuestion],
+        [pathKey]: sanitizeNodes([...(parsed[pathKey] || []), nextQuestion]),
+      },
+    });
+  };
+
+  const handleAddPathFollowUp = (block, pathKey, parentId, text) => {
+    const parsed = parseBlockPathQuestionSets(block);
+    const nextQuestion = {
+      id: `path-q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text,
+      expected_answer: '',
+      notes: '',
+      proof_ids: [],
+      party_ids: [],
+      children: [],
+      admission_path: pathKey,
+    };
+
+    const appendChild = (nodes) =>
+      (Array.isArray(nodes) ? nodes : []).map((node) => {
+        if (node.id === parentId) {
+          return {
+            ...node,
+            children: [...(node.children || []), nextQuestion],
+          };
+        }
+
+        return {
+          ...node,
+          children: appendChild(node.children || []),
+        };
+      });
+
+    updateBlockPathsMutation.mutate({
+      blockId: block.id,
+      pathQuestionSets: {
+        ...parsed,
+        [pathKey]: sanitizeNodes(appendChild(parsed[pathKey] || [])),
       },
     });
   };
@@ -237,6 +280,7 @@ export default function QuestionList({
                         onEditBlock={onEditBlock}
                         onDeleteBlock={onDeleteBlock}
                         onAddPathQuestion={handleAddPathQuestion}
+                        onAddPathFollowUp={handleAddPathFollowUp}
                         dragHandleProps={dragProvided.dragHandleProps}
                       />
                     ) : (
