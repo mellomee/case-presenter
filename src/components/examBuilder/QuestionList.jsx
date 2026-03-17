@@ -113,6 +113,28 @@ export default function QuestionList({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admissionBlocks'] }),
   });
 
+  const handleAddPathQuestion = (block, pathKey, text) => {
+    const parsed = parseBlockPathQuestionSets(block);
+    const nextQuestion = {
+      id: `path-q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text,
+      expected_answer: '',
+      notes: '',
+      proof_ids: [],
+      party_ids: [],
+      children: [],
+      admission_path: pathKey,
+    };
+
+    updateBlockPathsMutation.mutate({
+      blockId: block.id,
+      pathQuestionSets: {
+        ...parsed,
+        [pathKey]: [...(parsed[pathKey] || []), nextQuestion],
+      },
+    });
+  };
+
   const items = [
     ...questions.map((question) => ({
       type: 'question',
@@ -214,6 +236,7 @@ export default function QuestionList({
                         proofTypeCategories={proofTypeCategories}
                         onEditBlock={onEditBlock}
                         onDeleteBlock={onDeleteBlock}
+                        onAddPathQuestion={handleAddPathQuestion}
                         dragHandleProps={dragProvided.dragHandleProps}
                       />
                     ) : (

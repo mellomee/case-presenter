@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronRight, FileCheck, GripVertical, Pencil, Trash2 } from 'lucide-react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
@@ -137,25 +138,71 @@ function PathNodeList({ nodes, blockId, pathKey, parentId = 'root', depth = 0, p
   );
 }
 
-function PathSection({ title, toneClass, pathKey, nodes, blockId, proofs }) {
+function PathSection({ title, toneClass, pathKey, nodes, blockId, proofs, onAddQuestion }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
+  const [draftText, setDraftText] = useState('');
+
+  const handleSave = () => {
+    if (!draftText.trim()) return;
+    onAddQuestion?.(pathKey, draftText.trim());
+    setDraftText('');
+    setIsAdding(false);
+  };
 
   return (
     <div className={`rounded-lg border ${toneClass}`}>
-      <button
-        type="button"
-        onClick={() => setIsOpen((value) => !value)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
-      >
-        <div>
-          <p className="text-sm font-semibold text-slate-800">{title}</p>
-          <p className="text-xs text-slate-500 mt-0.5">{nodes.length} top-level question{nodes.length !== 1 ? 's' : ''}</p>
-        </div>
-        {isOpen ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
-      </button>
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setIsOpen((value) => !value)}
+          className="flex-1 flex items-center justify-between gap-3 text-left"
+        >
+          <div>
+            <p className="text-sm font-semibold text-slate-800">{title}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{nodes.length} top-level question{nodes.length !== 1 ? 's' : ''}</p>
+          </div>
+          {isOpen ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
+        </button>
+
+        <Button type="button" size="sm" onClick={() => setIsAdding((value) => !value)} className="bg-blue-600 hover:bg-blue-700 h-8 text-xs shrink-0">
+          Add Question
+        </Button>
+      </div>
 
       {isOpen && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 space-y-3">
+          {isAdding && (
+            <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+              <Input
+                value={draftText}
+                onChange={(event) => setDraftText(event.target.value)}
+                placeholder="Type the new question..."
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') handleSave();
+                }}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button type="button" size="sm" onClick={handleSave} disabled={!draftText.trim()} className="bg-blue-600 hover:bg-blue-700 h-8 text-xs">
+                  Save Question
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraftText('');
+                    setIsAdding(false);
+                  }}
+                  className="h-8 text-xs"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
           {nodes.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white/80 px-3 py-3 text-xs text-slate-500">
               No questions in this path yet.
@@ -175,6 +222,7 @@ export default function AdmissionBlockPathsAccordion({
   proofTypeCategories,
   onEditBlock,
   onDeleteBlock,
+  onAddPathQuestion,
   dragHandleProps,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -242,6 +290,7 @@ export default function AdmissionBlockPathsAccordion({
             nodes={pathSets.admitted}
             blockId={block.id}
             proofs={proofs}
+            onAddQuestion={(pathKey, text) => onAddPathQuestion?.(block, pathKey, text)}
           />
           <PathSection
             title="Path 2 — Not Admitted"
@@ -250,6 +299,7 @@ export default function AdmissionBlockPathsAccordion({
             nodes={pathSets.not_admitted}
             blockId={block.id}
             proofs={proofs}
+            onAddQuestion={(pathKey, text) => onAddPathQuestion?.(block, pathKey, text)}
           />
         </div>
       )}
