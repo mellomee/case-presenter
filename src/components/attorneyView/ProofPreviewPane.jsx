@@ -92,7 +92,6 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
           <VideoClipViewer
             videoUrl={externalUrl}
             segments={proof.video_clips || []}
-            onStateChange={handleVideoStateChange}
           />
         </div>
       );

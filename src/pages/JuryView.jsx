@@ -8,7 +8,6 @@ import { parsePageRange } from '@/components/proofVault/pageRangeUtils';
 import { getInitialHighlightPage } from '@/components/proofVault/highlightGroupUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { Loader2, Scale, Maximize } from 'lucide-react';
-import JuryVideoClipPlayer from '@/components/present/JuryVideoClipPlayer.jsx';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
   const playerRef = useRef(null);
@@ -121,19 +120,12 @@ export default function JuryView() {
     enabled: proof?.proof_child_type === 'ExtractClip' && !!proof?.parent_proof_id,
   });
 
-  const { data: parentVideoProof } = useQuery({
-    queryKey: ['juryParentVideoProof', proof?.parent_proof_id],
-    queryFn: () => base44.entities.Proof.filter({ id: proof.parent_proof_id }).then((r) => r[0] || null),
-    enabled: proof?.proof_child_type === 'VideoClip' && !!proof?.parent_proof_id,
-  });
-
   const { data: settings } = useQuery({
     queryKey: ['appSettings'],
     queryFn: () => base44.entities.AppSettings.list().then((r) => r[0] || {}),
   });
 
   const { url: resolvedAssetUrl, isLoading: isAssetLoading } = useResolvedProofAsset(proof);
-  const { url: resolvedParentVideoUrl, isLoading: isParentVideoAssetLoading } = useResolvedProofAsset(parentVideoProof);
 
   useEffect(() => {
     const tryFs = () => {
@@ -157,8 +149,6 @@ export default function JuryView() {
     ? getInitialHighlightPage(proof.highlights, proof.clipped_page || 1)
     : null;
   const isExtractClipLoading = proof?.proof_child_type === 'ExtractClip' && !!proof?.parent_proof_id && parentExtract === undefined;
-  const isVideoClipLoading = proof?.proof_child_type === 'VideoClip' && !!proof?.parent_proof_id && (parentVideoProof === undefined || isParentVideoAssetLoading);
-  const clipVideoUrl = resolvedAssetUrl || resolvedParentVideoUrl || proof?.video_url || proof?.file_url || parentVideoProof?.video_url || parentVideoProof?.file_url;
 
   if (!juryState) {
     return (
@@ -172,7 +162,7 @@ export default function JuryView() {
     return <BlankScreen caseName={caseName} />;
   }
 
-  if (!proof || isAssetLoading || isExtractClipLoading || isVideoClipLoading) {
+  if (!proof || isAssetLoading || isExtractClipLoading) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
         <Loader2 className="w-8 h-8 animate-spin text-white/15" />
@@ -189,13 +179,6 @@ export default function JuryView() {
           <div className="flex items-center justify-center w-full h-full p-6">
             <img src={resolvedAssetUrl || proof.file_url} alt={proof.formal_name || proof.name} className="max-w-full max-h-full object-contain" />
           </div>
-        ) : proof.proof_child_type === 'VideoClip' ? (
-          <JuryVideoClipPlayer
-            src={clipVideoUrl}
-            segments={proof.video_clips || []}
-            videoTime={juryState.video_time}
-            isPlaying={juryState.is_playing}
-          />
         ) : proof.file_type === 'Video' ? (
           <JuryVideo src={resolvedAssetUrl || proof.video_url || proof.file_url} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
         ) : (resolvedAssetUrl || proof.file_url) ? (

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactPlayer from 'react-player';
 import { Play, Pause, List, X } from 'lucide-react';
 
-export default function VideoClipViewer({ videoUrl, segments, onStateChange }) {
+export default function VideoClipViewer({ videoUrl, segments }) {
   const playerRef = useRef(null);
   const shouldAutoResumeRef = useRef(false);
   const segmentItemRefs = useRef({});
@@ -30,10 +30,6 @@ export default function VideoClipViewer({ videoUrl, segments, onStateChange }) {
       return () => clearTimeout(timeout);
     }
   }, [currentSegmentIdx, segments]);
-
-  useEffect(() => {
-    onStateChange?.({ currentTime, playing });
-  }, [currentTime, playing, onStateChange]);
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -85,15 +81,7 @@ export default function VideoClipViewer({ videoUrl, segments, onStateChange }) {
           onProgress={(state) => setCurrentTime(state.playedSeconds)}
           onReady={() => playerRef.current?.seekTo(startSec, 'seconds')}
           config={{
-            youtube: {
-              playerVars: {
-                showinfo: 1,
-                modestbranding: 1,
-                cc_load_policy: 1,
-                cc_lang_pref: 'en',
-                enablejsapi: 1,
-              },
-            },
+            youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
           }}
         />
 
