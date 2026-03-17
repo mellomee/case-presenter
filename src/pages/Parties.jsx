@@ -26,6 +26,9 @@ export default function Parties() {
       queryClient.invalidateQueries({ queryKey: ['parties'] });
       setShowForm(false);
     },
+    onError: (error) => {
+      alert(`Cannot save party: ${error.message}`);
+    },
   });
 
   const updateMutation = useMutation({
@@ -34,6 +37,9 @@ export default function Parties() {
       queryClient.invalidateQueries({ queryKey: ['parties'] });
       setEditingParty(null);
       setShowForm(false);
+    },
+    onError: (error) => {
+      alert(`Cannot save party: ${error.message}`);
     },
   });
 
