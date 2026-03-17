@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tv, ChevronLeft, ChevronRight, ExternalLink, User, LayoutList } from 'lucide-react';
+import { Tv, ChevronLeft, ChevronRight, ExternalLink, User, LayoutList, GripVertical } from 'lucide-react';
 import BucketNav from '@/components/attorneyView/BucketNav.jsx';
 import CurrentQuestionCard from '@/components/attorneyView/CurrentQuestionCard.jsx';
 import NextQuestionCard from '@/components/attorneyView/NextQuestionCard.jsx';
@@ -98,6 +98,9 @@ export default function AttorneyView() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedProof, setSelectedProof] = useState(null);
   const [showOverview, setShowOverview] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [proofPaneWidth, setProofPaneWidth] = useState(320);
+  const proofResizeRef = useRef(null);
 
   const { data: parties = [] } = useQuery({ queryKey: ['parties'], queryFn: () => base44.entities.Party.list() });
   const { data: allBuckets = [] } = useQuery({ queryKey: ['allBuckets'], queryFn: () => base44.entities.Bucket.list() });
@@ -158,62 +161,127 @@ export default function AttorneyView() {
 
   const currentBucketId = currentItem?.bucket?.id || null;
 
+  const startProofResize = useCallback((event) => {
+    proofResizeRef.current = {
+      startX: event.clientX,
+      startWidth: proofPaneWidth,
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [proofPaneWidth]);
+
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      if (!proofResizeRef.current) return;
+      const delta = proofResizeRef.current.startX - event.clientX;
+      const maxWidth = Math.max(420, window.innerWidth - (showOverview ? 900 : 760));
+      const nextWidth = Math.min(maxWidth, Math.max(280, proofResizeRef.current.startWidth + delta));
+      setProofPaneWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      proofResizeRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [showOverview]);
+
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden">
       {/* Left Sidebar — Bucket Nav */}
-      <div className="w-52 flex-shrink-0 bg-slate-800 border-r border-slate-700 flex flex-col overflow-y-auto">
+      <div className={`${isSidebarCollapsed ? 'w-14' : 'w-52'} flex-shrink-0 bg-slate-800 border-r border-slate-700 flex flex-col overflow-hidden transition-all duration-200`}>
         <div className="px-3 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-2 mb-3">
-            <Tv className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-bold text-white">Trial Screen</span>
-          </div>
-          <Select value={selectedPartyId} onValueChange={(v) => { setSelectedPartyId(v); setCurrentIndex(0); setSelectedProof(null); }}>
-            <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-xs">
-              <SelectValue placeholder="Select party…" />
-            </SelectTrigger>
-            <SelectContent>
-              {parties.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.first_name} {p.last_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedPartyId && (
-            <div className="flex gap-1 mt-2">
-              {['Direct', 'Cross'].map(type => (
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-2 mb-3`}>
+            {isSidebarCollapsed ? (
+              <button
+                onClick={() => setIsSidebarCollapsed(false)}
+                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                title="Show witness and bucket sidebar"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Tv className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-bold text-white">Trial Screen</span>
+                </div>
                 <button
-                  key={type}
-                  onClick={() => { setSelectedExamType(type); setCurrentIndex(0); setSelectedProof(null); }}
-                  className={`flex-1 text-xs py-1 rounded font-semibold transition-colors ${
-                    selectedExamType === type
-                      ? type === 'Direct' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                      : 'bg-slate-700 text-slate-400 hover:text-slate-200'
-                  }`}
+                  onClick={() => setIsSidebarCollapsed(true)}
+                  className="h-8 w-8 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                  title="Hide witness and bucket sidebar"
                 >
-                  {type}
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-              ))}
-            </div>
+              </>
+            )}
+          </div>
+
+          {!isSidebarCollapsed && (
+            <>
+              <Select value={selectedPartyId} onValueChange={(v) => { setSelectedPartyId(v); setCurrentIndex(0); setSelectedProof(null); }}>
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-xs">
+                  <SelectValue placeholder="Select party…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parties.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.first_name} {p.last_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedPartyId && (
+                <div className="flex gap-1 mt-2">
+                  {['Direct', 'Cross'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => { setSelectedExamType(type); setCurrentIndex(0); setSelectedProof(null); }}
+                      className={`flex-1 text-xs py-1 rounded font-semibold transition-colors ${
+                        selectedExamType === type
+                          ? type === 'Direct' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                          : 'bg-slate-700 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        <div className="flex-1">
-          <BucketNav
-            buckets={buckets}
-            currentBucketId={currentBucketId}
-            flatList={flatList}
-            currentIndex={currentIndex}
-            onJumpToBucket={jumpToBucket}
-            onJumpToIndex={(idx) => { setCurrentIndex(idx); setSelectedProof(null); }}
-          />
-        </div>
+        {!isSidebarCollapsed && (
+          <>
+            <div className="flex-1 overflow-y-auto">
+              <BucketNav
+                buckets={buckets}
+                currentBucketId={currentBucketId}
+                flatList={flatList}
+                currentIndex={currentIndex}
+                onJumpToBucket={jumpToBucket}
+                onJumpToIndex={(idx) => { setCurrentIndex(idx); setSelectedProof(null); }}
+              />
+            </div>
 
-        <div className="px-3 py-3 border-t border-slate-700">
-          <a href="/present/jury" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700">
-              <ExternalLink className="w-3 h-3" /> Jury View
-            </Button>
-          </a>
-        </div>
+            <div className="px-3 py-3 border-t border-slate-700">
+              <a href="/present/jury" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700">
+                  <ExternalLink className="w-3 h-3" /> Jury View
+                </Button>
+              </a>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Main area */}
@@ -263,7 +331,7 @@ export default function AttorneyView() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex gap-6 p-6 min-h-0 overflow-hidden">
+          <div className="flex-1 flex gap-4 p-6 min-h-0 overflow-hidden">
             {/* Questions column */}
             <div className="flex-1 flex flex-col gap-4 min-w-0 overflow-y-auto">
               <CurrentQuestionCard
@@ -300,19 +368,33 @@ export default function AttorneyView() {
               </div>
             </div>
 
+            <div
+              onMouseDown={startProofResize}
+              className="w-3 flex-shrink-0 cursor-col-resize relative group hidden lg:flex items-center justify-center"
+              title="Drag to resize proof preview"
+            >
+              <div className="w-px h-full bg-slate-700 group-hover:bg-blue-500 transition-colors" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <GripVertical className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
+              </div>
+            </div>
+
             {/* Proof Preview Pane */}
-            <div className="w-80 flex-shrink-0 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col">
-            <div className="px-4 py-2.5 border-b border-slate-700">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Proof Preview</span>
-            </div>
-            <div className="flex-1 min-h-0">
-              <ProofPreviewPane
-                proof={selectedProof}
-                juryState={juryState}
-                onUpdateJury={updateJury}
-                onClose={() => setSelectedProof(null)}
-              />
-            </div>
+            <div
+              style={{ width: `${proofPaneWidth}px` }}
+              className="flex-shrink-0 min-w-[280px] bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col"
+            >
+              <div className="px-4 py-2.5 border-b border-slate-700">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Proof Preview</span>
+              </div>
+              <div className="flex-1 min-h-0">
+                <ProofPreviewPane
+                  proof={selectedProof}
+                  juryState={juryState}
+                  onUpdateJury={updateJury}
+                  onClose={() => setSelectedProof(null)}
+                />
+              </div>
             </div>
 
             {/* Overview Panel */}
