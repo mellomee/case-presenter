@@ -1,8 +1,10 @@
 import React from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, GripVertical, Plus, MessageSquare, FileCheck } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { Pencil, Trash2, GripVertical, Plus, MessageSquare } from 'lucide-react';
+import AdmissionBlockPathsAccordion, { parseBlockPathQuestionSets } from './AdmissionBlockPathsAccordion.jsx';
 
 function getProofIds(value) {
   if (Array.isArray(value)) return value;
@@ -89,48 +91,6 @@ function QuestionRow({ question, proofs, examType, depth, onEdit, onDelete, onAd
   );
 }
 
-function BlockRow({ block, proofs, proofTypeCategories, onEditBlock, onDeleteBlock, dragHandleProps }) {
-  const proof = proofs.find((p) => p.id === block.proof_id);
-  const category = proofTypeCategories.find((c) => c.id === block.proof_type_category_id);
-  const overrideCount = Object.keys(block.step_overrides || {}).length;
-  const exhibitNum = proof?.joint_exhibit_num || proof?.admitted_exhibit_num || proof?.demonstrative_exhibit_num;
-
-  return (
-    <div className="flex items-start gap-3 p-3 rounded-lg border border-blue-100 bg-blue-50/40">
-      <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-blue-300 flex-shrink-0 mt-0.5">
-        <GripVertical className="w-4 h-4" />
-      </div>
-      <FileCheck className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-semibold text-slate-800">
-            {proof?.formal_name || proof?.name || 'Unknown Proof'}
-          </p>
-          {exhibitNum && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">{exhibitNum}</span>
-          )}
-          {category && (
-            <Badge className="bg-slate-100 text-slate-600 text-xs">{category.name}</Badge>
-          )}
-        </div>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Admission Block · 10 steps
-          {overrideCount > 0 && (
-            <span className="ml-2 text-amber-600 font-medium">✏️ {overrideCount} customised</span>
-          )}
-        </p>
-      </div>
-      <div className="flex gap-1 flex-shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600" onClick={() => onEditBlock(block)}>
-          <Pencil className="w-3.5 h-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600" onClick={() => onDeleteBlock(block)}>
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export default function QuestionList({
   questions,
@@ -145,7 +105,13 @@ export default function QuestionList({
   onDeleteBlock,
   onReorder,
 }) {
+  const queryClient = useQueryClient();
   const questionMap = new Map(questions.map((q) => [q.id, q]));
+
+  const updateBlockPathsMutation = useMutation({
+    mutationFn: ({ blockId, pathQuestionSets }) => base44.entities.AdmissionBlock.update(blockId, { path_question_sets: pathQuestionSets }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admissionBlocks'] }),
+  });
 
   const items = [
     ...questions.map((question) => ({
@@ -163,10 +129,51 @@ export default function QuestionList({
   const handleDragEnd = (result) => {
     const { source, destination } = result;
     if (!destination || source.index === destination.index) return;
-    const reordered = Array.from(items);
-    const [moved] = reordered.splice(source.index, 1);
-    reordered.splice(destination.index, 0, moved);
-    onReorder(reordered);
+
+    if (source.droppableId === 'questions-and-blocks') {
+      const reordered = Array.from(items);
+      const [moved] = reordered.splice(source.index, 1);
+      reordered.splice(destination.index, 0, moved);
+      onReorder(reordered);
+      return;
+    }
+
+    if (source.droppableId !== destination.droppableId) return;
+
+    const [blockId, pathKey, parentId = 'root'] = source.droppableId.split('::');
+    const block = blocks.find((item) => item.id === blockId);
+    if (!block || !pathKey) return;
+
+    const parsed = parseBlockPathQuestionSets(block);
+    const reorderItems = (list, fromIndex, toIndex) => {
+      const next = Array.from(list);
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    };
+
+    const reorderBranch = (nodes) => {
+      if (parentId === 'root') return reorderItems(nodes, source.index, destination.index);
+      return nodes.map((node) => {
+        if (node.id === parentId) {
+          return {
+            ...node,
+            children: reorderItems(node.children || [], source.index, destination.index),
+          };
+        }
+        return {
+          ...node,
+          children: reorderBranch(node.children || []),
+        };
+      });
+    };
+
+    const nextPathQuestionSets = {
+      ...parsed,
+      [pathKey]: reorderBranch(parsed[pathKey] || []),
+    };
+
+    updateBlockPathsMutation.mutate({ blockId, pathQuestionSets: nextPathQuestionSets });
   };
 
   if (items.length === 0) {
@@ -195,7 +202,7 @@ export default function QuestionList({
                     className={dragSnapshot.isDragging ? 'opacity-60' : ''}
                   >
                     {item.type === 'block' ? (
-                      <BlockRow
+                      <AdmissionBlockPathsAccordion
                         block={item.data}
                         proofs={proofs}
                         proofTypeCategories={proofTypeCategories}
