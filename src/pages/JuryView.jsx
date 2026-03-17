@@ -33,6 +33,17 @@ function JuryVideo({ src, videoTime, isPlaying }) {
           width="100%"
           height="100%"
           playsinline
+          config={{
+            youtube: {
+              playerVars: {
+                modestbranding: 1,
+                rel: 0,
+                cc_load_policy: 1,
+                cc_lang_pref: 'en',
+                enablejsapi: 1,
+              },
+            },
+          }}
         />
       </div>
     </div>
