@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2, GripVertical, ChevronDown, ChevronRight, Plus, FileCheck } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import QuestionList from './QuestionList.jsx';
-import AdmissionBlockList from './AdmissionBlockList.jsx';
 
 export default function BucketList({
   buckets,
@@ -153,33 +152,23 @@ export default function BucketList({
 
                         {/* Expanded Panel */}
                         {isExpanded && (
-                          <div className="border-t border-slate-100 bg-slate-50/50 p-4 space-y-4">
-                            {bucketBlocks.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Admission Blocks</p>
-                                <AdmissionBlockList
-                                  blocks={bucketBlocks}
-                                  proofs={proofs}
-                                  proofTypeCategories={proofTypeCategories}
-                                  onEdit={onEditBlock}
-                                  onDelete={onDeleteBlock}
-                                />
-                              </div>
+                          <div className="border-t border-slate-100 bg-slate-50/50 p-4">
+                            {(bucketBlocks.length > 0 || bucketQuestions.length > 0) && (
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Questions & Blocks</p>
                             )}
-                            <div>
-                              {(bucketBlocks.length > 0 || bucketQuestions.filter(q => !q.parent_question_id).length > 0) && (
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Questions</p>
-                              )}
-                              <QuestionList
-                                questions={bucketQuestions}
-                                proofs={proofs}
-                                examType={examType}
-                                onEdit={onEditQuestion}
-                                onDelete={onDeleteQuestion}
-                                onAddChild={onAddChildQuestion}
-                                onReorder={(reordered) => onReorderQuestions(reordered, bucket.id)}
-                              />
-                            </div>
+                            <QuestionList
+                              questions={bucketQuestions}
+                              blocks={bucketBlocks}
+                              proofs={proofs}
+                              proofTypeCategories={proofTypeCategories}
+                              examType={examType}
+                              onEdit={onEditQuestion}
+                              onDelete={onDeleteQuestion}
+                              onAddChild={onAddChildQuestion}
+                              onEditBlock={onEditBlock}
+                              onDeleteBlock={onDeleteBlock}
+                              onReorder={(reordered) => onReorderQuestions(reordered, bucket.id)}
+                            />
                           </div>
                         )}
                       </Card>

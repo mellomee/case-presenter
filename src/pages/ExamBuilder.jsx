@@ -240,9 +240,17 @@ export default function ExamBuilder() {
   });
 
   const reorderQuestionMutation = useMutation({
-    mutationFn: (questionsInOrder) =>
-      Promise.all(questionsInOrder.map((q, idx) => base44.entities.Question.update(q.id, { sort_order: idx }))),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['questions'] }),
+    mutationFn: (itemsInOrder) =>
+      Promise.all(itemsInOrder.map((item, idx) => {
+        if (item.type === 'block') {
+          return base44.entities.AdmissionBlock.update(item.data.id, { sort_order: idx });
+        }
+        return base44.entities.Question.update(item.data.id, { sort_order: idx });
+      })),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admissionBlocks'] });
+    },
   });
 
   // ── Bucket handlers ─────────────────────────────────────
