@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactPlayer from 'react-player';
 import { Play, Pause, List, X } from 'lucide-react';
 
-export default function VideoClipViewer({ videoUrl, segments }) {
+export default function VideoClipViewer({ videoUrl, segments, onStateChange }) {
   const playerRef = useRef(null);
   const shouldAutoResumeRef = useRef(false);
   const segmentItemRefs = useRef({});
@@ -60,6 +60,14 @@ export default function VideoClipViewer({ videoUrl, segments }) {
       }
     }
   }, [currentTime, currentSegmentIdx, segments]);
+
+  useEffect(() => {
+    onStateChange?.({
+      currentTime,
+      playing,
+      segmentIndex: currentSegmentIdx,
+    });
+  }, [currentTime, playing, currentSegmentIdx, onStateChange]);
 
   if (!segments || segments.length === 0) {
     return <div className="text-slate-500 italic">No segments</div>;
