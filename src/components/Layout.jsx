@@ -83,6 +83,45 @@ export default function Layout() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
+
+            if (item.children) {
+              return (
+                <li key={item.label}>
+                  <Link
+                    to="/present/attorney"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors min-h-[44px] ${
+                      active
+                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 pl-2'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                  <div className="mt-1 ml-6 space-y-1 border-l border-slate-200 pl-3">
+                    {item.children.map((child) => {
+                      const childActive = location.pathname === child.path;
+                      return (
+                        <Link
+                          key={child.path}
+                          to={child.path}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+                            childActive
+                              ? 'bg-blue-50 text-blue-600 font-medium'
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </li>
+              );
+            }
+
             return (
               <li key={item.path}>
                 <Link
