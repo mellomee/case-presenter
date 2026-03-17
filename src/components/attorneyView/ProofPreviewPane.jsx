@@ -88,12 +88,12 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
 
     if (proof.proof_child_type === 'VideoClip') {
       return (
-        <VideoClipViewer
-          videoUrl={externalUrl}
-          segments={proof.video_clips || []}
-          mode="controller"
-          onStateChange={handleVideoStateChange}
-        />
+        <div className="w-full h-full p-4">
+          <VideoClipViewer
+            videoUrl={externalUrl}
+            segments={proof.video_clips || []}
+          />
+        </div>
       );
     }
 
