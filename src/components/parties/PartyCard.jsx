@@ -17,9 +17,12 @@ export default function PartyCard({ party, onEdit, onDelete }) {
   });
 
   const roleLabel = roles.find((r) => r.id === party.role_id)?.name || '—';
-  const partyCredentials = Array.isArray(party.credentials) 
-    ? credentials.filter((c) => party.credentials.includes(c.id))
-    : [];
+  const credentialIds = Array.isArray(party.credentials)
+    ? party.credentials
+    : Array.isArray(party.credentials?.ids)
+      ? party.credentials.ids
+      : [];
+  const partyCredentials = credentials.filter((c) => credentialIds.includes(c.id));
 
   const sideColor = {
     'Plaintiff': 'bg-green-50 border-green-200',

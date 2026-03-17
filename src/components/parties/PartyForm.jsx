@@ -15,15 +15,19 @@ import { X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 export default function PartyForm({ party, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(
-    party || {
-      first_name: '',
-      last_name: '',
-      side: 'Plaintiff',
-      role_id: '',
-      credentials: [],
-    }
-  );
+  const getCredentialIds = (value) => {
+    if (Array.isArray(value)) return value;
+    if (value && Array.isArray(value.ids)) return value.ids;
+    return [];
+  };
+
+  const [formData, setFormData] = useState({
+    first_name: party?.first_name || '',
+    last_name: party?.last_name || '',
+    side: party?.side || 'Plaintiff',
+    role_id: party?.role_id || '',
+    credentials: getCredentialIds(party?.credentials),
+  });
 
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
@@ -48,7 +52,10 @@ export default function PartyForm({ party, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      credentials: { ids: formData.credentials },
+    });
   };
 
   return (
