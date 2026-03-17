@@ -38,7 +38,11 @@ export default function VideoViewer({
   const parentProof = isClip && proof?.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
   const videoUrl = proof?.video_url || proof?.file_url || parentProof?.video_url || parentProof?.file_url;
 
-  const debouncedPush = useCallback(debounce((s) => onStateChange && onStateChange(s), 500), [onStateChange]);
+  const debouncedPush = useCallback(debounce((s) => onStateChange && onStateChange(s), 150), [onStateChange]);
+  const pushImmediate = useCallback((s) => {
+    debouncedPush.cancel?.();
+    onStateChange && onStateChange(s);
+  }, [debouncedPush, onStateChange]);
 
   useEffect(() => {
     if (mode !== 'viewer' || !syncState || !ready) return;
@@ -67,13 +71,13 @@ export default function VideoViewer({
     setHasInteracted(true);
     const next = !playing;
     setPlaying(next);
-    pushState({ playing: next });
+    pushImmediate({ playing: next, currentTime, volume });
   };
 
   const handlePlayClick = () => {
     setHasInteracted(true);
     setPlaying(true);
-    pushState({ playing: true });
+    pushImmediate({ playing: true, currentTime, volume });
   };
 
   const handleReady = () => {
@@ -89,7 +93,7 @@ export default function VideoViewer({
         setPlaying(false);
         playerRef.current?.seekTo(clipStart, 'seconds');
         setCurrentTime(clipStart);
-        pushState({ playing: false, currentTime: clipStart });
+        pushImmediate({ playing: false, currentTime: clipStart, volume });
         return;
       }
       setCurrentTime(playedSeconds);
@@ -109,14 +113,14 @@ export default function VideoViewer({
     playerRef.current?.seekTo(t, 'seconds');
     setCurrentTime(t);
     setSeeking(false);
-    pushState({ currentTime: t });
+    pushImmediate({ playing, currentTime: t, volume });
   };
 
   const handleSkip = (secs) => {
     const t = Math.max(0, Math.min(currentTime + secs, duration));
     playerRef.current?.seekTo(t, 'seconds');
     setCurrentTime(t);
-    pushState({ currentTime: t });
+    pushImmediate({ playing, currentTime: t, volume });
   };
 
   const handleVolumeChange = (value) => {
