@@ -13,10 +13,16 @@ export default function NextQuestionCard({ item, examType, onClick }) {
   const { data: q, bucket, blockProof, pathQuestionSets } = item;
   const borderClass = examType === 'Direct' ? 'border-green-800/50' : 'border-red-800/50';
   const isBlock = q.block_type === 'AdmissionBlock';
+  const isPathQuestion = item.type === 'path-question';
   const branchCount = (pathQuestionSets?.admitted?.length || 0) + (pathQuestionSets?.not_admitted?.length || 0);
   const previewText = isBlock
     ? `Admission block for ${blockProof?.formal_name || blockProof?.name || 'selected proof'}`
     : q.text;
+  const nextLabel = isBlock
+    ? `${bucket?.name} · Next · Admission Block`
+    : isPathQuestion
+      ? `${bucket?.name} · Next · ${item.pathKey === 'admitted' ? 'Path 1' : 'Path 2'}`
+      : `${bucket?.name} · Next`;
 
   return (
     <button
@@ -26,7 +32,7 @@ export default function NextQuestionCard({ item, examType, onClick }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
-            {bucket?.name} · Next{isBlock ? ' · Admission Block' : ''}
+            {nextLabel}
           </p>
           <p className="text-base text-slate-400 group-hover:text-slate-300 transition-colors leading-snug line-clamp-2">
             {previewText}
