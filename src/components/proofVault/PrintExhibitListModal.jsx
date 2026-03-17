@@ -6,13 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-const VIEW_OPTIONS = [
-  { key: 'joint_internal', label: 'Joint Exhibit List — Internal View', status: 'Joint', view: 'internal' },
-  { key: 'joint_court', label: 'Joint Exhibit List — Court View', status: 'Joint', view: 'court' },
-  { key: 'admitted_internal', label: 'Admitted Exhibit List — Internal View', status: 'Admitted', view: 'internal' },
-  { key: 'admitted_court', label: 'Admitted Exhibit List — Court View', status: 'Admitted', view: 'court' },
-];
-
 function formatDatePrinted() {
   return new Date().toLocaleDateString();
 }
@@ -33,8 +26,18 @@ function buildDisplayProofs(proofs, status) {
   });
 }
 
+function formatHistory(proof) {
+  const parts = [];
+  if (proof.draft_exhibit_num) parts.push(`D: ${proof.draft_exhibit_num}`);
+  if (proof.joint_exhibit_num) parts.push(`J: ${proof.joint_exhibit_num}`);
+  if (proof.admitted_exhibit_num) parts.push(`Adm: ${proof.admitted_exhibit_num}`);
+  if (proof.demonstrative_exhibit_num) parts.push(`Demo: ${proof.demonstrative_exhibit_num}`);
+  return parts.length ? parts.join(' → ') : '—';
+}
+
 export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
-  const [selectedView, setSelectedView] = useState('joint_internal');
+  const [selectedStatus, setSelectedStatus] = useState('Joint');
+  const [selectedView, setSelectedView] = useState('internal');
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
@@ -46,36 +49,42 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
     queryFn: () => base44.entities.AppSettings.list(),
   });
 
-  const currentOption = VIEW_OPTIONS.find((option) => option.key === selectedView) || VIEW_OPTIONS[0];
   const caseName = settings[0]?.case_name || 'Case Presenter';
   const datePrinted = formatDatePrinted();
+  const title = `${selectedStatus} Exhibit List${selectedView === 'internal' ? ' — Internal View' : ''}`;
 
   const rows = useMemo(() => {
-    const visibleProofs = buildDisplayProofs(proofs, currentOption.status);
+    const visibleProofs = buildDisplayProofs(proofs, selectedStatus);
 
     return visibleProofs.map((proof) => {
       const party = parties.find((item) => item.id === proof.party_id);
-      const exhibitNumber = currentOption.status === 'Joint' ? proof.joint_exhibit_num || '—' : proof.admitted_exhibit_num || '—';
-      const offeredBy = currentOption.status === 'Joint' ? proof.joint_by || '—' : proof.admitted_by || '—';
+      const parentProof = proof.parent_proof_id ? proofs.find((item) => item.id === proof.parent_proof_id) : null;
+      const exhibitNumber = selectedStatus === 'Joint' ? proof.joint_exhibit_num || '—' : proof.admitted_exhibit_num || '—';
+      const offeredBy = selectedStatus === 'Joint' ? proof.joint_by || '—' : proof.admitted_by || '—';
 
       return {
-        exhibit_number: currentOption.view === 'internal' && currentOption.status === 'Joint' ? `J: ${exhibitNumber}` : exhibitNumber,
+        exhibit_number: selectedView === 'internal' && selectedStatus === 'Joint' ? `J: ${exhibitNumber}` : exhibitNumber,
         internal_name: proof.name || '—',
+        original_name: parentProof ? (parentProof.formal_name || parentProof.name || '—') : (proof.name || '—'),
         formal_name: proof.formal_name || proof.name || 'Untitled Exhibit',
         type: proof.file_type || '—',
         party: party ? `${party.first_name} ${party.last_name}` : '—',
         status: proof.status || '—',
         offered_by: offeredBy,
+        history: formatHistory(proof),
       };
     });
-  }, [currentOption.status, currentOption.view, parties, proofs]);
+  }, [parties, proofs, selectedStatus, selectedView]);
 
   const handleExportExcel = () => {
-    const exportRows = currentOption.view === 'internal'
+    const exportRows = selectedView === 'internal'
       ? rows.map((row) => ({
           'Ex. #': row.exhibit_number,
           'Internal Name': row.internal_name,
+          'Original Name': row.original_name,
           'Formal Name': row.formal_name,
+          'Exhibit History': row.history,
+          'Offered By': row.offered_by,
           Type: row.type,
           Party: row.party,
           Status: row.status,
@@ -83,25 +92,27 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
       : rows.map((row) => ({
           'Ex. #': row.exhibit_number,
           'Formal Name': row.formal_name,
-          'Offered By': row.offered_by,
         }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, currentOption.label);
-    XLSX.writeFile(workbook, `${currentOption.key}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, title);
+    XLSX.writeFile(workbook, `${selectedStatus.toLowerCase()}-${selectedView}-exhibit-list.xlsx`);
   };
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank', 'width=1200,height=800');
     if (!printWindow) return;
 
-    const tableHead = currentOption.view === 'internal'
+    const tableHead = selectedView === 'internal'
       ? `
         <tr>
           <th>Ex. #</th>
           <th>Internal Name</th>
+          <th>Original Name</th>
           <th>Formal Name</th>
+          <th>History</th>
+          <th>Offered By</th>
           <th>Type</th>
           <th>Party</th>
           <th>Status</th>
@@ -111,16 +122,18 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
         <tr>
           <th>Ex. #</th>
           <th>Formal Name</th>
-          <th>Offered By</th>
         </tr>
       `;
 
-    const tableRows = rows.map((row) => currentOption.view === 'internal'
+    const tableRows = rows.map((row) => selectedView === 'internal'
       ? `
         <tr>
           <td>${row.exhibit_number}</td>
           <td><div style="font-weight: 700;">${row.internal_name}</div></td>
+          <td>${row.original_name}</td>
           <td><div style="font-style: italic; color: #475569;">${row.formal_name}</div></td>
+          <td>${row.history}</td>
+          <td>${row.offered_by}</td>
           <td>${row.type}</td>
           <td>${row.party}</td>
           <td>${row.status}</td>
@@ -130,14 +143,13 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
         <tr>
           <td>${row.exhibit_number}</td>
           <td>${row.formal_name}</td>
-          <td>${row.offered_by}</td>
         </tr>
       `).join('');
 
     printWindow.document.write(`
       <html>
         <head>
-          <title>${currentOption.label}</title>
+          <title>${title}</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; }
             .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
@@ -153,7 +165,7 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
             <div class="case">CASE: ${caseName}</div>
             <div>${datePrinted}</div>
           </div>
-          <div class="title">${currentOption.label}</div>
+          <div class="title">${title}</div>
           <table>
             <thead>${tableHead}</thead>
             <tbody>${tableRows}</tbody>
@@ -174,24 +186,50 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
         </DialogHeader>
 
         <div className="space-y-5">
-          <div className="grid gap-2 md:grid-cols-2">
-            {VIEW_OPTIONS.map((option) => (
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap gap-2">
               <Button
-                key={option.key}
                 type="button"
-                variant={selectedView === option.key ? 'default' : 'outline'}
-                className={`justify-start text-left h-auto py-3 ${selectedView === option.key ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
-                onClick={() => setSelectedView(option.key)}
+                variant={selectedStatus === 'Joint' ? 'default' : 'outline'}
+                className={selectedStatus === 'Joint' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                onClick={() => setSelectedStatus('Joint')}
               >
-                {option.label}
+                Joint
               </Button>
-            ))}
+              <Button
+                type="button"
+                variant={selectedStatus === 'Admitted' ? 'default' : 'outline'}
+                className={selectedStatus === 'Admitted' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                onClick={() => setSelectedStatus('Admitted')}
+              >
+                Admitted
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={selectedView === 'internal' ? 'default' : 'outline'}
+                className={selectedView === 'internal' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                onClick={() => setSelectedView('internal')}
+              >
+                Internal View
+              </Button>
+              <Button
+                type="button"
+                variant={selectedView === 'court' ? 'default' : 'outline'}
+                className={selectedView === 'court' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                onClick={() => setSelectedView('court')}
+              >
+                Court View
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <Badge className="bg-slate-100 text-slate-700">{rows.length}</Badge>
-              <span>{currentOption.label}</span>
+              <span>{title}</span>
             </div>
 
             <div className="flex gap-2">
@@ -208,7 +246,7 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
             <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 text-sm">
               <div>
                 <div className="font-semibold text-slate-900">CASE: {caseName}</div>
-                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-700">{currentOption.label}</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-700">{title}</div>
               </div>
               <div className="text-slate-500">{datePrinted}</div>
             </div>
@@ -216,36 +254,41 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-slate-700">
-                  {currentOption.view === 'internal' ? (
+                  {selectedView === 'internal' ? (
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium w-32">Ex. #</th>
+                      <th className="px-4 py-3 text-left font-medium w-28">Ex. #</th>
                       <th className="px-4 py-3 text-left font-medium">Internal Name</th>
+                      <th className="px-4 py-3 text-left font-medium">Original Name</th>
                       <th className="px-4 py-3 text-left font-medium">Formal Name</th>
-                      <th className="px-4 py-3 text-left font-medium w-28">Type</th>
+                      <th className="px-4 py-3 text-left font-medium">History</th>
+                      <th className="px-4 py-3 text-left font-medium w-32">Offered By</th>
+                      <th className="px-4 py-3 text-left font-medium w-24">Type</th>
                       <th className="px-4 py-3 text-left font-medium">Party</th>
-                      <th className="px-4 py-3 text-left font-medium w-28">Status</th>
+                      <th className="px-4 py-3 text-left font-medium w-24">Status</th>
                     </tr>
                   ) : (
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium w-32">Ex. #</th>
+                      <th className="px-4 py-3 text-left font-medium w-28">Ex. #</th>
                       <th className="px-4 py-3 text-left font-medium">Formal Name</th>
-                      <th className="px-4 py-3 text-left font-medium w-40">Offered By</th>
                     </tr>
                   )}
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={currentOption.view === 'internal' ? 6 : 3} className="px-4 py-10 text-center text-slate-500">
+                      <td colSpan={selectedView === 'internal' ? 9 : 2} className="px-4 py-10 text-center text-slate-500">
                         No exhibits found for this list.
                       </td>
                     </tr>
-                  ) : currentOption.view === 'internal' ? (
+                  ) : selectedView === 'internal' ? (
                     rows.map((row, index) => (
                       <tr key={`${row.exhibit_number}-${row.formal_name}-${index}`} className="border-t border-slate-200 align-top">
                         <td className="px-4 py-3 font-mono text-slate-700">{row.exhibit_number}</td>
                         <td className="px-4 py-3 font-semibold text-slate-900">{row.internal_name}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.original_name}</td>
                         <td className="px-4 py-3 italic text-slate-600">{row.formal_name}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.history}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.offered_by}</td>
                         <td className="px-4 py-3 text-slate-700">{row.type}</td>
                         <td className="px-4 py-3 text-slate-700">{row.party}</td>
                         <td className="px-4 py-3 text-slate-700">{row.status}</td>
@@ -256,7 +299,6 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
                       <tr key={`${row.exhibit_number}-${row.formal_name}-${index}`} className="border-t border-slate-200 align-top">
                         <td className="px-4 py-3 font-mono text-slate-700">{row.exhibit_number}</td>
                         <td className="px-4 py-3 text-slate-900">{row.formal_name}</td>
-                        <td className="px-4 py-3 text-slate-700">{row.offered_by}</td>
                       </tr>
                     ))
                   )}
