@@ -226,7 +226,7 @@ export default function AdmissionBlockModal({ block, bucketId, partyId, onSubmit
             <SelectContent>
               {jointExhibits.map(p => (
                 <SelectItem key={p.id} value={p.id}>
-                  <span className="font-medium">{p.formal_name || p.name}</span>
+                  <span className="font-medium">{p.name}</span>
                   {(p.joint_exhibit_num || p.admitted_exhibit_num) && (
                     <span className="ml-2 text-xs text-slate-400 font-mono">
                       [{p.admitted_exhibit_num || p.joint_exhibit_num}]
