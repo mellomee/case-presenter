@@ -54,12 +54,8 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
   useEffect(() => {
     if (segments.length === 0) return;
     const safeIndex = Math.min(currentSegmentIdx, segments.length - 1);
-    if (safeIndex !== currentSegmentIdx) {
-      setCurrentSegmentIdx(safeIndex);
-      return;
-    }
     seekToSegment(safeIndex, { resume: false });
-  }, [segments, currentSegmentIdx, seekToSegment]);
+  }, [segments, seekToSegment]);
 
   useEffect(() => {
     if (!panelOpen) return;
