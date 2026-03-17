@@ -19,15 +19,17 @@ export default function RemoveFromJointModal({ open, onClose, proof }) {
     queryFn: () => base44.entities.Proof.list(),
   });
 
+  const activeProofId = proof?.id;
+
   // Find all questions attached to this proof or its children
-  const attachedQuestions = questions.filter((q) => {
+  const attachedQuestions = activeProofId ? questions.filter((q) => {
     const proofIds = Array.isArray(q.proof_ids) ? q.proof_ids : [];
     const childProofIds = proofs
-      .filter((p) => p.parent_proof_id === proof.id)
+      .filter((p) => p.parent_proof_id === activeProofId)
       .map((p) => p.id);
-    
-    return proofIds.includes(proof.id) || childProofIds.some((cid) => proofIds.includes(cid));
-  });
+
+    return proofIds.includes(activeProofId) || childProofIds.some((cid) => proofIds.includes(cid));
+  }) : [];
 
   const isBlocked = attachedQuestions.length > 0;
 
