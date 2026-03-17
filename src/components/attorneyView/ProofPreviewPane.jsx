@@ -45,6 +45,7 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
     onUpdateJury({
       video_time: videoSync.currentTime || 0,
       is_playing: !!videoSync.playing,
+      ...(videoSync.currentSegmentIdx !== undefined ? { video_segment_index: videoSync.currentSegmentIdx } : {}),
     });
   }, [juryState, proof, onUpdateJury]);
 
@@ -92,6 +93,13 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
           <VideoClipViewer
             videoUrl={externalUrl}
             segments={proof.video_clips || []}
+            mode="controller"
+            syncState={juryState?.published_proof_id === proof.id ? {
+              currentTime: juryState.video_time || 0,
+              playing: !!juryState.is_playing,
+              currentSegmentIdx: juryState.video_segment_index ?? 0,
+            } : undefined}
+            onStateChange={handleVideoStateChange}
           />
         </div>
       );
