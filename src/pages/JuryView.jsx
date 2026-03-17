@@ -8,6 +8,7 @@ import { parsePageRange } from '@/components/proofVault/pageRangeUtils';
 import { getInitialHighlightPage } from '@/components/proofVault/highlightGroupUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { Loader2, Scale, Maximize } from 'lucide-react';
+import JuryVideoClipPlayer from '@/components/juryView/JuryVideoClipPlayer.jsx';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
   const playerRef = useRef(null);
@@ -180,7 +181,16 @@ export default function JuryView() {
             <img src={resolvedAssetUrl || proof.file_url} alt={proof.formal_name || proof.name} className="max-w-full max-h-full object-contain" />
           </div>
         ) : proof.file_type === 'Video' ? (
-          <JuryVideo src={resolvedAssetUrl || proof.video_url || proof.file_url} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
+          proof.proof_child_type === 'VideoClip' ? (
+            <JuryVideoClipPlayer
+              src={resolvedAssetUrl || proof.video_url || proof.file_url}
+              segments={proof.video_clips || []}
+              videoTime={juryState.video_time}
+              isPlaying={juryState.is_playing}
+            />
+          ) : (
+            <JuryVideo src={resolvedAssetUrl || proof.video_url || proof.file_url} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
+          )
         ) : (resolvedAssetUrl || proof.file_url) ? (
           <PDFViewer
             fileUrl={resolvedAssetUrl || proof.file_url}

@@ -8,7 +8,7 @@ import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
 import ExtractViewer from '@/components/proofVault/ExtractViewer.jsx';
 import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
-import VideoClipViewer from '@/components/proofVault/VideoClipViewer.jsx';
+import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import JuryPublishBar from './JuryPublishBar.jsx';
 
@@ -89,9 +89,10 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
     if (proof.proof_child_type === 'VideoClip') {
       return (
         <div className="w-full h-full p-4">
-          <VideoClipViewer
+          <VideoClipController
             videoUrl={externalUrl}
             segments={proof.video_clips || []}
+            onStateChange={handleVideoStateChange}
           />
         </div>
       );
