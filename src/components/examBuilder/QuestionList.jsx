@@ -168,9 +168,15 @@ export default function QuestionList({
       });
     };
 
+    const sanitizeNodes = (nodes) =>
+      (Array.isArray(nodes) ? nodes : []).map(({ attachedProofs, children, ...node }) => ({
+        ...node,
+        children: sanitizeNodes(children || []),
+      }));
+
     const nextPathQuestionSets = {
       ...parsed,
-      [pathKey]: reorderBranch(parsed[pathKey] || []),
+      [pathKey]: sanitizeNodes(reorderBranch(parsed[pathKey] || [])),
     };
 
     updateBlockPathsMutation.mutate({ blockId, pathQuestionSets: nextPathQuestionSets });
