@@ -65,8 +65,8 @@ function buildFlatList(buckets, questions, admissionBlocks, proofs) {
       ? buildChildren(item.data.id, questions)
       : [];
 
-    const attachedProofs = item.type === 'question' && item.data.proof_ids
-      ? (Array.isArray(item.data.proof_ids) ? item.data.proof_ids : [])
+    const attachedProofs = item.type === 'question'
+      ? normalizeProofIds(item.data.proof_ids)
           .map(pid => proofs.find(p => p.id === pid))
           .filter(Boolean)
       : [];
