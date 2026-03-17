@@ -1,8 +1,15 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { FileText, X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { base44 } from '@/api/base44Client';
 import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
+import ExtractViewer from '@/components/proofVault/ExtractViewer.jsx';
+import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
+import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
+import VideoClipViewer from '@/components/proofVault/VideoClipViewer.jsx';
+import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import JuryPublishBar from './JuryPublishBar.jsx';
 
 function statusPill(proof) {
@@ -13,29 +20,27 @@ function statusPill(proof) {
 }
 
 export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClose }) {
-  const videoRef = useRef(null);
+  const { data: allProofs = [] } = useQuery({
+    queryKey: ['proofs'],
+    queryFn: () => base44.entities.Proof.list(),
+    enabled: !!proof,
+  });
+
+  const { url } = useResolvedProofAsset(proof);
+  const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
+  const { url: parentUrl } = useResolvedProofAsset(parentProof);
 
   const handlePdfStateChange = useCallback((pdfSync) => {
     if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
     onUpdateJury({ pdf_page: pdfSync.currentPage });
   }, [juryState, proof, onUpdateJury]);
 
-  const handleVideoTimeUpdate = useCallback(() => {
-    const el = videoRef.current;
-    if (!el || !juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
-    onUpdateJury({ video_time: el.currentTime, is_playing: !el.paused });
-  }, [juryState, proof, onUpdateJury]);
-
-  const handleVideoPlay = useCallback(() => {
-    if (juryState?.published_proof_id === proof?.id && !juryState?.is_blank) {
-      onUpdateJury({ is_playing: true });
-    }
-  }, [juryState, proof, onUpdateJury]);
-
-  const handleVideoPause = useCallback(() => {
-    if (juryState?.published_proof_id === proof?.id && !juryState?.is_blank) {
-      onUpdateJury({ is_playing: false });
-    }
+  const handleVideoStateChange = useCallback((videoSync) => {
+    if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
+    onUpdateJury({
+      video_time: videoSync.currentTime || 0,
+      is_playing: !!videoSync.playing,
+    });
   }, [juryState, proof, onUpdateJury]);
 
   if (!proof) {
@@ -52,10 +57,88 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
   }
 
   const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num;
+  const externalUrl = url || parentUrl || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
+
+  const renderPreview = () => {
+    if (proof.proof_child_type === 'ExtractClip') {
+      return (
+        <ExtractClipViewer
+          proof={proof}
+          allProofs={allProofs}
+          mode="controller"
+          onStateChange={handlePdfStateChange}
+        />
+      );
+    }
+
+    if (proof.proof_child_type === 'Extract') {
+      return (
+        <ExtractViewer
+          proof={proof}
+          mode="controller"
+          onStateChange={handlePdfStateChange}
+        />
+      );
+    }
+
+    if (proof.proof_child_type === 'VideoClip') {
+      return (
+        <div className="w-full h-full p-4">
+          <VideoClipViewer
+            videoUrl={externalUrl}
+            segments={proof.video_clips || []}
+          />
+        </div>
+      );
+    }
+
+    if (proof.file_type === 'Video') {
+      return (
+        <VideoViewer
+          proof={proof}
+          allProofs={allProofs}
+          mode="controller"
+          onStateChange={handleVideoStateChange}
+        />
+      );
+    }
+
+    if (proof.file_type === 'Image' && externalUrl) {
+      return (
+        <div className="flex items-center justify-center h-full p-4">
+          <img
+            src={externalUrl}
+            alt={proof.name}
+            className="max-w-full max-h-full object-contain rounded"
+          />
+        </div>
+      );
+    }
+
+    if (externalUrl) {
+      return (
+        <PDFViewer
+          fileUrl={externalUrl}
+          mode="controller"
+          onStateChange={handlePdfStateChange}
+          highlights={proof.highlights || []}
+          clippedPage={proof.clipped_page || null}
+        />
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <FileText className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">No file attached</p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="px-4 py-3 border-b border-slate-700 flex items-start justify-between gap-2 flex-shrink-0">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -75,8 +158,8 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
           )}
         </div>
         <div className="flex gap-1 flex-shrink-0">
-          {proof.file_url && (
-            <a href={proof.file_url} target="_blank" rel="noopener noreferrer">
+          {externalUrl && (
+            <a href={externalUrl} target="_blank" rel="noopener noreferrer">
               <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-200">
                 <ExternalLink className="w-3.5 h-3.5" />
               </Button>
@@ -88,58 +171,16 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
         </div>
       </div>
 
-      {/* Preview Content */}
       <div className="flex-1 overflow-hidden bg-slate-900/50 min-h-0">
-        {proof.file_url ? (
-          <div className="w-full h-full">
-            {proof.file_type === 'Image' ? (
-              <div className="flex items-center justify-center h-full p-4">
-                <img
-                  src={proof.file_url}
-                  alt={proof.name}
-                  className="max-w-full max-h-full object-contain rounded"
-                />
-              </div>
-            ) : proof.file_type === 'Video' ? (
-              <div className="flex items-center justify-center h-full p-4">
-                <video
-                  ref={videoRef}
-                  src={proof.video_url || proof.file_url}
-                  controls
-                  className="max-w-full max-h-full rounded"
-                  onTimeUpdate={handleVideoTimeUpdate}
-                  onPlay={handleVideoPlay}
-                  onPause={handleVideoPause}
-                />
-              </div>
-            ) : (
-              <PDFViewer
-                fileUrl={proof.file_url}
-                mode="controller"
-                onStateChange={handlePdfStateChange}
-                highlights={proof.highlights || []}
-                clippedPage={proof.clipped_page || null}
-              />
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <FileText className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">No file attached</p>
-            </div>
-          </div>
-        )}
+        {renderPreview()}
       </div>
 
-      {/* Description */}
       {proof.description && (
         <div className="px-4 py-2 border-t border-slate-700 bg-slate-800/50 flex-shrink-0">
           <p className="text-xs text-slate-400 leading-relaxed">{proof.description}</p>
         </div>
       )}
 
-      {/* Jury Publish Bar */}
       <JuryPublishBar proof={proof} juryState={juryState} onUpdate={onUpdateJury} />
     </div>
   );
