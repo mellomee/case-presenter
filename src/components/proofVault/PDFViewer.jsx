@@ -166,6 +166,79 @@ export default function PDFViewer({
   );
 
   useEffect(() => {
+    panXRef.current = panX;
+    panYRef.current = panY;
+  }, [panX, panY]);
+
+  useEffect(() => {
+    if (!focusTarget || !Array.isArray(focusTarget.highlights) || focusTarget.highlights.length === 0) return;
+    if (focusTarget.page && focusTarget.page !== currentPage) return;
+
+    const groupBounds = focusTarget.highlights.reduce((bounds, highlight) => {
+      const left = Math.max(0, Number(highlight.x) || 0);
+      const top = Math.max(0, Number(highlight.y) || 0);
+      const right = Math.min(100, left + (Number(highlight.width) || 0));
+      const bottom = Math.min(100, top + (Number(highlight.height) || 0));
+
+      return {
+        left: Math.min(bounds.left, left),
+        top: Math.min(bounds.top, top),
+        right: Math.max(bounds.right, right),
+        bottom: Math.max(bounds.bottom, bottom),
+      };
+    }, { left: 100, top: 100, right: 0, bottom: 0 });
+
+    const containerEl = containerRef.current;
+    const pageEl = pageSurfaceRef.current;
+    if (!containerEl || !pageEl) return;
+
+    const pageWidth = pageEl.offsetWidth || 600;
+    const pageHeight = pageEl.offsetHeight || 800;
+    const regionWidthRatio = Math.max((groupBounds.right - groupBounds.left) / 100, 0.12);
+    const regionHeightRatio = Math.max((groupBounds.bottom - groupBounds.top) / 100, 0.12);
+    const containerWidth = containerEl.clientWidth || pageWidth;
+    const containerHeight = containerEl.clientHeight || pageHeight;
+    const targetZoom = Math.min(
+      4,
+      Math.max(
+        1.6,
+        Math.min(
+          containerWidth / (pageWidth * regionWidthRatio * 2.2),
+          containerHeight / (pageHeight * regionHeightRatio * 2.2)
+        )
+      )
+    );
+
+    setZoom(targetZoom);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const nextContainerEl = containerRef.current;
+        const nextPageEl = pageSurfaceRef.current;
+        if (!nextContainerEl || !nextPageEl) return;
+
+        const containerRect = nextContainerEl.getBoundingClientRect();
+        const pageRect = nextPageEl.getBoundingClientRect();
+        const focusX = pageRect.left + (((groupBounds.left + groupBounds.right) / 2) / 100) * pageRect.width;
+        const focusY = pageRect.top + (((groupBounds.top + groupBounds.bottom) / 2) / 100) * pageRect.height;
+        const deltaX = containerRect.left + containerRect.width / 2 - focusX;
+        const deltaY = containerRect.top + containerRect.height / 2 - focusY;
+        const nextPanX = panXRef.current + deltaX;
+        const nextPanY = panYRef.current + deltaY;
+
+        panXRef.current = nextPanX;
+        panYRef.current = nextPanY;
+        setPanX(nextPanX);
+        setPanY(nextPanY);
+
+        if (mode === 'controller') {
+          debouncedPush({ currentPage, zoom: targetZoom, panX: nextPanX, panY: nextPanY });
+        }
+      });
+    });
+  }, [focusTarget, currentPage, mode, debouncedPush]);
+
+  useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const onWheel = (e) => {
@@ -483,7 +556,7 @@ export default function PDFViewer({
             }}
           >
             <div style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})`, transformOrigin: 'top center', userSelect: 'none' }}>
-              <div className="relative shadow-2xl">
+              <div ref={pageSurfaceRef} className="relative shadow-2xl">
                 <Page pageNumber={activePageNumber} width={600} renderTextLayer={true} renderAnnotationLayer={true} customTextRenderer={textRenderer} loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />} />
                 {activeHighlights.map((highlight) => (
                   <div
