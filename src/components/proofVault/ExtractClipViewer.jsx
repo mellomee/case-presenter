@@ -98,7 +98,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
             if (selectedGroup) {
               setCurrentPage(selectedGroup.page);
               if (mode === 'controller') {
-                onStateChange?.({ currentPage: selectedGroup.page, panX: 0, panY: 0 });
+                onStateChange?.({ currentPage: selectedGroup.page });
               }
             }
           }}

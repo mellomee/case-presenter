@@ -130,6 +130,7 @@ export default function JuryView() {
   const initialClipPage = proof?.proof_child_type === 'ExtractClip'
     ? getInitialHighlightPage(proof.highlights, proof.clipped_page || 1)
     : null;
+  const isExtractClipLoading = proof?.proof_child_type === 'ExtractClip' && !!proof?.parent_proof_id && parentExtract === undefined;
 
   if (!juryState) {
     return (
@@ -143,7 +144,7 @@ export default function JuryView() {
     return <BlankScreen caseName={caseName} />;
   }
 
-  if (!proof || isAssetLoading) {
+  if (!proof || isAssetLoading || isExtractClipLoading) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
         <Loader2 className="w-8 h-8 animate-spin text-white/15" />
