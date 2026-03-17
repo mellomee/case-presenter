@@ -97,6 +97,9 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
             const selectedGroup = groups.find((group) => group.id === groupId);
             if (selectedGroup) {
               setCurrentPage(selectedGroup.page);
+              if (mode === 'controller') {
+                onStateChange?.({ currentPage: selectedGroup.page, panX: 0, panY: 0 });
+              }
             }
           }}
           onShowAll={() => {

@@ -32,7 +32,12 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
 
   const handlePdfStateChange = useCallback((pdfSync) => {
     if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
-    onUpdateJury({ pdf_page: pdfSync.currentPage });
+    onUpdateJury({
+      pdf_page: pdfSync.currentPage,
+      ...(pdfSync.zoom !== undefined ? { zoom: pdfSync.zoom } : {}),
+      ...(pdfSync.panX !== undefined ? { panX: pdfSync.panX } : {}),
+      ...(pdfSync.panY !== undefined ? { panY: pdfSync.panY } : {}),
+    });
   }, [juryState, proof, onUpdateJury]);
 
   const handleVideoStateChange = useCallback((videoSync) => {

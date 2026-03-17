@@ -96,6 +96,12 @@ export default function JuryView() {
     enabled: !!juryState?.published_proof_id && !juryState?.is_blank,
   });
 
+  const { data: parentExtract } = useQuery({
+    queryKey: ['juryParentExtract', proof?.parent_proof_id],
+    queryFn: () => base44.entities.Proof.filter({ id: proof.parent_proof_id }).then((r) => r[0] || null),
+    enabled: proof?.proof_child_type === 'ExtractClip' && !!proof?.parent_proof_id,
+  });
+
   const { data: settings } = useQuery({
     queryKey: ['appSettings'],
     queryFn: () => base44.entities.AppSettings.list().then((r) => r[0] || {}),
@@ -116,7 +122,11 @@ export default function JuryView() {
   const caseName = settings?.case_name || 'Case Presenter';
   const demoLabel = settings?.jury_demonstrative_label || 'For illustrative purposes only';
   const isBlank = !juryState || juryState.is_blank || !juryState.published_proof_id;
-  const visiblePages = proof?.proof_child_type === 'Extract' ? parsePageRange(proof.extract_pages || '') : null;
+  const visiblePages = proof?.proof_child_type === 'Extract'
+    ? parsePageRange(proof.extract_pages || '')
+    : proof?.proof_child_type === 'ExtractClip'
+      ? parsePageRange(parentExtract?.extract_pages || '')
+      : null;
   const initialClipPage = proof?.proof_child_type === 'ExtractClip'
     ? getInitialHighlightPage(proof.highlights, proof.clipped_page || 1)
     : null;
@@ -158,9 +168,9 @@ export default function JuryView() {
             mode="viewer"
             syncState={{
               currentPage: juryState.pdf_page || 1,
-              zoom: juryState.zoom || 1,
-              panX: juryState.panX || 0,
-              panY: juryState.panY || 0,
+              zoom: juryState.zoom ?? 1,
+              panX: juryState.panX ?? 0,
+              panY: juryState.panY ?? 0,
             }}
             allowPan={false}
             visiblePages={visiblePages?.length ? visiblePages : null}
