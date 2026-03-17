@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Star, XCircle, Loader2, ChevronDown } from 'lucide-react';
+import { CheckCircle2, Star, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ const STATUS_CONFIG = {
   Draft: { label: 'Draft', className: 'bg-slate-100 text-slate-600' },
 };
 
-export default function AdmissionEndActions({ proof, onRuling, isLoading }) {
+export default function AdmissionEndActions({ proof, onRuling, onDecision, isLoading }) {
   const [mode, setMode] = useState(null); // 'admit' | 'demo' | 'not'
   const [exhibitNum, setExhibitNum] = useState('');
   const [admittedBy, setAdmittedBy] = useState('Plaintiff');
@@ -33,6 +33,7 @@ export default function AdmissionEndActions({ proof, onRuling, isLoading }) {
         admit_date: new Date().toISOString().split('T')[0],
       },
     });
+    onDecision?.('admit');
     setMode(null);
     setExhibitNum('');
   };
@@ -46,11 +47,13 @@ export default function AdmissionEndActions({ proof, onRuling, isLoading }) {
         demonstrative_exhibit_num: proof.joint_exhibit_num || '',
       },
     });
+    onDecision?.('demo');
     setMode(null);
   };
 
   const handleNotAdmitted = () => {
     onRuling({ action: 'not_admitted', proofId: proof.id, data: null });
+    onDecision?.('not_admitted');
     setMode(null);
   };
 
