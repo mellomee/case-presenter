@@ -38,14 +38,11 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
     suppressEndCheckRef.current = true;
     setCurrentSegmentIdx(idx);
     setCurrentTime(startSec);
-    setPlaying(false);
+    setPlaying(shouldResume);
     playerRef.current?.seekTo(startSec, 'seconds');
 
     resumeTimeoutRef.current = setTimeout(() => {
       suppressEndCheckRef.current = false;
-      if (shouldResume) {
-        setPlaying(true);
-      }
     }, 140);
   }, [segments, clearResumeTimeout]);
 
