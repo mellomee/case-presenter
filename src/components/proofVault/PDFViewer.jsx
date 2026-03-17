@@ -16,6 +16,7 @@ export default function PDFViewer({
   syncState,
   onStateChange,
   highlights = [],
+  focusTarget = null,
   clippedPage = null,
   currentPage: controlledPage,
   onPageChange,
@@ -41,9 +42,12 @@ export default function PDFViewer({
   const [searching, setSearching] = useState(false);
   const [showThumbs, setShowThumbs] = useState(true);
   const containerRef = useRef();
+  const pageSurfaceRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
   const selectionAnchorRef = useRef(null);
+  const panXRef = useRef(0);
+  const panYRef = useRef(0);
 
   const pageNumbers = useMemo(() => {
     if (Array.isArray(visiblePages) && visiblePages.length > 0) {

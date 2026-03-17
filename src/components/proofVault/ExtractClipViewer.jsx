@@ -44,6 +44,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const [showHighlights, setShowHighlights] = useState(true);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(initialPage);
+  const [focusTarget, setFocusTarget] = useState(null);
   const filteredHighlights = useMemo(() => {
     if (!showHighlights) return [];
     if (selectedGroupId === 'all') return groups;
@@ -97,6 +98,12 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
             const selectedGroup = groups.find((group) => group.id === groupId);
             if (selectedGroup) {
               setCurrentPage(selectedGroup.page);
+              setFocusTarget({
+                id: selectedGroup.id,
+                page: selectedGroup.page,
+                highlights: selectedGroup.highlights,
+                requestedAt: Date.now(),
+              });
               if (mode === 'controller') {
                 onStateChange?.({ currentPage: selectedGroup.page });
               }
@@ -105,6 +112,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
           onShowAll={() => {
             setSelectedGroupId('all');
             setShowHighlights(true);
+            setFocusTarget(null);
           }}
           showHighlights={showHighlights}
           onToggleHighlights={() => setShowHighlights((value) => !value)}
@@ -125,6 +133,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
               currentPage={currentPage}
               onPageChange={setCurrentPage}
               highlights={filteredHighlights}
+              focusTarget={focusTarget}
               clippedPage={initialPage}
               visiblePages={visiblePages.length > 0 ? visiblePages : null}
             />
