@@ -99,7 +99,11 @@ export default function AttorneyView() {
   const [selectedProof, setSelectedProof] = useState(null);
   const [showOverview, setShowOverview] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [proofPaneWidth, setProofPaneWidth] = useState(320);
+  const [desiredProofPaneWidth, setDesiredProofPaneWidth] = useState(() => {
+    if (typeof window === 'undefined') return 420;
+    const saved = Number(window.localStorage.getItem('attorney-proof-pane-width'));
+    return Number.isFinite(saved) && saved > 0 ? saved : 420;
+  });
   const proofResizeRef = useRef(null);
 
   const { data: parties = [] } = useQuery({ queryKey: ['parties'], queryFn: () => base44.entities.Party.list() });
@@ -161,6 +165,22 @@ export default function AttorneyView() {
 
   const currentBucketId = currentItem?.bucket?.id || null;
 
+  const getMaxProofPaneWidth = useCallback(() => {
+    const sidebarWidth = isSidebarCollapsed ? 56 : 208;
+    const overviewWidth = showOverview ? 288 : 0;
+    const pagePadding = 48;
+    const resizeHandleWidth = 12;
+    const columnGaps = showOverview ? 32 : 16;
+    const minQuestionWidth = 240;
+
+    return Math.max(360, window.innerWidth - sidebarWidth - overviewWidth - pagePadding - resizeHandleWidth - columnGaps - minQuestionWidth);
+  }, [isSidebarCollapsed, showOverview]);
+
+  const proofPaneWidth = useMemo(() => {
+    if (typeof window === 'undefined') return Math.max(280, desiredProofPaneWidth);
+    return Math.min(getMaxProofPaneWidth(), Math.max(280, desiredProofPaneWidth));
+  }, [desiredProofPaneWidth, getMaxProofPaneWidth]);
+
   const startProofResize = useCallback((event) => {
     proofResizeRef.current = {
       startX: event.clientX,
@@ -174,9 +194,8 @@ export default function AttorneyView() {
     const handleMouseMove = (event) => {
       if (!proofResizeRef.current) return;
       const delta = proofResizeRef.current.startX - event.clientX;
-      const maxWidth = Math.max(420, window.innerWidth - (showOverview ? 900 : 760));
-      const nextWidth = Math.min(maxWidth, Math.max(280, proofResizeRef.current.startWidth + delta));
-      setProofPaneWidth(nextWidth);
+      const nextWidth = Math.max(280, proofResizeRef.current.startWidth + delta);
+      setDesiredProofPaneWidth(nextWidth);
     };
 
     const handleMouseUp = () => {
@@ -194,7 +213,20 @@ export default function AttorneyView() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [showOverview]);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('attorney-proof-pane-width', String(desiredProofPaneWidth));
+  }, [desiredProofPaneWidth]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDesiredProofPaneWidth((current) => Math.max(280, current));
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (currentItem?.type === 'block' && currentItem.blockProof) {
@@ -360,14 +392,14 @@ export default function AttorneyView() {
                   variant="outline"
                   onClick={goPrev}
                   disabled={currentIndex === 0}
-                  className="gap-2 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30"
+                  className="gap-2 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 shrink-0"
                 >
                   <ChevronLeft className="w-4 h-4" /> Previous
                 </Button>
                 <Button
                   onClick={goNext}
                   disabled={currentIndex >= flatList.length - 1}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-30"
+                  className="gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 shrink-0"
                 >
                   Next <ChevronRight className="w-4 h-4" />
                 </Button>
