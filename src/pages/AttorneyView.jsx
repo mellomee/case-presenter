@@ -196,6 +196,12 @@ export default function AttorneyView() {
     };
   }, [showOverview]);
 
+  useEffect(() => {
+    if (currentItem?.type === 'block' && currentItem.blockProof) {
+      setSelectedProof(currentItem.blockProof);
+    }
+  }, [currentItem]);
+
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden">
       {/* Left Sidebar — Bucket Nav */}
