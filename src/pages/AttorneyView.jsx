@@ -192,6 +192,7 @@ export default function AttorneyView() {
     return Number.isFinite(saved) && saved > 0 ? saved : 420;
   });
   const [blockFlow, setBlockFlow] = useState(null);
+  const [blockDecisions, setBlockDecisions] = useState({});
   const proofResizeRef = useRef(null);
 
   const { data: parties = [] } = useQuery({ queryKey: ['parties'], queryFn: () => base44.entities.Party.list() });
@@ -238,6 +239,16 @@ export default function AttorneyView() {
   const currentItem = flatList[currentIndex] || null;
   const nextTopLevelItem = flatList[currentIndex + 1] || null;
   const selectedParty = parties.find(p => p.id === selectedPartyId);
+  const storedBlockDecision = currentItem?.type === 'block' && Object.prototype.hasOwnProperty.call(blockDecisions, currentItem.data.id)
+    ? blockDecisions[currentItem.data.id]
+    : undefined;
+  const resolvedBlockDecision = storedBlockDecision !== undefined
+    ? storedBlockDecision
+    : currentItem?.blockProof?.status === 'Admitted'
+      ? 'admit'
+      : currentItem?.blockProof?.status === 'Demonstrative'
+        ? 'demo'
+        : null;
 
   useEffect(() => {
     if (currentItem?.type === 'block') {
@@ -248,7 +259,7 @@ export default function AttorneyView() {
               blockId: currentItem.data.id,
               phase: 'sequence',
               stepIndex: 0,
-              decision: null,
+              decision: resolvedBlockDecision,
               branchKey: null,
               branchIndex: 0,
             }
@@ -256,7 +267,7 @@ export default function AttorneyView() {
     } else {
       setBlockFlow(null);
     }
-  }, [currentItem?.type, currentItem?.data?.id]);
+  }, [currentItem?.type, currentItem?.data?.id, resolvedBlockDecision]);
 
   const activeBlockFlow = currentItem?.type === 'block' && blockFlow?.blockId === currentItem.data.id
     ? blockFlow
@@ -322,8 +333,25 @@ export default function AttorneyView() {
   const handleBlockDecision = useCallback((action) => {
     if (currentItem?.type !== 'block') return;
 
+    setBlockDecisions((prev) => ({
+      ...prev,
+      [currentItem.data.id]: action ?? null,
+    }));
+
     if (action === 'not_admitted') {
       startBranch('not_admitted');
+      return;
+    }
+
+    if (!action) {
+      setBlockFlow((prev) => ({
+        ...(prev || {}),
+        blockId: currentItem.data.id,
+        phase: 'sequence',
+        decision: null,
+        branchKey: null,
+        branchIndex: 0,
+      }));
       return;
     }
 
@@ -362,6 +390,10 @@ export default function AttorneyView() {
       return admittedPathCount > 0 || currentIndex < flatList.length - 1;
     }
 
+    if (currentBlockStep.key === '4' && activeBlockFlow?.decision === 'not_admitted') {
+      return (currentItem.pathQuestionSets?.not_admitted?.length || 0) > 0 || currentIndex < flatList.length - 1;
+    }
+
     return (activeBlockFlow?.stepIndex || 0) < visibleBlockSteps.length - 1;
   }, [currentItem, currentIndex, flatList.length, activeBlockFlow, admittedPathCount, currentBlockStep, visibleBlockSteps.length]);
 
@@ -391,6 +423,11 @@ export default function AttorneyView() {
 
     if (currentBlockStep?.key === '5' && (activeBlockFlow.decision === 'admit' || activeBlockFlow.decision === 'demo')) {
       startBranch('admitted');
+      return;
+    }
+
+    if (currentBlockStep?.key === '4' && activeBlockFlow.decision === 'not_admitted') {
+      startBranch('not_admitted');
       return;
     }
 

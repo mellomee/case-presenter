@@ -73,6 +73,7 @@ export default function AdmissionEndActions({ proof, onRuling, onDecision, isLoa
             demonstrative_exhibit_num: null,
           },
     });
+    onDecision?.(null);
     setMode(null);
   };
 
