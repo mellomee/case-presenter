@@ -1,7 +1,14 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
+import {
+  normalizeProofIds,
+  renderBlockPathSectionsHtml,
+  renderBlockPathSectionsReact,
+  renderQuestionGroupsHtml,
+  renderQuestionGroupsReact,
+} from '@/components/examBuilder/printStructureUtils.jsx';
 
 const STEPS = [
   { key: '1', label: 'Step 1', title: 'Mark the Exhibit' },
@@ -20,61 +27,53 @@ function fillExhibitNum(text, exhibitNum) {
   return (text || '').replace(/\{\{exhibit_num\}\}/g, exhibitNum || '[Exhibit #]');
 }
 
-// Build flat ordered list of items for a party+examType
 function buildFlatItems(buckets, questions, admissionBlocks, proofs, admissionTemplates, trialPoints) {
   const items = [];
 
   for (const bucket of buckets) {
-    const trialPoint = trialPoints.find(tp => tp.id === bucket.trial_point_id);
+    const trialPoint = trialPoints.find((tp) => tp.id === bucket.trial_point_id);
 
-    const bucketQs = questions
-      .filter(q => q.bucket_id === bucket.id && !q.parent_question_id)
+    const bucketQuestions = questions
+      .filter((question) => question.bucket_id === bucket.id && !question.parent_question_id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
     const bucketBlocks = admissionBlocks
-      .filter(ab => ab.bucket_id === bucket.id)
+      .filter((block) => block.bucket_id === bucket.id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-    const merged = [
-      ...bucketQs.map(q => ({ type: 'question', data: q, bucket, trialPoint })),
-      ...bucketBlocks.map(ab => ({ type: 'block', data: ab, bucket, trialPoint })),
+    const mergedItems = [
+      ...bucketQuestions.map((question) => ({ type: 'question', data: question, bucket, trialPoint })),
+      ...bucketBlocks.map((block) => ({ type: 'block', data: block, bucket, trialPoint })),
     ].sort((a, b) => (a.data.sort_order || 0) - (b.data.sort_order || 0));
 
-    for (const item of merged) {
+    for (const item of mergedItems) {
       if (item.type === 'question') {
-        const attachedProofs = (Array.isArray(item.data.proof_ids) ? item.data.proof_ids : [])
-          .map(pid => proofs.find(p => p.id === pid))
+        const attachedProofs = normalizeProofIds(item.data.proof_ids)
+          .map((proofId) => proofs.find((proof) => proof.id === proofId))
           .filter(Boolean);
 
-        const childQs = questions
-          .filter(q => q.parent_question_id === item.data.id)
-          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-
-        items.push({ ...item, attachedProofs, childQs });
-      } else {
-        const proof = proofs.find(p => p.id === item.data.proof_id);
-        const exhibitNum = proof?.admitted_exhibit_num || proof?.demonstrative_exhibit_num || proof?.joint_exhibit_num || '';
-
-        const steps = STEPS.map(step => {
-          const overrideText = item.data.step_overrides?.[step.key]?.text;
-          const tmpl = admissionTemplates.find(t =>
-            t.proof_type_category_id === item.data.proof_type_category_id && t.step === step.key
-          );
-          const rawText = overrideText ?? tmpl?.default_text ?? '';
-          return { ...step, text: fillExhibitNum(rawText, exhibitNum), isOverride: !!overrideText };
-        });
-
-        items.push({ ...item, proof, exhibitNum, steps });
+        items.push({ ...item, attachedProofs });
+        continue;
       }
+
+      const proof = proofs.find((proofItem) => proofItem.id === item.data.proof_id);
+      const exhibitNum = proof?.admitted_exhibit_num || proof?.demonstrative_exhibit_num || proof?.joint_exhibit_num || '';
+      const steps = STEPS.map((step) => {
+        const overrideText = item.data.step_overrides?.[step.key]?.text;
+        const template = admissionTemplates.find((entry) => entry.proof_type_category_id === item.data.proof_type_category_id && entry.step === step.key);
+        const rawText = overrideText ?? template?.default_text ?? '';
+        return { ...step, text: fillExhibitNum(rawText, exhibitNum), isOverride: !!overrideText };
+      });
+
+      items.push({ ...item, proof, exhibitNum, steps });
     }
   }
 
   return items;
 }
 
-function CardPreview({ item, index, total, isNext = false }) {
+function CardPreview({ item, index, total, allQuestions, allProofs, isNext = false }) {
   const isBlock = item.type === 'block';
-  const isQuestion = item.type === 'question';
 
   return (
     <div
@@ -83,12 +82,10 @@ function CardPreview({ item, index, total, isNext = false }) {
         border: isNext ? '1px dashed #94a3b8' : '1px solid #1e293b',
         borderRadius: '8px',
         padding: isNext ? '12px 16px' : '20px 24px',
-        marginBottom: isNext ? '0' : '0',
         background: isNext ? '#f8fafc' : '#fff',
         opacity: isNext ? 0.75 : 1,
       }}
     >
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
         <div>
           <span style={{ fontSize: '11px', fontFamily: 'sans-serif', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -107,12 +104,13 @@ function CardPreview({ item, index, total, isNext = false }) {
           </div>
           {!isNext && (
             <div style={{ fontSize: '13px', color: '#374151', marginTop: '4px' }}>
-              {item.steps.filter(s => s.text).map(s => (
-                <div key={s.key} style={{ marginBottom: '6px', paddingLeft: '8px', borderLeft: s.isOverride ? '2px solid #f59e0b' : '2px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '10px', fontFamily: 'sans-serif', fontWeight: 700, color: '#6b7280', marginRight: '6px' }}>{s.label}</span>
-                  <span>{s.text}</span>
+              {item.steps.filter((step) => step.text).map((step) => (
+                <div key={step.key} style={{ marginBottom: '6px', paddingLeft: '8px', borderLeft: step.isOverride ? '2px solid #f59e0b' : '2px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '10px', fontFamily: 'sans-serif', fontWeight: 700, color: '#6b7280', marginRight: '6px' }}>{step.label}</span>
+                  <span>{step.text}</span>
                 </div>
               ))}
+              {renderBlockPathSectionsReact(item.data, allProofs)}
             </div>
           )}
         </div>
@@ -136,25 +134,18 @@ function CardPreview({ item, index, total, isNext = false }) {
             </div>
           )}
 
-          {!isNext && item.attachedProofs?.length > 0 && (
+          {!isNext && item.attachedProofs.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
-              {item.attachedProofs.map(p => (
-                <span key={p.id} style={{ fontSize: '11px', fontFamily: 'sans-serif', background: '#dbeafe', color: '#1d4ed8', borderRadius: '4px', padding: '2px 8px', fontWeight: 600 }}>
-                  {p.admitted_exhibit_num || p.joint_exhibit_num ? `Ex ${p.admitted_exhibit_num || p.joint_exhibit_num} — ` : ''}{p.formal_name || p.name}
+              {item.attachedProofs.map((proof) => (
+                <span key={proof.id} style={{ fontSize: '11px', fontFamily: 'sans-serif', background: '#dbeafe', color: '#1d4ed8', borderRadius: '4px', padding: '2px 8px', fontWeight: 600 }}>
+                  {proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num ? `Ex ${proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num} — ` : ''}
+                  {proof.formal_name || proof.name}
                 </span>
               ))}
             </div>
           )}
 
-          {!isNext && item.childQs?.length > 0 && (
-            <div style={{ marginTop: '8px', paddingLeft: '12px', borderLeft: '2px solid #e2e8f0' }}>
-              {item.childQs.map((cq, ci) => (
-                <p key={cq.id} style={{ fontSize: '13px', color: '#475569', margin: '4px 0', fontStyle: 'italic' }}>
-                  ↳ {cq.text}
-                </p>
-              ))}
-            </div>
-          )}
+          {!isNext && renderQuestionGroupsReact(item.data.id, allQuestions, allProofs)}
         </div>
       )}
     </div>
@@ -162,49 +153,50 @@ function CardPreview({ item, index, total, isNext = false }) {
 }
 
 export default function PrintQuestionsTrialModal({ open, onClose, party, examType, buckets, questions, admissionBlocks, proofs, admissionTemplates, trialPoints }) {
-  const printRef = useRef(null);
-
   const flatItems = buildFlatItems(buckets, questions, admissionBlocks, proofs, admissionTemplates, trialPoints);
 
   const handlePrint = () => {
     const win = window.open('', '_blank');
     const pages = flatItems.map((item, index) => {
       const nextItem = flatItems[index + 1] || null;
-      const isBlock = item.type === 'block';
-      const isQuestion = item.type === 'question';
-
       const trialPointText = item.trialPoint ? ` · ${item.trialPoint.name}` : '';
+
       const headerHtml = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
         <span style="font-size:11px;font-family:sans-serif;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${item.bucket?.name}${trialPointText}</span>
         <span style="font-size:11px;font-family:sans-serif;color:#94a3b8;">${index + 1} / ${flatItems.length}</span>
       </div>`;
 
       let mainHtml = '';
-      if (isBlock) {
+      if (item.type === 'block') {
         mainHtml = `<div style="font-size:16px;font-weight:700;color:#1e293b;margin-bottom:10px;">📋 Admission Block — ${item.proof?.formal_name || item.proof?.name || 'Unknown'}</div>
-          ${item.steps.filter(s => s.text).map(s => `
-            <div style="margin-bottom:8px;padding-left:8px;border-left:${s.isOverride ? '2px solid #f59e0b' : '2px solid #e2e8f0'};">
-              <span style="font-size:10px;font-family:sans-serif;font-weight:700;color:#6b7280;margin-right:6px;">${s.label}</span>
-              <span style="font-size:14px;">${s.text}</span>
-            </div>`).join('')}`;
+          ${item.steps.filter((step) => step.text).map((step) => `
+            <div style="margin-bottom:8px;padding-left:8px;border-left:${step.isOverride ? '2px solid #f59e0b' : '2px solid #e2e8f0'};">
+              <span style="font-size:10px;font-family:sans-serif;font-weight:700;color:#6b7280;margin-right:6px;">${step.label}</span>
+              <span style="font-size:14px;">${step.text}</span>
+            </div>`).join('')}
+          ${renderBlockPathSectionsHtml(item.data, proofs)}`;
       } else {
         mainHtml = `<p style="font-size:22px;font-weight:600;color:#0f172a;line-height:1.5;margin:0 0 12px 0;">${item.data.text}</p>`;
+
         if (item.data.expected_answer) {
           mainHtml += `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 12px;margin-bottom:10px;">
             <span style="font-size:10px;font-family:sans-serif;font-weight:700;color:#16a34a;text-transform:uppercase;display:block;margin-bottom:2px;">Expected Answer</span>
-            <p style="font-size:13px;color:#15803d;margin:0;">${item.data.expected_answer}</p></div>`;
+            <p style="font-size:13px;color:#15803d;margin:0;">${item.data.expected_answer}</p>
+          </div>`;
         }
+
         if (item.data.notes) {
           mainHtml += `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-bottom:10px;">
             <span style="font-size:10px;font-family:sans-serif;font-weight:700;color:#d97706;text-transform:uppercase;display:block;margin-bottom:2px;">Notes</span>
-            <p style="font-size:13px;color:#92400e;margin:0;">${item.data.notes}</p></div>`;
+            <p style="font-size:13px;color:#92400e;margin:0;">${item.data.notes}</p>
+          </div>`;
         }
-        if (item.attachedProofs?.length > 0) {
-          mainHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${item.attachedProofs.map(p => `<span style="font-size:11px;font-family:sans-serif;background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:2px 8px;font-weight:600;">${p.admitted_exhibit_num || p.joint_exhibit_num ? `Ex ${p.admitted_exhibit_num || p.joint_exhibit_num} — ` : ''}${p.formal_name || p.name}</span>`).join('')}</div>`;
+
+        if (item.attachedProofs.length > 0) {
+          mainHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${item.attachedProofs.map((proof) => `<span style="font-size:11px;font-family:sans-serif;background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:2px 8px;font-weight:600;">${proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num ? `Ex ${proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num} — ` : ''}${proof.formal_name || proof.name}</span>`).join('')}</div>`;
         }
-        if (item.childQs?.length > 0) {
-          mainHtml += `<div style="margin-top:8px;padding-left:12px;border-left:2px solid #e2e8f0;">${item.childQs.map(cq => `<p style="font-size:13px;color:#475569;margin:4px 0;font-style:italic;">↳ ${cq.text}</p>`).join('')}</div>`;
-        }
+
+        mainHtml += renderQuestionGroupsHtml(item.data.id, questions, proofs);
       }
 
       let nextHtml = '';
@@ -212,6 +204,7 @@ export default function PrintQuestionsTrialModal({ open, onClose, party, examTyp
         const nextText = nextItem.type === 'block'
           ? `📋 Admission Block — ${nextItem.proof?.formal_name || nextItem.proof?.name || 'Unknown'}`
           : nextItem.data.text;
+
         nextHtml = `<div style="margin-top:auto;padding-top:16px;">
           <div style="border:1px dashed #94a3b8;border-radius:6px;padding:10px 14px;background:#f8fafc;opacity:0.8;">
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
@@ -244,7 +237,7 @@ export default function PrintQuestionsTrialModal({ open, onClose, party, examTyp
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -253,13 +246,12 @@ export default function PrintQuestionsTrialModal({ open, onClose, party, examTyp
         </DialogHeader>
 
         <div className="flex items-center justify-between py-2 border-b border-slate-200 flex-shrink-0">
-          <p className="text-sm text-slate-600">{flatItems.length} items — one question per page with next preview</p>
+          <p className="text-sm text-slate-600">{flatItems.length} pages · nested follow-ups and block paths included</p>
           <Button onClick={handlePrint} className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Printer className="w-4 h-4" /> Print / Save PDF
           </Button>
         </div>
 
-        {/* Preview */}
         <div className="flex-1 overflow-y-auto space-y-6 py-4 px-1">
           {flatItems.length === 0 ? (
             <p className="text-center text-slate-500 py-12">No questions to print.</p>
@@ -269,9 +261,9 @@ export default function PrintQuestionsTrialModal({ open, onClose, party, examTyp
                 <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide pl-1">
                   Page {index + 1}
                 </div>
-                <CardPreview item={item} index={index} total={flatItems.length} />
+                <CardPreview item={item} index={index} total={flatItems.length} allQuestions={questions} allProofs={proofs} />
                 {flatItems[index + 1] && (
-                  <CardPreview item={flatItems[index + 1]} index={index + 1} total={flatItems.length} isNext />
+                  <CardPreview item={flatItems[index + 1]} index={index + 1} total={flatItems.length} allQuestions={questions} allProofs={proofs} isNext />
                 )}
               </div>
             ))
