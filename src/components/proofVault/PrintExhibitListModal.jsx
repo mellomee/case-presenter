@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ const sortRows = (rows) =>
 
 export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
   const [listType, setListType] = useState('joint');
+  const printContentRef = useRef(null);
 
   const rows = useMemo(() => {
     const exhibits = proofs.filter((proof) => proof.proof_category === 'Exhibit');
@@ -53,7 +54,12 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
   const title = listType === 'joint' ? 'Joint Exhibit List' : 'Court Exhibit List';
 
   const handleExportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const worksheet = XLSX.utils.json_to_sheet(
+      rows.map((row) => ({
+        'Exhibit #': row.exhibit_number,
+        'Formal Exhibit Name': row.formal_name,
+      }))
+    );
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, title);
     XLSX.writeFile(workbook, `${title.toLowerCase().replace(/\s+/g, '-')}.xlsx`);
@@ -61,44 +67,20 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank', 'width=900,height=700');
-    if (!printWindow) return;
+    if (!printWindow || !printContentRef.current) return;
 
-    const tableRows = rows
-      .map(
-        (row) => `
-          <tr>
-            <td>${row.exhibit_number}</td>
-            <td>${row.formal_name}</td>
-          </tr>
-        `
-      )
+    const documentStyles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((node) => node.outerHTML)
       .join('');
 
     printWindow.document.write(`
       <html>
         <head>
           <title>${title}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; }
-            h1 { margin-bottom: 8px; }
-            p { color: #475569; margin-bottom: 24px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; }
-            th { background: #f8fafc; }
-          </style>
+          ${documentStyles}
         </head>
-        <body>
-          <h1>${title}</h1>
-          <p>${rows.length} exhibit${rows.length === 1 ? '' : 's'}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Exhibit #</th>
-                <th>Formal Exhibit Name</th>
-              </tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
-          </table>
+        <body class="bg-white p-8">
+          ${printContentRef.current.outerHTML}
         </body>
       </html>
     `);
@@ -114,7 +96,7 @@ export default function PrintExhibitListModal({ open, onClose, proofs = [] }) {
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
+        <div ref={printContentRef} className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex gap-2">
               <Button
