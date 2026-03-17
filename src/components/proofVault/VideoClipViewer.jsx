@@ -1,35 +1,74 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import ReactPlayer from 'react-player';
 import { Play, Pause, List, X } from 'lucide-react';
+import debounce from 'lodash/debounce';
 
-export default function VideoClipViewer({ videoUrl, segments }) {
+function toSeconds(value) {
+  if (typeof value === 'number') return value;
+  if (!value || typeof value !== 'string') return 0;
+  const parts = value.split(':').map(Number).filter((part) => !Number.isNaN(part));
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return parts[0] || 0;
+}
+
+function normalizeSegments(value) {
+  const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+export default function VideoClipViewer({ videoUrl, segments, mode = 'controller', onStateChange }) {
   const playerRef = useRef(null);
   const shouldAutoResumeRef = useRef(false);
   const segmentItemRefs = useRef({});
+  const normalizedSegments = useMemo(() => normalizeSegments(segments), [segments]);
   const [playing, setPlaying] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
-  const timeToSeconds = (timeStr) => {
-    const parts = timeStr.split(':').map(Number);
-    return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  };
+  const debouncedPush = useCallback(
+    debounce((state) => onStateChange && onStateChange(state), 150),
+    [onStateChange]
+  );
+
+  const pushImmediate = useCallback((state) => {
+    debouncedPush.cancel?.();
+    onStateChange && onStateChange(state);
+  }, [debouncedPush, onStateChange]);
+
+  const jumpToSegment = useCallback((segmentIndex, resumeAfterSeek = false) => {
+    const nextSegment = normalizedSegments[segmentIndex];
+    if (!nextSegment) return;
+    const startSec = toSeconds(nextSegment.start);
+    shouldAutoResumeRef.current = resumeAfterSeek;
+    setPlaying(false);
+    setCurrentSegmentIdx(segmentIndex);
+    setCurrentTime(startSec);
+    playerRef.current?.seekTo(startSec, 'seconds');
+    if (mode === 'controller') {
+      pushImmediate({ currentTime: startSec, playing: false });
+    }
+  }, [mode, normalizedSegments, pushImmediate]);
 
   useEffect(() => {
-    if (segments.length === 0) return;
-    const startSec = timeToSeconds(segments[currentSegmentIdx].start);
+    if (!normalizedSegments.length) return;
+    const currentSegment = normalizedSegments[currentSegmentIdx] || normalizedSegments[0];
+    const startSec = toSeconds(currentSegment.start);
     playerRef.current?.seekTo(startSec, 'seconds');
     setCurrentTime(startSec);
 
     if (shouldAutoResumeRef.current) {
       const timeout = setTimeout(() => {
         setPlaying(true);
+        if (mode === 'controller') {
+          pushImmediate({ currentTime: startSec, playing: true });
+        }
         shouldAutoResumeRef.current = false;
       }, 80);
       return () => clearTimeout(timeout);
     }
-  }, [currentSegmentIdx, segments]);
+  }, [currentSegmentIdx, normalizedSegments, mode, pushImmediate]);
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -43,63 +82,77 @@ export default function VideoClipViewer({ videoUrl, segments }) {
     return () => clearTimeout(timeout);
   }, [currentSegmentIdx, panelOpen]);
 
-  // Auto-play segments in sequence
   useEffect(() => {
-    if (segments.length === 0) return;
-
-    const segment = segments[currentSegmentIdx];
-    const endSec = timeToSeconds(segment.end);
+    if (!normalizedSegments.length || !playing) return;
+    const segment = normalizedSegments[currentSegmentIdx];
+    const endSec = toSeconds(segment.end);
 
     if (currentTime >= endSec) {
-      if (currentSegmentIdx < segments.length - 1) {
-        shouldAutoResumeRef.current = true;
-        setPlaying(false);
-        setCurrentSegmentIdx((idx) => idx + 1);
+      if (currentSegmentIdx < normalizedSegments.length - 1) {
+        jumpToSegment(currentSegmentIdx + 1, true);
       } else {
         setPlaying(false);
+        if (mode === 'controller') {
+          pushImmediate({ currentTime: endSec, playing: false });
+        }
       }
     }
-  }, [currentTime, currentSegmentIdx, segments]);
+  }, [currentTime, currentSegmentIdx, normalizedSegments, playing, jumpToSegment, mode, pushImmediate]);
 
-  if (!segments || segments.length === 0) {
-    return <div className="text-slate-500 italic">No segments</div>;
+  useEffect(() => () => debouncedPush.cancel?.(), [debouncedPush]);
+
+  if (!normalizedSegments.length) {
+    return <div className="flex items-center justify-center h-full text-slate-500 italic">No segments</div>;
   }
 
-  const segment = segments[currentSegmentIdx];
-  const startSec = timeToSeconds(segment.start);
+  const segment = normalizedSegments[currentSegmentIdx];
+  const startSec = toSeconds(segment.start);
 
   return (
-    <div className="relative">
-      <div className="relative bg-slate-900 rounded-lg overflow-hidden aspect-video border border-slate-200">
+    <div className="relative h-full bg-black overflow-hidden">
+      <div className="relative h-full min-h-0 overflow-hidden">
         <ReactPlayer
           ref={playerRef}
           url={videoUrl}
           width="100%"
           height="100%"
-          controls
+          controls={false}
           playing={playing}
-          onProgress={(state) => setCurrentTime(state.playedSeconds)}
-          onReady={() => playerRef.current?.seekTo(startSec, 'seconds')}
+          onProgress={({ playedSeconds }) => {
+            setCurrentTime(playedSeconds);
+            if (mode === 'controller' && playing) {
+              debouncedPush({ currentTime: playedSeconds, playing: true });
+            }
+          }}
+          onReady={() => {
+            playerRef.current?.seekTo(startSec, 'seconds');
+            setCurrentTime(startSec);
+          }}
+          progressInterval={250}
+          style={{ position: 'absolute', inset: 0 }}
           config={{
-            youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
+            youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1, cc_lang_pref: 'en', enablejsapi: 1 } },
           }}
         />
 
         <div className="absolute top-4 left-4 z-20 flex gap-2">
           <button
-            onClick={() => setPlaying(!playing)}
+            onClick={() => {
+              const nextPlaying = !playing;
+              setPlaying(nextPlaying);
+              if (mode === 'controller') {
+                pushImmediate({ currentTime, playing: nextPlaying });
+              }
+            }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-black/70 hover:bg-black/85 text-white text-xs font-medium backdrop-blur transition"
           >
             {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             {playing ? 'Pause' : 'Play'}
           </button>
 
-          {currentSegmentIdx < segments.length - 1 && (
+          {currentSegmentIdx < normalizedSegments.length - 1 && (
             <button
-              onClick={() => {
-                setCurrentSegmentIdx(currentSegmentIdx + 1);
-                setPlaying(false);
-              }}
+              onClick={() => jumpToSegment(currentSegmentIdx + 1, false)}
               className="px-3 py-2 rounded-md bg-black/60 hover:bg-black/80 text-white text-xs font-medium backdrop-blur transition"
             >
               Next
@@ -112,11 +165,11 @@ export default function VideoClipViewer({ videoUrl, segments }) {
           className="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 rounded-md bg-black/70 hover:bg-black/85 text-white text-xs font-medium backdrop-blur transition"
         >
           {panelOpen ? <X className="w-3.5 h-3.5" /> : <List className="w-3.5 h-3.5" />}
-          {panelOpen ? 'Hide Segments' : `Segments (${segments.length})`}
+          {panelOpen ? 'Hide Segments' : `Segments (${normalizedSegments.length})`}
         </button>
 
         <div
-          className={`absolute top-0 right-0 z-10 h-full w-full max-w-sm bg-slate-950/95 backdrop-blur-md border-l border-white/10 transition-transform duration-300 ${
+          className={`absolute top-0 right-0 z-10 h-full w-72 max-w-[85%] bg-slate-950/95 backdrop-blur-md border-l border-white/10 transition-transform duration-300 ${
             panelOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
@@ -134,7 +187,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
           </div>
 
           <div className="h-[calc(100%-61px)] overflow-y-auto p-3 space-y-2">
-            {segments.map((seg, idx) => (
+            {normalizedSegments.map((seg, idx) => (
               <button
                 key={idx}
                 ref={(el) => {
@@ -145,10 +198,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
                     ? 'bg-blue-600/20 border-blue-400 text-white shadow-sm'
                     : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
                 }`}
-                onClick={() => {
-                  setCurrentSegmentIdx(idx);
-                  setPlaying(false);
-                }}
+                onClick={() => jumpToSegment(idx, false)}
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold">Segment {idx + 1}</span>
