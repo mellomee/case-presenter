@@ -95,18 +95,13 @@ export default function CurrentQuestionCard({ item, index, total, examType, onSe
         <div className="px-5 pb-4 flex flex-col gap-2 border-t border-slate-700/50 pt-3">
           {q.expected_answer && (
             <div>
-              <button
-                onClick={() => setShowAnswer(a => !a)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-green-400 hover:text-green-300 transition-colors"
-              >
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-green-400">
                 <BookOpen className="w-3.5 h-3.5" />
-                Expected Answer {showAnswer ? '▲' : '▼'}
-              </button>
-              {showAnswer && (
-                <p className="mt-1.5 text-sm text-slate-300 bg-green-950/30 border border-green-900/50 rounded-lg px-3 py-2 leading-relaxed">
-                  {q.expected_answer}
-                </p>
-              )}
+                Expected Answer
+              </div>
+              <p className="mt-1.5 text-sm text-slate-300 bg-green-950/30 border border-green-900/50 rounded-lg px-3 py-2 leading-relaxed">
+                {q.expected_answer}
+              </p>
             </div>
           )}
           {q.notes && (
