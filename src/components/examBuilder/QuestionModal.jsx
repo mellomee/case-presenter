@@ -15,6 +15,12 @@ export default function QuestionModal({
   onCancel,
   isLoading,
 }) {
+  const getProofIds = (value) => {
+    if (Array.isArray(value)) return value;
+    if (value && Array.isArray(value.ids)) return value.ids;
+    return [];
+  };
+
   const [text, setText] = useState('');
   const [expectedAnswer, setExpectedAnswer] = useState('');
   const [notes, setNotes] = useState('');
@@ -25,7 +31,7 @@ export default function QuestionModal({
       setText(question.text || '');
       setExpectedAnswer(question.expected_answer || '');
       setNotes(question.notes || '');
-      setProofIds(question.proof_ids || []);
+      setProofIds(getProofIds(question.proof_ids));
     } else {
       setText('');
       setExpectedAnswer('');
@@ -46,7 +52,7 @@ export default function QuestionModal({
       text: text.trim(),
       expected_answer: expectedAnswer.trim() || null,
       notes: notes.trim() || null,
-      proof_ids: proofIds,
+      proof_ids: { ids: proofIds },
       type: examType,
       party_id: partyId,
       bucket_id: bucketId,

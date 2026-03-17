@@ -81,7 +81,11 @@ export default function ProofVault() {
 
       const questions = await base44.entities.Question.list();
       const attached = questions.filter((q) => {
-        const proofIds = Array.isArray(q.proof_ids) ? q.proof_ids : [];
+        const proofIds = Array.isArray(q.proof_ids)
+          ? q.proof_ids
+          : Array.isArray(q.proof_ids?.ids)
+            ? q.proof_ids.ids
+            : [];
         return proofIds.includes(id);
       });
 

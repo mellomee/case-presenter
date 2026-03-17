@@ -118,7 +118,12 @@ export default function PrintQuestionsListModal({ open, onClose, party, examType
               const childQs = questions
                 .filter(cq => cq.parent_question_id === q.id)
                 .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-              const attachedProofs = (Array.isArray(q.proof_ids) ? q.proof_ids : [])
+              const proofIds = Array.isArray(q.proof_ids)
+                ? q.proof_ids
+                : Array.isArray(q.proof_ids?.ids)
+                  ? q.proof_ids.ids
+                  : [];
+              const attachedProofs = proofIds
                 .map(pid => proofs.find(p => p.id === pid))
                 .filter(Boolean);
 

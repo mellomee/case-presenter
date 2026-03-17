@@ -7,7 +7,12 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 function QuestionItem({ question, allQuestions, proofs, index, onEdit, onDelete, onAddChild, examType }) {
   const [expanded, setExpanded] = useState(false);
   const children = allQuestions.filter(q => q.parent_question_id === question.id);
-  const attachedProofs = proofs.filter(p => (question.proof_ids || []).includes(p.id));
+  const proofIds = Array.isArray(question.proof_ids)
+    ? question.proof_ids
+    : Array.isArray(question.proof_ids?.ids)
+      ? question.proof_ids.ids
+      : [];
+  const attachedProofs = proofs.filter(p => proofIds.includes(p.id));
   const typeColor = examType === 'Direct' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
 
   return (

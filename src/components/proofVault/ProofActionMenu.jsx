@@ -59,7 +59,14 @@ export default function ProofActionMenu({
     queryFn: async () => {
       if (!proof.id) return [];
       const questions = await base44.entities.Question.list();
-      return questions.filter((q) => q.proof_ids && q.proof_ids.includes(proof.id));
+      return questions.filter((q) => {
+        const proofIds = Array.isArray(q.proof_ids)
+          ? q.proof_ids
+          : Array.isArray(q.proof_ids?.ids)
+            ? q.proof_ids.ids
+            : [];
+        return proofIds.includes(proof.id);
+      });
     },
   });
 
