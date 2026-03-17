@@ -73,12 +73,6 @@ export default function ProofTile({
   const parentProof = proof.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
   const grandParentProof = parentProof?.parent_proof_id ? allProofs.find((p) => p.id === parentProof.parent_proof_id) : null;
   const hasChildren = children.length > 0;
-  const hierarchyLabel = !proof.parent_proof_id ? 'Parent' : grandParentProof ? 'Grandchild' : 'Child';
-  const hierarchyBadgeClass = !proof.parent_proof_id
-    ? 'bg-slate-900 text-white'
-    : grandParentProof
-      ? 'bg-amber-100 text-amber-700'
-      : 'bg-blue-100 text-blue-700';
   const hasAttachment = proofHasLinkedFile(proof);
   const highlightGroupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
   const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
@@ -86,6 +80,13 @@ export default function ProofTile({
     ? allProofs.find((item) => item.id === proof.parent_proof_id)
     : null;
   const extractSourcePages = parsePageRange(parentExtract?.extract_pages || '');
+  const hierarchyLabel = !proof.parent_proof_id ? 'Parent' : grandParentProof ? 'Grandchild' : 'Child';
+  const hierarchyBadgeClass = !proof.parent_proof_id
+    ? 'bg-slate-900 text-white'
+    : grandParentProof
+      ? 'bg-amber-100 text-amber-700'
+      : 'bg-blue-100 text-blue-700';
+
   const getClipPage = (storedPage) => {
     if (!extractSourcePages.length) return storedPage || 1;
     const isWithinClipRange = storedPage >= 1 && storedPage <= extractSourcePages.length;
@@ -95,6 +96,7 @@ export default function ProofTile({
     }
     return storedPage || 1;
   };
+
   const getSourcePage = (storedPage) => {
     if (!extractSourcePages.length) return null;
     if (storedPage >= 1 && storedPage <= extractSourcePages.length) {
@@ -102,6 +104,7 @@ export default function ProofTile({
     }
     return extractSourcePages.includes(storedPage) ? storedPage : null;
   };
+
   const highlightGroups = normalizeHighlightGroups(proof.highlights, proof.clipped_page || 1).map((group) => ({
     ...group,
     page: getClipPage(group.page),
