@@ -45,7 +45,6 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
     onUpdateJury({
       video_time: videoSync.currentTime || 0,
       is_playing: !!videoSync.playing,
-      ...(videoSync.segmentIndex !== undefined ? { clip_segment_index: videoSync.segmentIndex } : {}),
     });
   }, [juryState, proof, onUpdateJury]);
 
@@ -93,7 +92,6 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
           <VideoClipViewer
             videoUrl={externalUrl}
             segments={proof.video_clips || []}
-            onStateChange={handleVideoStateChange}
           />
         </div>
       );
