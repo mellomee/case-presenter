@@ -362,12 +362,12 @@ export default function ProofImportModal({ open, onClose, onImportComplete }) {
               </div>
             )}
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
-              <p><strong>Required:</strong> name, proof_category, file_type, proof_type_category_id</p>
-              <p><strong>Names or IDs accepted:</strong> proof_type_category_id, category_id, party_id</p>
-              <p><strong>Formal Name:</strong> optional for Draft, required for Joint / Admitted / Demonstrative exhibits</p>
-              <p><strong>Dropbox rows:</strong> set file_source to dropbox and include dropbox_file_id or dropbox_path</p>
-              <p><strong>Depositions:</strong> party_id is required</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1.5">
+              <p><strong>Required for every row:</strong> <code>name</code>, <code>proof_category</code>, <code>file_type</code>, <code>proof_type_category_id</code></p>
+              <p><strong>Conditionally required:</strong> <code>formal_name</code> for Joint / Admitted / Demonstrative exhibits, and <code>party_id</code> for Depositions</p>
+              <p><strong>Optional:</strong> <code>description</code>, <code>status</code>, <code>draft_exhibit_num</code>, <code>category_id</code>, <code>file_source</code>, <code>file_url</code>, <code>video_url</code>, <code>dropbox_file_id</code>, <code>dropbox_path</code>, <code>dropbox_file_name</code></p>
+              <p><strong>Reference sheet:</strong> the downloaded template includes a separate <code>Reference</code> sheet with valid options for <code>proof_type_category_id</code>, <code>category_id</code>, and <code>party_id</code>. You can use either the name or the ID.</p>
+              <p><strong>Dropbox rows:</strong> set <code>file_source</code> to <code>dropbox</code> and usually fill in <code>dropbox_path</code>. Leave <code>dropbox_file_id</code> blank unless you already know it.</p>
             </div>
 
             <Button variant="outline" onClick={downloadTemplate} className="w-full gap-2">
