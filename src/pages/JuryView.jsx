@@ -4,7 +4,6 @@ import ReactPlayer from 'react-player';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import PDFViewer from '@/components/proofVault/PDFViewer';
-import VideoClipViewer from '@/components/proofVault/VideoClipViewer.jsx';
 import { parsePageRange } from '@/components/proofVault/pageRangeUtils';
 import { getInitialHighlightPage } from '@/components/proofVault/highlightGroupUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
@@ -115,10 +114,10 @@ export default function JuryView() {
     enabled: !!juryState?.published_proof_id && !juryState?.is_blank,
   });
 
-  const { data: parentProof } = useQuery({
-    queryKey: ['juryParentProof', proof?.parent_proof_id],
+  const { data: parentExtract } = useQuery({
+    queryKey: ['juryParentExtract', proof?.parent_proof_id],
     queryFn: () => base44.entities.Proof.filter({ id: proof.parent_proof_id }).then((r) => r[0] || null),
-    enabled: ['ExtractClip', 'VideoClip'].includes(proof?.proof_child_type) && !!proof?.parent_proof_id,
+    enabled: proof?.proof_child_type === 'ExtractClip' && !!proof?.parent_proof_id,
   });
 
   const { data: settings } = useQuery({
@@ -127,7 +126,6 @@ export default function JuryView() {
   });
 
   const { url: resolvedAssetUrl, isLoading: isAssetLoading } = useResolvedProofAsset(proof);
-  const { url: parentResolvedAssetUrl, isLoading: isParentAssetLoading } = useResolvedProofAsset(parentProof);
 
   useEffect(() => {
     const tryFs = () => {
@@ -145,14 +143,12 @@ export default function JuryView() {
   const visiblePages = proof?.proof_child_type === 'Extract'
     ? parsePageRange(proof.extract_pages || '')
     : proof?.proof_child_type === 'ExtractClip'
-      ? parsePageRange(parentProof?.extract_pages || '')
+      ? parsePageRange(parentExtract?.extract_pages || '')
       : null;
   const initialClipPage = proof?.proof_child_type === 'ExtractClip'
     ? getInitialHighlightPage(proof.highlights, proof.clipped_page || 1)
     : null;
-  const isExtractClipLoading = proof?.proof_child_type === 'ExtractClip' && !!proof?.parent_proof_id && parentProof === undefined;
-  const isVideoClipLoading = proof?.proof_child_type === 'VideoClip' && !!proof?.parent_proof_id && (parentProof === undefined || isParentAssetLoading);
-  const resolvedVideoUrl = resolvedAssetUrl || parentResolvedAssetUrl || proof?.video_url || proof?.file_url || parentProof?.video_url || parentProof?.file_url;
+  const isExtractClipLoading = proof?.proof_child_type === 'ExtractClip' && !!proof?.parent_proof_id && parentExtract === undefined;
 
   if (!juryState) {
     return (
@@ -166,7 +162,7 @@ export default function JuryView() {
     return <BlankScreen caseName={caseName} />;
   }
 
-  if (!proof || isAssetLoading || isExtractClipLoading || isVideoClipLoading) {
+  if (!proof || isAssetLoading || isExtractClipLoading) {
     return (
       <div className="flex items-center justify-center w-full h-screen bg-black">
         <Loader2 className="w-8 h-8 animate-spin text-white/15" />
@@ -183,21 +179,8 @@ export default function JuryView() {
           <div className="flex items-center justify-center w-full h-full p-6">
             <img src={resolvedAssetUrl || proof.file_url} alt={proof.formal_name || proof.name} className="max-w-full max-h-full object-contain" />
           </div>
-        ) : proof.proof_child_type === 'VideoClip' ? (
-          <div className="w-full h-full p-6">
-            <VideoClipViewer
-              videoUrl={resolvedVideoUrl}
-              segments={proof.video_clips || []}
-              mode="viewer"
-              syncState={{
-                currentTime: juryState.video_time || 0,
-                playing: !!juryState.is_playing,
-                currentSegmentIdx: juryState.video_segment_index ?? 0,
-              }}
-            />
-          </div>
         ) : proof.file_type === 'Video' ? (
-          <JuryVideo src={resolvedVideoUrl} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
+          <JuryVideo src={resolvedAssetUrl || proof.video_url || proof.file_url} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
         ) : (resolvedAssetUrl || proof.file_url) ? (
           <PDFViewer
             fileUrl={resolvedAssetUrl || proof.file_url}

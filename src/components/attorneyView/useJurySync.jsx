@@ -32,7 +32,6 @@ export function useJurySync(role = 'attorney') {
           panX: 0,
           panY: 0,
           video_time: 0,
-          video_segment_index: 0,
           is_playing: false,
           exhibit_label: '',
         });
