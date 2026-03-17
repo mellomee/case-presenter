@@ -41,7 +41,7 @@ export default function QuestionModal({
       setProofIds([]);
       setFollowUpGroup(parentQuestion?.follow_up_group || '');
     }
-  }, [question]);
+  }, [question, parentQuestion]);
 
   const handleToggleProof = (proofId) => {
     setProofIds(prev =>
