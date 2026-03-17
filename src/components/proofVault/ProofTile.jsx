@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
+import PdfPageCountBadge from './PdfPageCountBadge';
 import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups } from './highlightGroupUtils';
 import { proofHasLinkedFile } from './proofAssetUtils';
 import { parsePageRange } from './pageRangeUtils';
@@ -25,6 +26,7 @@ export default function ProofTile({
   onUnAdmit,
   expandedProofId,
   highlightedChildId,
+  depth = 0,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -69,7 +71,14 @@ export default function ProofTile({
 
   const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
   const parentProof = proof.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
+  const grandParentProof = parentProof?.parent_proof_id ? allProofs.find((p) => p.id === parentProof.parent_proof_id) : null;
   const hasChildren = children.length > 0;
+  const hierarchyLabel = !proof.parent_proof_id ? 'Parent' : grandParentProof ? 'Grandchild' : 'Child';
+  const hierarchyBadgeClass = !proof.parent_proof_id
+    ? 'bg-slate-900 text-white'
+    : grandParentProof
+      ? 'bg-amber-100 text-amber-700'
+      : 'bg-blue-100 text-blue-700';
   const hasAttachment = proofHasLinkedFile(proof);
   const highlightGroupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
   const highlightCount = countGroupedHighlights(proof.highlights, proof.clipped_page || 1);
@@ -165,7 +174,7 @@ export default function ProofTile({
 
   return (
     <>
-      <Card ref={cardRef} className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}>
+      <Card ref={cardRef} className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${depth > 0 ? 'shadow-sm' : ''} ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}>
         <div className="p-4 flex items-start gap-3" onClick={() => setExpanded(!expanded)}>
           {hasChildren ? (
             <div className="mt-0.5">{expanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}</div>
@@ -192,6 +201,8 @@ export default function ProofTile({
 
             <div className="flex gap-2 mb-2 flex-wrap items-center">
               <Badge variant="outline" className="text-xs">{proof.file_type}</Badge>
+              <Badge className={`text-xs ${hierarchyBadgeClass}`}>{hierarchyLabel}</Badge>
+              <PdfPageCountBadge proof={proof} sourceFileUrl={proof.file_url || parentProof?.file_url || parentExtract?.file_url} />
               {proof.file_source === 'dropbox' && <Badge className="bg-blue-50 text-blue-700 text-xs">Dropbox</Badge>}
               {party && <Badge className={`text-xs ${getPartyColor()}`}>{party.first_name} {party.last_name}</Badge>}
               {category && <Badge className="bg-slate-100 text-slate-700 text-xs">{category.name}</Badge>}
@@ -270,26 +281,29 @@ export default function ProofTile({
         </div>
 
         {expanded && hasChildren && (
-          <div className="border-t border-slate-200 bg-slate-50">
-            {children.map((child) => (
-              <ProofTile
-                key={child.id}
-                proof={child}
-                allProofs={allProofs}
-                currentTab={currentTab}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onExtract={(p) => onExtract(p)}
-                onClip={(p) => onClip(p)}
-                onAddToJoint={onAddToJoint}
-                onAdmitAsExhibit={onAdmitAsExhibit}
-                onAdmitAsDemonstrative={onAdmitAsDemonstrative}
-                onRemoveFromJoint={onRemoveFromJoint}
-                onUnAdmit={onUnAdmit}
-                expandedProofId={expandedProofId}
-                highlightedChildId={highlightedChildId}
-              />
-            ))}
+          <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="ml-3 border-l-2 border-slate-200 pl-4 space-y-3">
+              {children.map((child) => (
+                <ProofTile
+                  key={child.id}
+                  proof={child}
+                  allProofs={allProofs}
+                  currentTab={currentTab}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onExtract={(p) => onExtract(p)}
+                  onClip={(p) => onClip(p)}
+                  onAddToJoint={onAddToJoint}
+                  onAdmitAsExhibit={onAdmitAsExhibit}
+                  onAdmitAsDemonstrative={onAdmitAsDemonstrative}
+                  onRemoveFromJoint={onRemoveFromJoint}
+                  onUnAdmit={onUnAdmit}
+                  expandedProofId={expandedProofId}
+                  highlightedChildId={highlightedChildId}
+                  depth={depth + 1}
+                />
+              ))}
+            </div>
           </div>
         )}
       </Card>
