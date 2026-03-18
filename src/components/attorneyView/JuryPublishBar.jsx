@@ -43,7 +43,7 @@ export default function JuryPublishBar({ proof, juryState, onUpdate }) {
   };
 
   return (
-    <div className="px-4 py-2.5 border-t border-slate-700 bg-slate-800/80 flex items-center gap-2 flex-wrap">
+    <div className="px-4 py-2.5 border-b border-slate-700 bg-slate-800/80 flex items-center gap-2 flex-wrap">
       {isPublished ? (
         <>
           <div className="flex items-center gap-1.5 flex-1 min-w-0">

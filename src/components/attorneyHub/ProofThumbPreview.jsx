@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { FileText, Film } from 'lucide-react';
+import { CheckCircle2, FileText, Film } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
@@ -12,8 +14,20 @@ const SIZE_MAP = {
 };
 
 export default function ProofThumbPreview({ proof = null, groupLabel = '', size = 'md' }) {
+  const { data: proofs = [] } = useQuery({
+    queryKey: ['proofs'],
+    queryFn: () => base44.entities.Proof.list(),
+    enabled: !!proof?.parent_proof_id,
+  });
   const { url } = useResolvedProofAsset(proof);
   const sizing = SIZE_MAP[size] || SIZE_MAP.md;
+  const parentProof = useMemo(
+    () => proofs.find((item) => item.id === proof?.parent_proof_id) || null,
+    [proof?.parent_proof_id, proofs]
+  );
+  const effectiveStatus = proof?.status === 'Admitted' || proof?.status === 'Demonstrative'
+    ? proof.status
+    : (parentProof?.status === 'Admitted' || parentProof?.status === 'Demonstrative' ? parentProof.status : null);
 
   if (groupLabel) {
     return (
@@ -32,22 +46,39 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
   }
 
   if (proof.file_type === 'Image' && url) {
-    return <img src={url} alt={proof.name} className={`${sizing.outer} rounded-lg border border-slate-700 object-cover bg-slate-900`} />;
+    return (
+      <div className="relative">
+        <img src={url} alt={proof.name} className={`${sizing.outer} rounded-lg border border-slate-700 object-cover bg-slate-900`} />
+        {effectiveStatus && (
+          <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
+        )}
+      </div>
+    );
   }
 
   if (proof.file_type === 'Video') {
     return (
-      <div className={`${sizing.outer} rounded-lg border border-slate-700 bg-slate-900 flex flex-col items-center justify-center gap-2`}>
-        <Film className="w-5 h-5 text-blue-400" />
-        <span className="text-[10px] text-slate-400 uppercase tracking-wide">Video</span>
+      <div className="relative">
+        <div className={`${sizing.outer} rounded-lg border border-slate-700 bg-slate-900 flex flex-col items-center justify-center gap-2`}>
+          <Film className="w-5 h-5 text-blue-400" />
+          <span className="text-[10px] text-slate-400 uppercase tracking-wide">Video</span>
+        </div>
+        {effectiveStatus && (
+          <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
+        )}
       </div>
     );
   }
 
   if (!url) {
     return (
-      <div className={`${sizing.outer} rounded-lg border border-slate-700 bg-slate-800 flex items-center justify-center`}>
-        <FileText className="w-5 h-5 text-slate-500" />
+      <div className="relative">
+        <div className={`${sizing.outer} rounded-lg border border-slate-700 bg-slate-800 flex items-center justify-center`}>
+          <FileText className="w-5 h-5 text-slate-500" />
+        </div>
+        {effectiveStatus && (
+          <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
+        )}
       </div>
     );
   }

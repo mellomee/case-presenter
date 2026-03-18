@@ -205,6 +205,8 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
         </div>
       </div>
 
+      <JuryPublishBar proof={proof} juryState={juryState} onUpdate={onUpdateJury} />
+
       <div className="flex-1 overflow-hidden bg-slate-900/50 min-h-0">
         {renderPreview()}
       </div>
@@ -214,8 +216,6 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
           <p className="text-xs text-slate-400 leading-relaxed">{proof.description}</p>
         </div>
       )}
-
-      <JuryPublishBar proof={proof} juryState={juryState} onUpdate={onUpdateJury} />
     </div>
   );
 }
