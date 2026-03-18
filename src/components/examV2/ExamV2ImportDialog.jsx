@@ -269,38 +269,38 @@ export default function ExamV2ImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) reset(); onOpenChange(nextOpen); }}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-white">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white border-slate-200 text-slate-900">
         <DialogHeader>
           <DialogTitle>Bulk Import — Exam Builder V2</DialogTitle>
         </DialogHeader>
 
         {!preview ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300">
-              <p className="font-semibold text-white">Import target</p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <p className="font-semibold text-slate-900">Import target</p>
               <p className="mt-2">Party: {selectedParty ? `${selectedParty.first_name} ${selectedParty.last_name}` : 'Select a party first'}</p>
               <p>Exam Type: {selectedExamType}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300 space-y-2">
-              <p className="font-semibold text-white">Required fields</p>
-              <p><code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">exam_order</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">item_type</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">root_item_name</code></p>
-              <p className="font-semibold text-white pt-2">Optional fields</p>
-              <p><code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">question_text</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">parent_question_text</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">question_order</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">expected_answer</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">notes</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">attached_proof_names</code></p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-2">
+              <p className="font-semibold text-slate-900">Required fields</p>
+              <p><code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">exam_order</code>, <code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">item_type</code>, <code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">root_item_name</code></p>
+              <p className="font-semibold text-slate-900 pt-2">Optional fields</p>
+              <p><code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">question_text</code>, <code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">parent_question_text</code>, <code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">question_order</code>, <code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">expected_answer</code>, <code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">notes</code>, <code className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-700 border border-slate-200">attached_proof_names</code></p>
               <p className="text-xs text-slate-500 pt-2">Use proof Internal Names or Display Names — never IDs. Proofs must already be linked to the selected party in Proof Vault.</p>
             </div>
 
-            <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-blue-500 transition-colors bg-slate-900/40">
+            <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors bg-slate-50">
               {parsing ? (
                 <>
-                  <Loader className="w-8 h-8 mx-auto mb-3 animate-spin text-slate-400" />
-                  <p className="text-sm text-slate-400">Reading Excel file…</p>
+                  <Loader className="w-8 h-8 mx-auto mb-3 animate-spin text-slate-500" />
+                  <p className="text-sm text-slate-600">Reading Excel file…</p>
                 </>
               ) : (
                 <>
-                  <Upload className="w-8 h-8 mx-auto mb-3 text-slate-400" />
+                  <Upload className="w-8 h-8 mx-auto mb-3 text-slate-500" />
                   <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileSelect} className="hidden" id="exam-v2-import-file" />
-                  <label htmlFor="exam-v2-import-file" className="cursor-pointer text-blue-400 hover:text-blue-300 font-medium">Click to upload Excel</label>
+                  <label htmlFor="exam-v2-import-file" className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium">Click to upload Excel</label>
                   <p className="mt-1 text-xs text-slate-500">XLSX recommended</p>
                 </>
               )}
@@ -313,7 +313,7 @@ export default function ExamV2ImportDialog({
               </div>
             )}
 
-            <Button variant="outline" className="w-full gap-2 border-slate-700 text-slate-200" onClick={downloadTemplate}>
+            <Button variant="outline" className="w-full gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={downloadTemplate}>
               <Download className="w-4 h-4" /> Download Excel Template
             </Button>
           </div>
@@ -373,7 +373,7 @@ export default function ExamV2ImportDialog({
             )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" className="border-slate-700 text-slate-200" onClick={reset} disabled={importing}>Back</Button>
+              <Button variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={reset} disabled={importing}>Back</Button>
               <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleImport} disabled={importing || validCount === 0}>
                 {importing ? 'Importing…' : `Import ${validCount} Sections`}
               </Button>

@@ -57,7 +57,12 @@ function getStoredHubSetting(key, fallback) {
 
 function ToolbarSelect({ value, onChange, children }) {
   return (
-    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-300 focus:outline-none">
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      style={{ colorScheme: 'light' }}
+      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-300 focus:outline-none"
+    >
       {children}
     </select>
   );
@@ -372,16 +377,16 @@ export default function AttorneyHub() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="inline-flex max-w-full rounded-lg border border-slate-200 bg-white p-1 gap-1 overflow-x-auto shadow-sm">
                       {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
-                        <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                        <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white [&_svg]:text-white' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
                           {tab}
                         </button>
                       ))}
                     </div>
                     <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 gap-1 flex-shrink-0 shadow-sm">
-                      <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="Thumbnail view">
+                      <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white [&_svg]:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="Thumbnail view">
                         <LayoutGrid className="w-4 h-4" />
                       </button>
-                      <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="List view">
+                      <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white [&_svg]:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="List view">
                         <List className="w-4 h-4" />
                       </button>
                     </div>
