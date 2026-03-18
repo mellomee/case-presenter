@@ -16,6 +16,8 @@ import AttorneyView from '@/pages/AttorneyView';
 import JuryView from '@/pages/JuryView';
 import AttorneyViewShell from '@/components/present/AttorneyViewShell';
 import Settings from '@/pages/Settings';
+import AttorneyHub from '@/pages/AttorneyHub';
+import ExamBuilderV2 from '@/pages/ExamBuilderV2';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -49,6 +51,8 @@ const AuthenticatedApp = () => {
         <Route path="/ProofVault" element={<ProofVault />} />
         <Route path="/Parties" element={<Parties />} />
         <Route path="/ExamBuilder" element={<ExamBuilder />} />
+        <Route path="/ExamBuilderV2" element={<ExamBuilderV2 />} />
+        <Route path="/AttorneyHub" element={<AttorneyHub />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       

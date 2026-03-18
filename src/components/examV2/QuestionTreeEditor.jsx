@@ -1,0 +1,75 @@
+import React from 'react';
+import { Draggable, Droppable } from '@hello-pangea/dnd';
+import { Button } from '@/components/ui/button';
+import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
+
+function Branch({ parentId, rootParentId, items, proofsById, onEdit, onAddFollowup, onDelete, onSelectAttachment }) {
+  const children = items
+    .filter((item) => (item.parent_item_id || null) === parentId)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const droppableId = `questions:${parentId === rootParentId ? 'root' : parentId}`;
+
+  return (
+    <Droppable droppableId={droppableId} type="QUESTION">
+      {(provided) => (
+        <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
+          {children.map((item, index) => {
+            const attachedProofs = parseIdsField(item.attached_proof_ids).map((id) => proofsById[id]).filter(Boolean);
+            return (
+              <Draggable key={item.id} draggableId={item.id} index={index}>
+                {(dragProvided) => (
+                  <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+                    <div className="flex items-start gap-3">
+                      <button type="button" {...dragProvided.dragHandleProps} className="mt-0.5 text-slate-500 hover:text-white">
+                        <GripVertical className="w-4 h-4" />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white leading-relaxed">{item.text}</p>
+                        {item.expected_answer && <p className="mt-2 text-xs text-green-300">Expected: {item.expected_answer}</p>}
+                        {item.notes && <p className="mt-1 text-xs text-amber-300">Notes: {item.notes}</p>}
+                        {attachedProofs.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {attachedProofs.map((proof) => (
+                              <button key={proof.id} type="button" onClick={() => onSelectAttachment(proof)} className="rounded-lg border border-slate-700 bg-slate-950/70 p-2 hover:border-blue-500">
+                                <ProofThumbPreview proof={proof} size="sm" />
+                                <p className="mt-1 max-w-14 text-[10px] text-slate-300 leading-tight">{getProofDisplayName(proof)}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400" onClick={() => onEdit(item)}><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400" onClick={() => onAddFollowup(item)}><Plus className="w-3.5 h-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400" onClick={() => onDelete(item)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                      </div>
+                    </div>
+                    <div className="mt-3 pl-6">
+                      <Branch
+                        parentId={item.id}
+                        rootParentId={rootParentId}
+                        items={items}
+                        proofsById={proofsById}
+                        onEdit={onEdit}
+                        onAddFollowup={onAddFollowup}
+                        onDelete={onDelete}
+                        onSelectAttachment={onSelectAttachment}
+                      />
+                    </div>
+                  </div>
+                )}
+              </Draggable>
+            );
+          })}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
+  );
+}
+
+export default function QuestionTreeEditor(props) {
+  return <Branch {...props} />;
+}

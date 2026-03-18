@@ -1,0 +1,87 @@
+import React, { useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import { getProofDisplayName } from '@/lib/examV2Utils';
+
+export default function QuestionEditorDialog({ open, onOpenChange, onSave, initialValue = null, availableProofs = [], title = 'Question' }) {
+  const [form, setForm] = useState({ text: '', expected_answer: '', notes: '', attached_proof_ids: [] });
+
+  useEffect(() => {
+    setForm({
+      text: initialValue?.text || '',
+      expected_answer: initialValue?.expected_answer || '',
+      notes: initialValue?.notes || '',
+      attached_proof_ids: initialValue?.attached_proof_ids || [],
+    });
+  }, [initialValue, open]);
+
+  const toggleProof = (proofId) => {
+    setForm((prev) => ({
+      ...prev,
+      attached_proof_ids: prev.attached_proof_ids.includes(proofId)
+        ? prev.attached_proof_ids.filter((id) => id !== proofId)
+        : [...prev.attached_proof_ids, proofId],
+    }));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl bg-slate-950 border-slate-800 text-white max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription className="text-slate-400">Build parent or follow-up questions and attach any proof clips they need.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <textarea
+            value={form.text}
+            onChange={(event) => setForm((prev) => ({ ...prev, text: event.target.value }))}
+            placeholder="Question text"
+            rows={4}
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+          />
+          <input
+            value={form.expected_answer}
+            onChange={(event) => setForm((prev) => ({ ...prev, expected_answer: event.target.value }))}
+            placeholder="Expected answer"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+          />
+          <textarea
+            value={form.notes}
+            onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+            placeholder="Notes"
+            rows={3}
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+          />
+          {availableProofs.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold text-white mb-2">Inline proof references</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {availableProofs.map((proof) => {
+                  const active = form.attached_proof_ids.includes(proof.id);
+                  return (
+                    <button
+                      key={proof.id}
+                      type="button"
+                      onClick={() => toggleProof(proof.id)}
+                      className={`rounded-xl border p-2 text-left ${active ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 bg-slate-900/60'}`}
+                    >
+                      <div className="flex justify-center">
+                        <ProofThumbPreview proof={proof} size="sm" />
+                      </div>
+                      <p className="mt-2 text-[11px] text-slate-300 leading-tight">{getProofDisplayName(proof)}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { onSave(form); onOpenChange(false); }}>Save Question</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
