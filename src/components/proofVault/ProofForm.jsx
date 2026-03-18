@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { X, Upload, Link2, Link as LinkIcon } from 'lucide-react';
 import DropboxFilePickerModal from '@/components/proofVault/DropboxFilePickerModal';
+import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
 
 function OptionCard({ active, onClick, title, subtitle, disabled = false }) {
   return (

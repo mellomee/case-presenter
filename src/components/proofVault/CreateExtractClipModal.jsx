@@ -14,6 +14,7 @@ import {
   getInitialHighlightPage,
   normalizeHighlightGroups,
 } from './highlightGroupUtils';
+import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
 
 const HIGHLIGHT_COLORS = [
   { name: 'Yellow', hex: '#FEF3C7' },

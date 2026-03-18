@@ -10,10 +10,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ReactPlayer from 'react-player';
 import VideoClipWorkspaceSidebar from './VideoClipWorkspaceSidebar.jsx';
+import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
 
 export default function CreateVideoClipModal({ open, onClose, parentProof, onSuccess }) {
   const queryClient = useQueryClient();
