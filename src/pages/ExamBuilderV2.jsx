@@ -49,7 +49,20 @@ export default function ExamBuilderV2() {
   const selectedRootProof = selectedRoot?.item_type === 'proof' ? proofs.find((proof) => proof.id === selectedRoot.linked_proof_id) || null : null;
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const availableAttachmentProofs = useMemo(() => selectedRootProof ? [selectedRootProof, ...proofs.filter((proof) => proof.parent_proof_id === selectedRootProof.id)] : [], [proofs, selectedRootProof]);
-  const selectableProofs = useMemo(() => proofs.filter((proof) => !proof.parent_proof_id && (proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status))), [proofs]);
+  const selectableProofs = useMemo(() => {
+    const allExhibits = proofs.filter((proof) => proof.proof_category === 'Exhibit');
+    const allDepositions = proofs.filter((proof) => proof.proof_category === 'Deposition');
+    const exhibitsTopLevel = allExhibits.filter((proof) => !proof.parent_proof_id);
+    const promotedExtracts = allExhibits.filter(
+      (proof) => proof.proof_child_type === 'Extract' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
+    );
+
+    return [
+      ...exhibitsTopLevel.filter((proof) => ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+      ...promotedExtracts,
+      ...allDepositions.filter((proof) => !proof.parent_proof_id),
+    ];
+  }, [proofs]);
   const previewProof = proofsById[previewProofId] || selectedRootProof || null;
 
   useEffect(() => {
