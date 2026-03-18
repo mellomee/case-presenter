@@ -16,7 +16,6 @@ import AttorneyView from '@/pages/AttorneyView';
 import JuryView from '@/pages/JuryView';
 import AttorneyViewShell from '@/components/present/AttorneyViewShell';
 import AttorneyHubShell from '@/components/present/AttorneyHubShell';
-import AttorneyHub from '@/pages/AttorneyHub';
 import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
