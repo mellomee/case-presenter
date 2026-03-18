@@ -57,7 +57,7 @@ function getStoredHubSetting(key, fallback) {
 
 function ToolbarSelect({ value, onChange, children }) {
   return (
-    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
+    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-300 focus:outline-none">
       {children}
     </select>
   );
@@ -315,11 +315,11 @@ export default function AttorneyHub() {
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
         <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950 p-1">
+            <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
               <button
                 type="button"
                 onClick={() => setIsTimerRunning(true)}
-                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white"
+                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 title="Start"
               >
                 <Play className="w-4 h-4 fill-current" />
@@ -327,7 +327,7 @@ export default function AttorneyHub() {
               <button
                 type="button"
                 onClick={() => setIsTimerRunning(false)}
-                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white"
+                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 title="Pause"
               >
                 <Pause className="w-4 h-4 fill-current" />
@@ -338,18 +338,18 @@ export default function AttorneyHub() {
                   setIsTimerRunning(false);
                   setElapsedSeconds(0);
                 }}
-                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white"
+                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 title="Stop and reset"
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
               </button>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
+            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm">
               {formatElapsedTime(elapsedSeconds)}
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
+          <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm">
             {currentTimeLabel}
           </div>
         </div>
@@ -362,7 +362,7 @@ export default function AttorneyHub() {
                   <button
                     type="button"
                     onClick={() => setLeftColumnCollapsed((value) => !value)}
-                    className="h-9 w-9 rounded-md border border-slate-800 bg-slate-950 flex items-center justify-center text-slate-400 hover:text-slate-200"
+                    className="h-9 w-9 rounded-md border border-slate-200 bg-white flex items-center justify-center text-slate-500 shadow-sm hover:text-slate-700"
                     title={leftColumnCollapsed ? 'Expand left column' : 'Collapse left column'}
                   >
                     {leftColumnCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -370,18 +370,18 @@ export default function AttorneyHub() {
                 </div>
                 {!leftColumnCollapsed && (
                   <div className="flex items-center justify-between gap-3">
-                    <div className="inline-flex max-w-full rounded-lg bg-slate-950 p-1 gap-1 overflow-x-auto">
+                    <div className="inline-flex max-w-full rounded-lg border border-slate-200 bg-white p-1 gap-1 overflow-x-auto shadow-sm">
                       {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
-                        <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
+                        <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
                           {tab}
                         </button>
                       ))}
                     </div>
-                    <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1 flex-shrink-0">
-                      <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
+                    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 gap-1 flex-shrink-0 shadow-sm">
+                      <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="Thumbnail view">
                         <LayoutGrid className="w-4 h-4" />
                       </button>
-                      <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
+                      <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="List view">
                         <List className="w-4 h-4" />
                       </button>
                     </div>
@@ -423,7 +423,7 @@ export default function AttorneyHub() {
                     value={exhibitSearch}
                     onChange={(event) => setExhibitSearch(event.target.value)}
                     placeholder="Search title, exhibit #, or party"
-                    className="min-w-[220px] flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    className="min-w-[220px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-300 focus:outline-none"
                   />
                 </div>
               ) : (
