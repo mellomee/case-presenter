@@ -16,6 +16,14 @@ import ReactPlayer from 'react-player';
 import VideoClipWorkspaceSidebar from './VideoClipWorkspaceSidebar.jsx';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
 
+function normalizePartyIds(currentProof) {
+  if (Array.isArray(currentProof?.party_ids) && currentProof.party_ids.length > 0) {
+    return currentProof.party_ids.filter(Boolean);
+  }
+
+  return currentProof?.party_id ? [currentProof.party_id] : [];
+}
+
 export default function CreateVideoClipModal({ open, onClose, parentProof, onSuccess }) {
   const queryClient = useQueryClient();
   const playerRef = useRef(null);
@@ -33,6 +41,12 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
+  const [selectedPartyIds, setSelectedPartyIds] = useState([]);
+
+  const { data: parties = [] } = useQuery({
+    queryKey: ['parties'],
+    queryFn: () => base44.entities.Party.list(),
+  });
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -66,6 +80,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
     setWarningMsg('');
     setShowWarning(false);
     setWorkspaceCollapsed(false);
+    setSelectedPartyIds([]);
   };
 
   useEffect(() => {
@@ -88,10 +103,12 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setCurrentTime(0);
       setWarningMsg('');
       setShowWarning(false);
+      setSelectedPartyIds(normalizePartyIds(parentProof));
       return;
     }
 
     resetForm();
+    setSelectedPartyIds(normalizePartyIds(parentProof));
   }, [open, parentProof, isEditing]);
 
   const secondsToTime = (seconds) => {
@@ -160,6 +177,11 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setShowWarning(true);
       return;
     }
+    if (selectedPartyIds.length === 0) {
+      setWarningMsg('Select at least one party');
+      setShowWarning(true);
+      return;
+    }
 
     const clipData = {
       proof_category: parentProof.proof_category,
@@ -168,7 +190,8 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       name: internalName.trim(),
       formal_name: formalName.trim(),
       parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
-      party_id: parentProof.party_id || null,
+      party_id: selectedPartyIds[0] || null,
+      party_ids: selectedPartyIds,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
       proof_type_category_id: parentProof.proof_type_category_id,
@@ -201,6 +224,17 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
               </p>
               <p className="text-xs text-blue-700 mt-1">Video</p>
             </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <PartyMultiSelectField
+              label="Assign to Parties"
+              required
+              parties={parties}
+              value={selectedPartyIds}
+              onChange={setSelectedPartyIds}
+              helperText="Choose one or more parties for this video clip."
+            />
           </div>
 
           <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
