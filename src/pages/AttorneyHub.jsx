@@ -8,6 +8,8 @@ import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofCardMenu from '@/components/attorneyHub/ProofCardMenu.jsx';
 import AttorneyHubQuestionList from '@/components/attorneyHub/AttorneyHubQuestionList.jsx';
 import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
+import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
+import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
 import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField, sortByJointExhibit } from '@/lib/examV2Utils';
 
 function proofMatchesParty(proof, partyId) {
@@ -37,6 +39,11 @@ export default function AttorneyHub() {
   const [viewMode, setViewMode] = useState('grid');
   const [selectedKey, setSelectedKey] = useState('');
   const [localDecisionMap, setLocalDecisionMap] = useState({});
+  const { widths, startDrag } = useStoredSplitWidths('attorney-hub-split-widths', {
+    left: 430,
+    middle: 360,
+    right: 620,
+  });
 
   const { data: parties = [] } = useQuery({ queryKey: ['hubParties'], queryFn: () => base44.entities.Party.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['hubProofs'], queryFn: () => base44.entities.Proof.list() });
@@ -171,8 +178,8 @@ export default function AttorneyHub() {
           </ToolbarSelect>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_1.35fr] min-h-[calc(100vh-10rem)]">
-          <div className="border-r border-slate-800 flex flex-col min-h-0">
+        <div className="min-h-[calc(100vh-10rem)] xl:flex xl:min-w-0">
+          <div style={{ width: `${widths.left}px` }} className="border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 xl:min-w-[320px]">
             <div className="border-b border-slate-800 px-4 pt-4">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="inline-flex rounded-lg bg-slate-950 p-1 gap-1">
@@ -233,9 +240,8 @@ export default function AttorneyHub() {
               )}
             </div>
 
-            <div className="flex-1 min-h-0 grid grid-rows-[1fr_22rem]">
-              <div className="overflow-y-auto p-4">
-                <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
+              <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                   {displayEntries.map((entry) => {
                     const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
                     if (entry.kind === 'group') {
@@ -307,22 +313,37 @@ export default function AttorneyHub() {
                 </div>
               </div>
 
-              <div className="border-t border-slate-800 p-4 min-h-0">
-                <AttorneyHubQuestionList
-                  title={selectedProof ? getProofDisplayName(selectedProof) : selectedGroup?.label}
-                  parentItemId={questionParentId}
-                  questionItems={questionItems}
-                  proofsById={proofsById}
-                  admissionSource={selectedProof ? admissionSource : null}
-                  admissionTemplates={admissionTemplates}
-                  exhibitNum={selectedProof?.joint_exhibit_num || selectedProof?.admitted_exhibit_num || ''}
-                  onSelectInlineProof={(proof) => setSelectedKey(`proof:${proof.id}`)}
-                />
-              </div>
             </div>
           </div>
 
-          <div className="min-h-0 p-4">
+          <ColumnResizeHandle onMouseDown={startDrag.left} />
+
+          <div style={{ width: `${widths.middle}px` }} className="border-r border-slate-800 min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[320px]">
+            {(selectedProof || selectedGroup) ? (
+              <AttorneyHubQuestionList
+                title={selectedProof ? getProofDisplayName(selectedProof) : selectedGroup?.label}
+                parentItemId={questionParentId}
+                questionItems={questionItems}
+                proofsById={proofsById}
+                admissionSource={selectedProof ? admissionSource : null}
+                admissionTemplates={admissionTemplates}
+                exhibitNum={selectedProof?.joint_exhibit_num || selectedProof?.admitted_exhibit_num || ''}
+                onSelectInlineProof={(proof) => setSelectedKey(`proof:${proof.id}`)}
+              />
+            ) : (
+              <div className="h-full rounded-2xl border border-dashed border-slate-800 bg-slate-950/60 flex items-center justify-center text-center p-8">
+                <div>
+                  <Layers3 className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+                  <p className="text-lg font-semibold text-slate-300">Questions</p>
+                  <p className="mt-2 text-sm text-slate-500">Select a proof or question group to see its questions here.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <ColumnResizeHandle onMouseDown={startDrag.right} />
+
+          <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
             {selectedProof ? (
               <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
                 <ProofPreviewPane
@@ -334,18 +355,7 @@ export default function AttorneyHub() {
                 />
               </div>
             ) : selectedGroup ? (
-              <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden p-4">
-                <AttorneyHubQuestionList
-                  title={selectedGroup.label}
-                  parentItemId={selectedGroup.id}
-                  questionItems={questionItems}
-                  proofsById={proofsById}
-                  admissionSource={null}
-                  admissionTemplates={admissionTemplates}
-                  exhibitNum=""
-                  onSelectInlineProof={(proof) => setSelectedKey(`proof:${proof.id}`)}
-                />
-              </div>
+              <GroupPreviewPane label={selectedGroup.label} />
             ) : (
               <div className="h-full rounded-2xl border border-dashed border-slate-800 bg-slate-950/60 flex items-center justify-center text-center p-10">
                 <div>
