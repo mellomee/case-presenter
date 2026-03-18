@@ -202,21 +202,23 @@ export default function AttorneyHub() {
         <div className="min-h-[calc(100vh-10rem)] xl:flex xl:min-w-0">
           <div style={{ width: `${widths.left}px` }} className="border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 xl:min-w-[320px]">
             <div className="border-b border-slate-800 px-4 pt-4">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="inline-flex rounded-lg bg-slate-950 p-1 gap-1">
+              <div className="mb-4 space-y-3">
+                <div className="inline-flex rounded-lg bg-slate-950 p-1 gap-1 max-w-full overflow-x-auto">
                   {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
-                    <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
+                    <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
                       {tab}
                     </button>
                   ))}
                 </div>
-                <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1">
-                  <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
-                  <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
-                    <List className="w-4 h-4" />
-                  </button>
+                <div className="flex justify-end">
+                  <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1">
+                    <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -262,18 +264,31 @@ export default function AttorneyHub() {
 
                   if (entry.kind === 'group') {
                     const group = rootGroups.find((item) => item.id === entry.id);
-                    return (
-                      <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'} ${viewMode === 'list' ? 'flex items-center gap-4' : ''}`}>
-                        <div className={`flex items-start justify-between gap-3 ${viewMode === 'list' ? 'w-full' : ''}`}>
+                    return viewMode === 'grid' ? (
+                      <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                        <div className="flex justify-between items-start gap-2">
+                          {rootExamOrderNumberMap[group?.id] ? <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span> : <span />}
+                          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
+                        </div>
+                        <div className="mt-3 flex justify-center">
+                          <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size="lg" />
+                        </div>
+                        <div className="mt-3 text-center">
+                          <p className="text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
+                          <p className="mt-1 text-[11px] text-slate-400">No Proof</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer flex items-center gap-4 ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                        <div className="flex items-start justify-between gap-3 w-full">
                           <div className="flex items-center gap-4 min-w-0">
-                            <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size={viewMode === 'grid' ? 'md' : 'sm'} />
+                            <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size="sm" />
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 {rootExamOrderNumberMap[group?.id] && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span>}
                                 <p className="text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
                               </div>
-                              {viewMode === 'list' && <p className="mt-1 text-xs text-slate-400">Question Group</p>}
-                              {viewMode === 'grid' && <p className="mt-2 text-[11px] text-slate-400">No Proof</p>}
+                              <p className="mt-1 text-xs text-slate-400">Question Group</p>
                             </div>
                           </div>
                           <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
@@ -287,17 +302,38 @@ export default function AttorneyHub() {
                   const isDemo = proof.status === 'Demonstrative';
                   const isAdmitted = proof.status === 'Admitted';
 
-                  return (
-                    <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'} ${viewMode === 'list' ? 'flex items-start gap-4' : ''}`}>
-                      <div className={`flex items-start justify-between gap-2 ${viewMode === 'list' ? 'w-full' : ''}`}>
+                  return viewMode === 'grid' ? (
+                    <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        {rootProofOrderNumberMap[proof.id] ? <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootProofOrderNumberMap[proof.id]}</span> : <span />}
+                        <div className="flex flex-col items-end gap-2">
+                          {(isAdmitted || isDemo) && <CheckCircle2 className={`w-5 h-5 ${isDemo ? 'text-blue-400' : 'text-red-400'}`} />}
+                          <ProofCardMenu proof={proof} selectedParty={selectedParty} localDecision={localDecisionMap[proof.id]} onAction={(action, patch) => handleProofAction(proof, action, patch)} />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex justify-center">
+                        <ProofThumbPreview proof={proof} size="lg" />
+                      </div>
+                      <div className="mt-3 text-center">
+                        <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
+                        <p className="mt-1 text-[11px] text-slate-400">{proof.status}</p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
+                        <span className="text-slate-400">{proof.status === 'Admitted' ? (proof.admitted_exhibit_num || '—') : proof.status === 'Demonstrative' ? (proof.demonstrative_exhibit_num || '—') : ''}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer flex items-start gap-4 ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                      <div className="flex items-start justify-between gap-2 w-full">
                         <div className="flex items-start gap-4 min-w-0">
-                          <ProofThumbPreview proof={proof} size={viewMode === 'grid' ? 'md' : 'sm'} />
+                          <ProofThumbPreview proof={proof} size="sm" />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               {rootProofOrderNumberMap[proof.id] && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootProofOrderNumberMap[proof.id]}</span>}
                               <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
                             </div>
-                            <div className={`mt-2 flex items-center ${viewMode === 'grid' ? 'justify-between' : 'justify-start gap-3'} text-xs`}>
+                            <div className="mt-2 flex items-center justify-start gap-3 text-xs">
                               <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
                               <span className="text-slate-500">{proof.status === 'Admitted' ? (proof.admitted_exhibit_num || '—') : proof.status === 'Demonstrative' ? (proof.demonstrative_exhibit_num || '—') : getProofTypeLabel(proof)}</span>
                             </div>
