@@ -5,7 +5,6 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Eye, GripVertical, Plus, ScrollText, Trash2 } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
-import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
 import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
@@ -46,16 +45,11 @@ export default function ExamBuilderV2() {
   const selectedRoot = rootItems.find((item) => item.id === selectedRootId) || rootItems[0] || null;
   const selectedRootProof = selectedRoot?.item_type === 'proof' ? proofs.find((proof) => proof.id === selectedRoot.linked_proof_id) || null : null;
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
-  const availableAttachmentProofs = useMemo(() => selectedRootProof ? [selectedRootProof, ...proofs.filter((proof) => proof.parent_proof_id === selectedRootProof.id)] : [], [proofs, selectedRootProof]);
-  const availableGroupProofs = useMemo(
-    () => proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
-    [proofs]
-  );
-  const selectedGroupProofs = useMemo(
-    () => selectedRoot?.item_type === 'group'
-      ? parseIdsField(selectedRoot.attached_proof_ids).map((id) => proofsById[id]).filter(Boolean)
-      : [],
-    [selectedRoot, proofsById]
+  const availableAttachmentProofs = useMemo(
+    () => selectedRootProof
+      ? [selectedRootProof, ...proofs.filter((proof) => proof.parent_proof_id === selectedRootProof.id)]
+      : proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+    [proofs, selectedRootProof]
   );
   const admissionStatusMeta = selectedRootProof?.status === 'Admitted'
     ? { label: `Admitted as Exhibit · #${selectedRootProof.admitted_exhibit_num || '—'}`, color: 'text-red-400' }
@@ -133,13 +127,12 @@ export default function ExamBuilderV2() {
     invalidate();
   };
 
-  const addGroupToExam = async ({ label, attached_proof_ids }) => {
+  const addGroupToExam = async ({ label }) => {
     if (!label) return;
 
     if (groupDialog.initialItem) {
       await base44.entities.ExamItemV2.update(groupDialog.initialItem.id, {
         label: truncateGroupLabel(label),
-        attached_proof_ids: attached_proof_ids?.length ? { ids: attached_proof_ids } : null,
       });
       invalidate();
       return;
@@ -148,7 +141,6 @@ export default function ExamBuilderV2() {
     await createRootItem({
       item_type: 'group',
       label: truncateGroupLabel(label),
-      attached_proof_ids: attached_proof_ids?.length ? { ids: attached_proof_ids } : null,
     });
   };
 
@@ -390,12 +382,6 @@ export default function ExamBuilderV2() {
                     </div>
                   </div>
 
-                  {selectedRoot?.item_type === 'group' && (
-                    <div className="mb-4">
-                      <GroupPreviewPane label={selectedRoot.label} attachedProofs={selectedGroupProofs} onPreviewProof={setPreviewDialogProof} />
-                    </div>
-                  )}
-
                   <QuestionTreeEditor
                     parentId={selectedRoot.id}
                     rootParentId={selectedRoot.id}
@@ -422,8 +408,6 @@ export default function ExamBuilderV2() {
           onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}
           onSave={addGroupToExam}
           initialLabel={groupDialog.initialItem?.label || ''}
-          initialProofIds={parseIdsField(groupDialog.initialItem?.attached_proof_ids)}
-          availableProofs={availableGroupProofs}
         />
         <QuestionEditorDialog
           open={questionDialog.open}
