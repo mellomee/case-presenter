@@ -79,7 +79,9 @@ export default function ExamBuilderV2() {
   );
 
   useEffect(() => {
-    if (!selectedPartyId && parties[0]) setSelectedPartyId(parties[0].id);
+    if (parties.length > 0 && !parties.some((party) => party.id === selectedPartyId)) {
+      setSelectedPartyId(parties[0].id);
+    }
   }, [parties, selectedPartyId]);
 
   useEffect(() => {
