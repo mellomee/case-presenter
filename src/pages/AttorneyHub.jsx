@@ -11,7 +11,6 @@ import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
 import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
-import TopPublishToolbar from '@/components/attorneyHub/TopPublishToolbar.jsx';
 import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
 import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
 import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField, sortByJointExhibit } from '@/lib/examV2Utils';
@@ -421,21 +420,14 @@ export default function AttorneyHub() {
 
           <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
             {(selectedPreviewProof || selectedProof) ? (
-              <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden flex flex-col">
-                <TopPublishToolbar
+              <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
+                <ProofPreviewPane
                   proof={selectedPreviewProof || selectedProof}
                   juryState={juryState}
-                  onUpdate={update}
+                  onUpdateJury={update}
+                  onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
+                  onClose={() => setSelectedPreviewProof(null)}
                 />
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <ProofPreviewPane
-                    proof={selectedPreviewProof || selectedProof}
-                    juryState={juryState}
-                    onUpdateJury={update}
-                    onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
-                    onClose={() => setSelectedPreviewProof(null)}
-                  />
-                </div>
               </div>
             ) : selectedGroup ? (
               <GroupPreviewPane label={selectedGroup.label} />
