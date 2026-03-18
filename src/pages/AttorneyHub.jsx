@@ -63,6 +63,25 @@ function ToolbarSelect({ value, onChange, children }) {
   );
 }
 
+const LOS_ANGELES_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+  timeZone: 'America/Los_Angeles',
+});
+
+function formatElapsedTime(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+  }
+
+  return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+}
+
 export default function AttorneyHub() {
   const queryClient = useQueryClient();
   const { juryState, update } = useJurySync('attorney');
@@ -83,6 +102,9 @@ export default function AttorneyHub() {
   const [showAdmitExhibitModal, setShowAdmitExhibitModal] = useState(false);
   const [showAdmitDemoModal, setShowAdmitDemoModal] = useState(false);
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [currentTimeLabel, setCurrentTimeLabel] = useState(() => LOS_ANGELES_TIME_FORMATTER.format(new Date()));
   const { widths, startDrag } = useStoredSplitWidths('attorney-hub-split-widths', {
     left: 430,
     middle: 360,
@@ -235,6 +257,15 @@ export default function AttorneyHub() {
     window.localStorage.setItem('attorney-hub-left-collapsed', leftColumnCollapsed ? 'true' : 'false');
   }, [proofTab, selectedExamType, selectedExamPartyId, depositionPartyFilter, statusFilter, sideFilter, exhibitSort, exhibitSearch, viewMode, leftColumnCollapsed]);
 
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentTimeLabel(LOS_ANGELES_TIME_FORMATTER.format(new Date()));
+      setElapsedSeconds((prev) => (isTimerRunning ? prev + 1 : prev));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isTimerRunning]);
+
   const [selectedKind, selectedId] = selectedKey.split(':');
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
   const selectedGroup = selectedKind === 'group' ? rootGroups.find((item) => item.id === selectedId) || null : null;
@@ -282,7 +313,26 @@ export default function AttorneyHub() {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 lg:p-6">
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
-        <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center gap-2" />
+        <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsTimerRunning((value) => !value)}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold ${isTimerRunning ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+            >
+              {isTimerRunning ? 'Stop Timer' : 'Start Timer'}
+            </button>
+            <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Elapsed</p>
+              <p className="mt-1 text-sm font-semibold text-white">{formatElapsedTime(elapsedSeconds)}</p>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Los Angeles</p>
+            <p className="mt-1 text-sm font-semibold text-white">{currentTimeLabel}</p>
+          </div>
+        </div>
 
         <div className="min-h-[calc(100vh-10rem)] xl:flex xl:min-w-0">
           <div style={{ width: `${leftPanelWidth}px` }} className={`border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 ${leftColumnCollapsed ? 'xl:min-w-[72px]' : 'xl:min-w-[320px]'}`}>
@@ -299,7 +349,7 @@ export default function AttorneyHub() {
                   </button>
                 </div>
                 {!leftColumnCollapsed && (
-                  <>
+                  <div className="flex items-center justify-between gap-3">
                     <div className="inline-flex max-w-full rounded-lg bg-slate-950 p-1 gap-1 overflow-x-auto">
                       {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
                         <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
@@ -307,17 +357,15 @@ export default function AttorneyHub() {
                         </button>
                       ))}
                     </div>
-                    <div className="flex justify-end">
-                      <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1">
-                        <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
-                          <LayoutGrid className="w-4 h-4" />
-                        </button>
-                        <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
-                          <List className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1 flex-shrink-0">
+                      <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                      <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
+                        <List className="w-4 h-4" />
+                      </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
 
