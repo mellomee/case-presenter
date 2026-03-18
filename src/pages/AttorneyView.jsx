@@ -194,7 +194,6 @@ export default function AttorneyView() {
   const [blockFlow, setBlockFlow] = useState(null);
   const [blockDecisions, setBlockDecisions] = useState({});
   const proofResizeRef = useRef(null);
-  const questionColumnRef = useRef(null);
 
   const { data: parties = [] } = useQuery({ queryKey: ['parties'], queryFn: () => base44.entities.Party.list() });
   const { data: allBuckets = [] } = useQuery({ queryKey: ['allBuckets'], queryFn: () => base44.entities.Bucket.list() });
@@ -553,32 +552,6 @@ export default function AttorneyView() {
     }
   }, [currentItem]);
 
-  useEffect(() => {
-    const container = questionColumnRef.current;
-    if (!container) return;
-
-    const patchFollowupNavButtons = () => {
-      container.querySelectorAll('button').forEach((button) => {
-        const label = button.textContent?.trim();
-        const parentCard = button.closest('.rounded-xl.border.border-slate-700.bg-slate-900\/40.overflow-hidden');
-        if (!parentCard) return;
-        if (label !== 'Previous' && label !== 'Next') return;
-
-        button.disabled = false;
-        button.removeAttribute('disabled');
-        button.removeAttribute('aria-disabled');
-        button.style.pointerEvents = 'auto';
-        button.style.opacity = '1';
-      });
-    };
-
-    patchFollowupNavButtons();
-    const observer = new MutationObserver(patchFollowupNavButtons);
-    observer.observe(container, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'class', 'aria-disabled'] });
-
-    return () => observer.disconnect();
-  }, [displayCurrentItem, currentItem?.id, currentIndex]);
-
   const isAdmittedPathLaunchStep = currentItem?.type === 'block'
     && activeBlockFlow?.phase !== 'branch'
     && currentBlockStep?.key === '5'
@@ -728,7 +701,7 @@ export default function AttorneyView() {
         ) : (
           <div className="flex-1 flex gap-4 p-6 min-h-0 overflow-hidden">
             {/* Questions column */}
-            <div ref={questionColumnRef} className="flex-1 flex flex-col gap-4 min-w-0 overflow-y-auto">
+            <div className="flex-1 flex flex-col gap-4 min-w-0 overflow-y-auto">
               {currentItem?.type === 'block' && activeBlockFlow?.phase !== 'branch' ? (
                 <div className={isAdmittedPathLaunchStep ? 'hide-admission-path-cta' : ''}>
                   <AdmissionBlockTrialPanel
