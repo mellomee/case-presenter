@@ -206,7 +206,7 @@ export default function ExamBuilderV2() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-[22rem_1fr] min-h-[calc(100vh-10rem)]">
-            <div className="border-r border-slate-800 p-4 min-h-0 overflow-y-auto xl:w-[20rem]">
+            <div className="border-r border-slate-800 p-4 min-h-0 overflow-y-auto">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3">Exam Order</p>
               <Droppable droppableId="root-items" type="ROOT">
                 {(provided) => (
@@ -253,8 +253,8 @@ export default function ExamBuilderV2() {
             <div className="grid grid-rows-[minmax(22rem,30rem)_1fr] min-h-0">
               <div className="border-b border-slate-800 p-4 min-h-0">
                 {selectedRoot ? (
-                  <div className="h-full grid grid-rows-[minmax(30rem,48vh)_1fr] gap-4">
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 flex flex-col min-h-0">
+                  <div className="h-full grid grid-cols-1 lg:grid-cols-[minmax(16rem,22rem)_1fr] gap-4">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 flex flex-col">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Selected Item</p>
@@ -266,7 +266,7 @@ export default function ExamBuilderV2() {
                           </Button>
                         )}
                       </div>
-                      <div className="mt-4 flex-1 min-h-0 overflow-hidden">
+                      <div className="mt-4 flex-1 overflow-hidden">
                         {selectedRootProof ? (
                           <div className="h-full rounded-xl border border-slate-800 overflow-hidden">
                             <ProofPreviewPane
@@ -282,7 +282,7 @@ export default function ExamBuilderV2() {
                         )}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 overflow-y-auto min-h-0">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 overflow-y-auto">
                       <div className="flex items-center justify-between gap-2 mb-4">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Question Builder</p>
