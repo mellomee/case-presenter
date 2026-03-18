@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ReactPlayer from 'react-player';
 import { base44 } from '@/api/base44Client';
@@ -71,21 +71,12 @@ function TopRightBadges({ proof, demoLabel }) {
   );
 }
 
-function FullscreenButton() {
-  const handleFullscreen = () => {
-    const el = document.documentElement;
-    if (!document.fullscreenElement) {
-      el.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
-  };
-
+function FullscreenButton({ onClick, visible }) {
   return (
     <button
-      onClick={handleFullscreen}
-      className="absolute bottom-4 right-4 z-30 bg-white/5 hover:bg-white/15 border border-white/10 text-white/40 hover:text-white/80 p-2 rounded-lg transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
-      title="Toggle fullscreen"
+      onClick={onClick}
+      className={`absolute bottom-4 right-4 z-30 bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 p-2.5 rounded-lg transition-all ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      title="Enter fullscreen"
     >
       <Maximize className="w-4 h-4" />
     </button>
@@ -101,13 +92,14 @@ function BlankScreen({ caseName }) {
           {caseName || 'Case Presenter'}
         </p>
       </div>
-      <FullscreenButton />
+      <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
     </div>
   );
 }
 
 export default function JuryView() {
   const { juryState } = useJurySync('jury');
+  const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement);
 
   const { data: proof } = useQuery({
     queryKey: ['juryProof', juryState?.published_proof_id],
@@ -128,15 +120,37 @@ export default function JuryView() {
 
   const { url: resolvedAssetUrl, isLoading: isAssetLoading } = useResolvedProofAsset(proof);
 
-  useEffect(() => {
-    const tryFs = () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
-      }
-    };
-    document.addEventListener('click', tryFs, { once: true });
-    return () => document.removeEventListener('click', tryFs);
+  const enterFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    }
   }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    handleFullscreenChange();
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    enterFullscreen();
+
+    const tryFullscreenOnGesture = () => {
+      enterFullscreen();
+    };
+
+    document.addEventListener('pointerdown', tryFullscreenOnGesture, { once: true });
+    document.addEventListener('keydown', tryFullscreenOnGesture, { once: true });
+
+    return () => {
+      document.removeEventListener('pointerdown', tryFullscreenOnGesture);
+      document.removeEventListener('keydown', tryFullscreenOnGesture);
+    };
+  }, [enterFullscreen]);
 
   const caseName = settings?.case_name || 'Case Presenter';
   const demoLabel = settings?.jury_demonstrative_label || 'For illustrative purposes only';
@@ -211,7 +225,7 @@ export default function JuryView() {
         )}
       </div>
 
-      <FullscreenButton />
+      <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
     </div>
   );
 }
