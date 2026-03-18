@@ -33,6 +33,14 @@ function OptionCard({ active, onClick, title, subtitle, disabled = false }) {
   );
 }
 
+function normalizePartyIds(currentProof) {
+  if (Array.isArray(currentProof?.party_ids) && currentProof.party_ids.length > 0) {
+    return currentProof.party_ids.filter(Boolean);
+  }
+
+  return currentProof?.party_id ? [currentProof.party_id] : [];
+}
+
 export default function ProofForm({ proof, onSubmit, onCancel }) {
   const initialSourceType = proof?.file_source === 'dropbox'
     ? 'dropbox'
@@ -41,27 +49,27 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
   const [proofCategory, setProofCategory] = useState(proof?.proof_category || 'Exhibit');
   const [fileType, setFileType] = useState(proof?.file_type || 'PDF');
   const [sourceType, setSourceType] = useState(initialSourceType);
-  const [formData, setFormData] = useState(
-    proof || {
-      proof_category: 'Exhibit',
-      file_type: 'PDF',
-      proof_child_type: null,
-      status: 'Draft',
-      name: '',
-      formal_name: '',
-      description: '',
-      party_id: '',
-      category_id: '',
-      proof_type_category_id: '',
-      file_url: '',
-      video_url: '',
-      file_source: 'base44',
-      dropbox_file_id: '',
-      dropbox_path: '',
-      dropbox_file_name: '',
-      draft_exhibit_num: '',
-    }
-  );
+  const [formData, setFormData] = useState({
+    ...proof,
+    proof_category: proof?.proof_category || 'Exhibit',
+    file_type: proof?.file_type || 'PDF',
+    proof_child_type: proof?.proof_child_type ?? null,
+    status: proof?.status || 'Draft',
+    name: proof?.name || '',
+    formal_name: proof?.formal_name || '',
+    description: proof?.description || '',
+    party_id: proof?.party_id || '',
+    party_ids: normalizePartyIds(proof),
+    category_id: proof?.category_id || '',
+    proof_type_category_id: proof?.proof_type_category_id || '',
+    file_url: proof?.file_url || '',
+    video_url: proof?.video_url || '',
+    file_source: proof?.file_source || 'base44',
+    dropbox_file_id: proof?.dropbox_file_id || '',
+    dropbox_path: proof?.dropbox_path || '',
+    dropbox_file_name: proof?.dropbox_file_name || '',
+    draft_exhibit_num: proof?.draft_exhibit_num || '',
+  });
   const [uploadedFileName, setUploadedFileName] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showDropboxPicker, setShowDropboxPicker] = useState(false);
@@ -148,7 +156,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     setFormData((current) => ({
       ...current,
       proof_category: newCategory,
-      party_id: newCategory === 'Deposition' ? current.party_id : '',
       file_type: newCategory === 'Deposition' && current.file_type === 'Image' ? 'PDF' : current.file_type,
     }));
     if (newCategory === 'Deposition' && fileType === 'Image') {
@@ -230,8 +237,10 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       return;
     }
 
-    if (proofCategory === 'Deposition' && !formData.party_id) {
-      alert('Party is required for Depositions.');
+    const selectedPartyIds = (formData.party_ids || []).filter(Boolean);
+
+    if (selectedPartyIds.length === 0) {
+      alert('At least one party is required.');
       return;
     }
 
@@ -243,6 +252,8 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       formal_name: formData.formal_name.trim(),
       description: formData.description?.trim() || '',
       video_url: sourceType === 'url' ? formData.video_url.trim() : '',
+      party_id: selectedPartyIds[0] || '',
+      party_ids: selectedPartyIds,
     };
 
     if (sourceType === 'dropbox') {
@@ -436,19 +447,14 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
             </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Assign to Party {proofCategory === 'Deposition' && '*'}</label>
-            <Select value={formData.party_id} onValueChange={(value) => setFormData({ ...formData, party_id: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select party" />
-              </SelectTrigger>
-              <SelectContent>
-                {parties.map((party) => (
-                  <SelectItem key={party.id} value={party.id}>{party.first_name} {party.last_name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <PartyMultiSelectField
+            label="Assign to Parties"
+            required
+            parties={parties}
+            value={formData.party_ids || []}
+            onChange={(partyIds) => setFormData({ ...formData, party_ids: partyIds, party_id: partyIds[0] || '' })}
+            helperText="Select one or more parties for this proof."
+          />
 
           {proofCategory === 'Exhibit' && (
             <div>
