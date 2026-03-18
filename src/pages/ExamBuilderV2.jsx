@@ -346,7 +346,10 @@ export default function ExamBuilderV2() {
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
-                              <p className="mt-3 text-sm font-semibold text-white leading-snug">{proof ? getProofDisplayName(proof) : item.label}</p>
+                              <div className="mt-3 flex items-center gap-2">
+                                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{index + 1}</span>
+                                <p className="text-sm font-semibold text-white leading-snug">{proof ? getProofDisplayName(proof) : item.label}</p>
+                              </div>
                               <div className="mt-1 flex items-center justify-between gap-2 text-xs">
                                 <span className="text-green-400 font-semibold">{proof ? getJointLabel(proof) : 'Group'}</span>
                                 <span className="text-slate-500">{proof ? getProofTypeLabel(proof) : 'No Proof'}</span>

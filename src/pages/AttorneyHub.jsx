@@ -44,6 +44,17 @@ export default function AttorneyHub() {
   const rootGroups = useMemo(() => currentExamItems.filter((item) => item.item_type === 'group' && !item.parent_item_id), [currentExamItems]);
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const rootProofOrderMap = useMemo(() => Object.fromEntries(rootProofItems.map((item) => [item.linked_proof_id, item.sort_order || 0])), [rootProofItems]);
+  const rootExamOrderNumberMap = useMemo(() => {
+    const orderedRootItems = currentExamItems
+      .filter((item) => !item.parent_item_id && item.item_type !== 'question')
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    return Object.fromEntries(orderedRootItems.map((item, index) => [item.id, index + 1]));
+  }, [currentExamItems]);
+  const rootProofOrderNumberMap = useMemo(
+    () => Object.fromEntries(rootProofItems.map((item) => [item.linked_proof_id, rootExamOrderNumberMap[item.id]])),
+    [rootProofItems, rootExamOrderNumberMap]
+  );
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
@@ -199,7 +210,12 @@ export default function AttorneyHub() {
                             <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size="md" />
                             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
                           </div>
-                          <p className="mt-3 text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
+                          <div className="mt-3 flex items-center gap-2">
+                            {rootExamOrderNumberMap[group?.id] && (
+                              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span>
+                            )}
+                            <p className="text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
+                          </div>
                         </div>
                       );
                     }
@@ -224,7 +240,12 @@ export default function AttorneyHub() {
                           <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
                           <span className="text-slate-500">{getProofTypeLabel(proof)}</span>
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          {rootProofOrderNumberMap[proof.id] && (
+                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootProofOrderNumberMap[proof.id]}</span>
+                          )}
+                          <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
+                        </div>
                         <p className="mt-1 text-xs text-slate-400">{proof.status}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
                         {proofTab === 'Depositions' && children.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
