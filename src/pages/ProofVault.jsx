@@ -101,6 +101,16 @@ export default function ProofVault() {
     queryFn: () => base44.entities.Proof.list(),
   });
 
+  const { data: parties = [] } = useQuery({
+    queryKey: ['parties'],
+    queryFn: () => base44.entities.Party.list(),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Proof.create(data),
     onSuccess: () => {
@@ -526,6 +536,8 @@ export default function ProofVault() {
                          disabled={isBulkDeleting}
                          onCheckedChange={toggleProofSelection}
                          allProofs={allExhibits}
+                         parties={parties}
+                         categories={categories}
                          currentTab={exhibitFilter}
                          onEdit={handleEdit}
                          onDelete={deleteMutation.mutate}
@@ -565,6 +577,8 @@ export default function ProofVault() {
                         disabled={isBulkDeleting}
                         onCheckedChange={toggleProofSelection}
                         allProofs={allDepositions}
+                        parties={parties}
+                        categories={categories}
                         currentTab="depositions"
                         onEdit={handleEdit}
                         onDelete={deleteMutation.mutate}

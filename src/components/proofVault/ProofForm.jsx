@@ -102,6 +102,11 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
+  const sortedProofTypes = useMemo(
+    () => [...proofTypes].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })),
+    [proofTypes]
+  );
+
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
@@ -441,7 +446,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
                 <SelectValue placeholder="Select proof type" />
               </SelectTrigger>
               <SelectContent>
-                {proofTypes.map((type) => (
+                {sortedProofTypes.map((type) => (
                   <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                 ))}
               </SelectContent>

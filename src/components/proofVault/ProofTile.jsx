@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
 import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups } from './highlightGroupUtils';
@@ -13,6 +11,8 @@ import { parsePageRange } from './pageRangeUtils';
 export default function ProofTile({
   proof,
   allProofs = [],
+  parties = [],
+  categories = [],
   currentTab = 'draft',
   onEdit,
   onDelete,
@@ -54,16 +54,6 @@ export default function ProofTile({
       cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [proof.id, highlightedChildId]);
-
-  const { data: parties = [] } = useQuery({
-    queryKey: ['parties'],
-    queryFn: () => base44.entities.Party.list(),
-  });
-
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
-  });
 
   const proofPartyIds = [...new Set([
     proof.party_id,
