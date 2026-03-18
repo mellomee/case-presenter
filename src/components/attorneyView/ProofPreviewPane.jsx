@@ -108,7 +108,7 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
 
     if (proof.proof_child_type === 'VideoClip') {
       return (
-        <div className="w-full h-full p-4">
+        <div className="w-full h-full min-h-0 p-2">
           <VideoClipController
             videoUrl={externalUrl}
             segments={proof.video_clips || []}

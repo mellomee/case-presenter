@@ -371,7 +371,7 @@ export default function AttorneyView() {
     if (!currentItem) return false;
     if (currentItem.type !== 'block') return currentIndex > 0;
     if (activeBlockFlow?.phase === 'branch') {
-      return activeBlockFlow.branchIndex > 0 || !!activeBlockFlow.decision || currentIndex > 0;
+      return true;
     }
     return (activeBlockFlow?.stepIndex || 0) > 0 || currentIndex > 0;
   }, [currentItem, currentIndex, activeBlockFlow]);
@@ -381,7 +381,7 @@ export default function AttorneyView() {
     if (currentItem.type !== 'block') return currentIndex < flatList.length - 1;
 
     if (activeBlockFlow?.phase === 'branch') {
-      return activeBlockFlow.branchIndex < branchItems.length - 1 || currentIndex < flatList.length - 1;
+      return activeBlockFlow.branchIndex < branchItems.length - 1 || !!nextTopLevelItem;
     }
 
     if (!currentBlockStep) return false;
@@ -395,7 +395,7 @@ export default function AttorneyView() {
     }
 
     return (activeBlockFlow?.stepIndex || 0) < visibleBlockSteps.length - 1;
-  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, currentBlockStep, visibleBlockSteps.length, branchItems.length]);
+  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, currentBlockStep, visibleBlockSteps.length, branchItems.length, nextTopLevelItem]);
 
   const goNext = useCallback(() => {
     if (!currentItem) return;
