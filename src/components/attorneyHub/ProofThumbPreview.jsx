@@ -29,6 +29,10 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
     ? proof.status
     : (parentProof?.status === 'Admitted' || parentProof?.status === 'Demonstrative' ? parentProof.status : null);
 
+  const statusIcon = effectiveStatus ? (
+    <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
+  ) : null;
+
   if (groupLabel) {
     return (
       <div className={`${sizing.outer} rounded-lg border border-slate-300 bg-white flex items-center justify-center p-3 text-center`}>
@@ -49,9 +53,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
     return (
       <div className="relative">
         <img src={url} alt={proof.name} className={`${sizing.outer} rounded-lg border border-slate-700 object-cover bg-slate-900`} />
-        {effectiveStatus && (
-          <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
-        )}
+        {statusIcon}
       </div>
     );
   }
@@ -63,9 +65,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
           <Film className="w-5 h-5 text-blue-400" />
           <span className="text-[10px] text-slate-400 uppercase tracking-wide">Video</span>
         </div>
-        {effectiveStatus && (
-          <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
-        )}
+        {statusIcon}
       </div>
     );
   }
@@ -76,9 +76,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
         <div className={`${sizing.outer} rounded-lg border border-slate-700 bg-slate-800 flex items-center justify-center`}>
           <FileText className="w-5 h-5 text-slate-500" />
         </div>
-        {effectiveStatus && (
-          <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
-        )}
+        {statusIcon}
       </div>
     );
   }
@@ -86,9 +84,11 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
   return (
     <div className="relative">
       <div className={`${sizing.outer} overflow-hidden rounded-lg border border-slate-700 bg-white`}>
-      <Document file={url} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}>
-        <Page pageNumber={1} width={sizing.page} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />} />
-      </Document>
+        <Document file={url} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}>
+          <Page pageNumber={1} width={sizing.page} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />} />
+        </Document>
+      </div>
+      {statusIcon}
     </div>
   );
 }
