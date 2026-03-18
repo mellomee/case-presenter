@@ -17,7 +17,7 @@ export default function BulkSelectionBar({
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="button" size="sm" variant="outline" onClick={onSelectAll} disabled={visibleCount === 0 || isDeleting}>
-          Select visible
+          Select all
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={onClear} disabled={selectedCount === 0 || isDeleting}>
           Clear
