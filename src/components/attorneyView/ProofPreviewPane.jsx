@@ -19,7 +19,7 @@ function statusPill(proof) {
   return 'bg-slate-100 text-slate-600';
 }
 
-export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClose }) {
+export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRuling, onClose }) {
   const { data: allProofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
@@ -63,6 +63,26 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
 
   const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num;
   const externalUrl = url || parentUrl || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
+  const canUnAdmit = ['Admitted', 'Demonstrative'].includes(proof.status);
+
+  const handleUnAdmit = () => {
+    if (!canUnAdmit || !onRuling) return;
+    onRuling({
+      action: 'unadmit',
+      proofId: proof.id,
+      data: proof.status === 'Admitted'
+        ? {
+            status: 'Joint',
+            admitted_exhibit_num: null,
+            admitted_by: null,
+            admit_date: null,
+          }
+        : {
+            status: 'Joint',
+            demonstrative_exhibit_num: null,
+          },
+    });
+  };
 
   const renderPreview = () => {
     if (proof.proof_child_type === 'ExtractClip') {
@@ -147,13 +167,21 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onClo
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b border-slate-700 flex items-start justify-between gap-2 flex-shrink-0">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             {exhibitNum && (
               <span className="text-xs font-bold font-mono text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded">
                 {exhibitNum}
               </span>
             )}
             <Badge className={`text-xs ${statusPill(proof)}`}>{proof.status}</Badge>
+            {canUnAdmit && (
+              <button
+                onClick={handleUnAdmit}
+                className="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+              >
+                Un-Admit
+              </button>
+            )}
           </div>
           <p className="text-sm font-semibold text-white leading-tight truncate">{proof.name}</p>
           {proof.formal_name && (

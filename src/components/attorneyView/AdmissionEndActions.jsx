@@ -219,17 +219,6 @@ export default function AdmissionEndActions({ proof, onRuling, onDecision, isLoa
               >
                 <XCircle className="w-3.5 h-3.5" /> Not Admitted
               </Button>
-              {alreadyRuled && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleUnAdmit}
-                  disabled={isLoading}
-                  className="gap-1.5 border-blue-800 text-blue-400 hover:bg-blue-950/30 h-8 text-xs"
-                >
-                  {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Un-Admit to Joint
-                </Button>
-              )}
             </div>
           )}
         </div>

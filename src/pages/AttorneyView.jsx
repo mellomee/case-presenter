@@ -387,7 +387,7 @@ export default function AttorneyView() {
     if (!currentBlockStep) return false;
 
     if (currentBlockStep.key === '5' && (activeBlockFlow?.decision === 'admit' || activeBlockFlow?.decision === 'demo')) {
-      return admittedPathCount > 0 || currentIndex < flatList.length - 1;
+      return true;
     }
 
     if (currentBlockStep.key === '4' && activeBlockFlow?.decision === 'not_admitted') {
@@ -395,7 +395,7 @@ export default function AttorneyView() {
     }
 
     return (activeBlockFlow?.stepIndex || 0) < visibleBlockSteps.length - 1;
-  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, admittedPathCount, currentBlockStep, visibleBlockSteps.length]);
+  }, [currentItem, currentIndex, flatList.length, activeBlockFlow, currentBlockStep, visibleBlockSteps.length, branchItems.length]);
 
   const goNext = useCallback(() => {
     if (!currentItem) return;
@@ -552,8 +552,20 @@ export default function AttorneyView() {
     }
   }, [currentItem]);
 
+  const isAdmittedPathLaunchStep = currentItem?.type === 'block'
+    && activeBlockFlow?.phase !== 'branch'
+    && currentBlockStep?.key === '5'
+    && (activeBlockFlow?.decision === 'admit' || activeBlockFlow?.decision === 'demo');
+
+  const nextButtonLabel = isAdmittedPathLaunchStep ? 'Start Admitted Questions' : 'Next';
+
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden">
+      <style>{`
+        .hide-admission-path-cta .rounded-xl.border.border-slate-700.bg-slate-900\/60.p-4.flex.flex-col.sm\:flex-row.sm\:items-center.sm\:justify-between.gap-3 {
+          display: none;
+        }
+      `}</style>
       {/* Left Sidebar — Bucket Nav */}
       <div className={`${isSidebarCollapsed ? 'w-14' : 'w-52'} flex-shrink-0 bg-slate-800 border-r border-slate-700 flex flex-col overflow-hidden transition-all duration-200`}>
         <div className="px-3 py-4 border-b border-slate-700">
@@ -745,7 +757,7 @@ export default function AttorneyView() {
                   disabled={!canGoNext}
                   className="gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 shrink-0"
                 >
-                  Next <ChevronRight className="w-4 h-4" />
+                  {nextButtonLabel} <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -774,6 +786,7 @@ export default function AttorneyView() {
                   proof={selectedProof}
                   juryState={juryState}
                   onUpdateJury={updateJury}
+                  onRuling={handleRuling}
                   onClose={() => setSelectedProof(null)}
                 />
               </div>
