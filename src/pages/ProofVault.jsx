@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Film, AlertCircle, Upload, Printer, Trash2 } from 'lucide-react';
+import { FileText, Plus, Film, AlertCircle, Upload, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import ProofForm from '@/components/proofVault/ProofForm';
-import ProofTile from '@/components/proofVault/ProofTile';
 import AddToJointModal from '@/components/proofVault/AddToJointModal';
+import BulkSelectionBar from '@/components/proofVault/BulkSelectionBar.jsx';
+import SelectableProofTile from '@/components/proofVault/SelectableProofTile.jsx';
 import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
 import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
@@ -79,7 +80,7 @@ export default function ProofVault() {
     },
   });
 
-  const deleteProofWithValidation = async (id) => {
+  const deleteProofById = async (id) => {
     const children = proofs.filter((p) => p.parent_proof_id === id);
 
     if (children.length > 0) {
@@ -104,12 +105,10 @@ export default function ProofVault() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: deleteProofWithValidation,
+    mutationFn: deleteProofById,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
     onError: (error) => {
-      if (!isBulkDeleting) {
-        alert(`Cannot delete: ${error.message}`);
-      }
+      alert(`Cannot delete: ${error.message}`);
     },
   });
 
@@ -205,9 +204,8 @@ export default function ProofVault() {
   }, [highlightedChildId]);
 
   useEffect(() => {
-    const existingIds = new Set(proofs.map((proof) => proof.id));
-    setSelectedProofIds((current) => current.filter((id) => existingIds.has(id)));
-  }, [proofs]);
+    setSelectedProofIds([]);
+  }, [activeTab, exhibitFilter]);
 
   // Separate exhibits and depositions (include ALL, not just top-level)
   const allExhibits = proofs.filter((p) => p.proof_category === 'Exhibit');
@@ -247,38 +245,43 @@ export default function ProofVault() {
 
   const toggleProofSelection = (proofId) => {
     setSelectedProofIds((current) => (
-      current.includes(proofId) ? current.filter((id) => id !== proofId) : [...current, proofId]
+      current.includes(proofId)
+        ? current.filter((id) => id !== proofId)
+        : [...current, proofId]
     ));
   };
 
-  const selectVisibleProofs = () => {
-    setSelectedProofIds((current) => Array.from(new Set([...current, ...visibleProofs.map((proof) => proof.id)])));
+  const handleSelectAllVisible = () => {
+    setSelectedProofIds(visibleProofs.map((proof) => proof.id));
   };
 
-  const clearProofSelection = () => {
+  const handleClearSelection = () => {
     setSelectedProofIds([]);
   };
 
   const handleBulkDelete = async () => {
     if (selectedProofIds.length === 0) return;
-    const confirmed = window.confirm(`Delete ${selectedProofIds.length} selected proof${selectedProofIds.length === 1 ? '' : 's'}?`);
-    if (!confirmed) return;
+    if (!window.confirm(`Delete ${selectedProofIds.length} selected proof${selectedProofIds.length === 1 ? '' : 's'}?`)) return;
 
     setIsBulkDeleting(true);
-    const idsToDelete = [...selectedProofIds];
-    const results = await Promise.allSettled(idsToDelete.map((id) => deleteMutation.mutateAsync(id)));
-    const failedIds = idsToDelete.filter((_, index) => results[index].status === 'rejected');
-    const deletedCount = idsToDelete.length - failedIds.length;
+    const failures = [];
 
-    setSelectedProofIds(failedIds);
-    setIsBulkDeleting(false);
-
-    if (failedIds.length === 0) {
-      alert(`Deleted ${deletedCount} proof${deletedCount === 1 ? '' : 's'}.`);
-      return;
+    for (const proofId of selectedProofIds) {
+      try {
+        await deleteProofById(proofId);
+      } catch (error) {
+        failures.push(error.message);
+      }
     }
 
-    alert(`${deletedCount} deleted. ${failedIds.length} could not be deleted because they are still linked or have child proofs.`);
+    await queryClient.invalidateQueries({ queryKey: ['proofs'] });
+    const deletedCount = selectedProofIds.length - failures.length;
+    setSelectedProofIds([]);
+    setIsBulkDeleting(false);
+
+    if (failures.length > 0) {
+      alert(`${deletedCount} deleted, ${failures.length} failed.\n\n${failures.join('\n')}`);
+    }
   };
 
   const renderEmptyState = (title) => (
@@ -295,16 +298,7 @@ export default function ProofVault() {
             <FileText className="w-8 h-8 text-blue-600" />
             <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
           </div>
-          <div className="flex gap-2 flex-wrap justify-end">
-            <Button variant="outline" onClick={selectVisibleProofs} disabled={visibleProofs.length === 0}>
-              Select Visible
-            </Button>
-            <Button variant="outline" onClick={clearProofSelection} disabled={selectedProofIds.length === 0}>
-              Clear
-            </Button>
-            <Button variant="outline" onClick={handleBulkDelete} disabled={selectedProofIds.length === 0 || isBulkDeleting} className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
-              <Trash2 className="w-4 h-4" /> Delete Selected{selectedProofIds.length > 0 ? ` (${selectedProofIds.length})` : ''}
-            </Button>
+          <div className="flex gap-2">
             <Button variant="outline" onClick={() => setShowPrintModal(true)} className="gap-2">
               <Printer className="w-4 h-4" /> Print List
             </Button>
@@ -453,39 +447,41 @@ export default function ProofVault() {
                     </Button>
                   ))}
                 </div>
+                <BulkSelectionBar
+                  selectedCount={selectedProofIds.length}
+                  visibleCount={filteredExhibits.length}
+                  isDeleting={isBulkDeleting}
+                  onSelectAll={handleSelectAllVisible}
+                  onClear={handleClearSelection}
+                  onDelete={handleBulkDelete}
+                />
                 {filteredExhibits.length === 0 ? (
                    renderEmptyState('No exhibits in this category.')
                  ) : (
                    <div className="space-y-3">
                      {filteredExhibits.map((proof) => (
-                       <div key={proof.id} className="flex items-start gap-3">
-                         <input
-                           type="checkbox"
-                           checked={selectedProofIds.includes(proof.id)}
-                           onChange={() => toggleProofSelection(proof.id)}
-                           className="mt-4 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                         />
-                         <div className="min-w-0 flex-1">
-                           <ProofTile
-                             proof={proof}
-                             allProofs={allExhibits}
-                            currentTab={exhibitFilter}
-                            onEdit={handleEdit}
-                            onDelete={deleteMutation.mutate}
-                            onExtract={handleExtract}
-                            onClip={handleClip}
-                            onAddToJoint={handleAddToJoint}
-                            onAdmitAsExhibit={handleAdmitAsExhibit}
-                            onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
-                            onRemoveFromJoint={handleRemoveFromJoint}
-                            onUnAdmit={handleUnAdmit}
-                            expandedProofId={expandedProofId}
-                            highlightedChildId={highlightedChildId}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                       <SelectableProofTile
+                         key={proof.id}
+                         proof={proof}
+                         checked={selectedProofIds.includes(proof.id)}
+                         disabled={isBulkDeleting}
+                         onCheckedChange={toggleProofSelection}
+                         allProofs={allExhibits}
+                         currentTab={exhibitFilter}
+                         onEdit={handleEdit}
+                         onDelete={deleteMutation.mutate}
+                         onExtract={handleExtract}
+                         onClip={handleClip}
+                         onAddToJoint={handleAddToJoint}
+                         onAdmitAsExhibit={handleAdmitAsExhibit}
+                         onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                         onRemoveFromJoint={handleRemoveFromJoint}
+                         onUnAdmit={handleUnAdmit}
+                         expandedProofId={expandedProofId}
+                         highlightedChildId={highlightedChildId}
+                       />
+                     ))}
+                   </div>
                 )}
               </TabsContent>
 
@@ -495,32 +491,26 @@ export default function ProofVault() {
                 ) : (
                   <div className="space-y-3">
                     {depositionsTopLevel.map((proof) => (
-                      <div key={proof.id} className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedProofIds.includes(proof.id)}
-                          onChange={() => toggleProofSelection(proof.id)}
-                          className="mt-4 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <ProofTile
-                            proof={proof}
-                            allProofs={allDepositions}
-                            currentTab="depositions"
-                            onEdit={handleEdit}
-                            onDelete={deleteMutation.mutate}
-                            onExtract={handleExtract}
-                            onClip={handleClip}
-                            onAddToJoint={handleAddToJoint}
-                            onAdmitAsExhibit={handleAdmitAsExhibit}
-                            onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
-                            onRemoveFromJoint={handleRemoveFromJoint}
-                            onUnAdmit={handleUnAdmit}
-                            expandedProofId={expandedProofId}
-                            highlightedChildId={highlightedChildId}
-                          />
-                        </div>
-                      </div>
+                      <SelectableProofTile
+                        key={proof.id}
+                        proof={proof}
+                        checked={selectedProofIds.includes(proof.id)}
+                        disabled={isBulkDeleting}
+                        onCheckedChange={toggleProofSelection}
+                        allProofs={allDepositions}
+                        currentTab="depositions"
+                        onEdit={handleEdit}
+                        onDelete={deleteMutation.mutate}
+                        onExtract={handleExtract}
+                        onClip={handleClip}
+                        onAddToJoint={handleAddToJoint}
+                        onAdmitAsExhibit={handleAdmitAsExhibit}
+                        onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                        onRemoveFromJoint={handleRemoveFromJoint}
+                        onUnAdmit={handleUnAdmit}
+                        expandedProofId={expandedProofId}
+                        highlightedChildId={highlightedChildId}
+                      />
                     ))}
                   </div>
                 )}
