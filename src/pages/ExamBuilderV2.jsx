@@ -548,6 +548,25 @@ export default function ExamBuilderV2() {
           exhibitNum={selectedRootProof?.joint_exhibit_num || ''}
           onSave={(step_overrides) => admissionScriptItem ? base44.entities.ExamItemV2.update(admissionScriptItem.id, { step_overrides }).then(invalidate) : Promise.resolve()}
         />
+        <ExamV2ImportDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          selectedParty={selectedParty}
+          selectedExamType={selectedExamType}
+          availableRootProofs={selectableProofs}
+          allProofs={proofs}
+          onImport={handleImportExamData}
+        />
+        <PrintExamV2Dialog
+          open={printDialogOpen}
+          onOpenChange={setPrintDialogOpen}
+          party={selectedParty}
+          examType={selectedExamType}
+          rootItems={rootItems}
+          currentItems={currentItems}
+          proofsById={proofsById}
+          admissionTemplates={admissionTemplates}
+        />
       </div>
     </DragDropContext>
   );
