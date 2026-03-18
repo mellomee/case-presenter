@@ -43,6 +43,8 @@ export default function PDFViewer({
   const [showThumbs, setShowThumbs] = useState(true);
   const containerRef = useRef();
   const pageSurfaceRef = useRef();
+  const thumbnailRailRef = useRef();
+  const activeThumbnailRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
   const selectionAnchorRef = useRef(null);
@@ -105,6 +107,11 @@ export default function PDFViewer({
       setPageInput('1');
     }
   }, [pageNumbers, currentPage]);
+
+  useEffect(() => {
+    if (!showThumbs || mode !== 'controller') return;
+    activeThumbnailRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [currentPage, showThumbs, mode]);
 
   const goToPage = useCallback(
     (pageIndex) => {
@@ -502,10 +509,16 @@ export default function PDFViewer({
         >
           {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
             <div
+              ref={thumbnailRailRef}
               className="bg-zinc-950 overflow-y-auto shrink-0 border-r border-zinc-700 py-1"
-              style={{ width: selectableThumbnails ? 76 : 88 }}
+              style={{
+                width: selectableThumbnails ? 76 : 88,
+                touchAction: 'pan-y',
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehaviorY: 'contain',
+              }}
             >
-              {pageNumbers.slice(0, 100).map((pageNumber, index) => {
+              {pageNumbers.map((pageNumber, index) => {
                 const pageIndex = index + 1;
                 const isCurrentPage = currentPage === pageIndex;
                 const isSelected = selectedPages.includes(pageNumber);
@@ -513,6 +526,7 @@ export default function PDFViewer({
                 return (
                   <div
                     key={`${pageNumber}-${pageIndex}`}
+                    ref={isCurrentPage ? activeThumbnailRef : null}
                     onClick={(event) => {
                       if (selectableThumbnails) {
                         handleThumbnailSelection(pageNumber, event);
