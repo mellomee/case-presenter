@@ -78,3 +78,5 @@ export default function TopPublishToolbar({ proof, juryState, onUpdate }) {
         </>
       )}
     </div>
+  );
+}
