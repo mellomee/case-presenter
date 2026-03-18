@@ -55,14 +55,14 @@ export default function VideoClipProgressBars({ segments = [], currentSegmentIdx
   });
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-950 px-3 py-3 shadow-sm">
-      <div className="space-y-3">
+    <div className="rounded-lg border border-slate-200 bg-slate-950 px-2.5 py-2 shadow-sm">
+      <div className="space-y-2">
         <div>
-          <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-            <span className="font-medium text-slate-300">Playlist progress</span>
-            <span>{formatTime(playlistElapsed)} / {formatTime(playlistTotal)}</span>
+          <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-slate-400">
+            <span className="min-w-0 font-medium text-slate-300">Playlist progress</span>
+            <span className="shrink-0">{formatTime(playlistElapsed)} / {formatTime(playlistTotal)}</span>
           </div>
-          <div className="relative h-2 overflow-hidden rounded-full bg-slate-800">
+          <div className="relative h-1.5 overflow-hidden rounded-full bg-slate-800">
             <div className="absolute inset-y-0 left-0 bg-blue-500" style={{ width: `${playlistPercent}%` }} />
             {segmentStops.slice(0, -1).map((stop, index) => (
               <div
@@ -72,18 +72,18 @@ export default function VideoClipProgressBars({ segments = [], currentSegmentIdx
               />
             ))}
           </div>
-          <div className="mt-1.5 flex items-center justify-between gap-3 text-[11px] text-slate-500">
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] text-slate-500">
             <span>Segment {currentSegmentIdx + 1} of {ranges.length}</span>
             {activeRange && <span>{formatTime(activeRange.duration)} clip length</span>}
           </div>
         </div>
 
         <div>
-          <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-            <span className="font-medium text-slate-300">Original video position</span>
-            <span>{formatTime(currentTime)} / {formatTime(videoDuration)}</span>
+          <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-slate-400">
+            <span className="min-w-0 font-medium text-slate-300">Original video position</span>
+            <span className="shrink-0">{formatTime(currentTime)} / {formatTime(videoDuration)}</span>
           </div>
-          <div className="relative h-2 overflow-hidden rounded-full bg-slate-800">
+          <div className="relative h-1.5 overflow-hidden rounded-full bg-slate-800">
             {activeRange && (
               <div
                 className="absolute inset-y-0 border-x border-amber-300/70 bg-amber-400/20"
@@ -96,9 +96,9 @@ export default function VideoClipProgressBars({ segments = [], currentSegmentIdx
             <div className="absolute inset-y-0 left-0 bg-slate-300/90" style={{ width: `${originalPercent}%` }} />
           </div>
           {activeRange && (
-            <div className="mt-1.5 flex items-center justify-between gap-3 text-[11px] text-slate-500">
+            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] text-slate-500">
               <span>Current clip window</span>
-              <span>{formatTime(activeRange.start)} → {formatTime(activeRange.end)}</span>
+              <span className="shrink-0">{formatTime(activeRange.start)} → {formatTime(activeRange.end)}</span>
             </div>
           )}
         </div>

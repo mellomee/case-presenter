@@ -67,7 +67,7 @@ export default function ChatPanel({ onClose, user }) {
   const isMe = (msg) => msg.sender_id === user?.id;
 
   return (
-    <div className="fixed right-0 bottom-0 top-0 w-80 bg-white border-l border-slate-200 shadow-xl flex flex-col z-50">
+    <div className="fixed right-5 bottom-5 w-80 h-[min(62vh,34rem)] rounded-2xl bg-white border border-slate-200 shadow-2xl flex flex-col z-50 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-white">
         <div>

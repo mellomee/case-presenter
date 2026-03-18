@@ -252,22 +252,39 @@ export default function AttorneyView() {
 
   useEffect(() => {
     if (currentItem?.type === 'block') {
-      setBlockFlow((prev) => (
-        prev?.blockId === currentItem.data.id
-          ? prev
-          : {
-              blockId: currentItem.data.id,
-              phase: 'sequence',
-              stepIndex: 0,
-              decision: resolvedBlockDecision,
-              branchKey: null,
-              branchIndex: 0,
-            }
-      ));
+      setBlockFlow((prev) => {
+        if (prev?.blockId !== currentItem.data.id) {
+          return {
+            blockId: currentItem.data.id,
+            phase: 'sequence',
+            stepIndex: 0,
+            decision: resolvedBlockDecision,
+            branchKey: null,
+            branchIndex: 0,
+          };
+        }
+
+        if (prev.decision === resolvedBlockDecision) {
+          return prev;
+        }
+
+        const nextVisibleSteps = resolvedBlockDecision === 'admit' || resolvedBlockDecision === 'demo'
+          ? (currentItem.blockSteps || [])
+          : (currentItem.blockSteps || []).filter((step) => step.key !== '5');
+
+        return {
+          ...prev,
+          phase: 'sequence',
+          decision: resolvedBlockDecision,
+          branchKey: null,
+          branchIndex: 0,
+          stepIndex: Math.min(prev.stepIndex || 0, Math.max(0, nextVisibleSteps.length - 1)),
+        };
+      });
     } else {
       setBlockFlow(null);
     }
-  }, [currentItem?.type, currentItem?.data?.id, resolvedBlockDecision]);
+  }, [currentItem?.type, currentItem?.data?.id, currentItem?.blockSteps, resolvedBlockDecision]);
 
   const activeBlockFlow = currentItem?.type === 'block' && blockFlow?.blockId === currentItem.data.id
     ? blockFlow
@@ -551,6 +568,27 @@ export default function AttorneyView() {
       setSelectedProof(currentItem.blockProof);
     }
   }, [currentItem]);
+
+  useEffect(() => {
+    if (!selectedProof?.id) return;
+    const refreshedSelectedProof = proofs.find((item) => item.id === selectedProof.id);
+    if (refreshedSelectedProof && refreshedSelectedProof !== selectedProof) {
+      setSelectedProof(refreshedSelectedProof);
+    }
+  }, [selectedProof, proofs]);
+
+  useEffect(() => {
+    if (currentItem?.type !== 'block') return;
+    const storedDecision = blockDecisions[currentItem.data.id];
+    const proofStatus = currentItem.blockProof?.status;
+
+    if ((storedDecision === 'admit' || storedDecision === 'demo') && !['Admitted', 'Demonstrative'].includes(proofStatus)) {
+      setBlockDecisions((prev) => ({
+        ...prev,
+        [currentItem.data.id]: null,
+      }));
+    }
+  }, [currentItem?.type, currentItem?.data?.id, currentItem?.blockProof?.status, blockDecisions]);
 
   const isAdmittedPathLaunchStep = currentItem?.type === 'block'
     && activeBlockFlow?.phase !== 'branch'
