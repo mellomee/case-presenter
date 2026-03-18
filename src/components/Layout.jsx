@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare, Menu, X } from 'lucide-react';
+import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare, Menu, X, FolderKanban } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ChatPanel from './chat/ChatPanel.jsx';
 import ChatMessageToast from './chat/ChatMessageToast.jsx';
@@ -46,11 +46,13 @@ export default function Layout() {
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
     { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
+    { label: 'Exam Builder V2', path: '/ExamBuilderV2', icon: FolderKanban },
     {
       label: 'Present',
       path: '/present',
       icon: Tv,
       children: [
+        { label: 'Attorney Hub', path: '/AttorneyHub' },
         { label: 'Attorney View', path: '/present/attorney' },
         { label: 'Jury View', path: '/present/jury' },
       ],
