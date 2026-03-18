@@ -3,37 +3,20 @@ import { MoreVertical } from 'lucide-react';
 
 export default function ProofCardMenu({ proof, selectedParty, localDecision, onAction }) {
   const [open, setOpen] = useState(false);
-  const side = selectedParty?.side === 'Plaintiff' || selectedParty?.side === 'Defense'
-    ? selectedParty.side
-    : proof?.joint_by || proof?.admitted_by || 'Plaintiff';
-
   const close = () => setOpen(false);
 
   const handleAdmit = () => {
-    const admittedNum = window.prompt('Admitted exhibit #', proof?.admitted_exhibit_num || proof?.joint_exhibit_num || '');
-    if (!admittedNum || !admittedNum.trim()) return;
-    onAction('admit', {
-      status: 'Admitted',
-      admitted_exhibit_num: admittedNum.trim(),
-      admitted_by: side,
-      admit_date: new Date().toISOString().slice(0, 10),
-    });
+    onAction('admit');
     close();
   };
 
   const handleDemo = () => {
-    onAction('demo', {
-      status: 'Demonstrative',
-      demonstrative_exhibit_num: proof?.joint_exhibit_num || proof?.demonstrative_exhibit_num || '',
-    });
+    onAction('demo');
     close();
   };
 
   const handleUnadmit = () => {
-    onAction('unadmit', proof?.status === 'Demonstrative'
-      ? { status: 'Joint', demonstrative_exhibit_num: null }
-      : { status: 'Joint', admitted_exhibit_num: null, admitted_by: null, admit_date: null }
-    );
+    onAction('unadmit');
     close();
   };
 

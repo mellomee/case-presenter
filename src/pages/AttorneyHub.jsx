@@ -7,6 +7,9 @@ import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofCardMenu from '@/components/attorneyHub/ProofCardMenu.jsx';
 import AttorneyHubQuestionList from '@/components/attorneyHub/AttorneyHubQuestionList.jsx';
+import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
+import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
+import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
 import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
 import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
@@ -45,6 +48,10 @@ export default function AttorneyHub() {
   const [selectedKey, setSelectedKey] = useState('');
   const [selectedPreviewProof, setSelectedPreviewProof] = useState(null);
   const [localDecisionMap, setLocalDecisionMap] = useState({});
+  const [selectedProofForModal, setSelectedProofForModal] = useState(null);
+  const [showAdmitExhibitModal, setShowAdmitExhibitModal] = useState(false);
+  const [showAdmitDemoModal, setShowAdmitDemoModal] = useState(false);
+  const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
   const { widths, startDrag } = useStoredSplitWidths('attorney-hub-split-widths', {
     left: 430,
     middle: 360,
@@ -52,7 +59,7 @@ export default function AttorneyHub() {
   });
 
   const { data: parties = [] } = useQuery({ queryKey: ['hubParties'], queryFn: () => base44.entities.Party.list() });
-  const { data: proofs = [] } = useQuery({ queryKey: ['hubProofs'], queryFn: () => base44.entities.Proof.list() });
+  const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list() });
   const { data: exams = [] } = useQuery({ queryKey: ['hubExamsV2'], queryFn: () => base44.entities.ExamV2.list() });
   const { data: examItems = [] } = useQuery({ queryKey: ['hubExamItemsV2'], queryFn: () => base44.entities.ExamItemV2.list() });
   const { data: admissionTemplates = [] } = useQuery({ queryKey: ['hubAdmissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list() });
@@ -190,8 +197,29 @@ export default function AttorneyHub() {
       setLocalDecisionMap((prev) => ({ ...prev, [proof.id]: prev[proof.id] === 'not_admitted' ? null : 'not_admitted' }));
       return;
     }
+
+    if (action === 'admit') {
+      setSelectedProofForModal(proof);
+      setShowAdmitExhibitModal(true);
+      return;
+    }
+
+    if (action === 'demo') {
+      setSelectedProofForModal(proof);
+      setShowAdmitDemoModal(true);
+      return;
+    }
+
+    if (action === 'unadmit') {
+      setSelectedProofForModal(proof);
+      setShowUnAdmitModal(true);
+      return;
+    }
+
     setLocalDecisionMap((prev) => ({ ...prev, [proof.id]: null }));
-    updateProofMutation.mutate({ proofId: proof.id, data: patch });
+    if (patch) {
+      updateProofMutation.mutate({ proofId: proof.id, data: patch });
+    }
   };
 
   return (
@@ -413,7 +441,33 @@ export default function AttorneyHub() {
               </div>
             )}
           </div>
-        </div>
+        <AdmitAsExhibitModal
+          open={showAdmitExhibitModal}
+          onClose={() => {
+            setShowAdmitExhibitModal(false);
+            setSelectedProofForModal(null);
+            queryClient.invalidateQueries({ queryKey: ['proofs'] });
+          }}
+          proof={selectedProofForModal}
+        />
+        <AdmitAsDemonstrativeModal
+          open={showAdmitDemoModal}
+          onClose={() => {
+            setShowAdmitDemoModal(false);
+            setSelectedProofForModal(null);
+            queryClient.invalidateQueries({ queryKey: ['proofs'] });
+          }}
+          proof={selectedProofForModal}
+        />
+        <UnAdmitModal
+          open={showUnAdmitModal}
+          onClose={() => {
+            setShowUnAdmitModal(false);
+            setSelectedProofForModal(null);
+            queryClient.invalidateQueries({ queryKey: ['proofs'] });
+          }}
+          proof={selectedProofForModal}
+        />
       </div>
     </div>
   );
