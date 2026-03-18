@@ -3,7 +3,7 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Eye, GripVertical, Pencil, Plus, Printer, ScrollText, Trash2, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, GripVertical, Pencil, Plus, Printer, ScrollText, Trash2, Upload } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
@@ -41,6 +41,7 @@ export default function ExamBuilderV2() {
   const [previewDialogProof, setPreviewDialogProof] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [leftColumnCollapsed, setLeftColumnCollapsed] = useState(false);
 
   const { data: parties = [] } = useQuery({ queryKey: ['v2Parties'], queryFn: () => base44.entities.Party.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['v2Proofs'], queryFn: () => base44.entities.Proof.list() });
@@ -411,65 +412,27 @@ export default function ExamBuilderV2() {
             {!currentExam && selectedPartyId && <span className="text-xs text-slate-400">Choose an item action to create this V2 exam.</span>}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[22rem_1fr] min-h-[calc(100vh-10rem)]">
+          <div className={`grid grid-cols-1 min-h-[calc(100vh-10rem)] ${leftColumnCollapsed ? 'xl:grid-cols-[4.5rem_1fr]' : 'xl:grid-cols-[22rem_1fr]'}`}>
             <div className="border-r border-slate-800 p-4 min-h-0 overflow-y-auto">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3">Exam Order</p>
+              <div className={`mb-3 flex items-center ${leftColumnCollapsed ? 'justify-center' : 'justify-between gap-3'}`}>
+                {!leftColumnCollapsed && <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Exam Order</p>}
+                <button
+                  type="button"
+                  onClick={() => setLeftColumnCollapsed((value) => !value)}
+                  className="h-9 w-9 rounded-md border border-slate-800 bg-slate-950 flex items-center justify-center text-slate-400 hover:text-slate-200"
+                  title={leftColumnCollapsed ? 'Expand exam order' : 'Collapse exam order'}
+                >
+                  {leftColumnCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </button>
+              </div>
+              {!leftColumnCollapsed && (
               <Droppable droppableId="root-items" type="ROOT">
                 {(provided) => (
                   <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
-                    {rootItems.map((item, index) => {
-                      const proof = item.item_type === 'proof' ? proofsById[item.linked_proof_id] : null;
-                      const active = selectedRootId === item.id;
-                      return (
-                        <Draggable key={item.id} draggableId={item.id} index={index}>
-                          {(dragProvided) => (
-                            <div
-                              ref={dragProvided.innerRef}
-                              {...dragProvided.draggableProps}
-                              onClick={() => setSelectedRootId(item.id)}
-                              className={`w-full rounded-2xl border p-3 text-left cursor-pointer ${active ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70'}`}
-                            >
-                              <div className="flex items-start gap-3">
-                                <button type="button" {...dragProvided.dragHandleProps} className="mt-1 text-slate-500 hover:text-white">
-                                  <GripVertical className="w-4 h-4" />
-                                </button>
-                                <div className="flex-1 min-w-0 relative">
-                                  {proof ? <ProofThumbPreview proof={proof} size="sm" /> : <ProofThumbPreview groupLabel={item.label} size="sm" />}
-                                  {proof && (
-                                    <button
-                                      type="button"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        setPreviewDialogProof(proof);
-                                      }}
-                                      className="absolute -right-1 -top-1 h-7 w-7 rounded-full border border-slate-700 bg-slate-950/90 flex items-center justify-center text-slate-300 hover:text-white"
-                                      title="Preview proof"
-                                    >
-                                      <Eye className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                                <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400" onClick={(event) => { event.stopPropagation(); deleteItem(item); }}>
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </div>
-                              <div className="mt-3 flex items-center gap-2">
-                                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{index + 1}</span>
-                                <p className="text-sm font-semibold text-white leading-snug">{proof ? getProofDisplayName(proof) : item.label}</p>
-                              </div>
-                              <div className="mt-1 flex items-center justify-between gap-2 text-xs">
-                                <span className="text-green-400 font-semibold">{proof ? getJointLabel(proof) : 'Group'}</span>
-                                <span className="text-slate-500">{proof ? getProofTypeLabel(proof) : 'No Proof'}</span>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
-                  </div>
+...
                 )}
               </Droppable>
+              )}
             </div>
 
             <div className="min-h-0 p-4 overflow-y-auto">
@@ -519,7 +482,7 @@ export default function ExamBuilderV2() {
           </div>
         </div>
 
-        <ProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} onSelect={addProofToExam} />
+        <ProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} parties={parties} onSelect={addProofToExam} />
         <GroupEditorDialog
           open={groupDialog.open}
           onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}

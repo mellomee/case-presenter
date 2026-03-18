@@ -91,13 +91,13 @@ export default function ExamV2ImportDialog({
       ['Field', 'Required', 'How it works'],
       ['exam_order', 'Yes', 'Whole number. Each exam order becomes a printed section/page.'],
       ['item_type', 'Yes', 'Use Proof or Question Group.'],
-      ['root_item_name', 'Yes', 'For Proof use the proof Internal Name or Display Name. For Question Group use the group name you want created.'],
+      ['root_item_name', 'Yes', 'For Proof use the proof Internal Name or Display Name from the selected party. For Question Group use the group name you want created.'],
       ['question_text', 'Optional', 'Leave blank if you only want to create the root proof/group on that row.'],
       ['parent_question_text', 'Optional', 'Creates a follow-up under an earlier question in the same exam order section.'],
       ['question_order', 'Optional', 'Numeric question order inside that section. If blank, the sheet row order is used.'],
       ['expected_answer', 'Optional', 'Printed under the question in green.'],
       ['notes', 'Optional', 'Printed under the question as attorney notes.'],
-      ['attached_proof_names', 'Optional', 'Use proof Internal Names or Display Names separated by |.'],
+      ['attached_proof_names', 'Optional', 'Use proof Internal Names or Display Names separated by |. Attached proofs should already belong to the selected party in Proof Vault.'],
       ['', '', 'Current import target'],
       ['party', 'Context', selectedParty ? `${selectedParty.first_name} ${selectedParty.last_name}` : 'Select a party first'],
       ['exam_type', 'Context', selectedExamType],
@@ -287,7 +287,7 @@ export default function ExamV2ImportDialog({
               <p><code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">exam_order</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">item_type</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">root_item_name</code></p>
               <p className="font-semibold text-white pt-2">Optional fields</p>
               <p><code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">question_text</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">parent_question_text</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">question_order</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">expected_answer</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">notes</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs">attached_proof_names</code></p>
-              <p className="text-xs text-slate-500 pt-2">Use proof Internal Names or Display Names — never IDs.</p>
+              <p className="text-xs text-slate-500 pt-2">Use proof Internal Names or Display Names — never IDs. Proofs must already be linked to the selected party in Proof Vault.</p>
             </div>
 
             <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-blue-500 transition-colors bg-slate-900/40">
