@@ -27,7 +27,7 @@ export default function ExamBuilderV2() {
   const [selectedExamType, setSelectedExamType] = useState('Direct');
   const [selectedRootId, setSelectedRootId] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [groupOpen, setGroupOpen] = useState(false);
+  const [groupDialog, setGroupDialog] = useState({ open: false, initialItem: null });
   const [questionDialog, setQuestionDialog] = useState({ open: false, parentId: null, initialValue: null, title: 'Question' });
   const [overridesOpen, setOverridesOpen] = useState(false);
   const [previewDialogProof, setPreviewDialogProof] = useState(null);
@@ -46,6 +46,16 @@ export default function ExamBuilderV2() {
   const selectedRootProof = selectedRoot?.item_type === 'proof' ? proofs.find((proof) => proof.id === selectedRoot.linked_proof_id) || null : null;
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const availableAttachmentProofs = useMemo(() => selectedRootProof ? [selectedRootProof, ...proofs.filter((proof) => proof.parent_proof_id === selectedRootProof.id)] : [], [proofs, selectedRootProof]);
+  const availableGroupProofs = useMemo(
+    () => proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+    [proofs]
+  );
+  const selectedGroupProofs = useMemo(
+    () => selectedRoot?.item_type === 'group'
+      ? parseIdsField(selectedRoot.attached_proof_ids).map((id) => proofsById[id]).filter(Boolean)
+      : [],
+    [selectedRoot, proofsById]
+  );
   const admissionStatusMeta = selectedRootProof?.status === 'Admitted'
     ? { label: `Admitted as Exhibit · #${selectedRootProof.admitted_exhibit_num || '—'}`, color: 'text-red-400' }
     : selectedRootProof?.status === 'Demonstrative'
@@ -122,9 +132,23 @@ export default function ExamBuilderV2() {
     invalidate();
   };
 
-  const addGroupToExam = async (label) => {
+  const addGroupToExam = async ({ label, attached_proof_ids }) => {
     if (!label) return;
-    await createRootItem({ item_type: 'group', label: truncateGroupLabel(label) });
+
+    if (groupDialog.initialItem) {
+      await base44.entities.ExamItemV2.update(groupDialog.initialItem.id, {
+        label: truncateGroupLabel(label),
+        attached_proof_ids: attached_proof_ids?.length ? { ids: attached_proof_ids } : null,
+      });
+      invalidate();
+      return;
+    }
+
+    await createRootItem({
+      item_type: 'group',
+      label: truncateGroupLabel(label),
+      attached_proof_ids: attached_proof_ids?.length ? { ids: attached_proof_ids } : null,
+    });
   };
 
   const admissionScriptItem = useMemo(
@@ -283,7 +307,7 @@ export default function ExamBuilderV2() {
               <option value="Cross">Cross</option>
             </ToolbarSelect>
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setPickerOpen(true)}>Add Joint Proof</Button>
-            <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setGroupOpen(true)}>Add Question Group</Button>
+            <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setGroupDialog({ open: true, initialItem: null })}>Add Question Group</Button>
             {!currentExam && selectedPartyId && <span className="text-xs text-slate-400">Choose an item action to create this V2 exam.</span>}
           </div>
 
@@ -353,10 +377,23 @@ export default function ExamBuilderV2() {
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Question Builder</p>
                       <p className="mt-2 text-lg font-semibold text-white">{selectedRootProof ? getProofDisplayName(selectedRootProof) : selectedRoot.label}</p>
                     </div>
-                    <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setQuestionDialog({ open: true, parentId: selectedRoot.id, initialValue: null, title: 'Add Question' })}>
-                      <Plus className="w-4 h-4 mr-2" /> Add Question
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {selectedRoot?.item_type === 'group' && (
+                        <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setGroupDialog({ open: true, initialItem: selectedRoot })}>
+                          Edit Group
+                        </Button>
+                      )}
+                      <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setQuestionDialog({ open: true, parentId: selectedRoot.id, initialValue: null, title: 'Add Question' })}>
+                        <Plus className="w-4 h-4 mr-2" /> Add Question
+                      </Button>
+                    </div>
                   </div>
+
+                  {selectedRoot?.item_type === 'group' && (
+                    <div className="mb-4">
+                      <GroupPreviewPane label={selectedRoot.label} attachedProofs={selectedGroupProofs} onPreviewProof={setPreviewDialogProof} />
+                    </div>
+                  )}
 
                   <QuestionTreeEditor
                     parentId={selectedRoot.id}
@@ -379,7 +416,14 @@ export default function ExamBuilderV2() {
         </div>
 
         <ProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} onSelect={addProofToExam} />
-        <GroupEditorDialog open={groupOpen} onOpenChange={setGroupOpen} onSave={addGroupToExam} />
+        <GroupEditorDialog
+          open={groupDialog.open}
+          onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}
+          onSave={addGroupToExam}
+          initialLabel={groupDialog.initialItem?.label || ''}
+          initialProofIds={parseIdsField(groupDialog.initialItem?.attached_proof_ids)}
+          availableProofs={availableGroupProofs}
+        />
         <QuestionEditorDialog
           open={questionDialog.open}
           onOpenChange={(open) => setQuestionDialog((prev) => ({ ...prev, open }))}
