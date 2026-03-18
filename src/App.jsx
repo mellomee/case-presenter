@@ -18,6 +18,7 @@ import AttorneyViewShell from '@/components/present/AttorneyViewShell';
 import Settings from '@/pages/Settings';
 import AttorneyHub from '@/pages/AttorneyHub';
 import ExamBuilderV2 from '@/pages/ExamBuilderV2';
+import ExamBuilderV2Print from '@/pages/ExamBuilderV2Print';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
       <Route path="/present/exam-builder-v2" element={<Navigate to="/ExamBuilderV2" replace />} />
       <Route path="/present/attorney" element={<AttorneyViewShell />} />
       <Route path="/present/jury" element={<JuryView />} />
+      <Route path="/ExamBuilderV2Print" element={<ExamBuilderV2Print />} />
       
       <Route path="*" element={<PageNotFound />} />
     </Routes>

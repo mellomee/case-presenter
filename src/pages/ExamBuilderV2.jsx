@@ -3,7 +3,7 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Eye, GripVertical, Pencil, Plus, ScrollText, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, Pencil, Plus, Printer, ScrollText, Trash2, Upload } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
@@ -11,6 +11,7 @@ import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
 import QuestionTreeEditor from '@/components/examV2/QuestionTreeEditor.jsx';
 import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEditor.jsx';
 import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
+import ImportExamWorkbookDialog from '@/components/examV2/ImportExamWorkbookDialog.jsx';
 import { collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
 
 function proofMatchesParty(proof, partyId) {
@@ -37,6 +38,7 @@ export default function ExamBuilderV2() {
   const [questionDialog, setQuestionDialog] = useState({ open: false, parentId: null, initialValue: null, title: 'Question' });
   const [overridesOpen, setOverridesOpen] = useState(false);
   const [previewDialogProof, setPreviewDialogProof] = useState(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const { data: parties = [] } = useQuery({ queryKey: ['v2Parties'], queryFn: () => base44.entities.Party.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['v2Proofs'], queryFn: () => base44.entities.Proof.list() });
@@ -292,6 +294,12 @@ export default function ExamBuilderV2() {
     await reorderQuestionItems(source, destination, draggableId);
   };
 
+  const handlePrint = () => {
+    if (!selectedPartyId) return;
+    const printUrl = `/ExamBuilderV2Print?partyId=${encodeURIComponent(selectedPartyId)}&examType=${encodeURIComponent(selectedExamType)}`;
+    window.open(printUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="min-h-screen bg-slate-950 text-white p-4 lg:p-6">
@@ -307,6 +315,12 @@ export default function ExamBuilderV2() {
             </ToolbarSelect>
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setPickerOpen(true)}>Add Joint Proof</Button>
             <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setGroupDialog({ open: true, initialItem: null })}>Add Question Group</Button>
+            <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" /> Import Excel
+            </Button>
+            <Button variant="outline" className="border-slate-700 text-slate-200" disabled={!selectedPartyId} onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" /> Print Exam
+            </Button>
             {!currentExam && selectedPartyId && <span className="text-xs text-slate-400">Choose an item action to create this V2 exam.</span>}
           </div>
 
@@ -419,6 +433,19 @@ export default function ExamBuilderV2() {
         </div>
 
         <ProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} onSelect={addProofToExam} />
+        <ImportExamWorkbookDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          selectedParty={selectedParty}
+          selectedExamType={selectedExamType}
+          proofs={proofs}
+          rootItems={rootItems}
+          onEnsureExam={ensureExam}
+          onImported={() => {
+            invalidate();
+            invalidateExams();
+          }}
+        />
         <GroupEditorDialog
           open={groupDialog.open}
           onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}
