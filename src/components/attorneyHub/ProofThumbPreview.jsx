@@ -84,7 +84,8 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
   }
 
   return (
-    <div className={`${sizing.outer} overflow-hidden rounded-lg border border-slate-700 bg-white`}>
+    <div className="relative">
+      <div className={`${sizing.outer} overflow-hidden rounded-lg border border-slate-700 bg-white`}>
       <Document file={url} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}>
         <Page pageNumber={1} width={sizing.page} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />} />
       </Document>
