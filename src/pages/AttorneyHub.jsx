@@ -247,9 +247,9 @@ export default function AttorneyHub() {
 
   const focusNode = useCallback((nodeId) => {
     const bucketMatch = nodeId.match(/^bucket-(.+)$/);
-    const questionMatch = nodeId.match(/^question-([^\-]+)-(.+)$/);
-    const blockMatch = nodeId.match(/^block-([^\-]+)-(.+)$/);
-    const proofMatch = nodeId.match(/^proof-([^\-]+)-(.+)$/);
+    const questionMatch = nodeId.startsWith('question::') ? nodeId.split('::') : null;
+    const blockMatch = nodeId.startsWith('block::') ? nodeId.split('::') : null;
+    const proofMatch = nodeId.startsWith('proof::') ? nodeId.split('::') : null;
 
     if (bucketMatch) {
       setExpandedBucketIds([bucketMatch[1]]);
