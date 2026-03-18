@@ -1,4 +1,3 @@
-import React, { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -17,9 +16,6 @@ import AttorneyView from '@/pages/AttorneyView';
 import JuryView from '@/pages/JuryView';
 import AttorneyViewShell from '@/components/present/AttorneyViewShell';
 import Settings from '@/pages/Settings';
-
-const AttorneyHub = lazy(() => import('@/pages/AttorneyHub'));
-const AttorneyMap = lazy(() => import('@/pages/AttorneyMap'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,37 +54,7 @@ const AuthenticatedApp = () => {
       
       <Route path="/AttorneyView" element={<Navigate to="/present/attorney" replace />} />
       <Route path="/JuryView" element={<Navigate to="/present/jury" replace />} />
-      <Route path="/AttorneyHub" element={<Navigate to="/present/attorney-hub" replace />} />
-      <Route path="/AttorneyMap" element={<Navigate to="/present/attorney-map" replace />} />
       <Route path="/present/attorney" element={<AttorneyViewShell />} />
-      <Route
-        path="/present/attorney-hub"
-        element={(
-          <Suspense
-            fallback={
-              <div className="fixed inset-0 flex items-center justify-center bg-slate-950 text-white">
-                <div className="w-8 h-8 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin"></div>
-              </div>
-            }
-          >
-            <AttorneyHub />
-          </Suspense>
-        )}
-      />
-      <Route
-        path="/present/attorney-map"
-        element={(
-          <Suspense
-            fallback={
-              <div className="fixed inset-0 flex items-center justify-center bg-slate-950 text-white">
-                <div className="w-8 h-8 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin"></div>
-              </div>
-            }
-          >
-            <AttorneyMap />
-          </Suspense>
-        )}
-      />
       <Route path="/present/jury" element={<JuryView />} />
       
       <Route path="*" element={<PageNotFound />} />
