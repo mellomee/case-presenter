@@ -13,12 +13,40 @@ import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
 import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
 import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
-import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField, sortByJointExhibit } from '@/lib/examV2Utils';
+import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField } from '@/lib/examV2Utils';
 
 function proofMatchesParty(proof, partyId) {
   if (!partyId || partyId === 'all') return true;
   const attachedPartyIds = parseIdsField(proof?.party_ids);
   return attachedPartyIds.includes(partyId) || proof?.party_id === partyId;
+}
+
+function normalizeSearchValue(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getProofPartySearchText(proof, partiesById) {
+  const partyIds = [...new Set([proof?.party_id, ...parseIdsField(proof?.party_ids)].filter(Boolean))];
+  return partyIds
+    .map((partyId) => {
+      const party = partiesById[partyId];
+      return party ? `${party.first_name} ${party.last_name}`.trim() : '';
+    })
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function compareLabeledNumbers(aValue, bValue, direction = 'asc') {
+  const a = String(aValue || '').trim();
+  const b = String(bValue || '').trim();
+
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+
+  const comparison = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  return direction === 'desc' ? comparison * -1 : comparison;
 }
 
 function getStoredHubSetting(key, fallback) {
@@ -44,6 +72,8 @@ export default function AttorneyHub() {
   const [depositionPartyFilter, setDepositionPartyFilter] = useState(() => getStoredHubSetting('attorney-hub-deposition-party', 'all'));
   const [statusFilter, setStatusFilter] = useState(() => getStoredHubSetting('attorney-hub-status', 'all'));
   const [sideFilter, setSideFilter] = useState(() => getStoredHubSetting('attorney-hub-side', 'all'));
+  const [exhibitSort, setExhibitSort] = useState(() => getStoredHubSetting('attorney-hub-exhibit-sort', 'joint-asc'));
+  const [exhibitSearch, setExhibitSearch] = useState(() => getStoredHubSetting('attorney-hub-exhibit-search', ''));
   const [viewMode, setViewMode] = useState(() => getStoredHubSetting('attorney-hub-view-mode', 'list'));
   const [leftColumnCollapsed, setLeftColumnCollapsed] = useState(() => getStoredHubSetting('attorney-hub-left-collapsed', 'false') === 'true');
   const [selectedKey, setSelectedKey] = useState('');
@@ -78,6 +108,7 @@ export default function AttorneyHub() {
   const rootProofItems = useMemo(() => currentExamItems.filter((item) => item.item_type === 'proof' && !item.parent_item_id), [currentExamItems]);
   const rootGroups = useMemo(() => currentExamItems.filter((item) => item.item_type === 'group' && !item.parent_item_id), [currentExamItems]);
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
+  const partiesById = useMemo(() => Object.fromEntries(parties.map((party) => [party.id, party])), [parties]);
   const rootProofOrderMap = useMemo(() => Object.fromEntries(rootProofItems.map((item) => [item.linked_proof_id, item.sort_order || 0])), [rootProofItems]);
   const rootExamOrderNumberMap = useMemo(() => {
     const orderedRootItems = currentExamItems
@@ -136,8 +167,29 @@ export default function AttorneyHub() {
       next = next.filter((proof) => getProofSide(proof) === sideFilter);
     }
 
-    return sortByJointExhibit(next);
-  }, [currentExam, depositionPartyFilter, parentDepositions, parentExhibits, proofTab, proofsById, rootProofItems, sideFilter, statusFilter]);
+    const searchTerm = normalizeSearchValue(exhibitSearch);
+    if (searchTerm) {
+      next = next.filter((proof) => {
+        const searchableValues = [
+          proof.name,
+          proof.formal_name,
+          proof.joint_exhibit_num,
+          proof.admitted_exhibit_num,
+          proof.demonstrative_exhibit_num,
+          getProofPartySearchText(proof, partiesById),
+        ];
+
+        return searchableValues.some((value) => normalizeSearchValue(value).includes(searchTerm));
+      });
+    }
+
+    const [sortField, sortDirection] = exhibitSort.split('-');
+    return [...next].sort((a, b) => {
+      const aValue = sortField === 'admit' ? (a.admitted_exhibit_num || a.demonstrative_exhibit_num) : a.joint_exhibit_num;
+      const bValue = sortField === 'admit' ? (b.admitted_exhibit_num || b.demonstrative_exhibit_num) : b.joint_exhibit_num;
+      return compareLabeledNumbers(aValue, bValue, sortDirection);
+    });
+  }, [currentExam, depositionPartyFilter, exhibitSearch, exhibitSort, parentDepositions, parentExhibits, partiesById, proofTab, proofsById, rootProofItems, sideFilter, statusFilter]);
 
   const displayEntries = useMemo(() => {
     const proofEntries = filteredProofs.map((proof) => ({ kind: 'proof', id: proof.id }));
@@ -177,9 +229,11 @@ export default function AttorneyHub() {
     window.localStorage.setItem('attorney-hub-deposition-party', depositionPartyFilter);
     window.localStorage.setItem('attorney-hub-status', statusFilter);
     window.localStorage.setItem('attorney-hub-side', sideFilter);
+    window.localStorage.setItem('attorney-hub-exhibit-sort', exhibitSort);
+    window.localStorage.setItem('attorney-hub-exhibit-search', exhibitSearch);
     window.localStorage.setItem('attorney-hub-view-mode', viewMode);
     window.localStorage.setItem('attorney-hub-left-collapsed', leftColumnCollapsed ? 'true' : 'false');
-  }, [proofTab, selectedExamType, selectedExamPartyId, depositionPartyFilter, statusFilter, sideFilter, viewMode, leftColumnCollapsed]);
+  }, [proofTab, selectedExamType, selectedExamPartyId, depositionPartyFilter, statusFilter, sideFilter, exhibitSort, exhibitSearch, viewMode, leftColumnCollapsed]);
 
   const [selectedKind, selectedId] = selectedKey.split(':');
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
@@ -291,6 +345,18 @@ export default function AttorneyHub() {
                     <option value="Plaintiff">Plaintiff</option>
                     <option value="Defense">Defense</option>
                   </ToolbarSelect>
+                  <ToolbarSelect value={exhibitSort} onChange={setExhibitSort}>
+                    <option value="joint-asc">Joint # ↑</option>
+                    <option value="joint-desc">Joint # ↓</option>
+                    <option value="admit-asc">Admitted # ↑</option>
+                    <option value="admit-desc">Admitted # ↓</option>
+                  </ToolbarSelect>
+                  <input
+                    value={exhibitSearch}
+                    onChange={(event) => setExhibitSearch(event.target.value)}
+                    placeholder="Search title, exhibit #, or party"
+                    className="min-w-[220px] flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                  />
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -330,7 +396,7 @@ export default function AttorneyHub() {
                     return viewMode === 'grid' ? (
                       <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
                         <div className="flex items-start justify-between gap-2">
-                          {rootExamOrderNumberMap[group?.id] ? <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span> : <span />}
+                          {rootExamOrderNumberMap[group?.id] ? <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootExamOrderNumberMap[group.id]}</span> : <span />}
                           <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
                         </div>
                         <div className="mt-3 flex justify-center">
@@ -348,7 +414,7 @@ export default function AttorneyHub() {
                             <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size="sm" />
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                {rootExamOrderNumberMap[group?.id] && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span>}
+                                {rootExamOrderNumberMap[group?.id] && <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootExamOrderNumberMap[group.id]}</span>}
                                 <p className="text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
                               </div>
                               <p className="mt-1 text-xs text-slate-400">Question Group</p>
@@ -369,7 +435,7 @@ export default function AttorneyHub() {
                   return viewMode === 'grid' ? (
                     <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
                       <div className="flex items-start justify-between gap-2">
-                        {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] ? <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Exam {rootProofOrderNumberMap[proof.id]}</span> : <span />}
+                        {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] ? <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootProofOrderNumberMap[proof.id]}</span> : <span />}
                         <div className="flex flex-col items-end gap-2">
                           {(isAdmitted || isDemo) && <CheckCircle2 className={`w-5 h-5 ${isDemo ? 'text-blue-400' : 'text-red-400'}`} />}
                           <ProofCardMenu proof={proof} selectedParty={selectedParty} localDecision={localDecisionMap[proof.id]} onAction={(action, patch) => handleProofAction(proof, action, patch)} />
@@ -393,7 +459,7 @@ export default function AttorneyHub() {
                           <ProofThumbPreview proof={proof} size="sm" />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] && <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Exam {rootProofOrderNumberMap[proof.id]}</span>}
+                              {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] && <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootProofOrderNumberMap[proof.id]}</span>}
                               <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
                             </div>
                             <div className="mt-2 flex items-center justify-start gap-2 text-xs">
