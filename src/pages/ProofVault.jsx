@@ -72,6 +72,9 @@ export default function ProofVault() {
       setEditingProof(null);
       setShowForm(false);
     },
+    onError: (error) => {
+      alert(`Could not update proof: ${error.message}`);
+    },
   });
 
   const deleteMutation = useMutation({

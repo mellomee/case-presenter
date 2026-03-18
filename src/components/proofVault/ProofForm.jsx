@@ -244,8 +244,23 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       return;
     }
 
+    const {
+      id,
+      created_date,
+      updated_date,
+      created_by,
+      created_by_id,
+      entity_name,
+      app_id,
+      is_sample,
+      is_deleted,
+      deleted_date,
+      environment,
+      ...editableFormData
+    } = formData;
+
     let nextPayload = {
-      ...formData,
+      ...editableFormData,
       proof_category: proofCategory,
       file_type: fileType,
       name: formData.name.trim(),
