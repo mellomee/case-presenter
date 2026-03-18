@@ -23,7 +23,7 @@ function proofMatchesParty(proof, partyId) {
 
 function ToolbarSelect({ value, onChange, children }) {
   return (
-    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
+    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-300 focus:outline-none">
       {children}
     </select>
   );
@@ -413,14 +413,14 @@ export default function ExamBuilderV2() {
               <option value="Cross">Cross</option>
             </ToolbarSelect>
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setPickerOpen(true)}>Add Joint Proof</Button>
-            <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setGroupDialog({ open: true, initialItem: null })}>Add Question Group</Button>
-            <Button variant="outline" className="border-slate-700 text-slate-200 gap-2" onClick={() => setImportDialogOpen(true)} disabled={!selectedPartyId}>
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setGroupDialog({ open: true, initialItem: null })}>Add Question Group</Button>
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setImportDialogOpen(true)} disabled={!selectedPartyId}>
               <Upload className="w-4 h-4" /> Import Excel
             </Button>
-            <Button variant="outline" className="border-slate-700 text-slate-200 gap-2" onClick={() => setPrintDialogOpen(true)} disabled={rootItems.length === 0}>
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setPrintDialogOpen(true)} disabled={rootItems.length === 0}>
               <Printer className="w-4 h-4" /> Print Exam
             </Button>
-            {!currentExam && selectedPartyId && <span className="text-xs text-slate-400">Choose an item action to create this V2 exam.</span>}
+            {!currentExam && selectedPartyId && <span className="text-xs text-slate-500">Choose an item action to create this V2 exam.</span>}
           </div>
 
           <div className={`grid grid-cols-1 min-h-[calc(100vh-10rem)] ${leftColumnCollapsed ? 'xl:grid-cols-[4.5rem_1fr]' : 'xl:grid-cols-[22rem_1fr]'}`}>

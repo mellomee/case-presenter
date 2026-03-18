@@ -52,10 +52,10 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl bg-slate-950 border-slate-800 text-white">
+      <DialogContent className="max-w-6xl bg-white border-slate-200 text-slate-900">
         <DialogHeader>
           <DialogTitle>Joint Proof Picker</DialogTitle>
-          <DialogDescription className="text-slate-400">Choose a parent proof to add into the V2 exam order.</DialogDescription>
+          <DialogDescription className="text-slate-500">Choose a parent proof to add into the V2 exam order.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {['Exhibit', 'Deposition'].map((value) => (
@@ -63,7 +63,7 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
               key={value}
               type="button"
               onClick={() => setTab(value)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold ${tab === value ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold ${tab === value ? 'bg-blue-600 text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
             >
               {value === 'Exhibit' ? 'Exhibits' : 'Depositions'}
             </button>
@@ -72,18 +72,18 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search party, name, or exhibit #"
-            className="min-w-[240px] flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+            className="min-w-[240px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
           />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4 min-h-[28rem]">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 overflow-y-auto">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 overflow-y-auto">
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
               {filtered.map((proof) => (
                 <button
                   key={proof.id}
                   type="button"
                   onClick={() => setSelectedId(proof.id)}
-                  className={`rounded-xl border p-3 text-left ${selectedProof?.id === proof.id ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}
+                  className={`rounded-xl border p-3 text-left ${selectedProof?.id === proof.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
                 >
                   <div className="flex justify-center">
                     <ProofThumbPreview proof={proof} size="lg" />
@@ -92,22 +92,22 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
                     <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
                     <span className="text-slate-500">{getProofTypeLabel(proof)}</span>
                   </div>
-                  <p className="mt-2 text-sm font-semibold text-white leading-snug">{getProofDisplayName(proof)}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900 leading-snug">{getProofDisplayName(proof)}</p>
                 </button>
               ))}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 flex flex-col">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col">
             {selectedProof ? (
               <>
                 <div className="flex justify-center">
                   <ProofThumbPreview proof={selectedProof} size="lg" />
                 </div>
                 <div className="mt-4 space-y-2 text-sm">
-                  <p className="font-semibold text-white">{getProofDisplayName(selectedProof)}</p>
-                  <p className="text-slate-400">Joint Exhibit #: <span className="text-green-400 font-semibold">{getJointLabel(selectedProof)}</span></p>
-                  <p className="text-slate-400">Type: <span className="text-slate-200">{getProofTypeLabel(selectedProof)}</span></p>
-                  <p className="text-slate-400">Status: <span className="text-slate-200">{selectedProof.status}</span></p>
+                  <p className="font-semibold text-slate-900">{getProofDisplayName(selectedProof)}</p>
+                  <p className="text-slate-600">Joint Exhibit #: <span className="text-green-600 font-semibold">{getJointLabel(selectedProof)}</span></p>
+                  <p className="text-slate-600">Type: <span className="text-slate-900">{getProofTypeLabel(selectedProof)}</span></p>
+                  <p className="text-slate-600">Status: <span className="text-slate-900">{selectedProof.status}</span></p>
                 </div>
                 <div className="mt-auto pt-4">
                   <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => { onSelect(selectedProof); onOpenChange(false); }}>
