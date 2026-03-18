@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, Layers3, LayoutGrid, List } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Layers3, LayoutGrid, List } from 'lucide-react';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
@@ -45,6 +45,7 @@ export default function AttorneyHub() {
   const [statusFilter, setStatusFilter] = useState(() => getStoredHubSetting('attorney-hub-status', 'all'));
   const [sideFilter, setSideFilter] = useState(() => getStoredHubSetting('attorney-hub-side', 'all'));
   const [viewMode, setViewMode] = useState(() => getStoredHubSetting('attorney-hub-view-mode', 'list'));
+  const [leftColumnCollapsed, setLeftColumnCollapsed] = useState(() => getStoredHubSetting('attorney-hub-left-collapsed', 'false') === 'true');
   const [selectedKey, setSelectedKey] = useState('');
   const [selectedPreviewProof, setSelectedPreviewProof] = useState(null);
   const [localDecisionMap, setLocalDecisionMap] = useState({});
@@ -177,7 +178,8 @@ export default function AttorneyHub() {
     window.localStorage.setItem('attorney-hub-status', statusFilter);
     window.localStorage.setItem('attorney-hub-side', sideFilter);
     window.localStorage.setItem('attorney-hub-view-mode', viewMode);
-  }, [proofTab, selectedExamType, selectedExamPartyId, depositionPartyFilter, statusFilter, sideFilter, viewMode]);
+    window.localStorage.setItem('attorney-hub-left-collapsed', leftColumnCollapsed ? 'true' : 'false');
+  }, [proofTab, selectedExamType, selectedExamPartyId, depositionPartyFilter, statusFilter, sideFilter, viewMode, leftColumnCollapsed]);
 
   const [selectedKind, selectedId] = selectedKey.split(':');
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
@@ -191,6 +193,7 @@ export default function AttorneyHub() {
     : null;
   const questionParentId = selectedProof ? selectedProofRootItem?.id : selectedGroup?.id;
   const questionItems = useMemo(() => currentExamItems.filter((item) => item.item_type === 'question'), [currentExamItems]);
+  const leftPanelWidth = leftColumnCollapsed ? 72 : widths.left;
 
   const handleProofAction = (proof, action, patch = null) => {
     if (action === 'not_admitted') {
@@ -228,8 +231,8 @@ export default function AttorneyHub() {
         <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center gap-2" />
 
         <div className="min-h-[calc(100vh-10rem)] xl:flex xl:min-w-0">
-          <div style={{ width: `${widths.left}px` }} className="border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 xl:min-w-[320px]">
-            <div className="border-b border-slate-800 px-4 pt-4">
+          <div style={{ width: `${leftPanelWidth}px` }} className={`border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 ${leftColumnCollapsed ? 'xl:min-w-[72px]' : 'xl:min-w-[320px]'}`}>
+            <div className={`border-b border-slate-800 ${leftColumnCollapsed ? 'px-2 py-3' : 'px-4 pt-4'}`}>
               <div className="mb-4 space-y-3">
                 <div className="inline-flex max-w-full rounded-lg bg-slate-950 p-1 gap-1 overflow-x-auto">
                   {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
