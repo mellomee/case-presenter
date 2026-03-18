@@ -203,7 +203,7 @@ export default function AttorneyHub() {
           <div style={{ width: `${widths.left}px` }} className="border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 xl:min-w-[320px]">
             <div className="border-b border-slate-800 px-4 pt-4">
               <div className="mb-4 space-y-3">
-                <div className="inline-flex rounded-lg bg-slate-950 p-1 gap-1 max-w-full overflow-x-auto">
+                <div className="inline-flex max-w-full rounded-lg bg-slate-950 p-1 gap-1 overflow-x-auto">
                   {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
                     <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
                       {tab}
@@ -264,9 +264,10 @@ export default function AttorneyHub() {
 
                   if (entry.kind === 'group') {
                     const group = rootGroups.find((item) => item.id === entry.id);
+
                     return viewMode === 'grid' ? (
                       <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
-                        <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-start justify-between gap-2">
                           {rootExamOrderNumberMap[group?.id] ? <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span> : <span />}
                           <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
                         </div>
