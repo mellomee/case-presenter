@@ -38,6 +38,10 @@ function normalizePartyIds(currentProof) {
     return currentProof.party_ids.filter(Boolean);
   }
 
+  if (Array.isArray(currentProof?.party_ids?.ids) && currentProof.party_ids.ids.length > 0) {
+    return currentProof.party_ids.ids.filter(Boolean);
+  }
+
   return currentProof?.party_id ? [currentProof.party_id] : [];
 }
 
@@ -268,7 +272,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       description: formData.description?.trim() || '',
       video_url: sourceType === 'url' ? formData.video_url.trim() : '',
       party_id: selectedPartyIds[0] || '',
-      party_ids: selectedPartyIds,
+      party_ids: { ids: selectedPartyIds },
     };
 
     if (sourceType === 'dropbox') {
