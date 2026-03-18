@@ -66,10 +66,7 @@ export default function AttorneyHubQuestionList({
   const [checkedMap, setCheckedMap] = useState({});
 
   const tree = useMemo(() => buildItemTree(questionItems, parentItemId || null), [questionItems, parentItemId]);
-  const parentPreviewProof = useMemo(
-    () => (selectedProof?.parent_proof_id ? proofsById[selectedProof.parent_proof_id] || null : null),
-    [selectedProof, proofsById]
-  );
+  const selectedPreviewProof = useMemo(() => selectedProof || null, [selectedProof]);
 
   return (
     <div className="h-full rounded-2xl border border-slate-700 bg-slate-900/50 flex flex-col overflow-hidden">
@@ -90,16 +87,16 @@ export default function AttorneyHubQuestionList({
                 View Script
               </Button>
             </div>
-            {parentPreviewProof && (
+            {selectedPreviewProof && (
               <button
                 type="button"
-                onClick={() => onSelectInlineProof?.(parentPreviewProof)}
+                onClick={() => onSelectInlineProof?.(selectedPreviewProof)}
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-700 bg-slate-900/70 p-2 text-left hover:border-blue-500"
               >
-                <ProofThumbPreview proof={parentPreviewProof} size="sm" />
+                <ProofThumbPreview proof={selectedPreviewProof} size="sm" />
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Parent Proof</p>
-                  <p className="mt-1 truncate text-xs font-medium text-white">{getProofDisplayName(parentPreviewProof)}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Selected Proof</p>
+                  <p className="mt-1 truncate text-xs font-medium text-white">{getProofDisplayName(selectedPreviewProof)}</p>
                 </div>
               </button>
             )}
