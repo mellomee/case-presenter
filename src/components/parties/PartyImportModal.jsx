@@ -129,9 +129,11 @@ export default function PartyImportModal({ isOpen, onClose, onImportComplete }) 
           last_name: normalizeValue(row.last_name),
           side: normalizeValue(row.side),
           role_id: roleValue ? roleIdMap[roleValue] || roleNameMap[roleValue.toLowerCase()] || null : null,
-          credentials: credentialValues
-            .map((value) => credentialIdMap[value] || credentialNameMap[value.toLowerCase()] || null)
-            .filter(Boolean),
+          credentials: {
+            ids: credentialValues
+              .map((value) => credentialIdMap[value] || credentialNameMap[value.toLowerCase()] || null)
+              .filter(Boolean),
+          },
         };
       });
 
