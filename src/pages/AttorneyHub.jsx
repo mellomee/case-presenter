@@ -50,7 +50,17 @@ export default function AttorneyHub() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hubProofs'] }),
   });
 
-  const parentExhibits = useMemo(() => proofs.filter((proof) => !proof.parent_proof_id && proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)), [proofs]);
+  const parentExhibits = useMemo(() => {
+    const allExhibits = proofs.filter((proof) => proof.proof_category === 'Exhibit');
+    const promotedExtracts = allExhibits.filter(
+      (proof) => proof.proof_child_type === 'Extract' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
+    );
+
+    return [
+      ...allExhibits.filter((proof) => !proof.parent_proof_id && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+      ...promotedExtracts,
+    ];
+  }, [proofs]);
   const parentDepositions = useMemo(() => proofs.filter((proof) => !proof.parent_proof_id && proof.proof_category === 'Deposition'), [proofs]);
 
   const filteredProofs = useMemo(() => {
@@ -258,7 +268,18 @@ export default function AttorneyHub() {
                 />
               </div>
             ) : selectedGroup ? (
-              <GroupPreviewPane label={selectedGroup.label} />
+              <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden p-4">
+                <AttorneyHubQuestionList
+                  title={selectedGroup.label}
+                  parentItemId={selectedGroup.id}
+                  questionItems={questionItems}
+                  proofsById={proofsById}
+                  admissionSource={null}
+                  admissionTemplates={admissionTemplates}
+                  exhibitNum=""
+                  onSelectInlineProof={(proof) => setSelectedKey(`proof:${proof.id}`)}
+                />
+              </div>
             ) : (
               <div className="h-full rounded-2xl border border-dashed border-slate-800 bg-slate-950/60 flex items-center justify-center text-center p-10">
                 <div>
