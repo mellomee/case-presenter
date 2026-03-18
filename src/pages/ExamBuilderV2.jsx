@@ -113,8 +113,16 @@ export default function ExamBuilderV2() {
 
   const saveQuestion = async (form) => {
     if (!questionDialog.parentId || !currentExam) return;
+
+    const normalizedForm = {
+      ...form,
+      attached_proof_ids: Array.isArray(form.attached_proof_ids) && form.attached_proof_ids.length > 0
+        ? { ids: form.attached_proof_ids }
+        : null,
+    };
+
     if (questionDialog.initialValue) {
-      await base44.entities.ExamItemV2.update(questionDialog.initialValue.id, form);
+      await base44.entities.ExamItemV2.update(questionDialog.initialValue.id, normalizedForm);
       invalidate();
       return;
     }
@@ -125,7 +133,7 @@ export default function ExamBuilderV2() {
       item_type: 'question',
       parent_item_id: questionDialog.parentId,
       sort_order: siblings.length,
-      ...form,
+      ...normalizedForm,
     });
     invalidate();
   };

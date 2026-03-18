@@ -91,7 +91,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
           )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { onSave(form); onOpenChange(false); }}>Save Question</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={async () => { await onSave(form); onOpenChange(false); }}>Save Question</Button>
           </div>
         </div>
         <InlineProofPreviewDialog open={!!previewProof} onOpenChange={(nextOpen) => !nextOpen && setPreviewProof(null)} proof={previewProof} />
