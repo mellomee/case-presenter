@@ -15,6 +15,7 @@ import ExamBuilder from '@/pages/ExamBuilder';
 import AttorneyView from '@/pages/AttorneyView';
 import JuryView from '@/pages/JuryView';
 import AttorneyViewShell from '@/components/present/AttorneyViewShell';
+import AttorneyHubShell from '@/components/present/AttorneyHubShell';
 import AttorneyHub from '@/pages/AttorneyHub';
 import Settings from '@/pages/Settings';
 
@@ -57,7 +58,7 @@ const AuthenticatedApp = () => {
       <Route path="/AttorneyHub" element={<Navigate to="/present/attorney-hub" replace />} />
       <Route path="/JuryView" element={<Navigate to="/present/jury" replace />} />
       <Route path="/present/attorney" element={<AttorneyViewShell />} />
-      <Route path="/present/attorney-hub" element={<AttorneyHub />} />
+      <Route path="/present/attorney-hub" element={<AttorneyHubShell />} />
       <Route path="/present/jury" element={<JuryView />} />
       
       <Route path="*" element={<PageNotFound />} />
