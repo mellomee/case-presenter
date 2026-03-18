@@ -703,27 +703,29 @@ export default function AttorneyView() {
             {/* Questions column */}
             <div className="flex-1 flex flex-col gap-4 min-w-0 overflow-y-auto">
               {currentItem?.type === 'block' && activeBlockFlow?.phase !== 'branch' ? (
-                <AdmissionBlockTrialPanel
-                  item={currentItem}
-                  index={currentIndex}
-                  total={flatList.length}
-                  visibleSteps={visibleBlockSteps}
-                  currentStepIndex={activeBlockFlow?.stepIndex || 0}
-                  decision={activeBlockFlow?.decision || null}
-                  canGoPrev={(activeBlockFlow?.stepIndex || 0) > 0}
-                  canGoNext={canGoNext}
-                  onPrevStep={() => {
-                    if ((activeBlockFlow?.stepIndex || 0) > 0) {
-                      setBlockFlow((prev) => ({ ...prev, stepIndex: prev.stepIndex - 1 }));
-                    }
-                  }}
-                  onNextStep={goNext}
-                  onSelectProof={setSelectedProof}
-                  onRuling={handleRuling}
-                  onDecision={handleBlockDecision}
-                  isRulingLoading={rulingMutation.isPending}
-                  onStartPath={() => startBranch('admitted')}
-                />
+                <div className={isAdmittedPathLaunchStep ? 'hide-admission-path-cta' : ''}>
+                  <AdmissionBlockTrialPanel
+                    item={currentItem}
+                    index={currentIndex}
+                    total={flatList.length}
+                    visibleSteps={visibleBlockSteps}
+                    currentStepIndex={activeBlockFlow?.stepIndex || 0}
+                    decision={activeBlockFlow?.decision || null}
+                    canGoPrev={(activeBlockFlow?.stepIndex || 0) > 0}
+                    canGoNext={canGoNext}
+                    onPrevStep={() => {
+                      if ((activeBlockFlow?.stepIndex || 0) > 0) {
+                        setBlockFlow((prev) => ({ ...prev, stepIndex: prev.stepIndex - 1 }));
+                      }
+                    }}
+                    onNextStep={goNext}
+                    onSelectProof={setSelectedProof}
+                    onRuling={handleRuling}
+                    onDecision={handleBlockDecision}
+                    isRulingLoading={rulingMutation.isPending}
+                    onStartPath={() => startBranch('admitted')}
+                  />
+                </div>
               ) : (
                 <>
                   <CurrentQuestionCard
