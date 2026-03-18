@@ -7,7 +7,7 @@ import DetailsPanel from '@/components/attorneyMap/DetailsPanel.jsx';
 import {
   buildBucketMap,
   buildOverviewMap,
-} from '@/components/attorneyMap/attorneyMapUtils.js';
+} from '../components/attorneyMap/attorneyMapUtils.js';
 
 function buildRecordMap(records = [], keyBuilder) {
   return records.reduce((acc, record) => {
