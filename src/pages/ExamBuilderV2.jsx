@@ -88,24 +88,9 @@ export default function ExamBuilderV2() {
     ];
   }, [proofs, selectedPartyId]);
 
-  const preferredPartyId = useMemo(() => {
-    if (selectedPartyId && parties.some((party) => party.id === selectedPartyId)) return selectedPartyId;
-
-    const examPartyId = exams.find((exam) => exam.party_id && parties.some((party) => party.id === exam.party_id))?.party_id;
-    if (examPartyId) return examPartyId;
-
-    const proofPartyId = proofs
-      .flatMap((proof) => [proof?.party_id, ...parseIdsField(proof?.party_ids)])
-      .find((partyId) => partyId && parties.some((party) => party.id === partyId));
-    if (proofPartyId) return proofPartyId;
-
-    return parties[0]?.id || '';
-  }, [selectedPartyId, parties, exams, proofs]);
-
   useEffect(() => {
-    if (!preferredPartyId || preferredPartyId === selectedPartyId) return;
-    setSelectedPartyId(preferredPartyId);
-  }, [preferredPartyId, selectedPartyId]);
+    if (!selectedPartyId && parties[0]) setSelectedPartyId(parties[0].id);
+  }, [parties, selectedPartyId]);
 
   useEffect(() => {
     if (!rootItems.length) {

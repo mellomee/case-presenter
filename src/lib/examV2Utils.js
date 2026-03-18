@@ -4,7 +4,9 @@ export function parseIdsField(value) {
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.ids)) return parsed.ids.filter(Boolean);
+      return [];
     } catch {
       return value.split(',').map((item) => item.trim()).filter(Boolean);
     }
