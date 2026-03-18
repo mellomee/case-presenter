@@ -31,12 +31,12 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-slate-950 border-slate-800 text-white max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[94vw] max-w-7xl bg-slate-950 border-slate-800 text-white max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="text-slate-400">Build parent or follow-up questions and attach any proof clips they need.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(320px,0.8fr)_minmax(620px,1.2fr)] items-start">
           <div className="space-y-4 min-w-0">
             <textarea
               value={form.text}
@@ -97,7 +97,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
               <Button className="bg-blue-600 hover:bg-blue-700" onClick={async () => { await onSave(form); onOpenChange(false); }}>Save Question</Button>
             </div>
           </div>
-          <div className="min-w-0 lg:max-h-[70vh]">
+          <div className="min-w-0 lg:h-[76vh]">
             <InlineProofPreviewPane proof={previewProof} allProofs={availableProofs} />
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare, Menu, X, FolderKanban } from 'lucide-react';
+import { Scale, LayoutDashboard, FileText, Users, BookOpen, Tv, Settings, MessageSquare, Menu, X, FolderKanban, ChevronLeft, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ChatPanel from './chat/ChatPanel.jsx';
 import ChatMessageToast from './chat/ChatMessageToast.jsx';
@@ -13,6 +13,7 @@ export default function Layout() {
   const [lastSeen, setLastSeen] = useState(() => Date.now());
   const [toastMessage, setToastMessage] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
 
   // Pages that should hide the chat button
   const hideChatPages = ['/present/jury', '/JuryView'];
@@ -60,22 +61,31 @@ export default function Layout() {
     { label: 'Settings', path: '/Settings', icon: Settings },
   ];
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path);
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const SidebarContent = () => (
     <>
       {/* Logo / App Name */}
       <div className="p-5 border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <Scale className="w-6 h-6 text-blue-600 flex-shrink-0" />
-            <h1 className="text-lg font-bold text-slate-900">Case Presenter</h1>
+            {!desktopSidebarCollapsed && <h1 className="text-lg font-bold text-slate-900 truncate">Case Presenter</h1>}
           </div>
-          <button className="lg:hidden p-1 text-slate-400 hover:text-slate-600" onClick={() => setSidebarOpen(false)}>
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              className="hidden lg:flex p-1 text-slate-400 hover:text-slate-600"
+              onClick={() => setDesktopSidebarCollapsed((value) => !value)}
+              title={desktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {desktopSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+            </button>
+            <button className="lg:hidden p-1 text-slate-400 hover:text-slate-600" onClick={() => setSidebarOpen(false)}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-slate-500 mt-1 pl-9">Trial Management System</p>
+        {!desktopSidebarCollapsed && <p className="text-xs text-slate-500 mt-1 pl-9">Trial Management System</p>}
       </div>
 
       {/* Navigation */}
@@ -83,41 +93,44 @@ export default function Layout() {
         <ul className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.path);
+            const active = isActive(item.path) || item.children?.some((child) => isActive(child.path));
 
             if (item.children) {
               return (
                 <li key={item.path} className="space-y-1">
                   <div
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md min-h-[44px] ${
+                    title={desktopSidebarCollapsed ? item.label : undefined}
+                    className={`flex items-center ${desktopSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2.5 rounded-md min-h-[44px] ${
                       active
                         ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 pl-2'
                         : 'text-slate-700'
                     }`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm font-medium">{item.label}</span>
+                    {!desktopSidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
                   </div>
 
-                  <div className="ml-6 space-y-1">
-                    {item.children.map((child) => {
-                      const childActive = isActive(child.path);
-                      return (
-                        <Link
-                          key={child.path}
-                          to={child.path}
-                          onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] ${
-                            childActive
-                              ? 'bg-blue-50 text-blue-600 font-medium'
-                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                          }`}
-                        >
-                          {child.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
+                  {!desktopSidebarCollapsed && (
+                    <div className="ml-6 space-y-1">
+                      {item.children.map((child) => {
+                        const childActive = isActive(child.path);
+                        return (
+                          <Link
+                            key={child.path}
+                            to={child.path}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] ${
+                              childActive
+                                ? 'bg-blue-50 text-blue-600 font-medium'
+                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                            }`}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </li>
               );
             }
@@ -126,15 +139,16 @@ export default function Layout() {
               <li key={item.path}>
                 <Link
                   to={item.path}
+                  title={desktopSidebarCollapsed ? item.label : undefined}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors min-h-[44px] ${
+                  className={`flex items-center ${desktopSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2.5 rounded-md transition-colors min-h-[44px] ${
                     active
                       ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 pl-2'
                       : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  {!desktopSidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
                 </Link>
               </li>
             );
@@ -143,8 +157,8 @@ export default function Layout() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-200 text-xs text-slate-500">
-        <p>© 2026 Case Presenter</p>
+      <div className={`p-4 border-t border-slate-200 text-xs text-slate-500 ${desktopSidebarCollapsed ? 'text-center px-2' : ''}`}>
+        <p>{desktopSidebarCollapsed ? '© 2026' : '© 2026 Case Presenter'}</p>
       </div>
     </>
   );
@@ -161,8 +175,8 @@ export default function Layout() {
 
       {/* Sidebar — desktop always visible, mobile slide-in */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col
-        transform transition-transform duration-200 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 w-64 ${desktopSidebarCollapsed ? 'lg:w-16' : 'lg:w-64'} bg-white border-r border-slate-200 flex flex-col
+        transform transition-all duration-200 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <SidebarContent />
