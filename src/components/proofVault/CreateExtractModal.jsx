@@ -171,6 +171,12 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       return;
     }
 
+    if (selectedPartyIds.length === 0) {
+      setWarningMsg('Select at least one party');
+      setShowWarning(true);
+      return;
+    }
+
     const inheritedFileFields = extractSource === 'original'
       ? {
           file_source: actualParentProof.file_source || 'base44',
@@ -194,7 +200,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       name: internalName.trim(),
       formal_name: formalName.trim(),
       parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
-      party_id: parentProof.party_id || null,
+      party_id: selectedPartyIds[0] || null,
+      party_ids: selectedPartyIds,
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
       proof_type_category_id: parentProof.proof_type_category_id,
@@ -315,6 +322,15 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
               <Input placeholder="e.g. Photograph Pages 1-3" value={formalName} onChange={(e) => setFormalName(e.target.value)} />
             </div>
           </div>
+
+          <PartyMultiSelectField
+            label="Assign to Parties"
+            required
+            parties={parties}
+            value={selectedPartyIds}
+            onChange={setSelectedPartyIds}
+            helperText="Choose one or more parties for this extract."
+          />
 
           {parentProof.proof_category === 'Exhibit' && (
             <div>
