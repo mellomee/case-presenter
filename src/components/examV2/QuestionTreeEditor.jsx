@@ -1,7 +1,7 @@
 import React from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
 
@@ -32,10 +32,20 @@ function Branch({ parentId, rootParentId, items, proofsById, onEdit, onAddFollow
                         {attachedProofs.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {attachedProofs.map((proof) => (
-                              <button key={proof.id} type="button" onClick={() => onSelectAttachment(proof)} className="rounded-lg border border-slate-700 bg-slate-950/70 p-2 hover:border-blue-500">
-                                <ProofThumbPreview proof={proof} size="sm" />
+                              <div key={proof.id} className="relative rounded-lg border border-slate-700 bg-slate-950/70 p-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onSelectAttachment(proof)}
+                                  className="absolute right-1.5 top-1.5 z-10 h-6 w-6 rounded-full border border-slate-700 bg-slate-900/90 flex items-center justify-center text-slate-300 hover:text-white"
+                                  title="Preview proof"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                </button>
+                                <div className="flex justify-center">
+                                  <ProofThumbPreview proof={proof} size="sm" />
+                                </div>
                                 <p className="mt-1 max-w-14 text-[10px] text-slate-300 leading-tight">{getProofDisplayName(proof)}</p>
-                              </button>
+                              </div>
                             ))}
                           </div>
                         )}
