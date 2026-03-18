@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
 import { getProofDisplayName } from '@/lib/examV2Utils';
 
 export default function QuestionEditorDialog({ open, onOpenChange, onSave, initialValue = null, availableProofs = [], title = 'Question' }) {
   const [form, setForm] = useState({ text: '', expected_answer: '', notes: '', attached_proof_ids: [] });
+  const [previewProof, setPreviewProof] = useState(null);
 
   useEffect(() => {
     setForm({
@@ -60,17 +63,27 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
                 {availableProofs.map((proof) => {
                   const active = form.attached_proof_ids.includes(proof.id);
                   return (
-                    <button
+                    <div
                       key={proof.id}
-                      type="button"
                       onClick={() => toggleProof(proof.id)}
-                      className={`rounded-xl border p-2 text-left ${active ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 bg-slate-900/60'}`}
+                      className={`relative rounded-xl border p-2 text-left cursor-pointer ${active ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 bg-slate-900/60'}`}
                     >
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setPreviewProof(proof);
+                        }}
+                        className="absolute right-2 top-2 z-10 h-7 w-7 rounded-full border border-slate-700 bg-slate-950/90 flex items-center justify-center text-slate-300 hover:text-white"
+                        title="Preview proof"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
                       <div className="flex justify-center">
                         <ProofThumbPreview proof={proof} size="sm" />
                       </div>
                       <p className="mt-2 text-[11px] text-slate-300 leading-tight">{getProofDisplayName(proof)}</p>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -81,6 +94,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { onSave(form); onOpenChange(false); }}>Save Question</Button>
           </div>
         </div>
+        <InlineProofPreviewDialog open={!!previewProof} onOpenChange={(nextOpen) => !nextOpen && setPreviewProof(null)} proof={previewProof} />
       </DialogContent>
     </Dialog>
   );
