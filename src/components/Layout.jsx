@@ -46,6 +46,7 @@ export default function Layout() {
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
     { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
+    { label: 'Workspace', path: '/Workspace', icon: BookOpen },
     {
       label: 'Present',
       path: '/present',

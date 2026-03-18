@@ -16,6 +16,7 @@ import AttorneyView from '@/pages/AttorneyView';
 import JuryView from '@/pages/JuryView';
 import AttorneyViewShell from '@/components/present/AttorneyViewShell';
 import AttorneyHubShell from '@/components/present/AttorneyHubShell';
+import Workspace from '@/pages/Workspace';
 import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
         <Route path="/ProofVault" element={<ProofVault />} />
         <Route path="/Parties" element={<Parties />} />
         <Route path="/ExamBuilder" element={<ExamBuilder />} />
+        <Route path="/Workspace" element={<Workspace />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       
