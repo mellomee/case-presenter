@@ -55,17 +55,23 @@ export default function ProofTile({
     }
   }, [proof.id, highlightedChildId]);
 
-  const { data: party } = useQuery({
-    queryKey: ['party', proof.party_id],
-    queryFn: () => proof.party_id ? base44.entities.Party.list().then((parties) => parties.find((p) => p.id === proof.party_id)) : null,
-    enabled: !!proof.party_id,
+  const { data: parties = [] } = useQuery({
+    queryKey: ['parties'],
+    queryFn: () => base44.entities.Party.list(),
   });
 
-  const { data: category } = useQuery({
-    queryKey: ['category', proof.category_id],
-    queryFn: () => proof.category_id ? base44.entities.Category.list().then((cats) => cats.find((c) => c.id === proof.category_id)) : null,
-    enabled: !!proof.category_id,
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => base44.entities.Category.list(),
   });
+
+  const proofPartyIds = [...new Set([
+    proof.party_id,
+    ...(Array.isArray(proof.party_ids) ? proof.party_ids : []),
+    ...(Array.isArray(proof.party_ids?.ids) ? proof.party_ids.ids : []),
+  ].filter(Boolean))];
+  const proofParties = parties.filter((item) => proofPartyIds.includes(item.id));
+  const category = categories.find((item) => item.id === proof.category_id) || null;
 
   const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
   const parentProof = proof.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
@@ -99,7 +105,7 @@ export default function ProofTile({
     sourcePage: getSourcePage(group.page),
   }));
 
-  const getPartyColor = () => {
+  const getPartyColor = (party) => {
     if (!party) return 'bg-slate-100 text-slate-700';
     switch (party.side) {
       case 'Plaintiff':
@@ -194,7 +200,11 @@ export default function ProofTile({
               <div className="flex gap-2 flex-wrap items-center">
                 <Badge variant="outline" className="text-xs">{proof.file_type}</Badge>
                 {proof.file_source === 'dropbox' && <Badge className="bg-blue-50 text-blue-700 text-xs">Dropbox</Badge>}
-                {party && <Badge className={`text-xs ${getPartyColor()}`}>{party.first_name} {party.last_name}</Badge>}
+                {proofParties.map((party) => (
+                  <Badge key={party.id} className={`text-xs ${getPartyColor(party)}`}>
+                    {party.first_name} {party.last_name}
+                  </Badge>
+                ))}
                 {category && <Badge className="bg-slate-100 text-slate-700 text-xs">{category.name}</Badge>}
                 {(isParentProof || isExtract) && (
                   hasAttachment ? (
