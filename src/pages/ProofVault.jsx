@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Film, AlertCircle, Upload, Printer } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FileText, Plus, Film, AlertCircle, Upload, Printer, Search } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,46 @@ import ProofImportSourceModal from '@/components/proofVault/ProofImportSourceMod
 import DropboxBulkImportModal from '@/components/proofVault/DropboxBulkImportModal.jsx';
 import PrintExhibitListModal from '@/components/proofVault/PrintExhibitListModal';
 
+function normalizeSearchValue(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getPrimaryExhibitNumber(proof) {
+  return proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || proof.draft_exhibit_num || '';
+}
+
+function proofMatchesSearch(proof, searchQuery) {
+  const searchValue = normalizeSearchValue(searchQuery);
+  if (!searchValue) return true;
+
+  return [
+    proof.name,
+    proof.formal_name,
+    proof.description,
+    proof.dropbox_file_name,
+    proof.draft_exhibit_num,
+    proof.joint_exhibit_num,
+    proof.admitted_exhibit_num,
+    proof.demonstrative_exhibit_num,
+  ].some((value) => normalizeSearchValue(value).includes(searchValue));
+}
+
+function sortProofsByExhibitNumber(items = []) {
+  return [...items].sort((a, b) => {
+    const aExhibit = getPrimaryExhibitNumber(a);
+    const bExhibit = getPrimaryExhibitNumber(b);
+
+    if (aExhibit && bExhibit) {
+      return aExhibit.localeCompare(bExhibit, undefined, { numeric: true, sensitivity: 'base' });
+    }
+
+    if (aExhibit) return -1;
+    if (bExhibit) return 1;
+
+    return String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' });
+  });
+}
+
 export default function ProofVault() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -54,6 +94,7 @@ export default function ProofVault() {
   const [highlightedChildId, setHighlightedChildId] = useState(null);
   const [selectedProofIds, setSelectedProofIds] = useState([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -220,8 +261,8 @@ export default function ProofVault() {
       ['Joint', 'Admitted', 'Demonstrative'].includes(p.status)
   );
 
-  const filteredExhibits =
-    exhibitFilter === 'all'
+  const filteredExhibits = useMemo(() => {
+    const exhibitsByStatus = exhibitFilter === 'all'
       ? exhibitsTopLevel
       : ['Joint', 'Admitted', 'Demonstrative'].includes(exhibitFilter)
         ? [
@@ -229,6 +270,14 @@ export default function ProofVault() {
             ...promotedExtracts.filter((e) => e.status === exhibitFilter),
           ]
         : exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
+
+    return sortProofsByExhibitNumber(exhibitsByStatus.filter((proof) => proofMatchesSearch(proof, searchQuery)));
+  }, [exhibitFilter, exhibitsTopLevel, promotedExtracts, searchQuery]);
+
+  const filteredDepositions = useMemo(
+    () => sortProofsByExhibitNumber(depositionsTopLevel.filter((proof) => proofMatchesSearch(proof, searchQuery))),
+    [depositionsTopLevel, searchQuery]
+  );
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
@@ -241,7 +290,7 @@ export default function ProofVault() {
     return exhibitsTopLevel.filter((e) => e.status === status).length;
   };
 
-  const visibleProofs = activeTab === 'exhibits' ? filteredExhibits : depositionsTopLevel;
+  const visibleProofs = activeTab === 'exhibits' ? filteredExhibits : filteredDepositions;
 
   const toggleProofSelection = (proofId) => {
     setSelectedProofIds((current) => (
@@ -433,6 +482,16 @@ export default function ProofVault() {
             </TabsList>
 
             <div className="p-6">
+              <div className="mb-4 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <Search className="h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search proofs by name, filename, description, or exhibit #"
+                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                />
+              </div>
               <TabsContent value="exhibits" className="mt-0">
                 <div className="mb-4 flex gap-2 flex-wrap">
                   {['all', 'Draft', 'Joint', 'Admitted', 'Demonstrative'].map((status) => (
@@ -456,7 +515,7 @@ export default function ProofVault() {
                   onDelete={handleBulkDelete}
                 />
                 {filteredExhibits.length === 0 ? (
-                   renderEmptyState('No exhibits in this category.')
+                   renderEmptyState(searchQuery ? 'No exhibits match your search.' : 'No exhibits in this category.')
                  ) : (
                    <div className="space-y-3">
                      {filteredExhibits.map((proof) => (
@@ -488,17 +547,17 @@ export default function ProofVault() {
               <TabsContent value="depositions" className="mt-0">
                 <BulkSelectionBar
                   selectedCount={selectedProofIds.length}
-                  visibleCount={depositionsTopLevel.length}
+                  visibleCount={filteredDepositions.length}
                   isDeleting={isBulkDeleting}
                   onSelectAll={handleSelectAllVisible}
                   onClear={handleClearSelection}
                   onDelete={handleBulkDelete}
                 />
-                {depositionsTopLevel.length === 0 ? (
-                  renderEmptyState('No depositions added yet.')
+                {filteredDepositions.length === 0 ? (
+                  renderEmptyState(searchQuery ? 'No depositions match your search.' : 'No depositions added yet.')
                 ) : (
                   <div className="space-y-3">
-                    {depositionsTopLevel.map((proof) => (
+                    {filteredDepositions.map((proof) => (
                       <SelectableProofTile
                         key={proof.id}
                         proof={proof}

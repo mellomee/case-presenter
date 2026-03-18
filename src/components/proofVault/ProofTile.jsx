@@ -156,10 +156,10 @@ export default function ProofTile({
 
   const renderExhibitHistory = () => {
     const pills = [];
-    if (proof.draft_exhibit_num) pills.push(<span key="draft" className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 font-mono">D: {proof.draft_exhibit_num}</span>);
-    if (proof.joint_exhibit_num) pills.push(<span key="joint" className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 font-mono">J: {proof.joint_exhibit_num}</span>);
-    if (proof.admitted_exhibit_num) pills.push(<span key="admitted" className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 font-mono">Adm: {proof.admitted_exhibit_num}</span>);
-    else if (proof.demonstrative_exhibit_num) pills.push(<span key="demo" className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 font-mono">Demo: {proof.demonstrative_exhibit_num}</span>);
+    if (proof.draft_exhibit_num) pills.push(<span key="draft" className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm font-semibold text-slate-700 shadow-sm font-mono">D: {proof.draft_exhibit_num}</span>);
+    if (proof.joint_exhibit_num) pills.push(<span key="joint" className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700 shadow-sm font-mono">J: {proof.joint_exhibit_num}</span>);
+    if (proof.admitted_exhibit_num) pills.push(<span key="admitted" className="rounded-md border border-green-200 bg-green-50 px-2.5 py-1 text-sm font-semibold text-green-700 shadow-sm font-mono">Adm: {proof.admitted_exhibit_num}</span>);
+    else if (proof.demonstrative_exhibit_num) pills.push(<span key="demo" className="rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-sm font-semibold text-purple-700 shadow-sm font-mono">Demo: {proof.demonstrative_exhibit_num}</span>);
     return pills.length > 0 ? pills : null;
   };
 
@@ -190,21 +190,32 @@ export default function ProofTile({
               </div>
             </div>
 
-            <div className="flex gap-2 mb-2 flex-wrap items-center">
-              <Badge variant="outline" className="text-xs">{proof.file_type}</Badge>
-              {proof.file_source === 'dropbox' && <Badge className="bg-blue-50 text-blue-700 text-xs">Dropbox</Badge>}
-              {party && <Badge className={`text-xs ${getPartyColor()}`}>{party.first_name} {party.last_name}</Badge>}
-              {category && <Badge className="bg-slate-100 text-slate-700 text-xs">{category.name}</Badge>}
-              {(isParentProof || isExtract) && (
-                hasAttachment ? (
-                  <div className="flex items-center gap-1 text-xs text-green-600"><CheckCircle2 className="w-3.5 h-3.5" /><span>Attached</span></div>
-                ) : (
-                  <div className="flex items-center gap-1 text-xs text-amber-600"><AlertCircle className="w-3.5 h-3.5" /><span>No File</span></div>
-                )
-              )}
-            </div>
+            <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex gap-2 flex-wrap items-center">
+                <Badge variant="outline" className="text-xs">{proof.file_type}</Badge>
+                {proof.file_source === 'dropbox' && <Badge className="bg-blue-50 text-blue-700 text-xs">Dropbox</Badge>}
+                {party && <Badge className={`text-xs ${getPartyColor()}`}>{party.first_name} {party.last_name}</Badge>}
+                {category && <Badge className="bg-slate-100 text-slate-700 text-xs">{category.name}</Badge>}
+                {(isParentProof || isExtract) && (
+                  hasAttachment ? (
+                    <div className="flex items-center gap-1 text-xs text-green-600"><CheckCircle2 className="w-3.5 h-3.5" /><span>Attached</span></div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-xs text-amber-600"><AlertCircle className="w-3.5 h-3.5" /><span>No File</span></div>
+                  )
+                )}
+              </div>
 
-            {proof.proof_category === 'Exhibit' && renderExhibitHistory() && <div className="flex gap-1 mb-2 flex-wrap">{renderExhibitHistory()}</div>}
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                {proof.proof_category === 'Exhibit' ? (
+                  <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
+                ) : (
+                  <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
+                )}
+                {proof.proof_category === 'Exhibit' && renderExhibitHistory() && (
+                  <div className="flex flex-wrap gap-2 lg:justify-end">{renderExhibitHistory()}</div>
+                )}
+              </div>
+            </div>
 
             {proof.proof_child_type === 'Extract' && proof.extract_pages && (
               <div className="text-xs text-slate-600 mb-2">Pages: <span className="font-mono font-semibold">{proof.extract_pages}</span></div>
@@ -243,11 +254,6 @@ export default function ProofTile({
               </div>
             )}
 
-            {proof.proof_category === 'Exhibit' ? (
-              <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
-            ) : (
-              <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
-            )}
           </div>
 
           <div onClick={(e) => e.stopPropagation()}>
