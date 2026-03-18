@@ -19,18 +19,23 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
     queryFn: () => base44.entities.Proof.list(),
     enabled: !!proof?.parent_proof_id,
   });
+
   const { url } = useResolvedProofAsset(proof);
   const sizing = SIZE_MAP[size] || SIZE_MAP.md;
+
   const parentProof = useMemo(
     () => proofs.find((item) => item.id === proof?.parent_proof_id) || null,
     [proof?.parent_proof_id, proofs]
   );
+
   const effectiveStatus = proof?.status === 'Admitted' || proof?.status === 'Demonstrative'
     ? proof.status
     : (parentProof?.status === 'Admitted' || parentProof?.status === 'Demonstrative' ? parentProof.status : null);
 
   const statusIcon = effectiveStatus ? (
-    <CheckCircle2 className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`} />
+    <CheckCircle2
+      className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`}
+    />
   ) : null;
 
   if (groupLabel) {
@@ -85,7 +90,13 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
     <div className="relative">
       <div className={`${sizing.outer} overflow-hidden rounded-lg border border-slate-700 bg-white`}>
         <Document file={url} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}>
-          <Page pageNumber={1} width={sizing.page} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />} />
+          <Page
+            pageNumber={1}
+            width={sizing.page}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+            loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}
+          />
         </Document>
       </div>
       {statusIcon}
