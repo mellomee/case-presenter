@@ -1,27 +1,28 @@
 import React from 'react';
-import { Monitor, MonitorOff, Send, SendHorizontal } from 'lucide-react';
+import { MonitorOff, SendHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function JuryPublishBar({ proof, juryState, onUpdate }) {
+export default function JuryPublishBar({ proof, parentProof = null, juryState, onUpdate }) {
   if (!proof) return null;
 
+  const sourceProof = parentProof || proof;
   const isPublished = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
   const isOtherPublished = juryState?.published_proof_id && juryState.published_proof_id !== proof.id && !juryState?.is_blank;
 
-  const publishable = ['Admitted', 'Demonstrative'].includes(proof.status) || proof.proof_category === 'Deposition';
+  const publishable = ['Admitted', 'Demonstrative'].includes(sourceProof.status) || sourceProof.proof_category === 'Deposition';
 
   const exhibitNum =
-    proof.admitted_exhibit_num ||
-    proof.demonstrative_exhibit_num ||
-    proof.joint_exhibit_num ||
+    sourceProof.admitted_exhibit_num ||
+    sourceProof.demonstrative_exhibit_num ||
+    sourceProof.joint_exhibit_num ||
     '';
 
   const label =
-    proof.status === 'Admitted'
+    sourceProof.status === 'Admitted'
       ? `Exhibit ${exhibitNum}`
-      : proof.status === 'Demonstrative'
+      : sourceProof.status === 'Demonstrative'
       ? `Demonstrative ${exhibitNum}`
-      : proof.formal_name || proof.name;
+      : sourceProof.formal_name || sourceProof.name;
 
   const handlePublish = () => {
     onUpdate({
@@ -36,10 +37,6 @@ export default function JuryPublishBar({ proof, juryState, onUpdate }) {
 
   const handleBlank = () => {
     onUpdate({ is_blank: true });
-  };
-
-  const handleUnblank = () => {
-    onUpdate({ is_blank: false });
   };
 
   return (
@@ -63,16 +60,6 @@ export default function JuryPublishBar({ proof, juryState, onUpdate }) {
         <>
           {isOtherPublished && (
             <span className="text-xs text-amber-400 flex-1 truncate">Other proof is live</span>
-          )}
-          {juryState?.is_blank && juryState?.published_proof_id === proof.id && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleUnblank}
-              className="gap-1.5 h-7 text-xs border-green-700 text-green-400 hover:bg-green-950/30"
-            >
-              <Monitor className="w-3 h-3" /> Restore to Jury
-            </Button>
           )}
           {publishable ? (
             <Button

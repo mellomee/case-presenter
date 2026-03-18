@@ -53,6 +53,7 @@ function QuestionNode({ node, level = 0, proofsById, checkedMap, onToggle, onSel
 
 export default function AttorneyHubQuestionList({
   title,
+  selectedProof = null,
   parentItemId,
   questionItems = [],
   proofsById = {},
@@ -65,6 +66,10 @@ export default function AttorneyHubQuestionList({
   const [checkedMap, setCheckedMap] = useState({});
 
   const tree = useMemo(() => buildItemTree(questionItems, parentItemId || null), [questionItems, parentItemId]);
+  const parentPreviewProof = useMemo(
+    () => (selectedProof?.parent_proof_id ? proofsById[selectedProof.parent_proof_id] || null : null),
+    [selectedProof, proofsById]
+  );
 
   return (
     <div className="h-full rounded-2xl border border-slate-700 bg-slate-900/50 flex flex-col overflow-hidden">
@@ -75,19 +80,29 @@ export default function AttorneyHubQuestionList({
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {admissionSource && (
-          <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-3">
+          <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-3 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <ScrollText className="w-4 h-4 text-emerald-300" />
-                <div>
-                  <p className="text-sm font-semibold text-white">Admission Block</p>
-                  <p className="text-xs text-slate-400">Always appears first for proof items.</p>
-                </div>
+                <p className="text-sm font-semibold text-white">Admission Script</p>
               </div>
               <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-xs" onClick={() => setShowSteps(true)}>
-                View Steps
+                View Script
               </Button>
             </div>
+            {parentPreviewProof && (
+              <button
+                type="button"
+                onClick={() => onSelectInlineProof?.(parentPreviewProof)}
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-700 bg-slate-900/70 p-2 text-left hover:border-blue-500"
+              >
+                <ProofThumbPreview proof={parentPreviewProof} size="sm" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Parent Proof</p>
+                  <p className="mt-1 truncate text-xs font-medium text-white">{getProofDisplayName(parentPreviewProof)}</p>
+                </div>
+              </button>
+            )}
           </div>
         )}
 

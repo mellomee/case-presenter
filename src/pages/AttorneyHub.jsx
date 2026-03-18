@@ -432,6 +432,7 @@ export default function AttorneyHub() {
             {(selectedProof || selectedGroup) ? (
               <AttorneyHubQuestionList
                 title={selectedProof ? getProofDisplayName(selectedProof) : selectedGroup?.label}
+                selectedProof={selectedProof}
                 parentItemId={questionParentId}
                 questionItems={questionItems}
                 proofsById={proofsById}

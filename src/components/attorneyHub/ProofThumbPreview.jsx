@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { CheckCircle2, FileText, Film } from 'lucide-react';
+import { CheckCircle2, FileText, Film, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
@@ -36,7 +36,11 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
     <CheckCircle2
       className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`}
     />
-  ) : null;
+  ) : (
+    <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/70">
+      <X className="h-3 w-3 text-slate-300" />
+    </div>
+  );
 
   if (groupLabel) {
     return (
