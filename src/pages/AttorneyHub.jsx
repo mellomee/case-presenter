@@ -18,6 +18,12 @@ function proofMatchesParty(proof, partyId) {
   return attachedPartyIds.includes(partyId) || proof?.party_id === partyId;
 }
 
+function getStoredHubSetting(key, fallback) {
+  if (typeof window === 'undefined') return fallback;
+  const value = window.localStorage.getItem(key);
+  return value ?? fallback;
+}
+
 function ToolbarSelect({ value, onChange, children }) {
   return (
     <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
@@ -29,15 +35,15 @@ function ToolbarSelect({ value, onChange, children }) {
 export default function AttorneyHub() {
   const queryClient = useQueryClient();
   const { juryState, update } = useJurySync('attorney');
-  const [selectedExamType, setSelectedExamType] = useState('Direct');
-  const [proofTab, setProofTab] = useState('Exhibits');
-  const [exhibitPartyFilter, setExhibitPartyFilter] = useState('all');
-  const [depositionPartyFilter, setDepositionPartyFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sideFilter, setSideFilter] = useState('all');
-  const [orderMode, setOrderMode] = useState('joint');
-  const [viewMode, setViewMode] = useState('grid');
+  const [selectedExamType, setSelectedExamType] = useState(() => getStoredHubSetting('attorney-hub-exam-type', 'Direct'));
+  const [proofTab, setProofTab] = useState(() => getStoredHubSetting('attorney-hub-tab', 'Exam'));
+  const [selectedExamPartyId, setSelectedExamPartyId] = useState(() => getStoredHubSetting('attorney-hub-exam-party', ''));
+  const [depositionPartyFilter, setDepositionPartyFilter] = useState(() => getStoredHubSetting('attorney-hub-deposition-party', 'all'));
+  const [statusFilter, setStatusFilter] = useState(() => getStoredHubSetting('attorney-hub-status', 'all'));
+  const [sideFilter, setSideFilter] = useState(() => getStoredHubSetting('attorney-hub-side', 'all'));
+  const [viewMode, setViewMode] = useState(() => getStoredHubSetting('attorney-hub-view-mode', 'list'));
   const [selectedKey, setSelectedKey] = useState('');
+  const [selectedPreviewProof, setSelectedPreviewProof] = useState(null);
   const [localDecisionMap, setLocalDecisionMap] = useState({});
   const { widths, startDrag } = useStoredSplitWidths('attorney-hub-split-widths', {
     left: 430,
@@ -52,11 +58,13 @@ export default function AttorneyHub() {
   const { data: admissionTemplates = [] } = useQuery({ queryKey: ['hubAdmissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list() });
   const { data: admissionBlocks = [] } = useQuery({ queryKey: ['hubAdmissionBlocks'], queryFn: () => base44.entities.AdmissionBlock.list() });
 
-  const activePartyId = proofTab === 'Depositions'
-    ? (depositionPartyFilter === 'all' ? '' : depositionPartyFilter)
-    : (exhibitPartyFilter === 'all' ? '' : exhibitPartyFilter);
+  const activePartyId = proofTab === 'Exam'
+    ? selectedExamPartyId
+    : proofTab === 'Depositions'
+      ? (depositionPartyFilter === 'all' ? '' : depositionPartyFilter)
+      : '';
   const selectedParty = parties.find((party) => party.id === activePartyId) || null;
-  const currentExam = exams.find((exam) => exam.party_id === activePartyId && exam.exam_type === selectedExamType) || null;
+  const currentExam = exams.find((exam) => exam.party_id === selectedExamPartyId && exam.exam_type === selectedExamType) || null;
   const currentExamItems = useMemo(() => examItems.filter((item) => item.exam_id === currentExam?.id), [examItems, currentExam]);
   const rootProofItems = useMemo(() => currentExamItems.filter((item) => item.item_type === 'proof' && !item.parent_item_id), [currentExamItems]);
   const rootGroups = useMemo(() => currentExamItems.filter((item) => item.item_type === 'group' && !item.parent_item_id), [currentExamItems]);
@@ -97,7 +105,14 @@ export default function AttorneyHub() {
       return parentDepositions.filter((proof) => proofMatchesParty(proof, depositionPartyFilter));
     }
 
-    let next = parentExhibits.filter((proof) => proofMatchesParty(proof, exhibitPartyFilter));
+    if (proofTab === 'Exam') {
+      if (!currentExam) return [];
+      return rootProofItems
+        .map((item) => proofsById[item.linked_proof_id])
+        .filter(Boolean);
+    }
+
+    let next = [...parentExhibits];
 
     if (statusFilter !== 'all') {
       next = next.filter((proof) => {
@@ -112,45 +127,22 @@ export default function AttorneyHub() {
       next = next.filter((proof) => getProofSide(proof) === sideFilter);
     }
 
-    if (orderMode === 'exam') {
-      if (!currentExam) return [];
-      next = next.filter((proof) => rootProofItems.some((item) => item.linked_proof_id === proof.id));
-      next.sort((a, b) => {
-        const aOrder = rootProofOrderMap[a.id];
-        const bOrder = rootProofOrderMap[b.id];
-        if (aOrder === undefined && bOrder === undefined) return getJointLabel(a).localeCompare(getJointLabel(b), undefined, { numeric: true });
-        if (aOrder === undefined) return 1;
-        if (bOrder === undefined) return -1;
-        return aOrder - bOrder;
-      });
-      return next;
-    }
-
     return sortByJointExhibit(next);
-  }, [currentExam, depositionPartyFilter, exhibitPartyFilter, orderMode, parentDepositions, parentExhibits, proofTab, rootProofItems, rootProofOrderMap, sideFilter, statusFilter]);
+  }, [currentExam, depositionPartyFilter, parentDepositions, parentExhibits, proofTab, proofsById, rootProofItems, sideFilter, statusFilter]);
 
   const displayEntries = useMemo(() => {
     const proofEntries = filteredProofs.map((proof) => ({ kind: 'proof', id: proof.id }));
-    if (proofTab === 'Depositions') return proofEntries;
-    if (orderMode !== 'exam' || !currentExam) return proofEntries;
-
-    const visibleProofIds = new Set(filteredProofs.map((proof) => proof.id));
+    if (proofTab === 'Depositions' || proofTab === 'Exhibits') return proofEntries;
 
     return currentExamItems
       .filter((item) => !item.parent_item_id && item.item_type !== 'question')
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
       .flatMap((item) => {
-        if (item.item_type === 'group') {
-          return statusFilter === 'all' && sideFilter === 'all' ? [{ kind: 'group', id: item.id }] : [];
-        }
-
-        if (item.item_type === 'proof' && visibleProofIds.has(item.linked_proof_id)) {
-          return [{ kind: 'proof', id: item.linked_proof_id }];
-        }
-
+        if (item.item_type === 'group') return [{ kind: 'group', id: item.id }];
+        if (item.item_type === 'proof') return [{ kind: 'proof', id: item.linked_proof_id }];
         return [];
       });
-  }, [currentExam, currentExamItems, filteredProofs, orderMode, proofTab, sideFilter, statusFilter]);
+  }, [currentExamItems, filteredProofs, proofTab]);
 
   useEffect(() => {
     if (!displayEntries.length) {
@@ -160,6 +152,26 @@ export default function AttorneyHub() {
     const stillExists = displayEntries.some((entry) => `${entry.kind}:${entry.id}` === selectedKey);
     if (!stillExists) setSelectedKey(`${displayEntries[0].kind}:${displayEntries[0].id}`);
   }, [displayEntries, selectedKey]);
+
+  useEffect(() => {
+    setSelectedPreviewProof(null);
+  }, [selectedKey]);
+
+  useEffect(() => {
+    if (!selectedExamPartyId && parties[0]) {
+      setSelectedExamPartyId(parties[0].id);
+    }
+  }, [parties, selectedExamPartyId]);
+
+  useEffect(() => {
+    window.localStorage.setItem('attorney-hub-tab', proofTab);
+    window.localStorage.setItem('attorney-hub-exam-type', selectedExamType);
+    window.localStorage.setItem('attorney-hub-exam-party', selectedExamPartyId || '');
+    window.localStorage.setItem('attorney-hub-deposition-party', depositionPartyFilter);
+    window.localStorage.setItem('attorney-hub-status', statusFilter);
+    window.localStorage.setItem('attorney-hub-side', sideFilter);
+    window.localStorage.setItem('attorney-hub-view-mode', viewMode);
+  }, [proofTab, selectedExamType, selectedExamPartyId, depositionPartyFilter, statusFilter, sideFilter, viewMode]);
 
   const [selectedKind, selectedId] = selectedKey.split(':');
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
@@ -186,19 +198,14 @@ export default function AttorneyHub() {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 lg:p-6">
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
-        <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center gap-2">
-          <ToolbarSelect value={selectedExamType} onChange={setSelectedExamType}>
-            <option value="Direct">Direct</option>
-            <option value="Cross">Cross</option>
-          </ToolbarSelect>
-        </div>
+        <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center gap-2" />
 
         <div className="min-h-[calc(100vh-10rem)] xl:flex xl:min-w-0">
           <div style={{ width: `${widths.left}px` }} className="border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 xl:min-w-[320px]">
             <div className="border-b border-slate-800 px-4 pt-4">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="inline-flex rounded-lg bg-slate-950 p-1 gap-1">
-                  {['Exhibits', 'Depositions'].map((tab) => (
+                  {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
                     <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
                       {tab}
                     </button>
@@ -223,26 +230,29 @@ export default function AttorneyHub() {
                   </button>
                 </div>
               </div>
-              {proofTab === 'Exhibits' ? (
+              {proofTab === 'Exam' ? (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <ToolbarSelect value={exhibitPartyFilter} onChange={setExhibitPartyFilter}>
-                    <option value="all">All Parties</option>
+                  <ToolbarSelect value={selectedExamPartyId} onChange={setSelectedExamPartyId}>
+                    <option value="">Select party</option>
                     {parties.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
                   </ToolbarSelect>
-                  <ToolbarSelect value={orderMode} onChange={setOrderMode}>
-                    <option value="joint">Joint List</option>
-                    <option value="exam">Exam Order</option>
+                  <ToolbarSelect value={selectedExamType} onChange={setSelectedExamType}>
+                    <option value="Direct">Direct</option>
+                    <option value="Cross">Cross</option>
+                  </ToolbarSelect>
+                </div>
+              ) : proofTab === 'Exhibits' ? (
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <ToolbarSelect value={statusFilter} onChange={setStatusFilter}>
+                    <option value="all">All Joint/Admitted/Demo</option>
+                    <option value="joint">Joint Only</option>
+                    <option value="admitted">Admitted Exhibits</option>
+                    <option value="demonstrative">Demonstratives</option>
                   </ToolbarSelect>
                   <ToolbarSelect value={sideFilter} onChange={setSideFilter}>
                     <option value="all">All Sides</option>
                     <option value="Plaintiff">Plaintiff</option>
                     <option value="Defense">Defense</option>
-                  </ToolbarSelect>
-                  <ToolbarSelect value={statusFilter} onChange={setStatusFilter}>
-                    <option value="all">All Status</option>
-                    <option value="joint">Joint Only</option>
-                    <option value="admitted">Admitted Exhibits</option>
-                    <option value="demonstrative">Demonstratives</option>
                   </ToolbarSelect>
                 </div>
               ) : (
@@ -257,7 +267,7 @@ export default function AttorneyHub() {
 
             <div className="flex-1 min-h-0 overflow-y-auto p-4">
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
-                  {displayEntries.map((entry) => {
+                {displayEntries.map((entry) => {
                     const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
                     if (entry.kind === 'group') {
                       const group = rootGroups.find((item) => item.id === entry.id);
@@ -274,6 +284,7 @@ export default function AttorneyHub() {
                                   <p className="text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
                                 </div>
                                 {viewMode === 'list' && <p className="mt-1 text-xs text-slate-400">Question Group</p>}
+                               {viewMode === 'grid' && <p className="mt-2 text-[11px] text-slate-400">No Proof</p>}
                               </div>
                             </div>
                             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
@@ -301,7 +312,7 @@ export default function AttorneyHub() {
                               </div>
                               <div className={`mt-2 flex items-center ${viewMode === 'grid' ? 'justify-between' : 'justify-start gap-3'} text-xs`}>
                                 <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
-                                <span className="text-slate-500">{getProofTypeLabel(proof)}</span>
+                                <span className="text-slate-500">{proof.status === 'Admitted' ? (proof.admitted_exhibit_num || '—') : proof.status === 'Demonstrative' ? (proof.demonstrative_exhibit_num || '—') : getProofTypeLabel(proof)}</span>
                               </div>
                               <p className="mt-1 text-xs text-slate-400">{proof.status}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
                               {proofTab === 'Depositions' && children.length > 0 && (
@@ -341,7 +352,7 @@ export default function AttorneyHub() {
                 admissionSource={selectedProof ? admissionSource : null}
                 admissionTemplates={admissionTemplates}
                 exhibitNum={selectedProof?.joint_exhibit_num || selectedProof?.admitted_exhibit_num || ''}
-                onSelectInlineProof={(proof) => setSelectedKey(`proof:${proof.id}`)}
+                onSelectInlineProof={(proof) => setSelectedPreviewProof(proof)}
               />
             ) : (
               <div className="h-full rounded-2xl border border-dashed border-slate-800 bg-slate-950/60 flex items-center justify-center text-center p-8">
@@ -357,14 +368,14 @@ export default function AttorneyHub() {
           <ColumnResizeHandle onMouseDown={startDrag.right} />
 
           <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
-            {selectedProof ? (
+            {(selectedPreviewProof || selectedProof) ? (
               <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
                 <ProofPreviewPane
-                  proof={selectedProof}
+                  proof={selectedPreviewProof || selectedProof}
                   juryState={juryState}
                   onUpdateJury={update}
                   onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
-                  onClose={() => setSelectedKey('')}
+                  onClose={() => setSelectedPreviewProof(null)}
                 />
               </div>
             ) : selectedGroup ? (
