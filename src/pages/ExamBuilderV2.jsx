@@ -73,20 +73,10 @@ export default function ExamBuilderV2() {
     : selectedRootProof?.status === 'Demonstrative'
       ? { label: `Admitted as Demonstrative · #${selectedRootProof.demonstrative_exhibit_num || selectedRootProof.joint_exhibit_num || '—'}`, color: 'text-blue-400' }
       : null;
-  const selectableProofs = useMemo(() => {
-    const allExhibits = proofs.filter((proof) => proof.proof_category === 'Exhibit');
-    const allDepositions = proofs.filter((proof) => proof.proof_category === 'Deposition');
-    const exhibitsTopLevel = allExhibits.filter((proof) => !proof.parent_proof_id);
-    const promotedExtracts = allExhibits.filter(
-      (proof) => proof.proof_child_type === 'Extract' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
-    );
-
-    return [
-      ...exhibitsTopLevel.filter((proof) => ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) && proofMatchesParty(proof, selectedPartyId)),
-      ...promotedExtracts.filter((proof) => proofMatchesParty(proof, selectedPartyId)),
-      ...allDepositions.filter((proof) => !proof.parent_proof_id && proofMatchesParty(proof, selectedPartyId)),
-    ];
-  }, [proofs, selectedPartyId]);
+  const selectableProofs = useMemo(
+    () => proofs.filter((proof) => ['Extract', 'Video', 'Image'].includes(proof.proof_child_type || proof.file_type)),
+    [proofs]
+  );
 
   useEffect(() => {
     if (!selectedPartyId && parties[0]) setSelectedPartyId(parties[0].id);

@@ -172,10 +172,6 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
       return;
     }
 
-    if (partyIds.length === 0) {
-      setError('At least one party is required.');
-      return;
-    }
 
     setError('');
     setIsImporting(true);
@@ -206,8 +202,8 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           draft_exhibit_num: '',
           proof_type_category_id: proofTypeCategoryId,
           category_id: categoryId,
-          party_id: partyIds[0],
-          party_ids: { ids: partyIds },
+          party_id: partyIds[0] || '',
+          party_ids: partyIds.length > 0 ? { ids: partyIds } : null,
           file_source: 'dropbox',
           file_url: '',
           video_url: '',
@@ -229,8 +225,8 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
             formal_name: baseName,
             proof_type_category_id: proofTypeCategoryId,
             category_id: categoryId,
-            party_id: partyIds[0],
-            party_ids: { ids: partyIds },
+            party_id: partyIds[0] || '',
+            party_ids: partyIds.length > 0 ? { ids: partyIds } : null,
             status: 'Draft',
           };
         }
@@ -444,11 +440,10 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
               <PartyMultiSelectField
                 label="Assign to Parties"
-                required
                 parties={parties}
                 value={partyIds}
                 onChange={setPartyIds}
-                helperText="Required for imported proofs. The first selected party will be the primary party."
+                helperText="Optional. If selected, the first party will be the primary party."
               />
             </div>
 

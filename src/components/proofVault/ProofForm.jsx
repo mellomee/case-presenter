@@ -243,10 +243,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
     const selectedPartyIds = (formData.party_ids || []).filter(Boolean);
 
-    if (selectedPartyIds.length === 0) {
-      alert('At least one party is required.');
-      return;
-    }
 
     const {
       id,
@@ -272,7 +268,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       description: formData.description?.trim() || '',
       video_url: sourceType === 'url' ? formData.video_url.trim() : '',
       party_id: selectedPartyIds[0] || '',
-      party_ids: { ids: selectedPartyIds },
+      party_ids: selectedPartyIds.length > 0 ? { ids: selectedPartyIds } : null,
     };
 
     if (sourceType === 'dropbox') {
@@ -468,11 +464,10 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
           <PartyMultiSelectField
             label="Assign to Parties"
-            required
             parties={parties}
             value={formData.party_ids || []}
             onChange={(partyIds) => setFormData({ ...formData, party_ids: partyIds, party_id: partyIds[0] || '' })}
-            helperText="Select one or more parties for this proof."
+            helperText="Optional. If selected, the first party will be the primary party."
           />
 
           {proofCategory === 'Exhibit' && (
