@@ -3,7 +3,7 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Eye, GripVertical, Plus, ScrollText, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, Plus, ScrollText, Trash2 } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
@@ -99,13 +99,70 @@ export default function ExamBuilderV2() {
   };
 
   const addProofToExam = async (proof) => {
-    await createRootItem({ item_type: 'proof', linked_proof_id: proof.id, label: getProofDisplayName(proof), step_overrides: {} });
+    const exam = await ensureExam();
+    const nextOrder = rootItems.length;
+    const rootProofItem = await base44.entities.ExamItemV2.create({
+      exam_id: exam.id,
+      item_type: 'proof',
+      linked_proof_id: proof.id,
+      label: getProofDisplayName(proof),
+      step_overrides: {},
+      sort_order: nextOrder,
+    });
+
+    await base44.entities.ExamItemV2.create({
+      exam_id: exam.id,
+      item_type: 'admission_script',
+      parent_item_id: rootProofItem.id,
+      label: 'Exhibit Admission Script',
+      step_overrides: {},
+      sort_order: 0,
+    });
+
+    invalidate();
   };
 
   const addGroupToExam = async (label) => {
     if (!label) return;
     await createRootItem({ item_type: 'group', label: truncateGroupLabel(label) });
   };
+
+  const admissionScriptItem = useMemo(
+    () => currentItems.find((item) => item.parent_item_id === selectedRoot?.id && item.item_type === 'admission_script') || null,
+    [currentItems, selectedRoot?.id]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function ensureAdmissionScript() {
+      if (!currentExam || !selectedRootProof || !selectedRoot || admissionScriptItem) return;
+
+      const siblings = currentItems
+        .filter((item) => item.parent_item_id === selectedRoot.id)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+      await Promise.all(
+        siblings.map((item, index) => base44.entities.ExamItemV2.update(item.id, { sort_order: index + 1 }))
+      );
+
+      await base44.entities.ExamItemV2.create({
+        exam_id: currentExam.id,
+        item_type: 'admission_script',
+        parent_item_id: selectedRoot.id,
+        label: 'Exhibit Admission Script',
+        step_overrides: {},
+        sort_order: 0,
+      });
+
+      if (!cancelled) invalidate();
+    }
+
+    ensureAdmissionScript();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentExam?.id, selectedRoot?.id, selectedRootProof?.id, admissionScriptItem?.id, currentItems]);
 
   const saveQuestion = async (form) => {
     if (!questionDialog.parentId || !currentExam) return;
@@ -156,14 +213,39 @@ export default function ExamBuilderV2() {
 
     const sourceParentId = decodeParent(source.droppableId);
     const destParentId = decodeParent(destination.droppableId);
-    const sourceSiblings = currentItems.filter((item) => item.item_type === 'question' && item.parent_item_id === sourceParentId).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-    const destSiblings = sourceParentId === destParentId ? sourceSiblings : currentItems.filter((item) => item.item_type === 'question' && item.parent_item_id === destParentId).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const isChildItem = (item) => item.item_type === 'question' || item.item_type === 'admission_script';
     const moved = currentItems.find((item) => item.id === draggableId);
+
+    if (!moved) return;
+    if (moved.item_type === 'admission_script' && destParentId !== selectedRoot.id) return;
+
+    const sourceSiblings = currentItems.filter((item) => isChildItem(item) && item.parent_item_id === sourceParentId).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const destSiblings = sourceParentId === destParentId
+      ? sourceSiblings
+      : currentItems.filter((item) => isChildItem(item) && item.parent_item_id === destParentId).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
     const nextSource = [...sourceSiblings];
     nextSource.splice(source.index, 1);
 
     const nextDest = sourceParentId === destParentId ? nextSource : [...destSiblings];
     nextDest.splice(destination.index, 0, moved);
+
+    if (destParentId === selectedRoot?.id && selectedRootProof) {
+      const firstRestrictedIndex = nextDest.findIndex((item) => {
+        if (item.item_type !== 'question') return false;
+        const attachedIds = parseIdsField(item.attached_proof_ids);
+        return attachedIds.some((proofId) => {
+          const attachedProof = proofsById[proofId];
+          return attachedProof?.parent_proof_id === selectedRootProof.id && ['ExtractClip', 'VideoClip'].includes(attachedProof?.proof_child_type);
+        });
+      });
+
+      const scriptIndex = nextDest.findIndex((item) => item.item_type === 'admission_script');
+      if (scriptIndex >= 0 && firstRestrictedIndex >= 0 && scriptIndex > firstRestrictedIndex) {
+        const [scriptItem] = nextDest.splice(scriptIndex, 1);
+        nextDest.splice(firstRestrictedIndex, 0, scriptItem);
+      }
+    }
 
     const updates = [
       ...nextSource.map((item, index) => ({ id: item.id, patch: { sort_order: index, parent_item_id: sourceParentId } })),
@@ -267,45 +349,19 @@ export default function ExamBuilderV2() {
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Question Builder</p>
                       <p className="mt-2 text-lg font-semibold text-white">{selectedRootProof ? getProofDisplayName(selectedRootProof) : selectedRoot.label}</p>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {selectedRootProof && (
-                        <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setOverridesOpen(true)}>
-                          <ScrollText className="w-4 h-4 mr-2" /> Add Exhibit Admission Block
-                        </Button>
-                      )}
-                      <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setQuestionDialog({ open: true, parentId: selectedRoot.id, initialValue: null, title: 'Add Question' })}>
-                        <Plus className="w-4 h-4 mr-2" /> Add Question
-                      </Button>
-                    </div>
+                    <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setQuestionDialog({ open: true, parentId: selectedRoot.id, initialValue: null, title: 'Add Question' })}>
+                      <Plus className="w-4 h-4 mr-2" /> Add Question
+                    </Button>
                   </div>
-
-                  {selectedRootProof && (
-                    <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-                      <div className="flex items-start justify-between gap-3 flex-wrap">
-                        <div>
-                          <p className="text-sm font-semibold text-white">Exhibit Admission Script</p>
-                          {admissionStatusMeta ? (
-                            <div className={`mt-2 flex items-center gap-2 text-sm font-medium ${admissionStatusMeta.color}`}>
-                              <CheckCircle2 className="w-4 h-4" />
-                              <span>{admissionStatusMeta.label}</span>
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-sm text-slate-400">Joint exhibit script comes first and stays ahead of all attached-proof questions.</p>
-                          )}
-                        </div>
-                        <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setOverridesOpen(true)}>
-                          <ScrollText className="w-4 h-4 mr-2" /> Edit Script
-                        </Button>
-                      </div>
-                    </div>
-                  )}
 
                   <QuestionTreeEditor
                     parentId={selectedRoot.id}
                     rootParentId={selectedRoot.id}
-                    items={currentItems.filter((item) => item.item_type === 'question')}
+                    items={currentItems.filter((item) => item.item_type === 'question' || item.item_type === 'admission_script')}
                     proofsById={proofsById}
+                    admissionStatusMeta={admissionStatusMeta}
                     onEdit={(item) => setQuestionDialog({ open: true, parentId: item.parent_item_id, initialValue: { ...item, attached_proof_ids: parseIdsField(item.attached_proof_ids) }, title: 'Edit Question' })}
+                    onEditScript={() => setOverridesOpen(true)}
                     onAddFollowup={(item) => setQuestionDialog({ open: true, parentId: item.id, initialValue: null, title: 'Add Follow-up' })}
                     onDelete={deleteItem}
                     onSelectAttachment={(proof) => setPreviewDialogProof(proof)}

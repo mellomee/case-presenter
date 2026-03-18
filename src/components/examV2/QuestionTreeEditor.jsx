@@ -1,11 +1,11 @@
 import React from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
-import { Eye, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle2, Eye, GripVertical, Pencil, Plus, ScrollText, Trash2 } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
 
-function Branch({ parentId, rootParentId, items, proofsById, onEdit, onAddFollowup, onDelete, onSelectAttachment }) {
+function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta, onEdit, onEditScript, onAddFollowup, onDelete, onSelectAttachment }) {
   const children = items
     .filter((item) => (item.parent_item_id || null) === parentId)
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -16,6 +16,36 @@ function Branch({ parentId, rootParentId, items, proofsById, onEdit, onAddFollow
       {(provided) => (
         <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
           {children.map((item, index) => {
+            if (item.item_type === 'admission_script') {
+              return (
+                <Draggable key={item.id} draggableId={item.id} index={index}>
+                  {(dragProvided) => (
+                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className="rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
+                      <div className="flex items-start gap-3">
+                        <button type="button" {...dragProvided.dragHandleProps} className="mt-0.5 text-slate-500 hover:text-white">
+                          <GripVertical className="w-4 h-4" />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white">{item.label || 'Exhibit Admission Script'}</p>
+                          {admissionStatusMeta ? (
+                            <div className={`mt-2 flex items-center gap-2 text-sm font-medium ${admissionStatusMeta.color}`}>
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>{admissionStatusMeta.label}</span>
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-sm text-slate-400">This script must stay before any extract-clip or video-clip proof questions.</p>
+                          )}
+                        </div>
+                        <Button size="sm" variant="outline" className="border-slate-700 text-slate-200" onClick={onEditScript}>
+                          <ScrollText className="w-3.5 h-3.5 mr-1.5" /> Edit Script
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Draggable>
+              );
+            }
+
             const attachedProofs = parseIdsField(item.attached_proof_ids).map((id) => proofsById[id]).filter(Boolean);
             return (
               <Draggable key={item.id} draggableId={item.id} index={index}>
@@ -62,7 +92,9 @@ function Branch({ parentId, rootParentId, items, proofsById, onEdit, onAddFollow
                         rootParentId={rootParentId}
                         items={items}
                         proofsById={proofsById}
+                        admissionStatusMeta={admissionStatusMeta}
                         onEdit={onEdit}
+                        onEditScript={onEditScript}
                         onAddFollowup={onAddFollowup}
                         onDelete={onDelete}
                         onSelectAttachment={onSelectAttachment}
