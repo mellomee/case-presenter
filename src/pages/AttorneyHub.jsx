@@ -214,7 +214,7 @@ export default function AttorneyHub() {
                           <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
                           <span className="text-slate-500">{getProofTypeLabel(proof)}</span>
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-white leading-snug">{getProofDisplayName(proof)}</p>
+                        <p className="mt-2 text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
                         <p className="mt-1 text-xs text-slate-400">{proof.status}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
                         {proofTab === 'Depositions' && children.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">

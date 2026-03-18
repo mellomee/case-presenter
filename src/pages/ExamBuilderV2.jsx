@@ -3,7 +3,7 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Eye, GripVertical, Plus, ScrollText, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, Pencil, Plus, ScrollText, Trash2 } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
@@ -368,14 +368,21 @@ export default function ExamBuilderV2() {
                   <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Question Builder</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{selectedRootProof ? getProofDisplayName(selectedRootProof) : selectedRoot.label}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <p className="text-lg font-semibold text-white">{selectedRootProof ? getProofDisplayName(selectedRootProof) : selectedRoot.label}</p>
+                        {selectedRoot?.item_type === 'group' && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-slate-400 hover:text-white"
+                            onClick={() => setGroupDialog({ open: true, initialItem: selectedRoot })}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {selectedRoot?.item_type === 'group' && (
-                        <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setGroupDialog({ open: true, initialItem: selectedRoot })}>
-                          Edit Group
-                        </Button>
-                      )}
                       <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setQuestionDialog({ open: true, parentId: selectedRoot.id, initialValue: null, title: 'Add Question' })}>
                         <Plus className="w-4 h-4 mr-2" /> Add Question
                       </Button>
