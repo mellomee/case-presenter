@@ -196,12 +196,11 @@ export default function ExamBuilderV2() {
                       return (
                         <Draggable key={item.id} draggableId={item.id} index={index}>
                           {(dragProvided) => (
-                            <button
+                            <div
                               ref={dragProvided.innerRef}
                               {...dragProvided.draggableProps}
-                              type="button"
                               onClick={() => setSelectedRootId(item.id)}
-                              className={`w-full rounded-2xl border p-3 text-left ${active ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70'}`}
+                              className={`w-full rounded-2xl border p-3 text-left cursor-pointer ${active ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70'}`}
                             >
                               <div className="flex items-start gap-3">
                                 <button type="button" {...dragProvided.dragHandleProps} className="mt-1 text-slate-500 hover:text-white">
@@ -219,7 +218,7 @@ export default function ExamBuilderV2() {
                                 <span className="text-green-400 font-semibold">{proof ? getJointLabel(proof) : 'Group'}</span>
                                 <span className="text-slate-500">{proof ? getProofTypeLabel(proof) : 'No Proof'}</span>
                               </div>
-                            </button>
+                            </div>
                           )}
                         </Draggable>
                       );

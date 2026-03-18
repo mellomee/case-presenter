@@ -184,13 +184,13 @@ export default function AttorneyHub() {
                     if (entry.kind === 'group') {
                       const group = rootGroups.find((item) => item.id === entry.id);
                       return (
-                        <button key={entry.id} type="button" onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 text-left ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                        <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
                           <div className="flex items-start justify-between gap-3">
                             <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size="md" />
                             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
                           </div>
                           <p className="mt-3 text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
-                        </button>
+                        </div>
                       );
                     }
 
@@ -200,7 +200,7 @@ export default function AttorneyHub() {
                     const isAdmitted = proof.status === 'Admitted';
 
                     return (
-                      <button key={proof.id} type="button" onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                      <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
                         <div className="flex items-start justify-between gap-2">
                           <ProofThumbPreview proof={proof} size="md" />
                           <div className="flex flex-col items-end gap-2">
@@ -225,7 +225,7 @@ export default function AttorneyHub() {
                             ))}
                           </div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
