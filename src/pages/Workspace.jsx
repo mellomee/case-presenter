@@ -186,4 +186,5 @@ export default function Workspace() {
         </div>
       </div>
     </div>
+  );
 }
