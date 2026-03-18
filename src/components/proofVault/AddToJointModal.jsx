@@ -12,10 +12,16 @@ export default function AddToJointModal({ open, onClose, proof }) {
   const [jointExhibitNum, setJointExhibitNum] = useState('');
   const [jointBy, setJointBy] = useState('');
   const [formalName, setFormalName] = useState('');
+  const [selectedPartyIds, setSelectedPartyIds] = useState([]);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
+  });
+
+  const { data: parties = [] } = useQuery({
+    queryKey: ['jointModalParties'],
+    queryFn: () => base44.entities.Party.list(),
   });
 
   useEffect(() => {
@@ -23,6 +29,12 @@ export default function AddToJointModal({ open, onClose, proof }) {
     setJointExhibitNum('');
     setJointBy('');
     setFormalName(proof?.formal_name || '');
+    const initialPartyIds = Array.isArray(proof?.party_ids?.ids)
+      ? proof.party_ids.ids
+      : proof?.party_id
+        ? [proof.party_id]
+        : [];
+    setSelectedPartyIds(initialPartyIds);
   }, [open, proof]);
 
   const updateMutation = useMutation({
@@ -37,6 +49,8 @@ export default function AddToJointModal({ open, onClose, proof }) {
           joint_exhibit_num: data.joint_exhibit_num,
           joint_by: data.joint_by,
           joint_date: new Date().toISOString().split('T')[0],
+          party_ids: data.party_ids,
+          party_id: data.party_id,
         });
       }
     },
@@ -65,6 +79,10 @@ export default function AddToJointModal({ open, onClose, proof }) {
       alert('Please select who is joining this exhibit.');
       return;
     }
+    if (selectedPartyIds.length === 0) {
+      alert('Please attach at least one party before moving this proof to Joint.');
+      return;
+    }
 
     updateMutation.mutate({
       status: 'Joint',
@@ -72,6 +90,8 @@ export default function AddToJointModal({ open, onClose, proof }) {
       joint_exhibit_num: jointExhibitNum.trim(),
       joint_by: jointBy,
       joint_date: new Date().toISOString().split('T')[0],
+      party_ids: { ids: selectedPartyIds },
+      party_id: selectedPartyIds.length === 1 ? selectedPartyIds[0] : null,
     });
   };
 
@@ -124,13 +144,39 @@ export default function AddToJointModal({ open, onClose, proof }) {
             </label>
             <Select value={jointBy} onValueChange={setJointBy}>
               <SelectTrigger>
-                <SelectValue placeholder="Select party..." />
+                <SelectValue placeholder="Select side..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Plaintiff">Plaintiff</SelectItem>
                 <SelectItem value="Defense">Defense</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Attached Parties *
+            </label>
+            <div className="max-h-40 overflow-y-auto rounded-md border border-slate-200 p-3 space-y-2">
+              {parties.map((party) => (
+                <label key={party.id} className="flex items-center gap-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={selectedPartyIds.includes(party.id)}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        setSelectedPartyIds((prev) => [...prev, party.id]);
+                      } else {
+                        setSelectedPartyIds((prev) => prev.filter((id) => id !== party.id));
+                      }
+                    }}
+                  />
+                  <span>{party.first_name} {party.last_name}</span>
+                  <span className="text-xs text-slate-400">{party.side}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Joint exhibits must be attached to one or more parties.</p>
           </div>
 
           <div className="bg-amber-50 border border-amber-200 rounded-md p-3">

@@ -13,6 +13,12 @@ import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEdit
 import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
 import { collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
 
+function proofMatchesParty(proof, partyId) {
+  if (!partyId) return true;
+  const attachedPartyIds = parseIdsField(proof?.party_ids);
+  return attachedPartyIds.includes(partyId) || proof?.party_id === partyId;
+}
+
 function ToolbarSelect({ value, onChange, children }) {
   return (
     <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
@@ -65,11 +71,11 @@ export default function ExamBuilderV2() {
     );
 
     return [
-      ...exhibitsTopLevel.filter((proof) => ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
-      ...promotedExtracts,
-      ...allDepositions.filter((proof) => !proof.parent_proof_id),
+      ...exhibitsTopLevel.filter((proof) => ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) && proofMatchesParty(proof, selectedPartyId)),
+      ...promotedExtracts.filter((proof) => proofMatchesParty(proof, selectedPartyId)),
+      ...allDepositions.filter((proof) => !proof.parent_proof_id && proofMatchesParty(proof, selectedPartyId)),
     ];
-  }, [proofs]);
+  }, [proofs, selectedPartyId]);
 
   useEffect(() => {
     if (!selectedPartyId && parties[0]) setSelectedPartyId(parties[0].id);
