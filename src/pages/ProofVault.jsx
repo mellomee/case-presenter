@@ -24,6 +24,8 @@ import CreateExtractModal from '@/components/proofVault/CreateExtractModal';
 import CreateExtractClipModal from '@/components/proofVault/CreateExtractClipModal';
 import CreateVideoClipModal from '@/components/proofVault/CreateVideoClipModal';
 import ProofImportModal from '@/components/proofVault/ProofImportModal';
+import ProofImportSourceModal from '@/components/proofVault/ProofImportSourceModal.jsx';
+import DropboxBulkImportModal from '@/components/proofVault/DropboxBulkImportModal.jsx';
 import PrintExhibitListModal from '@/components/proofVault/PrintExhibitListModal';
 
 export default function ProofVault() {
@@ -44,6 +46,8 @@ export default function ProofVault() {
   const [warningMessage, setWarningMessage] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportSourceModal, setShowImportSourceModal] = useState(false);
+  const [showDropboxBulkImportModal, setShowDropboxBulkImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [expandedProofId, setExpandedProofId] = useState(null);
   const [highlightedChildId, setHighlightedChildId] = useState(null);
@@ -244,7 +248,7 @@ export default function ProofVault() {
             <Button variant="outline" onClick={() => setShowPrintModal(true)} className="gap-2">
               <Printer className="w-4 h-4" /> Print List
             </Button>
-            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+            <Button variant="outline" onClick={() => setShowImportSourceModal(true)} className="gap-2">
               <Upload className="w-4 h-4" /> Import
             </Button>
             <Button onClick={() => setShowForm(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
@@ -312,10 +316,33 @@ export default function ProofVault() {
           proofs={proofs}
         />
 
+        <ProofImportSourceModal
+          open={showImportSourceModal}
+          onClose={() => setShowImportSourceModal(false)}
+          onSelectExcel={() => {
+            setShowImportSourceModal(false);
+            setShowImportModal(true);
+          }}
+          onSelectDropbox={() => {
+            setShowImportSourceModal(false);
+            setShowDropboxBulkImportModal(true);
+          }}
+        />
+
         <ProofImportModal
           open={showImportModal}
           onClose={() => setShowImportModal(false)}
           onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['proofs'] })}
+        />
+
+        <DropboxBulkImportModal
+          open={showDropboxBulkImportModal}
+          onClose={() => setShowDropboxBulkImportModal(false)}
+          onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['proofs'] })}
+          onEditImported={(proof) => {
+            setShowDropboxBulkImportModal(false);
+            handleEdit(proof);
+          }}
         />
 
         <CreateVideoClipModal
