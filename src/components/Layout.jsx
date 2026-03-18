@@ -46,14 +46,12 @@ export default function Layout() {
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
     { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
-    { label: 'Workspace', path: '/Workspace', icon: BookOpen },
     {
       label: 'Present',
       path: '/present',
       icon: Tv,
       children: [
         { label: 'Attorney View', path: '/present/attorney' },
-        { label: 'Attorney Hub', path: '/present/attorney-hub' },
         { label: 'Jury View', path: '/present/jury' },
       ],
     },

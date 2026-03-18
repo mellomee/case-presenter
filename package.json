@@ -79,8 +79,7 @@
     "zod": "^3.24.2",
     "xlsx": "^0.18.5",
     "react-pdf": "^7.7.0",
-    "react-player": "^2.14.0",
-    "@xyflow/react": "^12.8.5"
+    "react-player": "^2.14.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
