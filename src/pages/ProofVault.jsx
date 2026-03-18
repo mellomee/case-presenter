@@ -246,7 +246,7 @@ export default function ProofVault() {
 
   useEffect(() => {
     setSelectedProofIds([]);
-  }, [activeTab, exhibitFilter]);
+  }, [activeTab, exhibitFilter, searchQuery]);
 
   // Separate exhibits and depositions (include ALL, not just top-level)
   const allExhibits = proofs.filter((p) => p.proof_category === 'Exhibit');
