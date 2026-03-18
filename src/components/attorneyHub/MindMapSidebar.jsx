@@ -84,7 +84,7 @@ export default function MindMapSidebar({ treeItems = [], selectedNodeId, onSelec
 
   const [openMap, setOpenMap] = useState(initialOpenState);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setOpenMap(initialOpenState);
   }, [initialOpenState]);
 
