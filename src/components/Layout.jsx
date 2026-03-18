@@ -46,15 +46,13 @@ export default function Layout() {
     { label: 'Dashboard', path: '/Dashboard', icon: LayoutDashboard },
     { label: 'Proof Vault', path: '/ProofVault', icon: FileText },
     { label: 'Parties', path: '/Parties', icon: Users },
-    { label: 'Exam Builder', path: '/ExamBuilder', icon: BookOpen },
-    { label: 'Exam Builder V2', path: '/ExamBuilderV2', icon: FolderKanban },
+    { label: 'Exam Builder', path: '/ExamBuilderV2', icon: FolderKanban },
     {
       label: 'Present',
       path: '/present',
       icon: Tv,
       children: [
         { label: 'Attorney Hub', path: '/AttorneyHub' },
-        { label: 'Attorney View', path: '/present/attorney' },
         { label: 'Jury View', path: '/present/jury' },
       ],
     },
