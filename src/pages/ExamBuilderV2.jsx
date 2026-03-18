@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Eye, GripVertical, Plus, ScrollText, Trash2 } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
 import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
