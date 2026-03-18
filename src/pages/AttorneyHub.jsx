@@ -143,7 +143,7 @@ export default function AttorneyHub() {
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
   const selectedGroup = selectedKind === 'group' ? rootGroups.find((item) => item.id === selectedId) || null : null;
   const selectedProofRootItem = selectedProof ? rootProofItems.find((item) => item.linked_proof_id === selectedProof.id) || null : null;
-  const fallbackAdmissionBlock = selectedProof ? admissionBlocks.find((item) => item.proof_id === selectedProof.id && item.party_id === selectedPartyId) || null : null;
+  const fallbackAdmissionBlock = selectedProof ? admissionBlocks.find((item) => item.proof_id === selectedProof.id && item.party_id === activePartyId) || null : null;
   const admissionSource = selectedProof
     ? selectedProofRootItem?.step_overrides
       ? { proof_type_category_id: selectedProof.proof_type_category_id, step_overrides: selectedProofRootItem.step_overrides }
