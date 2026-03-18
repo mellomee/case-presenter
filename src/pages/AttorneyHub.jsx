@@ -233,27 +233,41 @@ export default function AttorneyHub() {
         <div className="min-h-[calc(100vh-10rem)] xl:flex xl:min-w-0">
           <div style={{ width: `${leftPanelWidth}px` }} className={`border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 ${leftColumnCollapsed ? 'xl:min-w-[72px]' : 'xl:min-w-[320px]'}`}>
             <div className={`border-b border-slate-800 ${leftColumnCollapsed ? 'px-2 py-3' : 'px-4 pt-4'}`}>
-              <div className="mb-4 space-y-3">
-                <div className="inline-flex max-w-full rounded-lg bg-slate-950 p-1 gap-1 overflow-x-auto">
-                  {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
-                    <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
-                      {tab}
-                    </button>
-                  ))}
+              <div className={`mb-4 ${leftColumnCollapsed ? 'space-y-2' : 'space-y-3'}`}>
+                <div className={`flex ${leftColumnCollapsed ? 'justify-center' : 'justify-end'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setLeftColumnCollapsed((value) => !value)}
+                    className="h-9 w-9 rounded-md border border-slate-800 bg-slate-950 flex items-center justify-center text-slate-400 hover:text-slate-200"
+                    title={leftColumnCollapsed ? 'Expand left column' : 'Collapse left column'}
+                  >
+                    {leftColumnCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  </button>
                 </div>
-                <div className="flex justify-end">
-                  <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1">
-                    <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
-                      <LayoutGrid className="w-4 h-4" />
-                    </button>
-                    <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
-                      <List className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                {!leftColumnCollapsed && (
+                  <>
+                    <div className="inline-flex max-w-full rounded-lg bg-slate-950 p-1 gap-1 overflow-x-auto">
+                      {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
+                        <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex justify-end">
+                      <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1">
+                        <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
+                          <LayoutGrid className="w-4 h-4" />
+                        </button>
+                        <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
+                          <List className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {proofTab === 'Exam' ? (
+              {!leftColumnCollapsed && (proofTab === 'Exam' ? (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <ToolbarSelect value={selectedExamPartyId} onChange={setSelectedExamPartyId}>
                     <option value="">Select party</option>
@@ -285,10 +299,27 @@ export default function AttorneyHub() {
                     {parties.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
                   </ToolbarSelect>
                 </div>
-              )}
+              ))}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto p-4">
+            <div className={`flex-1 min-h-0 overflow-y-auto ${leftColumnCollapsed ? 'p-2' : 'p-4'}`}>
+              {leftColumnCollapsed ? (
+                <div className="flex h-full flex-col items-center gap-3 pt-2">
+                  {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => {
+                        setProofTab(tab);
+                        setLeftColumnCollapsed(false);
+                      }}
+                      className={`w-full rounded-lg px-2 py-3 text-[11px] font-semibold leading-tight ${proofTab === tab ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:text-slate-200'}`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              ) : (
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {displayEntries.map((entry) => {
                   const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
@@ -391,6 +422,7 @@ export default function AttorneyHub() {
                   );
                 })}
               </div>
+              )}
             </div>
           </div>
 
