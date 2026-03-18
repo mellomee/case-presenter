@@ -299,6 +299,7 @@ export default function AttorneyHub() {
                   }
 
                   const proof = proofsById[entry.id];
+                  if (!proof) return null;
                   const children = proofs.filter((item) => item.parent_proof_id === proof.id);
                   const isDemo = proof.status === 'Demonstrative';
                   const isAdmitted = proof.status === 'Admitted';
