@@ -28,6 +28,14 @@ function clamp(value, min = 0, max = 100) {
   return Math.min(Math.max(value, min), max);
 }
 
+function normalizePartyIds(currentProof) {
+  if (Array.isArray(currentProof?.party_ids) && currentProof.party_ids.length > 0) {
+    return currentProof.party_ids.filter(Boolean);
+  }
+
+  return currentProof?.party_id ? [currentProof.party_id] : [];
+}
+
 export default function CreateExtractClipModal({ open, onClose, parentExtract, onSuccess }) {
   const queryClient = useQueryClient();
   const overlayRef = useRef(null);
@@ -49,6 +57,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [warning, setWarning] = useState('');
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
+  const [selectedPartyIds, setSelectedPartyIds] = useState([]);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -58,6 +67,11 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const actualParentExtract = isEditing
     ? proofs.find((proof) => proof.id === parentExtract?.parent_proof_id) || parentExtract
     : parentExtract;
+
+  const { data: parties = [] } = useQuery({
+    queryKey: ['parties'],
+    queryFn: () => base44.entities.Party.list(),
+  });
 
   const { url: resolvedParentUrl, isLoading: isResolvingParentUrl } = useResolvedProofAsset(actualParentExtract);
 
@@ -94,6 +108,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setDraftHighlight(null);
     setWarning('');
     setWorkspaceCollapsed(false);
+    setSelectedPartyIds([]);
   };
 
   useEffect(() => {
@@ -114,11 +129,13 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setCurrentPage(getInitialHighlightPage(parentExtract.highlights, parentExtract.clipped_page || 1));
       setDraftHighlight(null);
       setWarning('');
+      setSelectedPartyIds(normalizePartyIds(parentExtract));
       return;
     }
 
     resetForm();
-  }, [open, parentExtract, isEditing]);
+    setSelectedPartyIds(normalizePartyIds(actualParentExtract));
+  }, [open, parentExtract, actualParentExtract, isEditing]);
 
   const visibleExtractPages = useMemo(
     () => parsePageRange(actualParentExtract?.extract_pages || ''),
@@ -300,6 +317,10 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setWarning('Add at least one highlight group');
       return;
     }
+    if (selectedPartyIds.length === 0) {
+      setWarning('Select at least one party');
+      return;
+    }
 
     const clipData = {
       proof_category: actualParentExtract.proof_category,
@@ -309,7 +330,8 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       formal_name: formalName.trim(),
       description: description.trim() || null,
       parent_proof_id: isEditing ? parentExtract.parent_proof_id : actualParentExtract.id,
-      party_id: actualParentExtract.party_id || null,
+      party_id: selectedPartyIds[0] || null,
+      party_ids: selectedPartyIds,
       status: actualParentExtract.status,
       category_id: actualParentExtract.category_id || null,
       proof_type_category_id: actualParentExtract.proof_type_category_id,
@@ -405,6 +427,17 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
               </p>
               <p className="text-xs text-blue-700 mt-1">Grouped highlights can span multiple pages in the same clip.</p>
             </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <PartyMultiSelectField
+              label="Assign to Parties"
+              required
+              parties={parties}
+              value={selectedPartyIds}
+              onChange={setSelectedPartyIds}
+              helperText="Choose one or more parties for this extract clip."
+            />
           </div>
 
           <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
