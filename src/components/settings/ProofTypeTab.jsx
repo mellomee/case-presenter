@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,11 @@ export default function ProofTypeTab() {
     queryKey: ['proofTypes'],
     queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
+
+  const sortedTypes = useMemo(
+    () => [...types].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })),
+    [types]
+  );
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ProofTypeCategory.create(data),
@@ -56,7 +61,7 @@ export default function ProofTypeTab() {
       </div>
 
       <div className="space-y-2">
-        {types.map((type) => (
+        {sortedTypes.map((type) => (
           <div key={type.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-md border border-slate-200">
             {editingId === type.id ? (
               <>
