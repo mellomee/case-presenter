@@ -23,6 +23,13 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
   const [selectedId, setSelectedId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    if (!open) return;
+    setTab('Exhibit');
+    setSelectedId('');
+    setSearchQuery('');
+  }, [open]);
+
   const filtered = useMemo(() => {
     const next = proofs.filter((proof) => proof.proof_category === tab);
     const searchTerm = normalizeSearchValue(searchQuery);
