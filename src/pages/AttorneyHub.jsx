@@ -441,6 +441,7 @@ export default function AttorneyHub() {
               </div>
             )}
           </div>
+        </div>
         <AdmitAsExhibitModal
           open={showAdmitExhibitModal}
           onClose={() => {
