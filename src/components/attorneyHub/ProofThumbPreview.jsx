@@ -13,6 +13,12 @@ const SIZE_MAP = {
   lg: { outer: 'w-32 h-40', page: 120 },
 };
 
+const BADGE_TEXT_SIZE = {
+  sm: 'text-[8px]',
+  md: 'text-[9px]',
+  lg: 'text-[10px]',
+};
+
 export default function ProofThumbPreview({ proof = null, groupLabel = '', size = 'md' }) {
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -31,6 +37,10 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
   const effectiveStatus = proof?.status === 'Admitted' || proof?.status === 'Demonstrative'
     ? proof.status
     : (parentProof?.status === 'Admitted' || parentProof?.status === 'Demonstrative' ? parentProof.status : null);
+  const jointNumber = proof?.joint_exhibit_num || parentProof?.joint_exhibit_num;
+  const admittedNumber = proof?.admitted_exhibit_num || parentProof?.admitted_exhibit_num;
+  const demoNumber = proof?.demonstrative_exhibit_num || parentProof?.demonstrative_exhibit_num;
+  const badgeTextSize = BADGE_TEXT_SIZE[size] || BADGE_TEXT_SIZE.md;
 
   const statusIcon = effectiveStatus ? (
     <CheckCircle2
@@ -41,6 +51,25 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
       <X className="h-3 w-3 text-slate-300" />
     </div>
   );
+
+  const overlayBadges = [
+    jointNumber ? { label: `Joint # ${jointNumber}`, className: 'bg-blue-600/90 text-white' } : null,
+    admittedNumber ? { label: `Admitted # ${admittedNumber}`, className: 'bg-green-600/90 text-white' } : null,
+    demoNumber ? { label: `Demo # ${demoNumber}`, className: 'bg-purple-600/90 text-white' } : null,
+  ].filter(Boolean);
+
+  const numberBadges = overlayBadges.length > 0 ? (
+    <div className="absolute bottom-1 left-1 flex max-w-[calc(100%-0.5rem)] flex-col items-start gap-1">
+      {overlayBadges.map((badge) => (
+        <div
+          key={badge.label}
+          className={`max-w-full truncate rounded px-1.5 py-0.5 font-semibold leading-none shadow-sm backdrop-blur ${badgeTextSize} ${badge.className}`}
+        >
+          {badge.label}
+        </div>
+      ))}
+    </div>
+  ) : null;
 
   if (groupLabel) {
     return (
@@ -63,6 +92,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
       <div className="relative">
         <img src={url} alt={proof.name} className={`${sizing.outer} rounded-lg border border-slate-700 object-cover bg-slate-900`} />
         {statusIcon}
+        {numberBadges}
       </div>
     );
   }
@@ -75,6 +105,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
           <span className="text-[10px] text-slate-400 uppercase tracking-wide">Video</span>
         </div>
         {statusIcon}
+        {numberBadges}
       </div>
     );
   }
@@ -86,6 +117,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
           <FileText className="w-5 h-5 text-slate-500" />
         </div>
         {statusIcon}
+        {numberBadges}
       </div>
     );
   }
@@ -104,6 +136,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
         </Document>
       </div>
       {statusIcon}
+      {numberBadges}
     </div>
   );
 }
