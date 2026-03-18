@@ -233,7 +233,7 @@ export function buildMindMapGraph({
       });
 
       bucketQuestions.forEach((question) => {
-        const questionId = `question-${bucket.id}-${question.id}`;
+        const questionId = `question::${bucket.id}::${question.id}`;
         searchIndex.push({
           id: `search-${questionId}`,
           nodeId: questionId,
@@ -245,7 +245,7 @@ export function buildMindMapGraph({
       });
 
       bucketBlocks.forEach((block) => {
-        const blockId = `block-${bucket.id}-${block.id}`;
+        const blockId = `block::${bucket.id}::${block.id}`;
         const blockProof = proofMap.get(block.proof_id) || null;
         searchIndex.push({
           id: `search-${blockId}`,
@@ -273,7 +273,7 @@ export function buildMindMapGraph({
       if (!expandedSet.has(bucket.id)) return;
 
       bucketQuestions.forEach((question, questionIndex) => {
-        const questionId = `question-${bucket.id}-${question.id}`;
+        const questionId = `question::${bucket.id}::${question.id}`;
         const questionProofs = parseProofIds(question.proof_ids).map((proofId) => proofMap.get(proofId)).filter(Boolean);
         const questionPosition = nodePositions[questionId] || {
           x: bucketPosition.x - (compactMode ? 240 : 280),
@@ -315,7 +315,7 @@ export function buildMindMapGraph({
       });
 
       bucketBlocks.forEach((block, blockIndex) => {
-        const blockId = `block-${bucket.id}-${block.id}`;
+        const blockId = `block::${bucket.id}::${block.id}`;
         const blockProof = proofMap.get(block.proof_id) || null;
         const blockPosition = nodePositions[blockId] || {
           x: bucketPosition.x,
@@ -354,7 +354,7 @@ export function buildMindMapGraph({
       });
 
       linkedProofs.forEach((proof, proofIndex) => {
-        const proofId = `proof-${bucket.id}-${proof.id}`;
+        const proofId = `proof::${bucket.id}::${proof.id}`;
         const directLink = bucketLinks.find((link) => link.proof_id === proof.id) || null;
         const connectedBlock = bucketBlocks.find((block) => block.proof_id === proof.id) || null;
         const proofPosition = nodePositions[proofId] || {
@@ -382,8 +382,8 @@ export function buildMindMapGraph({
         });
 
         edges.push({
-          id: `edge-${connectedBlock ? `block-${bucket.id}-${connectedBlock.id}` : bucketId}-${proofId}`,
-          source: connectedBlock ? `block-${bucket.id}-${connectedBlock.id}` : bucketId,
+          id: `edge-${connectedBlock ? `block::${bucket.id}::${connectedBlock.id}` : bucketId}-${proofId}`,
+          source: connectedBlock ? `block::${bucket.id}::${connectedBlock.id}` : bucketId,
           target: proofId,
           style: { stroke: color, strokeWidth: 1.8 },
         });

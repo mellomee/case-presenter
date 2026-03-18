@@ -124,7 +124,7 @@ export default function AttorneyHubDetailsPanel({
                   {selectedItem.questions.map((question) => (
                     <button
                       key={question.id}
-                      onClick={() => onSelectNode(`question-${selectedItem.bucket.id}-${question.id}`)}
+                      onClick={() => onSelectNode(`question::${selectedItem.bucket.id}::${question.id}`)}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left hover:bg-slate-100"
                     >
                       <p className="text-sm font-medium text-slate-800">{question.text}</p>
@@ -172,7 +172,7 @@ export default function AttorneyHubDetailsPanel({
                     return (
                       <div key={proof.id} className="rounded-2xl border border-slate-200 bg-white p-3">
                         <div className="flex items-start justify-between gap-3">
-                          <button onClick={() => onSelectNode(`proof-${selectedItem.bucket.id}-${proof.id}`)} className="min-w-0 text-left">
+                          <button onClick={() => onSelectNode(`proof::${selectedItem.bucket.id}::${proof.id}`)} className="min-w-0 text-left">
                             <p className="truncate text-sm font-semibold text-slate-900">{entry?.node_label || getProofDisplayLabel(proof)}</p>
                             <p className="mt-1 text-xs text-slate-500">{entry?.why_it_matters || proof.formal_name || proof.name}</p>
                           </button>
@@ -224,7 +224,7 @@ export default function AttorneyHubDetailsPanel({
                     {selectedItem.linkedProofs.map((proof) => (
                       <button
                         key={proof.id}
-                        onClick={() => onSelectNode(`proof-${selectedItem.bucket.id}-${proof.id}`)}
+                        onClick={() => onSelectNode(`proof::${selectedItem.bucket.id}::${proof.id}`)}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left hover:bg-slate-100"
                       >
                         <p className="text-sm font-semibold text-slate-900">{getProofDisplayLabel(proof)}</p>
