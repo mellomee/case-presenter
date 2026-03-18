@@ -1,22 +1,7 @@
 const BRANCH_COLORS = ['#b91c1c', '#f59e0b', '#0f766e', '#1d4ed8', '#db2777', '#7c3aed', '#0891b2', '#15803d'];
 
-function parseProofIds(value) {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.filter(Boolean);
-
-  if (typeof value === 'string') {
-    try {
-      return parseProofIds(JSON.parse(value));
-    } catch {
-      return value.split(',').map((item) => item.trim()).filter(Boolean);
-    }
-  }
-
-  if (typeof value === 'object' && Array.isArray(value.ids)) {
-    return value.ids.filter(Boolean);
-  }
-
-  return [];
+function makeBadge(label, tone) {
+  return { label, tone };
 }
 
 function getStatusTone(status) {
@@ -26,21 +11,25 @@ function getStatusTone(status) {
   return 'slate';
 }
 
-function getProofTone(proof) {
-  if (proof?.status === 'Admitted') return 'green';
-  if (proof?.status === 'Demonstrative') return 'purple';
-  if (proof?.status === 'Joint') return 'blue';
-  return 'slate';
-}
-
-function makeBadge(label, tone) {
-  return { label, tone };
-}
-
 export function getBucketStatus(bucketId, layoutDraft = {}) {
   if (layoutDraft.bucket_statuses?.[bucketId]) return layoutDraft.bucket_statuses[bucketId];
   if (layoutDraft.active_bucket_id === bucketId) return 'Active';
   return 'Not Started';
+}
+
+export function getBlockOutcome(block, proof, layoutDraft = {}) {
+  const local = layoutDraft.block_outcomes?.[block?.id];
+  if (local) return local;
+  if (proof?.status === 'Admitted') return 'admitted';
+  if (proof?.status === 'Demonstrative') return 'demonstrative';
+  return 'needs_admission';
+}
+
+export function getOutcomeBadge(outcome) {
+  if (outcome === 'admitted') return makeBadge('Admitted', 'green');
+  if (outcome === 'demonstrative') return makeBadge('Demonstrative', 'purple');
+  if (outcome === 'not_admitted') return makeBadge('Not Admitted', 'red');
+  return makeBadge('Needs Admission', 'amber');
 }
 
 export function isProofPublishable(proof) {
@@ -59,10 +48,10 @@ export function buildMindMapGraph({
   party,
   trialPoints = [],
   buckets = [],
+  questionGroups = [],
   questions = [],
   proofs = [],
   admissionBlocks = [],
-  bucketProofLinks = [],
   layoutDraft = {},
   compactMode = false,
   expandedBucketIds = [],
@@ -82,6 +71,32 @@ export function buildMindMapGraph({
   const nodes = [];
   const searchIndex = [];
 
+  const groupsByBucket = new Map();
+  questionGroups.forEach((group) => {
+    if (!groupsByBucket.has(group.bucket_id)) groupsByBucket.set(group.bucket_id, []);
+    groupsByBucket.get(group.bucket_id).push(group);
+  });
+
+  const questionsByGroup = new Map();
+  questions.forEach((question) => {
+    if (!question.question_group_id) return;
+    if (!questionsByGroup.has(question.question_group_id)) questionsByGroup.set(question.question_group_id, []);
+    questionsByGroup.get(question.question_group_id).push(question);
+  });
+
+  const blocksByGroup = new Map();
+  admissionBlocks.forEach((block) => {
+    if (!block.question_group_id) return;
+    if (!blocksByGroup.has(block.question_group_id)) blocksByGroup.set(block.question_group_id, []);
+    blocksByGroup.get(block.question_group_id).push(block);
+  });
+
+  const blocksByBucket = new Map();
+  admissionBlocks.forEach((block) => {
+    if (!blocksByBucket.has(block.bucket_id)) blocksByBucket.set(block.bucket_id, []);
+    blocksByBucket.get(block.bucket_id).push(block);
+  });
+
   const bucketsByTrialPoint = new Map();
   buckets.forEach((bucket) => {
     const key = bucket.trial_point_id || 'unassigned';
@@ -97,15 +112,14 @@ export function buildMindMapGraph({
   }));
 
   const witnessId = `witness-${party.id}`;
-  const witnessPosition = nodePositions[witnessId] || { x: 0, y: 0 };
   nodes.push({
     id: witnessId,
     type: 'witnessNode',
-    position: witnessPosition,
+    position: nodePositions[witnessId] || { x: 0, y: 0 },
     data: {
       title: `${party.first_name} ${party.last_name}`,
       subtitle: party.side,
-      meta: party.role_id ? ['Witness'] : [],
+      meta: ['Witness'],
       badges: [makeBadge(party.side, party.side === 'Plaintiff' ? 'green' : party.side === 'Defense' ? 'red' : 'amber')],
       accent: '#0f172a',
       compact: compactMode,
@@ -122,7 +136,7 @@ export function buildMindMapGraph({
     const trialPointId = `trialpoint-${group.trialPoint.id}`;
     const trialPointPosition = nodePositions[trialPointId] || {
       x: Math.cos(angle) * 320,
-      y: Math.sin(angle) * 230,
+      y: Math.sin(angle) * 220,
     };
 
     nodes.push({
@@ -139,50 +153,29 @@ export function buildMindMapGraph({
       },
       selected: selectedNodeId === trialPointId,
     });
+
     edges.push({
       id: `edge-${witnessId}-${trialPointId}`,
       source: witnessId,
       target: trialPointId,
       style: { stroke: color, strokeWidth: 2.25 },
     });
-    lookup[trialPointId] = { type: 'trialPoint', trialPoint: group.trialPoint };
 
-    searchIndex.push({
-      id: `search-${trialPointId}`,
-      nodeId: trialPointId,
-      type: 'trialPoint',
-      label: group.trialPoint.name,
-      subtitle: party.side,
-      parentBucketId: null,
-    });
+    lookup[trialPointId] = { type: 'trialPoint', trialPoint: group.trialPoint };
+    searchIndex.push({ id: `search-${trialPointId}`, nodeId: trialPointId, type: 'trialPoint', label: group.trialPoint.name, subtitle: party.side });
 
     const bucketCount = Math.max(group.buckets.length, 1);
     group.buckets.forEach((bucket, bucketIndex) => {
-      const spread = bucketCount === 1 ? 0 : ((bucketIndex / (bucketCount - 1)) - 0.5) * 1.45;
+      const spread = bucketCount === 1 ? 0 : ((bucketIndex / (bucketCount - 1)) - 0.5) * 1.4;
       const bucketAngle = angle + spread;
       const bucketId = `bucket-${bucket.id}`;
-      const bucketQuestions = questions
-        .filter((question) => question.bucket_id === bucket.id && !question.parent_question_id)
-        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-      const bucketBlocks = admissionBlocks
-        .filter((block) => block.bucket_id === bucket.id)
-        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-      const bucketLinks = bucketProofLinks
-        .filter((link) => link.bucket_id === bucket.id)
-        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-      const questionProofIds = Array.from(new Set(bucketQuestions.flatMap((question) => parseProofIds(question.proof_ids))));
-      const linkedProofIds = Array.from(new Set([
-        ...bucketLinks.map((link) => link.proof_id),
-        ...questionProofIds,
-        ...bucketBlocks.map((block) => block.proof_id),
-      ].filter(Boolean)));
-      const linkedProofs = linkedProofIds.map((proofId) => proofMap.get(proofId)).filter(Boolean);
-      const hasProof = linkedProofs.length > 0;
-      const needsAdmission = linkedProofs.some((proof) => proof.proof_category !== 'Deposition' && !['Admitted', 'Demonstrative'].includes(proof.status));
+      const bucketGroupItems = [...(groupsByBucket.get(bucket.id) || [])].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const bucketBlocks = [...(blocksByBucket.get(bucket.id) || [])].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       const bucketStatus = getBucketStatus(bucket.id, layoutDraft);
+      const needsAdmission = bucketBlocks.some((block) => getBlockOutcome(block, proofMap.get(block.proof_id), layoutDraft) === 'needs_admission');
       const bucketPosition = nodePositions[bucketId] || {
-        x: trialPointPosition.x + Math.cos(bucketAngle) * (compactMode ? 250 : 290),
-        y: trialPointPosition.y + Math.sin(bucketAngle) * (compactMode ? 180 : 220),
+        x: trialPointPosition.x + Math.cos(bucketAngle) * (compactMode ? 260 : 300),
+        y: trialPointPosition.y + Math.sin(bucketAngle) * (compactMode ? 190 : 230),
       };
 
       nodes.push({
@@ -192,10 +185,10 @@ export function buildMindMapGraph({
         data: {
           title: bucket.name,
           subtitle: group.trialPoint.name,
-          meta: [`${bucketQuestions.length} Q`, `${linkedProofs.length} Proof`],
+          meta: [`${bucketGroupItems.length} groups`, `${bucketBlocks.length} admission block${bucketBlocks.length === 1 ? '' : 's'}`],
           badges: [
             makeBadge(bucketStatus, getStatusTone(bucketStatus)),
-            ...(hasProof ? [makeBadge('Has Proof', 'teal')] : []),
+            ...(bucketGroupItems.some((item) => !!item.proof_id) ? [makeBadge('Has Proof', 'teal')] : []),
             ...(needsAdmission ? [makeBadge('Needs Admission', 'amber')] : []),
           ],
           accent: color,
@@ -203,6 +196,7 @@ export function buildMindMapGraph({
         },
         selected: selectedNodeId === bucketId,
       });
+
       edges.push({
         id: `edge-${trialPointId}-${bucketId}`,
         source: trialPointId,
@@ -214,189 +208,109 @@ export function buildMindMapGraph({
         type: 'bucket',
         bucket,
         trialPoint: group.trialPoint,
-        questions: bucketQuestions,
-        linkedProofs,
-        linkedProofEntries: bucketLinks,
+        questionGroups: bucketGroupItems,
         admissionBlocks: bucketBlocks,
-        branchColor: color,
         status: bucketStatus,
-        needsAdmission,
       };
 
-      searchIndex.push({
-        id: `search-${bucketId}`,
-        nodeId: bucketId,
-        type: 'bucket',
-        label: bucket.name,
-        subtitle: group.trialPoint.name,
-        parentBucketId: bucket.id,
-      });
-
-      bucketQuestions.forEach((question) => {
-        const questionId = `question::${bucket.id}::${question.id}`;
-        searchIndex.push({
-          id: `search-${questionId}`,
-          nodeId: questionId,
-          type: 'question',
-          label: question.text,
-          subtitle: bucket.name,
-          parentBucketId: bucket.id,
-        });
-      });
-
-      bucketBlocks.forEach((block) => {
-        const blockId = `block::${bucket.id}::${block.id}`;
-        const blockProof = proofMap.get(block.proof_id) || null;
-        searchIndex.push({
-          id: `search-${blockId}`,
-          nodeId: blockId,
-          type: 'evidence',
-          label: blockProof ? `Admission: ${blockProof.formal_name || blockProof.name}` : 'Admission Block',
-          subtitle: bucket.name,
-          parentBucketId: bucket.id,
-        });
-      });
-
-      linkedProofs.forEach((proof) => {
-        const proofNodeId = `proof-${bucket.id}-${proof.id}`;
-        const directLink = bucketLinks.find((link) => link.proof_id === proof.id) || null;
-        searchIndex.push({
-          id: `search-${proofNodeId}`,
-          nodeId: proofNodeId,
-          type: 'proof',
-          label: directLink?.node_label || proof.formal_name || proof.name,
-          subtitle: bucket.name,
-          parentBucketId: bucket.id,
-        });
-      });
+      searchIndex.push({ id: `search-${bucketId}`, nodeId: bucketId, type: 'bucket', label: bucket.name, subtitle: group.trialPoint.name });
 
       if (!expandedSet.has(bucket.id)) return;
 
-      bucketQuestions.forEach((question, questionIndex) => {
-        const questionId = `question::${bucket.id}::${question.id}`;
-        const questionProofs = parseProofIds(question.proof_ids).map((proofId) => proofMap.get(proofId)).filter(Boolean);
-        const questionPosition = nodePositions[questionId] || {
-          x: bucketPosition.x - (compactMode ? 240 : 280),
-          y: bucketPosition.y - 60 + questionIndex * (compactMode ? 90 : 110),
+      bucketGroupItems.forEach((questionGroup, groupIndex) => {
+        const groupNodeId = `group::${questionGroup.id}`;
+        const groupQuestions = [...(questionsByGroup.get(questionGroup.id) || [])].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        const groupBlocks = [...(blocksByGroup.get(questionGroup.id) || [])].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        const focusProof = questionGroup.proof_id ? proofMap.get(questionGroup.proof_id) || null : null;
+        const groupPosition = nodePositions[groupNodeId] || {
+          x: bucketPosition.x + (compactMode ? 230 : 270),
+          y: bucketPosition.y - 90 + groupIndex * (compactMode ? 100 : 120),
         };
-        const asked = !!layoutDraft.asked_question_ids?.[question.id];
 
         nodes.push({
-          id: questionId,
+          id: groupNodeId,
           type: 'questionNode',
-          position: questionPosition,
+          position: groupPosition,
           data: {
-            title: question.text,
-            subtitle: question.expected_answer || 'Question cluster',
-            meta: compactMode ? [] : [`${questionProofs.length} linked proof${questionProofs.length === 1 ? '' : 's'}`],
+            title: questionGroup.node_label || questionGroup.name,
+            subtitle: questionGroup.why_it_matters || (focusProof ? getProofDisplayLabel(focusProof) : 'Question group'),
+            meta: [`${groupQuestions.length} questions`],
             badges: [
-              ...(asked ? [makeBadge('Asked', 'green')] : [makeBadge('Unasked', 'slate')]),
-              ...(questionProofs.length > 0 ? [makeBadge('Has Proof', 'teal')] : []),
+              ...(focusProof ? [makeBadge('Proof Focus', 'teal')] : []),
+              ...(groupBlocks.length > 0 ? [makeBadge(`${groupBlocks.length} admission`, 'amber')] : []),
             ],
             accent: color,
             compact: compactMode,
           },
-          selected: selectedNodeId === questionId,
+          selected: selectedNodeId === groupNodeId,
         });
+
         edges.push({
-          id: `edge-${bucketId}-${questionId}`,
+          id: `edge-${bucketId}-${groupNodeId}`,
           source: bucketId,
-          target: questionId,
-          style: { stroke: color, strokeWidth: 1.75 },
+          target: groupNodeId,
+          style: { stroke: color, strokeWidth: 1.9 },
         });
-        lookup[questionId] = {
-          type: 'question',
-          question,
+
+        lookup[groupNodeId] = {
+          type: 'questionGroup',
+          questionGroup,
           bucket,
           trialPoint: group.trialPoint,
-          linkedProofs: questionProofs,
-          branchColor: color,
-        };
-      });
-
-      bucketBlocks.forEach((block, blockIndex) => {
-        const blockId = `block::${bucket.id}::${block.id}`;
-        const blockProof = proofMap.get(block.proof_id) || null;
-        const blockPosition = nodePositions[blockId] || {
-          x: bucketPosition.x,
-          y: bucketPosition.y + 160 + blockIndex * 120,
+          questions: groupQuestions,
+          proof: focusProof,
+          admissionBlocks: groupBlocks,
         };
 
-        nodes.push({
-          id: blockId,
-          type: 'evidenceBlockNode',
-          position: blockPosition,
-          data: {
-            title: blockProof ? `Admit ${getProofDisplayLabel(blockProof)}` : 'Admission Block',
-            subtitle: blockProof?.status || 'Needs ruling',
-            meta: compactMode ? [] : ['Foundation path'],
-            badges: [makeBadge(blockProof?.status || 'Not Marked', getProofTone(blockProof))],
-            accent: color,
-            compact: compactMode,
-          },
-          selected: selectedNodeId === blockId,
+        searchIndex.push({ id: `search-${groupNodeId}`, nodeId: groupNodeId, type: 'group', label: questionGroup.name, subtitle: bucket.name });
+        if (focusProof) {
+          searchIndex.push({ id: `search-proof-${focusProof.id}-${groupNodeId}`, nodeId: groupNodeId, type: 'proof', label: focusProof.formal_name || focusProof.name, subtitle: questionGroup.name });
+        }
+
+        groupBlocks.forEach((block, blockIndex) => {
+          const blockNodeId = `block::${block.id}`;
+          const proof = proofMap.get(block.proof_id) || null;
+          const outcome = getBlockOutcome(block, proof, layoutDraft);
+          const blockPosition = nodePositions[blockNodeId] || {
+            x: groupPosition.x + (compactMode ? 210 : 240),
+            y: groupPosition.y - 20 + blockIndex * (compactMode ? 88 : 104),
+          };
+
+          nodes.push({
+            id: blockNodeId,
+            type: 'evidenceBlockNode',
+            position: blockPosition,
+            data: {
+              title: proof ? `Admit ${getProofDisplayLabel(proof)}` : 'Admission Block',
+              subtitle: proof?.formal_name || proof?.name || 'Foundation reminder',
+              meta: compactMode ? [] : ['Remembered steps'],
+              badges: [getOutcomeBadge(outcome)],
+              accent: color,
+              compact: compactMode,
+            },
+            selected: selectedNodeId === blockNodeId,
+          });
+
+          edges.push({
+            id: `edge-${groupNodeId}-${blockNodeId}`,
+            source: groupNodeId,
+            target: blockNodeId,
+            style: { stroke: color, strokeWidth: 1.7, strokeDasharray: '6 4' },
+          });
+
+          lookup[blockNodeId] = {
+            type: 'evidenceBlock',
+            block,
+            proof,
+            bucket,
+            trialPoint: group.trialPoint,
+            questionGroup,
+            outcome,
+            published: proof ? juryState?.published_proof_id === proof.id && !juryState?.is_blank : false,
+          };
+
+          searchIndex.push({ id: `search-${blockNodeId}`, nodeId: blockNodeId, type: 'admission', label: proof ? getProofDisplayLabel(proof) : 'Admission Block', subtitle: questionGroup.name });
         });
-        edges.push({
-          id: `edge-${bucketId}-${blockId}`,
-          source: bucketId,
-          target: blockId,
-          style: { stroke: color, strokeWidth: 1.9, strokeDasharray: '6 4' },
-        });
-
-        lookup[blockId] = {
-          type: 'evidenceBlock',
-          block,
-          bucket,
-          proof: blockProof,
-          trialPoint: group.trialPoint,
-          branchColor: color,
-        };
-      });
-
-      linkedProofs.forEach((proof, proofIndex) => {
-        const proofId = `proof::${bucket.id}::${proof.id}`;
-        const directLink = bucketLinks.find((link) => link.proof_id === proof.id) || null;
-        const connectedBlock = bucketBlocks.find((block) => block.proof_id === proof.id) || null;
-        const proofPosition = nodePositions[proofId] || {
-          x: bucketPosition.x + (compactMode ? 250 : 300),
-          y: bucketPosition.y - 60 + proofIndex * (compactMode ? 96 : 120),
-        };
-        const published = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
-
-        nodes.push({
-          id: proofId,
-          type: 'proofNode',
-          position: proofPosition,
-          data: {
-            title: directLink?.node_label || getProofDisplayLabel(proof),
-            subtitle: directLink?.why_it_matters || proof.formal_name || proof.name,
-            meta: [proof.file_type || 'Proof'],
-            badges: [
-              makeBadge(proof.status || 'Draft', getProofTone(proof)),
-              ...(published ? [makeBadge('Published', 'pink')] : []),
-            ],
-            accent: color,
-            compact: compactMode,
-          },
-          selected: selectedNodeId === proofId,
-        });
-
-        edges.push({
-          id: `edge-${connectedBlock ? `block::${bucket.id}::${connectedBlock.id}` : bucketId}-${proofId}`,
-          source: connectedBlock ? `block::${bucket.id}::${connectedBlock.id}` : bucketId,
-          target: proofId,
-          style: { stroke: color, strokeWidth: 1.8 },
-        });
-
-        lookup[proofId] = {
-          type: 'proof',
-          proof,
-          bucket,
-          trialPoint: group.trialPoint,
-          link: directLink,
-          branchColor: color,
-          published,
-        };
       });
     });
   });

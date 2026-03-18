@@ -24,7 +24,9 @@ function InfoBadge({ label, tone = 'slate' }) {
 function ActionButton({ label, onClick, variant = 'outline', disabled = false }) {
   const className = variant === 'primary'
     ? 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-slate-300'
-    : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:text-slate-400';
+    : variant === 'danger'
+      ? 'bg-rose-600 text-white hover:bg-rose-700 disabled:bg-slate-300'
+      : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:text-slate-400';
 
   return (
     <button
@@ -37,23 +39,50 @@ function ActionButton({ label, onClick, variant = 'outline', disabled = false })
   );
 }
 
-function renderQuestionProofHint(question) {
-  const proofIds = Array.isArray(question?.linkedProofs) ? question.linkedProofs.length : 0;
-  if (!proofIds) return null;
-  return <InfoBadge label={`${proofIds} linked proof${proofIds === 1 ? '' : 's'}`} tone="blue" />;
+function QuestionChecklist({ questions = [], askedQuestionIds = {}, onToggleAsked, depth = 0, parentId = null }) {
+  const items = questions
+    .filter((question) => (question.parent_question_id || null) === parentId)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className={`space-y-2 ${depth > 0 ? 'ml-5 border-l border-slate-200 pl-4' : ''}`}>
+      {items.map((question) => (
+        <div key={question.id} className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={!!askedQuestionIds[question.id]}
+              onChange={() => onToggleAsked(question.id)}
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600"
+            />
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-medium ${askedQuestionIds[question.id] ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{question.text}</p>
+              {question.expected_answer ? <p className="mt-1 text-xs text-emerald-700">Expected: {question.expected_answer}</p> : null}
+              {question.notes ? <p className="mt-1 text-xs text-amber-700">Notes: {question.notes}</p> : null}
+            </div>
+          </label>
+          <QuestionChecklist
+            questions={questions}
+            askedQuestionIds={askedQuestionIds}
+            onToggleAsked={onToggleAsked}
+            depth={depth + 1}
+            parentId={question.id}
+          />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function AttorneyHubDetailsPanel({
   selectedItem,
-  proofOptions = [],
-  linkDraft,
-  setLinkDraft,
-  onCreateProofLink,
-  onDeleteProofLink,
+  askedQuestionIds = {},
+  onToggleAsked,
   onSelectNode,
   onBucketStatusChange,
   nextSiblingBucket,
-  onMarkQuestionAsked,
   admissionTemplates = [],
   juryState,
   liveSync,
@@ -61,26 +90,23 @@ export default function AttorneyHubDetailsPanel({
   onPublishProof,
   onBlankJury,
   onPreviewStateChange,
+  onSetBlockOutcome,
 }) {
   if (!selectedItem) {
     return (
-      <div className="h-full w-[340px] flex-shrink-0 border-l border-slate-200 bg-white p-5">
+      <div className="h-full w-[360px] flex-shrink-0 border-l border-slate-200 bg-white p-5">
         <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
-          Select a node to see proof context, question clusters, admission reminders, and publish controls.
+          Select a bucket, question group, or admission block to work from the map.
         </div>
       </div>
     );
   }
 
-  const previewProof = selectedItem.type === 'proof'
+  const previewProof = selectedItem.type === 'questionGroup'
     ? selectedItem.proof
     : selectedItem.type === 'evidenceBlock'
       ? selectedItem.proof
-      : selectedItem.type === 'bucket'
-        ? selectedItem.linkedProofs[0] || null
-        : selectedItem.type === 'question'
-          ? selectedItem.linkedProofs[0] || null
-          : null;
+      : null;
 
   const published = previewProof && juryState?.published_proof_id === previewProof.id && !juryState?.is_blank;
   const publishable = previewProof ? isProofPublishable(previewProof) : false;
@@ -93,7 +119,7 @@ export default function AttorneyHubDetailsPanel({
     : [];
 
   return (
-    <div className="h-full w-[340px] flex-shrink-0 border-l border-slate-200 bg-slate-50/70 overflow-y-auto">
+    <div className="h-full w-[360px] flex-shrink-0 border-l border-slate-200 bg-slate-50/70 overflow-y-auto">
       <div className="space-y-4 p-4">
         <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Selected Node</p>
@@ -107,8 +133,8 @@ export default function AttorneyHubDetailsPanel({
 
               <div className="flex flex-wrap gap-2">
                 <InfoBadge label={selectedItem.status} tone={selectedItem.status === 'Done' ? 'green' : selectedItem.status === 'Active' ? 'blue' : selectedItem.status === 'Skipped' ? 'red' : 'slate'} />
-                {selectedItem.needsAdmission ? <InfoBadge label="Needs Admission" tone="amber" /> : null}
-                {selectedItem.linkedProofs.length > 0 ? <InfoBadge label={`${selectedItem.linkedProofs.length} proofs`} tone="purple" /> : null}
+                <InfoBadge label={`${selectedItem.questionGroups.length} groups`} tone="purple" />
+                {selectedItem.admissionBlocks.length > 0 ? <InfoBadge label={`${selectedItem.admissionBlocks.length} admission block${selectedItem.admissionBlocks.length === 1 ? '' : 's'}`} tone="amber" /> : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -119,116 +145,75 @@ export default function AttorneyHubDetailsPanel({
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Question Cluster</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Question Groups</p>
                 <div className="mt-2 space-y-2">
-                  {selectedItem.questions.map((question) => (
+                  {selectedItem.questionGroups.map((group) => (
                     <button
-                      key={question.id}
-                      onClick={() => onSelectNode(`question::${selectedItem.bucket.id}::${question.id}`)}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left hover:bg-slate-100"
+                      key={group.id}
+                      onClick={() => onSelectNode(`group::${group.id}`)}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-left hover:bg-slate-100"
                     >
-                      <p className="text-sm font-medium text-slate-800">{question.text}</p>
+                      <p className="text-sm font-semibold text-slate-900">{group.node_label || group.name}</p>
+                      {group.why_it_matters ? <p className="mt-1 text-xs text-slate-500">{group.why_it_matters}</p> : null}
                     </button>
                   ))}
-                  {selectedItem.questions.length === 0 && <p className="text-sm text-slate-500">No questions in this bucket yet.</p>}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Link a Proof to this Bucket</p>
-                <div className="mt-2 space-y-2">
-                  <select
-                    value={linkDraft.proofId}
-                    onChange={(e) => setLinkDraft((prev) => ({ ...prev, proofId: e.target.value }))}
-                    className="h-10 w-full rounded-2xl border border-slate-300 bg-white px-3 text-sm text-slate-700"
-                  >
-                    <option value="">Choose a proof…</option>
-                    {proofOptions.map((proof) => (
-                      <option key={proof.id} value={proof.id}>{proof.formal_name || proof.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    value={linkDraft.nodeLabel}
-                    onChange={(e) => setLinkDraft((prev) => ({ ...prev, nodeLabel: e.target.value }))}
-                    placeholder="Short node label"
-                    className="h-10 w-full rounded-2xl border border-slate-300 bg-white px-3 text-sm text-slate-700"
-                  />
-                  <textarea
-                    value={linkDraft.whyItMatters}
-                    onChange={(e) => setLinkDraft((prev) => ({ ...prev, whyItMatters: e.target.value }))}
-                    placeholder="Why this proof helps prove this bucket"
-                    rows={3}
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                  />
-                  <ActionButton label="Add Proof Link" variant="primary" onClick={onCreateProofLink} disabled={!linkDraft.proofId} />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Linked Proofs</p>
-                <div className="mt-2 space-y-2">
-                  {selectedItem.linkedProofs.map((proof) => {
-                    const entry = selectedItem.linkedProofEntries.find((item) => item.proof_id === proof.id);
-                    return (
-                      <div key={proof.id} className="rounded-2xl border border-slate-200 bg-white p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <button onClick={() => onSelectNode(`proof::${selectedItem.bucket.id}::${proof.id}`)} className="min-w-0 text-left">
-                            <p className="truncate text-sm font-semibold text-slate-900">{entry?.node_label || getProofDisplayLabel(proof)}</p>
-                            <p className="mt-1 text-xs text-slate-500">{entry?.why_it_matters || proof.formal_name || proof.name}</p>
-                          </button>
-                          {entry ? <ActionButton label="Remove" onClick={() => onDeleteProofLink(entry.id)} /> : null}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {selectedItem.linkedProofs.length === 0 && <p className="text-sm text-slate-500">No linked proofs yet.</p>}
+                  {selectedItem.questionGroups.length === 0 && <p className="text-sm text-slate-500">No question groups in this bucket yet.</p>}
                 </div>
               </div>
             </div>
           )}
 
-          {selectedItem.type === 'question' && (
+          {selectedItem.type === 'questionGroup' && (
             <div className="mt-3 space-y-4">
               <div>
-                <p className="text-lg font-bold text-slate-900">{selectedItem.question.text}</p>
+                <p className="text-lg font-bold text-slate-900">{selectedItem.questionGroup.name}</p>
                 <p className="mt-1 text-sm text-slate-500">{selectedItem.bucket.name}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {renderQuestionProofHint(selectedItem)}
-                {selectedItem.question.expected_answer ? <InfoBadge label="Expected Answer" tone="green" /> : null}
-                {selectedItem.question.notes ? <InfoBadge label="Notes" tone="amber" /> : null}
+                <InfoBadge label={`${selectedItem.questions.length} questions`} tone="blue" />
+                {selectedItem.proof ? <InfoBadge label="Proof Focus" tone="teal" /> : null}
+                {selectedItem.admissionBlocks.length > 0 ? <InfoBadge label={`${selectedItem.admissionBlocks.length} admission`} tone="amber" /> : null}
               </div>
 
-              {selectedItem.question.expected_answer && (
-                <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                  {selectedItem.question.expected_answer}
+              {selectedItem.questionGroup.why_it_matters && (
+                <div className="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                  {selectedItem.questionGroup.why_it_matters}
                 </div>
               )}
 
-              {selectedItem.question.notes && (
-                <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  {selectedItem.question.notes}
+              {selectedItem.proof && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Proof Focus</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">{getProofDisplayLabel(selectedItem.proof)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedItem.proof.formal_name || selectedItem.proof.name}</p>
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-2">
-                <ActionButton label="Mark as Asked" variant="primary" onClick={() => onMarkQuestionAsked(selectedItem.question.id)} />
-                <ActionButton label="Open Bucket" onClick={() => onSelectNode(`bucket-${selectedItem.bucket.id}`)} />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Question Checklist</p>
+                <div className="mt-2 space-y-2">
+                  <QuestionChecklist
+                    questions={selectedItem.questions}
+                    askedQuestionIds={askedQuestionIds}
+                    onToggleAsked={onToggleAsked}
+                  />
+                  {selectedItem.questions.length === 0 && <p className="text-sm text-slate-500">No questions in this group yet.</p>}
+                </div>
               </div>
 
-              {selectedItem.linkedProofs.length > 0 && (
+              {selectedItem.admissionBlocks.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Linked Proofs</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Admission Blocks</p>
                   <div className="mt-2 space-y-2">
-                    {selectedItem.linkedProofs.map((proof) => (
+                    {selectedItem.admissionBlocks.map((block) => (
                       <button
-                        key={proof.id}
-                        onClick={() => onSelectNode(`proof::${selectedItem.bucket.id}::${proof.id}`)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left hover:bg-slate-100"
+                        key={block.id}
+                        onClick={() => onSelectNode(`block::${block.id}`)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-left hover:bg-slate-100"
                       >
-                        <p className="text-sm font-semibold text-slate-900">{getProofDisplayLabel(proof)}</p>
-                        <p className="text-xs text-slate-500">{proof.formal_name || proof.name}</p>
+                        <p className="text-sm font-semibold text-slate-900">Open Admission Block</p>
+                        <p className="mt-1 text-xs text-slate-500">{block.proof_id}</p>
                       </button>
                     ))}
                   </div>
@@ -241,12 +226,19 @@ export default function AttorneyHubDetailsPanel({
             <div className="mt-3 space-y-4">
               <div>
                 <p className="text-lg font-bold text-slate-900">{selectedItem.proof ? `Admission · ${getProofDisplayLabel(selectedItem.proof)}` : 'Admission Block'}</p>
-                <p className="mt-1 text-sm text-slate-500">{selectedItem.bucket.name}</p>
+                <p className="mt-1 text-sm text-slate-500">{selectedItem.questionGroup?.name || selectedItem.bucket.name}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <InfoBadge label={selectedItem.proof?.status || 'Not Marked'} tone={selectedItem.proof?.status === 'Admitted' ? 'green' : selectedItem.proof?.status === 'Demonstrative' ? 'purple' : selectedItem.proof?.status === 'Joint' ? 'blue' : 'slate'} />
-                <InfoBadge label={selectedItem.proof && juryState?.published_proof_id === selectedItem.proof.id && !juryState?.is_blank ? 'Published' : 'Not Published'} tone={selectedItem.proof && juryState?.published_proof_id === selectedItem.proof.id && !juryState?.is_blank ? 'pink' : 'slate'} />
+                <InfoBadge label={selectedItem.outcome === 'admitted' ? 'Admitted' : selectedItem.outcome === 'demonstrative' ? 'Demonstrative' : selectedItem.outcome === 'not_admitted' ? 'Not Admitted' : 'Needs Admission'} tone={selectedItem.outcome === 'admitted' ? 'green' : selectedItem.outcome === 'demonstrative' ? 'purple' : selectedItem.outcome === 'not_admitted' ? 'red' : 'amber'} />
+                <InfoBadge label={selectedItem.published ? 'Published' : 'Private'} tone={selectedItem.published ? 'pink' : 'slate'} />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <ActionButton label="Admit Exhibit" variant="primary" onClick={() => onSetBlockOutcome(selectedItem.block, 'admitted')} />
+                <ActionButton label="Demonstrative" onClick={() => onSetBlockOutcome(selectedItem.block, 'demonstrative')} />
+                <ActionButton label="Not Admitted" variant="danger" onClick={() => onSetBlockOutcome(selectedItem.block, 'not_admitted')} />
+                <ActionButton label="Reset" onClick={() => onSetBlockOutcome(selectedItem.block, 'needs_admission')} />
               </div>
 
               <div>
@@ -263,28 +255,9 @@ export default function AttorneyHubDetailsPanel({
               </div>
             </div>
           )}
-
-          {selectedItem.type === 'proof' && (
-            <div className="mt-3 space-y-4">
-              <div>
-                <p className="text-lg font-bold text-slate-900">{getProofDisplayLabel(selectedItem.proof)}</p>
-                <p className="mt-1 text-sm text-slate-500">{selectedItem.link?.why_it_matters || selectedItem.proof.formal_name || selectedItem.proof.name}</p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <InfoBadge label={selectedItem.proof.status || 'Draft'} tone={selectedItem.proof.status === 'Admitted' ? 'green' : selectedItem.proof.status === 'Demonstrative' ? 'purple' : selectedItem.proof.status === 'Joint' ? 'blue' : 'slate'} />
-                <InfoBadge label={selectedItem.published ? 'Published' : 'Not Published'} tone={selectedItem.published ? 'pink' : 'slate'} />
-                <InfoBadge label={selectedItem.proof.file_type} tone="blue" />
-              </div>
-
-              {selectedItem.link?.quote_or_line ? (
-                <div className="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">{selectedItem.link.quote_or_line}</div>
-              ) : null}
-            </div>
-          )}
         </div>
 
-        {(previewProof || selectedItem.type === 'proof' || selectedItem.type === 'bucket' || selectedItem.type === 'evidenceBlock' || selectedItem.type === 'question') && (
+        {previewProof && (
           <ProofPreviewCard
             proof={previewProof}
             onStateChange={onPreviewStateChange}
@@ -292,7 +265,7 @@ export default function AttorneyHubDetailsPanel({
             published={!!published}
             liveSync={liveSync}
             onToggleLiveSync={onToggleLiveSync}
-            onPublish={() => previewProof && onPublishProof(previewProof)}
+            onPublish={() => onPublishProof(previewProof)}
             onBlankJury={onBlankJury}
           />
         )}
