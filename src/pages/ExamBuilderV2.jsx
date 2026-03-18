@@ -180,12 +180,16 @@ export default function ExamBuilderV2() {
       return;
     }
 
-    const siblings = currentItems.filter((item) => item.item_type === 'question' && item.parent_item_id === questionDialog.parentId);
+    const siblings = currentItems.filter(
+      (item) => (item.item_type === 'question' || item.item_type === 'admission_script') && item.parent_item_id === questionDialog.parentId
+    );
+    const nextSortOrder = siblings.length > 0 ? Math.max(...siblings.map((item) => item.sort_order || 0)) + 1 : 0;
+
     await base44.entities.ExamItemV2.create({
       exam_id: currentExam.id,
       item_type: 'question',
       parent_item_id: questionDialog.parentId,
-      sort_order: siblings.length,
+      sort_order: nextSortOrder,
       ...normalizedForm,
     });
     invalidate();
@@ -393,10 +397,10 @@ export default function ExamBuilderV2() {
         <AdmissionOverridesEditor
           open={overridesOpen}
           onOpenChange={setOverridesOpen}
-          sourceBlock={selectedRootProof ? { proof_type_category_id: selectedRootProof.proof_type_category_id, step_overrides: selectedRoot?.step_overrides || {} } : null}
+          sourceBlock={selectedRootProof ? { proof_type_category_id: selectedRootProof.proof_type_category_id, step_overrides: admissionScriptItem?.step_overrides || selectedRoot?.step_overrides || {} } : null}
           templates={admissionTemplates}
           exhibitNum={selectedRootProof?.joint_exhibit_num || ''}
-          onSave={(step_overrides) => base44.entities.ExamItemV2.update(selectedRoot.id, { step_overrides }).then(invalidate)}
+          onSave={(step_overrides) => admissionScriptItem ? base44.entities.ExamItemV2.update(admissionScriptItem.id, { step_overrides }).then(invalidate) : Promise.resolve()}
         />
       </div>
     </DragDropContext>
