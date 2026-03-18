@@ -17,8 +17,8 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
       notes: initialValue?.notes || '',
       attached_proof_ids: initialValue?.attached_proof_ids || [],
     });
-    setPreviewProof((current) => current || availableProofs[0] || null);
-  }, [initialValue, open, availableProofs]);
+    setPreviewProof(null);
+  }, [initialValue, open]);
 
   const toggleProof = (proofId) => {
     setForm((prev) => ({
