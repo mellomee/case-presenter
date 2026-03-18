@@ -53,6 +53,7 @@ export default function Layout() {
       children: [
         { label: 'Attorney View', path: '/present/attorney' },
         { label: 'Attorney Hub', path: '/present/attorney-hub' },
+        { label: 'Attorney Map', path: '/present/attorney-map' },
         { label: 'Jury View', path: '/present/jury' },
       ],
     },
