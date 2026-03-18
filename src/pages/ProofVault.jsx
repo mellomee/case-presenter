@@ -486,6 +486,14 @@ export default function ProofVault() {
               </TabsContent>
 
               <TabsContent value="depositions" className="mt-0">
+                <BulkSelectionBar
+                  selectedCount={selectedProofIds.length}
+                  visibleCount={depositionsTopLevel.length}
+                  isDeleting={isBulkDeleting}
+                  onSelectAll={handleSelectAllVisible}
+                  onClear={handleClearSelection}
+                  onDelete={handleBulkDelete}
+                />
                 {depositionsTopLevel.length === 0 ? (
                   renderEmptyState('No depositions added yet.')
                 ) : (
