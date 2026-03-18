@@ -65,7 +65,6 @@ export default function ExamBuilderV2() {
       ...allDepositions.filter((proof) => !proof.parent_proof_id),
     ];
   }, [proofs]);
-  const previewProof = proofsById[previewProofId] || selectedRootProof || null;
 
   useEffect(() => {
     if (!selectedPartyId && parties[0]) setSelectedPartyId(parties[0].id);
