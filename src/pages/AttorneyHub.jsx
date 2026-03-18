@@ -47,7 +47,10 @@ function AttorneyHubContent() {
   const [fitRequestKey, setFitRequestKey] = useState(1);
   const [focusRequest, setFocusRequest] = useState(null);
   const [positionsMap, setPositionsMap] = useState({});
+  const [positionRecordMap, setPositionRecordMap] = useState({});
   const [stateMap, setStateMap] = useState({});
+  const [hubRecordMap, setHubRecordMap] = useState({});
+  const [publishedProofIdLocal, setPublishedProofIdLocal] = useState(null);
 
   useEffect(() => {
     if (!selectedSide && sideOptions.length > 0) {
@@ -89,14 +92,21 @@ function AttorneyHubContent() {
 
   useEffect(() => {
     setPositionsMap(buildRecordMap(positionRecords, (record) => record.node_id));
+    setPositionRecordMap(buildRecordMap(positionRecords, (record) => record.node_id));
   }, [positionRecords]);
 
   useEffect(() => {
     setStateMap(buildRecordMap(hubStateRecords, (record) => `${record.node_type}:${record.node_id}`));
+    setHubRecordMap(buildRecordMap(hubStateRecords, (record) => `${record.node_type}:${record.node_id}`));
   }, [hubStateRecords]);
 
   const juryState = juryStateRecords[0] || null;
-  const publishedProofId = juryState?.published_proof_id || null;
+
+  useEffect(() => {
+    setPublishedProofIdLocal(juryState?.published_proof_id || null);
+  }, [juryState?.published_proof_id]);
+
+  const publishedProofId = publishedProofIdLocal;
 
   const mapData = useMemo(() => buildMapData({
     selectedSide,
@@ -135,28 +145,32 @@ function AttorneyHubContent() {
 
   const persistNodePosition = async (nodeId, nodeType, position) => {
     if (!selectedWitnessId) return;
-    const existing = positionRecords.find((record) => record.node_id === nodeId);
+    const existing = positionRecordMap[nodeId];
     const nextPosition = { witness_id: selectedWitnessId, node_id: nodeId, node_type: nodeType, x: position.x, y: position.y };
     setPositionsMap((prev) => ({ ...prev, [nodeId]: nextPosition }));
 
-    if (existing) {
-      await base44.entities.MindMapNodePosition.update(existing.id, nextPosition);
+    if (existing?.id) {
+      const updated = await base44.entities.MindMapNodePosition.update(existing.id, nextPosition);
+      setPositionRecordMap((prev) => ({ ...prev, [nodeId]: updated }));
     } else {
-      await base44.entities.MindMapNodePosition.create(nextPosition);
+      const created = await base44.entities.MindMapNodePosition.create(nextPosition);
+      setPositionRecordMap((prev) => ({ ...prev, [nodeId]: created }));
     }
   };
 
   const saveHubState = async (nodeType, nodeId, status) => {
     if (!selectedWitnessId) return;
     const key = `${nodeType}:${nodeId}`;
-    const existing = hubStateRecords.find((record) => record.node_type === nodeType && record.node_id === nodeId);
+    const existing = hubRecordMap[key];
     const nextState = { witness_id: selectedWitnessId, node_id: nodeId, node_type: nodeType, status };
     setStateMap((prev) => ({ ...prev, [key]: nextState }));
 
-    if (existing) {
-      await base44.entities.AttorneyHubState.update(existing.id, nextState);
+    if (existing?.id) {
+      const updated = await base44.entities.AttorneyHubState.update(existing.id, nextState);
+      setHubRecordMap((prev) => ({ ...prev, [key]: updated }));
     } else {
-      await base44.entities.AttorneyHubState.create(nextState);
+      const created = await base44.entities.AttorneyHubState.create(nextState);
+      setHubRecordMap((prev) => ({ ...prev, [key]: created }));
     }
   };
 
@@ -180,6 +194,7 @@ function AttorneyHubContent() {
       is_playing: false,
       is_blank: false,
     });
+    setPublishedProofIdLocal(proof.id);
     setFocusRequest({ id: `proof-${proof.id}`, ts: Date.now() });
   };
 
@@ -192,6 +207,7 @@ function AttorneyHubContent() {
       is_blank: true,
       is_playing: false,
     });
+    setPublishedProofIdLocal(null);
   };
 
   const openProof = (proof) => {
