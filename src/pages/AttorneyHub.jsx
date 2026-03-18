@@ -133,9 +133,24 @@ export default function AttorneyHub() {
     const proofEntries = filteredProofs.map((proof) => ({ kind: 'proof', id: proof.id }));
     if (proofTab === 'Depositions') return proofEntries;
     if (orderMode !== 'exam' || !currentExam) return proofEntries;
-    const groupEntries = rootGroups.map((item) => ({ kind: 'group', id: item.id }));
-    return [...proofEntries, ...groupEntries];
-  }, [currentExam, filteredProofs, orderMode, proofTab, rootGroups]);
+
+    const visibleProofIds = new Set(filteredProofs.map((proof) => proof.id));
+
+    return currentExamItems
+      .filter((item) => !item.parent_item_id && item.item_type !== 'question')
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      .flatMap((item) => {
+        if (item.item_type === 'group') {
+          return statusFilter === 'all' && sideFilter === 'all' ? [{ kind: 'group', id: item.id }] : [];
+        }
+
+        if (item.item_type === 'proof' && visibleProofIds.has(item.linked_proof_id)) {
+          return [{ kind: 'proof', id: item.linked_proof_id }];
+        }
+
+        return [];
+      });
+  }, [currentExam, currentExamItems, filteredProofs, orderMode, proofTab, sideFilter, statusFilter]);
 
   useEffect(() => {
     if (!displayEntries.length) {
