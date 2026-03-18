@@ -426,12 +426,68 @@ export default function ExamBuilderV2() {
                 </button>
               </div>
               {!leftColumnCollapsed && (
-              <Droppable droppableId="root-items" type="ROOT">
-                {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
-...
-                )}
-              </Droppable>
+                <Droppable droppableId="root-items" type="ROOT">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
+                      {rootItems.map((item, index) => {
+                        const proof = item.item_type === 'proof' ? proofsById[item.linked_proof_id] : null;
+                        const active = selectedRootId === item.id;
+                        return (
+                          <Draggable key={item.id} draggableId={item.id} index={index}>
+                            {(dragProvided) => (
+                              <div
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                onClick={() => setSelectedRootId(item.id)}
+                                className={`w-full rounded-2xl border p-3 text-left cursor-pointer ${active ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70'}`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <button type="button" {...dragProvided.dragHandleProps} className="mt-1 text-slate-500 hover:text-white flex-shrink-0">
+                                    <GripVertical className="w-4 h-4" />
+                                  </button>
+                                  <div className="flex-shrink-0 relative">
+                                    {proof ? <ProofThumbPreview proof={proof} size="md" /> : <ProofThumbPreview groupLabel={item.label} size="md" />}
+                                    {proof && (
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setPreviewDialogProof(proof);
+                                        }}
+                                        className="absolute -right-1 -top-1 h-7 w-7 rounded-full border border-slate-700 bg-slate-950/90 flex items-center justify-center text-slate-300 hover:text-white"
+                                        title="Preview proof"
+                                      >
+                                        <Eye className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1 pt-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{index + 1}</span>
+                                      <p className="text-sm font-semibold text-white leading-snug truncate">{proof ? getProofDisplayName(proof) : item.label}</p>
+                                    </div>
+                                    {proof && (
+                                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-400 flex-wrap">
+                                        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{proof.status}</span>
+                                        {proof.joint_exhibit_num && <span>Joint # {proof.joint_exhibit_num}</span>}
+                                        {proof.admitted_exhibit_num && <span>Admitted # {proof.admitted_exhibit_num}</span>}
+                                        {proof.demonstrative_exhibit_num && <span>Demo # {proof.demonstrative_exhibit_num}</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 flex-shrink-0" onClick={(event) => { event.stopPropagation(); deleteItem(item); }}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
               )}
             </div>
 
