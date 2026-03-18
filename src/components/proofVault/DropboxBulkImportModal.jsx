@@ -9,7 +9,8 @@ import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField
 
 function normalizePath(path) {
   if (!path || path === '/') return '';
-  return path.startsWith('/') ? path : `/${path}`;
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return normalized.replace(/\/+$/, '');
 }
 
 function getParentPath(path) {
@@ -104,6 +105,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
       return response.data;
     },
     enabled: open,
+    refetchOnMount: 'always',
   });
 
   const filteredEntries = useMemo(() => {
