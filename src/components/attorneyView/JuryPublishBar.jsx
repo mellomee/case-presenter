@@ -53,7 +53,7 @@ export default function JuryPublishBar({ proof, parentProof = null, juryState, o
             onClick={handleBlank}
             className="gap-1.5 h-7 text-xs border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
           >
-            <MonitorOff className="w-3 h-3" /> Blank Screen
+            <MonitorOff className="w-3 h-3" /> Unpublish
           </Button>
         </>
       ) : (

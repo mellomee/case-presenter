@@ -437,7 +437,26 @@ export default function AttorneyHub() {
             </div>
 
             <div className={`flex-1 min-h-0 overflow-y-auto ${leftColumnCollapsed ? 'p-2' : 'p-4'}`}>
-              {leftColumnCollapsed ? null : (
+              {leftColumnCollapsed ? (
+                <div className="flex h-full flex-col items-center gap-2 overflow-y-auto">
+                  {displayEntries.map((entry) => {
+                    const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
+                    const proof = entry.kind === 'proof' ? proofsById[entry.id] : null;
+                    const group = entry.kind === 'group' ? rootGroups.find((item) => item.id === entry.id) : null;
+
+                    return (
+                      <button
+                        key={`${entry.kind}:${entry.id}`}
+                        type="button"
+                        onClick={() => setSelectedKey(`${entry.kind}:${entry.id}`)}
+                        className={`rounded-xl border p-1.5 ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70 hover:border-slate-700'}`}
+                      >
+                        {proof ? <ProofThumbPreview proof={proof} size="sm" /> : <ProofThumbPreview groupLabel={group?.label || 'Group'} size="sm" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {displayEntries.map((entry) => {
                   const isSelected = selectedKey === `${entry.kind}:${entry.id}`;

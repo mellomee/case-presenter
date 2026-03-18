@@ -29,10 +29,16 @@ function ToolbarSelect({ value, onChange, children }) {
   );
 }
 
+function getStoredExamV2Setting(key, fallback) {
+  if (typeof window === 'undefined') return fallback;
+  const value = window.localStorage.getItem(key);
+  return value ?? fallback;
+}
+
 export default function ExamBuilderV2() {
   const queryClient = useQueryClient();
-  const [selectedPartyId, setSelectedPartyId] = useState('');
-  const [selectedExamType, setSelectedExamType] = useState('Direct');
+  const [selectedPartyId, setSelectedPartyId] = useState(() => getStoredExamV2Setting('exam-v2-selected-party', ''));
+  const [selectedExamType, setSelectedExamType] = useState(() => getStoredExamV2Setting('exam-v2-selected-type', 'Direct'));
   const [selectedRootId, setSelectedRootId] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [groupDialog, setGroupDialog] = useState({ open: false, initialItem: null });
@@ -95,6 +101,11 @@ export default function ExamBuilderV2() {
       setSelectedRootId(rootItems[0].id);
     }
   }, [rootItems, selectedRootId]);
+
+  useEffect(() => {
+    window.localStorage.setItem('exam-v2-selected-party', selectedPartyId || '');
+    window.localStorage.setItem('exam-v2-selected-type', selectedExamType);
+  }, [selectedPartyId, selectedExamType]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['v2ExamItems'] });
   const invalidateExams = () => queryClient.invalidateQueries({ queryKey: ['v2Exams'] });
