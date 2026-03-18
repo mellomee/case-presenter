@@ -16,6 +16,15 @@ import { base44 } from '@/api/base44Client';
 import PDFViewer from './PDFViewer';
 import { compressPageRange, parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
+import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
+
+function normalizePartyIds(currentProof) {
+  if (Array.isArray(currentProof?.party_ids) && currentProof.party_ids.length > 0) {
+    return currentProof.party_ids.filter(Boolean);
+  }
+
+  return currentProof?.party_id ? [currentProof.party_id] : [];
+}
 
 export default function CreateExtractModal({ open, onClose, parentProof, onSuccess }) {
   const queryClient = useQueryClient();
@@ -31,10 +40,16 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [pageRangeError, setPageRangeError] = useState('');
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
+  const [selectedPartyIds, setSelectedPartyIds] = useState([]);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
+  });
+
+  const { data: parties = [] } = useQuery({
+    queryKey: ['parties'],
+    queryFn: () => base44.entities.Party.list(),
   });
 
   const actualParentProof = isEditing
@@ -81,6 +96,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setPageRangeError('');
     setWarningMsg('');
     setShowWarning(false);
+    setSelectedPartyIds([]);
   };
 
   useEffect(() => {
@@ -98,10 +114,12 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       setPageRangeError('');
       setWarningMsg('');
       setShowWarning(false);
+      setSelectedPartyIds(normalizePartyIds(parentProof));
       return;
     }
 
     resetForm();
+    setSelectedPartyIds(normalizePartyIds(actualParentProof));
   }, [open, parentProof, isEditing, actualParentProof]);
 
   const validatePageRange = (range) => {
