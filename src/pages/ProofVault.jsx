@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Film, AlertCircle, Upload, Printer } from 'lucide-react';
+import { FileText, Plus, Film, AlertCircle, Upload, Printer, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,8 @@ export default function ProofVault() {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [expandedProofId, setExpandedProofId] = useState(null);
   const [highlightedChildId, setHighlightedChildId] = useState(null);
+  const [selectedProofIds, setSelectedProofIds] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -77,34 +79,37 @@ export default function ProofVault() {
     },
   });
 
+  const deleteProofWithValidation = async (id) => {
+    const children = proofs.filter((p) => p.parent_proof_id === id);
+
+    if (children.length > 0) {
+      throw new Error(`This proof has ${children.length} child proofs. Delete all children first.`);
+    }
+
+    const questions = await base44.entities.Question.list();
+    const attached = questions.filter((q) => {
+      const proofIds = Array.isArray(q.proof_ids)
+        ? q.proof_ids
+        : Array.isArray(q.proof_ids?.ids)
+          ? q.proof_ids.ids
+          : [];
+      return proofIds.includes(id);
+    });
+
+    if (attached.length > 0) {
+      throw new Error('Remove this proof from all Questions first.');
+    }
+
+    return base44.entities.Proof.delete(id);
+  };
+
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const proof = proofs.find((p) => p.id === id);
-      const children = proofs.filter((p) => p.parent_proof_id === id);
-      
-      if (children.length > 0) {
-        throw new Error(`This proof has ${children.length} child proofs. Delete all children first.`);
-      }
-
-      const questions = await base44.entities.Question.list();
-      const attached = questions.filter((q) => {
-        const proofIds = Array.isArray(q.proof_ids)
-          ? q.proof_ids
-          : Array.isArray(q.proof_ids?.ids)
-            ? q.proof_ids.ids
-            : [];
-        return proofIds.includes(id);
-      });
-
-      if (attached.length > 0) {
-        throw new Error('Remove this proof from all Questions first.');
-      }
-
-      return base44.entities.Proof.delete(id);
-    },
+    mutationFn: deleteProofWithValidation,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
     onError: (error) => {
-      alert(`Cannot delete: ${error.message}`);
+      if (!isBulkDeleting) {
+        alert(`Cannot delete: ${error.message}`);
+      }
     },
   });
 
@@ -199,6 +204,11 @@ export default function ProofVault() {
     return () => clearTimeout(timeout);
   }, [highlightedChildId]);
 
+  useEffect(() => {
+    const existingIds = new Set(proofs.map((proof) => proof.id));
+    setSelectedProofIds((current) => current.filter((id) => existingIds.has(id)));
+  }, [proofs]);
+
   // Separate exhibits and depositions (include ALL, not just top-level)
   const allExhibits = proofs.filter((p) => p.proof_category === 'Exhibit');
   const allDepositions = proofs.filter((p) => p.proof_category === 'Deposition');
@@ -233,6 +243,44 @@ export default function ProofVault() {
     return exhibitsTopLevel.filter((e) => e.status === status).length;
   };
 
+  const visibleProofs = activeTab === 'exhibits' ? filteredExhibits : depositionsTopLevel;
+
+  const toggleProofSelection = (proofId) => {
+    setSelectedProofIds((current) => (
+      current.includes(proofId) ? current.filter((id) => id !== proofId) : [...current, proofId]
+    ));
+  };
+
+  const selectVisibleProofs = () => {
+    setSelectedProofIds((current) => Array.from(new Set([...current, ...visibleProofs.map((proof) => proof.id)])));
+  };
+
+  const clearProofSelection = () => {
+    setSelectedProofIds([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProofIds.length === 0) return;
+    const confirmed = window.confirm(`Delete ${selectedProofIds.length} selected proof${selectedProofIds.length === 1 ? '' : 's'}?`);
+    if (!confirmed) return;
+
+    setIsBulkDeleting(true);
+    const idsToDelete = [...selectedProofIds];
+    const results = await Promise.allSettled(idsToDelete.map((id) => deleteMutation.mutateAsync(id)));
+    const failedIds = idsToDelete.filter((_, index) => results[index].status === 'rejected');
+    const deletedCount = idsToDelete.length - failedIds.length;
+
+    setSelectedProofIds(failedIds);
+    setIsBulkDeleting(false);
+
+    if (failedIds.length === 0) {
+      alert(`Deleted ${deletedCount} proof${deletedCount === 1 ? '' : 's'}.`);
+      return;
+    }
+
+    alert(`${deletedCount} deleted. ${failedIds.length} could not be deleted because they are still linked or have child proofs.`);
+  };
+
   const renderEmptyState = (title) => (
     <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
       <p className="text-slate-600">{title}</p>
@@ -247,7 +295,16 @@ export default function ProofVault() {
             <FileText className="w-8 h-8 text-blue-600" />
             <h2 className="text-3xl font-bold text-slate-900">Proof Vault</h2>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
+            <Button variant="outline" onClick={selectVisibleProofs} disabled={visibleProofs.length === 0}>
+              Select Visible
+            </Button>
+            <Button variant="outline" onClick={clearProofSelection} disabled={selectedProofIds.length === 0}>
+              Clear
+            </Button>
+            <Button variant="outline" onClick={handleBulkDelete} disabled={selectedProofIds.length === 0 || isBulkDeleting} className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+              <Trash2 className="w-4 h-4" /> Delete Selected{selectedProofIds.length > 0 ? ` (${selectedProofIds.length})` : ''}
+            </Button>
             <Button variant="outline" onClick={() => setShowPrintModal(true)} className="gap-2">
               <Printer className="w-4 h-4" /> Print List
             </Button>
@@ -401,23 +458,32 @@ export default function ProofVault() {
                  ) : (
                    <div className="space-y-3">
                      {filteredExhibits.map((proof) => (
-                       <ProofTile
-                         key={proof.id}
-                         proof={proof}
-                         allProofs={allExhibits}
-                        currentTab={exhibitFilter}
-                        onEdit={handleEdit}
-                        onDelete={deleteMutation.mutate}
-                        onExtract={handleExtract}
-                        onClip={handleClip}
-                        onAddToJoint={handleAddToJoint}
-                        onAdmitAsExhibit={handleAdmitAsExhibit}
-                        onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
-                        onRemoveFromJoint={handleRemoveFromJoint}
-                        onUnAdmit={handleUnAdmit}
-                        expandedProofId={expandedProofId}
-                        highlightedChildId={highlightedChildId}
-                      />
+                       <div key={proof.id} className="flex items-start gap-3">
+                         <input
+                           type="checkbox"
+                           checked={selectedProofIds.includes(proof.id)}
+                           onChange={() => toggleProofSelection(proof.id)}
+                           className="mt-4 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                         />
+                         <div className="min-w-0 flex-1">
+                           <ProofTile
+                             proof={proof}
+                             allProofs={allExhibits}
+                            currentTab={exhibitFilter}
+                            onEdit={handleEdit}
+                            onDelete={deleteMutation.mutate}
+                            onExtract={handleExtract}
+                            onClip={handleClip}
+                            onAddToJoint={handleAddToJoint}
+                            onAdmitAsExhibit={handleAdmitAsExhibit}
+                            onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                            onRemoveFromJoint={handleRemoveFromJoint}
+                            onUnAdmit={handleUnAdmit}
+                            expandedProofId={expandedProofId}
+                            highlightedChildId={highlightedChildId}
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -429,23 +495,32 @@ export default function ProofVault() {
                 ) : (
                   <div className="space-y-3">
                     {depositionsTopLevel.map((proof) => (
-                      <ProofTile
-                        key={proof.id}
-                        proof={proof}
-                        allProofs={allDepositions}
-                        currentTab="depositions"
-                        onEdit={handleEdit}
-                        onDelete={deleteMutation.mutate}
-                        onExtract={handleExtract}
-                        onClip={handleClip}
-                        onAddToJoint={handleAddToJoint}
-                        onAdmitAsExhibit={handleAdmitAsExhibit}
-                        onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
-                        onRemoveFromJoint={handleRemoveFromJoint}
-                        onUnAdmit={handleUnAdmit}
-                        expandedProofId={expandedProofId}
-                        highlightedChildId={highlightedChildId}
-                      />
+                      <div key={proof.id} className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedProofIds.includes(proof.id)}
+                          onChange={() => toggleProofSelection(proof.id)}
+                          className="mt-4 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <ProofTile
+                            proof={proof}
+                            allProofs={allDepositions}
+                            currentTab="depositions"
+                            onEdit={handleEdit}
+                            onDelete={deleteMutation.mutate}
+                            onExtract={handleExtract}
+                            onClip={handleClip}
+                            onAddToJoint={handleAddToJoint}
+                            onAdmitAsExhibit={handleAdmitAsExhibit}
+                            onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                            onRemoveFromJoint={handleRemoveFromJoint}
+                            onUnAdmit={handleUnAdmit}
+                            expandedProofId={expandedProofId}
+                            highlightedChildId={highlightedChildId}
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
