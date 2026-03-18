@@ -3,7 +3,7 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Eye, GripVertical, Pencil, Plus, ScrollText, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, Pencil, Plus, Printer, ScrollText, Trash2, Upload } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
@@ -11,6 +11,8 @@ import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
 import QuestionTreeEditor from '@/components/examV2/QuestionTreeEditor.jsx';
 import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEditor.jsx';
 import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
+import ExamV2ImportDialog from '@/components/examV2/ExamV2ImportDialog.jsx';
+import PrintExamV2Dialog from '@/components/examV2/PrintExamV2Dialog.jsx';
 import { collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
 
 function proofMatchesParty(proof, partyId) {
@@ -37,6 +39,8 @@ export default function ExamBuilderV2() {
   const [questionDialog, setQuestionDialog] = useState({ open: false, parentId: null, initialValue: null, title: 'Question' });
   const [overridesOpen, setOverridesOpen] = useState(false);
   const [previewDialogProof, setPreviewDialogProof] = useState(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
 
   const { data: parties = [] } = useQuery({ queryKey: ['v2Parties'], queryFn: () => base44.entities.Party.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['v2Proofs'], queryFn: () => base44.entities.Proof.list() });
@@ -109,20 +113,18 @@ export default function ExamBuilderV2() {
     invalidate();
   };
 
-  const addProofToExam = async (proof) => {
-    const exam = await ensureExam();
-    const nextOrder = rootItems.length;
+  const createProofRootItem = async ({ examId, proof, sortOrder }) => {
     const rootProofItem = await base44.entities.ExamItemV2.create({
-      exam_id: exam.id,
+      exam_id: examId,
       item_type: 'proof',
       linked_proof_id: proof.id,
       label: getProofDisplayName(proof),
       step_overrides: {},
-      sort_order: nextOrder,
+      sort_order: sortOrder,
     });
 
     await base44.entities.ExamItemV2.create({
-      exam_id: exam.id,
+      exam_id: examId,
       item_type: 'admission_script',
       parent_item_id: rootProofItem.id,
       label: 'Exhibit Admission Script',
@@ -130,6 +132,12 @@ export default function ExamBuilderV2() {
       sort_order: 0,
     });
 
+    return rootProofItem;
+  };
+
+  const addProofToExam = async (proof) => {
+    const exam = await ensureExam();
+    await createProofRootItem({ examId: exam.id, proof, sortOrder: rootItems.length });
     invalidate();
   };
 
@@ -224,6 +232,93 @@ export default function ExamBuilderV2() {
     invalidate();
   };
 
+  const handleImportExamData = async (importedRootItems) => {
+    if (!selectedPartyId) {
+      throw new Error('Select a party before importing.');
+    }
+
+    const exam = await ensureExam();
+    const createdRootIds = [];
+    const baseSortOrder = rootItems.length;
+    const normalizeQuestionKey = (value) => String(value || '').trim().toLowerCase();
+
+    for (const [rootIndex, importedRoot] of importedRootItems.entries()) {
+      let createdRootItem;
+
+      if (importedRoot.item_type === 'proof') {
+        if (!importedRoot.matched_root_proof) {
+          throw new Error(`Proof "${importedRoot.root_item_name}" could not be found.`);
+        }
+
+        createdRootItem = await createProofRootItem({
+          examId: exam.id,
+          proof: importedRoot.matched_root_proof,
+          sortOrder: baseSortOrder + rootIndex,
+        });
+      } else {
+        createdRootItem = await base44.entities.ExamItemV2.create({
+          exam_id: exam.id,
+          item_type: 'group',
+          label: truncateGroupLabel(importedRoot.root_item_name),
+          sort_order: baseSortOrder + rootIndex,
+        });
+      }
+
+      createdRootIds.push(createdRootItem.id);
+
+      const questionRows = importedRoot.question_rows.filter((row) => row.question_text);
+      if (questionRows.length === 0) continue;
+
+      const topLevelRows = questionRows.filter((row) => !row.parent_question_text);
+      const childRows = questionRows.filter((row) => row.parent_question_text);
+      const createdQuestionIdsByKey = {};
+      const childOrderByParentId = {};
+      const baseQuestionSortOrder = importedRoot.item_type === 'proof' ? 1 : 0;
+
+      for (const [questionIndex, row] of topLevelRows.entries()) {
+        const createdQuestion = await base44.entities.ExamItemV2.create({
+          exam_id: exam.id,
+          item_type: 'question',
+          parent_item_id: createdRootItem.id,
+          sort_order: baseQuestionSortOrder + questionIndex,
+          text: row.question_text,
+          expected_answer: row.expected_answer || '',
+          notes: row.notes || '',
+          attached_proof_ids: row.attached_proof_ids?.length ? { ids: row.attached_proof_ids } : null,
+        });
+
+        const key = normalizeQuestionKey(row.question_text);
+        if (key) createdQuestionIdsByKey[key] = createdQuestion.id;
+      }
+
+      for (const row of childRows) {
+        const parentQuestionId = createdQuestionIdsByKey[normalizeQuestionKey(row.parent_question_text)];
+        if (!parentQuestionId) {
+          throw new Error(`Parent question "${row.parent_question_text}" was not found inside exam order ${importedRoot.exam_order}.`);
+        }
+
+        const childSortOrder = childOrderByParentId[parentQuestionId] || 0;
+        const createdQuestion = await base44.entities.ExamItemV2.create({
+          exam_id: exam.id,
+          item_type: 'question',
+          parent_item_id: parentQuestionId,
+          sort_order: childSortOrder,
+          text: row.question_text,
+          expected_answer: row.expected_answer || '',
+          notes: row.notes || '',
+          attached_proof_ids: row.attached_proof_ids?.length ? { ids: row.attached_proof_ids } : null,
+        });
+
+        childOrderByParentId[parentQuestionId] = childSortOrder + 1;
+        const key = normalizeQuestionKey(row.question_text);
+        if (key) createdQuestionIdsByKey[key] = createdQuestion.id;
+      }
+    }
+
+    invalidate();
+    if (createdRootIds[0]) setSelectedRootId(createdRootIds[0]);
+  };
+
   const reorderRootItems = async (sourceIndex, destinationIndex) => {
     const reordered = [...rootItems];
     const [moved] = reordered.splice(sourceIndex, 1);
@@ -307,6 +402,12 @@ export default function ExamBuilderV2() {
             </ToolbarSelect>
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setPickerOpen(true)}>Add Joint Proof</Button>
             <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => setGroupDialog({ open: true, initialItem: null })}>Add Question Group</Button>
+            <Button variant="outline" className="border-slate-700 text-slate-200 gap-2" onClick={() => setImportDialogOpen(true)} disabled={!selectedPartyId}>
+              <Upload className="w-4 h-4" /> Import Excel
+            </Button>
+            <Button variant="outline" className="border-slate-700 text-slate-200 gap-2" onClick={() => setPrintDialogOpen(true)} disabled={rootItems.length === 0}>
+              <Printer className="w-4 h-4" /> Print Exam
+            </Button>
             {!currentExam && selectedPartyId && <span className="text-xs text-slate-400">Choose an item action to create this V2 exam.</span>}
           </div>
 
