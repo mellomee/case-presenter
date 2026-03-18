@@ -50,6 +50,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
   const [currentPath, setCurrentPath] = useState('');
   const [search, setSearch] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [browserSelectedKeys, setBrowserSelectedKeys] = useState([]);
   const [proofCategory, setProofCategory] = useState('Exhibit');
   const [proofTypeCategoryId, setProofTypeCategoryId] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -88,6 +89,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     setCurrentPath(normalizePath(rootPath));
     setSearch('');
     setSelectedFiles([]);
+    setBrowserSelectedKeys([]);
     setProofCategory('Exhibit');
     setProofTypeCategoryId('');
     setCategoryId('');
@@ -117,10 +119,24 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     [selectedFiles]
   );
 
-  const addFile = (file) => {
+  const toggleBrowserSelection = (file) => {
     const key = file.id || file.path_display;
-    if (selectedLookup.has(key)) return;
-    setSelectedFiles((current) => [...current, buildInitialSelection(file)]);
+    setBrowserSelectedKeys((current) => (
+      current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
+    ));
+  };
+
+  const addSelectedFilesToQueue = () => {
+    const selectedEntries = filteredEntries.filter((entry) => entry.type === 'file' && browserSelectedKeys.includes(entry.id || entry.path_display));
+    if (selectedEntries.length === 0) return;
+
+    setSelectedFiles((current) => {
+      const existingKeys = new Set(current.map((file) => file.id || file.path_display));
+      const nextFiles = selectedEntries.filter((file) => !existingKeys.has(file.id || file.path_display));
+      return nextFiles.length > 0 ? [...current, ...nextFiles.map(buildInitialSelection)] : current;
+    });
+
+    setBrowserSelectedKeys([]);
   };
 
   const removeFile = (fileKey) => {
@@ -242,7 +258,13 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     onImportComplete?.();
   };
 
+  useEffect(() => {
+    if (!open) return;
+    setBrowserSelectedKeys([]);
+  }, [currentPath, open]);
+
   const successCount = selectedFiles.filter((file) => file.status === 'done').length;
+  const browserSelectableCount = browserSelectedKeys.filter((key) => !selectedLookup.has(key)).length;
 
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
@@ -254,14 +276,22 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-              <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-slate-600">
-                <Button type="button" variant="outline" size="sm" onClick={() => setCurrentPath(getParentPath(currentPath))} disabled={!currentPath} className="gap-1">
-                  <ChevronLeft className="w-4 h-4" /> Up
-                </Button>
-                <span className="min-w-0 truncate font-mono text-xs">{currentPath || '/'}</span>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-slate-600">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setCurrentPath(getParentPath(currentPath))} disabled={!currentPath} className="gap-1">
+                    <ChevronLeft className="w-4 h-4" /> Up
+                  </Button>
+                  <span className="min-w-0 truncate font-mono text-xs">{currentPath || '/'}</span>
+                </div>
+                <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter Dropbox files" className="w-full sm:w-72 sm:flex-none" />
               </div>
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter Dropbox files" className="w-full sm:w-72 sm:flex-none" />
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-slate-500">Select the files you want, then add them all at once.</p>
+                <Button type="button" size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={addSelectedFilesToQueue} disabled={browserSelectableCount === 0 || isImporting}>
+                  Add selected{browserSelectableCount > 0 ? ` (${browserSelectableCount})` : ''}
+                </Button>
+              </div>
             </div>
 
             <div className="rounded-lg border border-slate-200 max-h-[22rem] overflow-y-auto overflow-x-hidden">
@@ -275,12 +305,24 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                 filteredEntries.map((entry) => {
                   const fileKey = entry.id || entry.path_display;
                   const selected = selectedLookup.has(fileKey);
+                  const checked = browserSelectedKeys.includes(fileKey);
                   return (
                     <div key={fileKey} className="flex flex-col items-start gap-3 px-4 py-3 border-b last:border-b-0 border-slate-100 sm:flex-row sm:items-center">
+                      {entry.type === 'file' && (
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={selected || isImporting}
+                          onChange={() => toggleBrowserSelection(entry)}
+                          className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 sm:mt-0"
+                        />
+                      )}
+
                       <button
                         type="button"
                         onClick={() => {
                           if (entry.type === 'folder') setCurrentPath(entry.path_display || '');
+                          if (entry.type === 'file' && !selected && !isImporting) toggleBrowserSelection(entry);
                         }}
                         className="flex items-center gap-3 min-w-0 text-left flex-1"
                       >
@@ -292,9 +334,15 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                       </button>
 
                       {entry.type === 'file' && (
-                        <Button type="button" size="sm" variant={selected ? 'outline' : 'default'} className={selected ? 'self-end shrink-0 sm:self-auto' : 'bg-blue-600 hover:bg-blue-700 self-end shrink-0 sm:self-auto'} onClick={() => addFile(entry)}>
-                          {selected ? 'Added' : 'Add'}
-                        </Button>
+                        <div className="self-end shrink-0 sm:self-auto">
+                          {selected ? (
+                            <span className="inline-flex items-center rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+                              Added
+                            </span>
+                          ) : (
+                            <span className="text-xs font-medium text-slate-500">{checked ? 'Selected' : 'Select'}</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
