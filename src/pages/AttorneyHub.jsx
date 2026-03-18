@@ -339,6 +339,7 @@ export default function AttorneyHub() {
                 </div>
               </div>
             </div>
+          </div>
 
           <ColumnResizeHandle onMouseDown={startDrag.left} />
 
