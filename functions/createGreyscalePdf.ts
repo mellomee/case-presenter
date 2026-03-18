@@ -3,6 +3,7 @@ import AdobePdfServicesSdk from 'npm:@adobe/pdfservices-node-sdk@4.1.0';
 import Jimp from 'npm:jimp@0.22.12';
 import { jsPDF } from 'npm:jspdf@4.0.0';
 import { Readable } from 'node:stream';
+import { Buffer } from 'node:buffer';
 
 const {
   ServicePrincipalCredentials,
@@ -237,7 +238,9 @@ Deno.serve(async (req) => {
     const saveFolder = normalizePath(settings[0]?.dropbox_save_folder || '/Case Presenter/OCR');
     await ensureDropboxFolder(accessToken, saveFolder);
 
-    const baseName = String(proof.formal_name || proof.name || 'proof').replace(/\.pdf$/i, '').trim() || 'proof';
+    const baseName = (String(proof.formal_name || proof.name || 'proof').replace(/\.pdf$/i, '').trim() || 'proof')
+      .replace(/[\\/:*?"<>|]/g, '-')
+      .replace(/\s+/g, ' ');
     const outputName = `${baseName}-greyscale.pdf`;
     const uploadedFile = await uploadDropboxFile(accessToken, `${saveFolder}/${outputName}`, outputBytes);
 
