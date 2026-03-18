@@ -14,6 +14,8 @@ export default function PartyMultiSelectField({
   helperText = '',
 }) {
   const selectedParties = parties.filter((party) => value.includes(party.id));
+  const allPartyIds = parties.map((party) => party.id);
+  const allSelected = parties.length > 0 && allPartyIds.every((partyId) => value.includes(partyId));
 
   const toggleParty = (partyId) => {
     onChange(
@@ -21,6 +23,10 @@ export default function PartyMultiSelectField({
         ? value.filter((id) => id !== partyId)
         : [...value, partyId]
     );
+  };
+
+  const toggleAllParties = () => {
+    onChange(allSelected ? [] : allPartyIds);
   };
 
   return (
@@ -41,6 +47,15 @@ export default function PartyMultiSelectField({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2" align="start">
+          <div className="mb-2 flex justify-end px-2">
+            <button
+              type="button"
+              onClick={toggleAllParties}
+              className="text-xs font-medium text-blue-600 hover:text-blue-700"
+            >
+              {allSelected ? 'Clear all' : 'Select all'}
+            </button>
+          </div>
           <div className="max-h-64 space-y-1 overflow-y-auto">
             {parties.map((party) => (
               <label
