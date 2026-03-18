@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, ChevronLeft, ChevronRight, Layers3, LayoutGrid, List } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Layers3, LayoutGrid, List, Pause, Play, Square } from 'lucide-react';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
@@ -76,10 +76,10 @@ function formatElapsedTime(totalSeconds) {
   const seconds = totalSeconds % 60;
 
   if (hours > 0) {
-    return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 
-  return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 export default function AttorneyHub() {
@@ -315,22 +315,42 @@ export default function AttorneyHub() {
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
         <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsTimerRunning((value) => !value)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold ${isTimerRunning ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-            >
-              {isTimerRunning ? 'Stop Timer' : 'Start Timer'}
-            </button>
-            <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Elapsed</p>
-              <p className="mt-1 text-sm font-semibold text-white">{formatElapsedTime(elapsedSeconds)}</p>
+            <div className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950 p-1">
+              <button
+                type="button"
+                onClick={() => setIsTimerRunning(true)}
+                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white"
+                title="Start"
+              >
+                <Play className="w-4 h-4 fill-current" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsTimerRunning(false)}
+                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white"
+                title="Pause"
+              >
+                <Pause className="w-4 h-4 fill-current" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTimerRunning(false);
+                  setElapsedSeconds(0);
+                }}
+                className="h-8 w-8 rounded-md flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white"
+                title="Stop and reset"
+              >
+                <Square className="w-3.5 h-3.5 fill-current" />
+              </button>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
+              {formatElapsedTime(elapsedSeconds)}
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Los Angeles</p>
-            <p className="mt-1 text-sm font-semibold text-white">{currentTimeLabel}</p>
+          <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
+            {currentTimeLabel}
           </div>
         </div>
 
@@ -417,23 +437,7 @@ export default function AttorneyHub() {
             </div>
 
             <div className={`flex-1 min-h-0 overflow-y-auto ${leftColumnCollapsed ? 'p-2' : 'p-4'}`}>
-              {leftColumnCollapsed ? (
-                <div className="flex h-full flex-col items-center gap-3 pt-2">
-                  {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => {
-                        setProofTab(tab);
-                        setLeftColumnCollapsed(false);
-                      }}
-                      className={`w-full rounded-lg px-2 py-3 text-[11px] font-semibold leading-tight ${proofTab === tab ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:text-slate-200'}`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              ) : (
+              {leftColumnCollapsed ? null : (
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {displayEntries.map((entry) => {
                   const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
