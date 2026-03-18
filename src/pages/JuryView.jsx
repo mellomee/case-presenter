@@ -87,7 +87,7 @@ function BlankScreen({ caseName, onEnterFullscreen, isFullscreen }) {
   return (
     <div className="flex items-center justify-center w-full h-screen bg-black group">
       <div className="text-center select-none">
-        <Scale className="mx-auto mb-6 h-[50px] w-[50px] text-white/12" strokeWidth={1.25} />
+        <Scale className="mx-auto mb-6 h-[200px] w-[200px] text-white/25" strokeWidth={1} />
         <p className="text-white/12 text-lg tracking-[0.3em] uppercase font-light">
           {caseName || 'Case Presenter'}
         </p>
@@ -168,7 +168,7 @@ export default function JuryView() {
   if (!juryState) {
     return (
       <div className="relative flex items-center justify-center w-full h-screen bg-black group">
-        <Scale className="h-[50px] w-[50px] text-white/12" strokeWidth={1.25} />
+        <Scale className="h-[200px] w-[200px] text-white/25" strokeWidth={1} />
         <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
       </div>
     );
@@ -181,7 +181,7 @@ export default function JuryView() {
   if (!proof || isAssetLoading || isExtractClipLoading) {
     return (
       <div className="relative flex items-center justify-center w-full h-screen bg-black group">
-        <Scale className="h-[50px] w-[50px] text-white/12" strokeWidth={1.25} />
+        <Scale className="h-[200px] w-[200px] text-white/25" strokeWidth={1} />
         <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
       </div>
     );
