@@ -7,7 +7,7 @@ import PDFViewer from '@/components/proofVault/PDFViewer';
 import { parsePageRange } from '@/components/proofVault/pageRangeUtils';
 import { getInitialHighlightPage } from '@/components/proofVault/highlightGroupUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
-import { Loader2, Scale, Maximize } from 'lucide-react';
+import { Scale, Maximize } from 'lucide-react';
 import JuryVideoClipPlayer from '@/components/juryView/JuryVideoClipPlayer.jsx';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
@@ -83,16 +83,16 @@ function FullscreenButton({ onClick, visible }) {
   );
 }
 
-function BlankScreen({ caseName }) {
+function BlankScreen({ caseName, onEnterFullscreen, isFullscreen }) {
   return (
     <div className="flex items-center justify-center w-full h-screen bg-black group">
       <div className="text-center select-none">
-        <Scale className="w-24 h-24 text-white/8 mx-auto mb-6" strokeWidth={1} />
+        <Scale className="mx-auto mb-6 h-[50px] w-[50px] text-white/12" strokeWidth={1.25} />
         <p className="text-white/12 text-lg tracking-[0.3em] uppercase font-light">
           {caseName || 'Case Presenter'}
         </p>
       </div>
-      <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
+      <FullscreenButton onClick={onEnterFullscreen} visible={!isFullscreen} />
     </div>
   );
 }
@@ -167,20 +167,22 @@ export default function JuryView() {
 
   if (!juryState) {
     return (
-      <div className="flex items-center justify-center w-full h-screen bg-black">
-        <Loader2 className="w-8 h-8 animate-spin text-white/15" />
+      <div className="relative flex items-center justify-center w-full h-screen bg-black group">
+        <Scale className="h-[50px] w-[50px] text-white/12" strokeWidth={1.25} />
+        <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
       </div>
     );
   }
 
   if (isBlank) {
-    return <BlankScreen caseName={caseName} />;
+    return <BlankScreen caseName={caseName} onEnterFullscreen={enterFullscreen} isFullscreen={isFullscreen} />;
   }
 
   if (!proof || isAssetLoading || isExtractClipLoading) {
     return (
-      <div className="flex items-center justify-center w-full h-screen bg-black">
-        <Loader2 className="w-8 h-8 animate-spin text-white/15" />
+      <div className="relative flex items-center justify-center w-full h-screen bg-black group">
+        <Scale className="h-[50px] w-[50px] text-white/12" strokeWidth={1.25} />
+        <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
       </div>
     );
   }
