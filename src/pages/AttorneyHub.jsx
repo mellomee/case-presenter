@@ -63,6 +63,7 @@ export default function AttorneyHub() {
     : proofTab === 'Depositions'
       ? (depositionPartyFilter === 'all' ? '' : depositionPartyFilter)
       : '';
+
   const selectedParty = parties.find((party) => party.id === activePartyId) || null;
   const currentExam = exams.find((exam) => exam.party_id === selectedExamPartyId && exam.exam_type === selectedExamType) || null;
   const currentExamItems = useMemo(() => examItems.filter((item) => item.exam_id === currentExam?.id), [examItems, currentExam]);
@@ -74,7 +75,6 @@ export default function AttorneyHub() {
     const orderedRootItems = currentExamItems
       .filter((item) => !item.parent_item_id && item.item_type !== 'question')
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-
     return Object.fromEntries(orderedRootItems.map((item, index) => [item.id, index + 1]));
   }, [currentExamItems]);
   const rootProofOrderNumberMap = useMemo(
@@ -92,13 +92,16 @@ export default function AttorneyHub() {
     const promotedExtracts = allExhibits.filter(
       (proof) => proof.proof_child_type === 'Extract' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
     );
-
     return [
       ...allExhibits.filter((proof) => !proof.parent_proof_id && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
       ...promotedExtracts,
     ];
   }, [proofs]);
-  const parentDepositions = useMemo(() => proofs.filter((proof) => !proof.parent_proof_id && proof.proof_category === 'Deposition'), [proofs]);
+
+  const parentDepositions = useMemo(
+    () => proofs.filter((proof) => !proof.parent_proof_id && proof.proof_category === 'Deposition'),
+    [proofs]
+  );
 
   const filteredProofs = useMemo(() => {
     if (proofTab === 'Depositions') {
@@ -107,9 +110,7 @@ export default function AttorneyHub() {
 
     if (proofTab === 'Exam') {
       if (!currentExam) return [];
-      return rootProofItems
-        .map((item) => proofsById[item.linked_proof_id])
-        .filter(Boolean);
+      return rootProofItems.map((item) => proofsById[item.linked_proof_id]).filter(Boolean);
     }
 
     let next = [...parentExhibits];
@@ -158,9 +159,7 @@ export default function AttorneyHub() {
   }, [selectedKey]);
 
   useEffect(() => {
-    if (!selectedExamPartyId && parties[0]) {
-      setSelectedExamPartyId(parties[0].id);
-    }
+    if (!selectedExamPartyId && parties[0]) setSelectedExamPartyId(parties[0].id);
   }, [parties, selectedExamPartyId]);
 
   useEffect(() => {
@@ -212,24 +211,15 @@ export default function AttorneyHub() {
                   ))}
                 </div>
                 <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-1 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('grid')}
-                    className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-                    title="Thumbnail view"
-                  >
+                  <button type="button" onClick={() => setViewMode('grid')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="Thumbnail view">
                     <LayoutGrid className="w-4 h-4" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('list')}
-                    className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-                    title="List view"
-                  >
+                  <button type="button" onClick={() => setViewMode('list')} className={`h-9 w-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} title="List view">
                     <List className="w-4 h-4" />
                   </button>
                 </div>
               </div>
+
               {proofTab === 'Exam' ? (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <ToolbarSelect value={selectedExamPartyId} onChange={setSelectedExamPartyId}>
@@ -268,75 +258,69 @@ export default function AttorneyHub() {
             <div className="flex-1 min-h-0 overflow-y-auto p-4">
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {displayEntries.map((entry) => {
-                    const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
-                    if (entry.kind === 'group') {
-                      const group = rootGroups.find((item) => item.id === entry.id);
-                      return (
-                        <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'} ${viewMode === 'list' ? 'flex items-center gap-4' : ''}`}>
-                          <div className={`flex items-start justify-between gap-3 ${viewMode === 'list' ? 'w-full' : ''}`}>
-                            <div className="flex items-center gap-4 min-w-0">
-                              <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size={viewMode === 'grid' ? 'md' : 'sm'} />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  {rootExamOrderNumberMap[group?.id] && (
-                                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span>
-                                  )}
-                                  <p className="text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
-                                </div>
-                                {viewMode === 'list' && <p className="mt-1 text-xs text-slate-400">Question Group</p>}
-                               {viewMode === 'grid' && <p className="mt-2 text-[11px] text-slate-400">No Proof</p>}
-                              </div>
-                            </div>
-                            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
-                          </div>
-                        </div>
-                      );
-                    }
+                  const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
 
-                    const proof = proofsById[entry.id];
-                    const children = proofs.filter((item) => item.parent_proof_id === proof.id);
-                    const isDemo = proof.status === 'Demonstrative';
-                    const isAdmitted = proof.status === 'Admitted';
-
+                  if (entry.kind === 'group') {
+                    const group = rootGroups.find((item) => item.id === entry.id);
                     return (
-                      <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'} ${viewMode === 'list' ? 'flex items-start gap-4' : ''}`}>
-                        <div className={`flex items-start justify-between gap-2 ${viewMode === 'list' ? 'w-full' : ''}`}>
-                          <div className="flex items-start gap-4 min-w-0">
-                            <ProofThumbPreview proof={proof} size={viewMode === 'grid' ? 'md' : 'sm'} />
+                      <div key={entry.id} onClick={() => setSelectedKey(`group:${entry.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'} ${viewMode === 'list' ? 'flex items-center gap-4' : ''}`}>
+                        <div className={`flex items-start justify-between gap-3 ${viewMode === 'list' ? 'w-full' : ''}`}>
+                          <div className="flex items-center gap-4 min-w-0">
+                            <ProofThumbPreview groupLabel={group?.label || 'No Proof'} size={viewMode === 'grid' ? 'md' : 'sm'} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                {rootProofOrderNumberMap[proof.id] && (
-                                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootProofOrderNumberMap[proof.id]}</span>
-                                )}
-                                <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
+                                {rootExamOrderNumberMap[group?.id] && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootExamOrderNumberMap[group.id]}</span>}
+                                <p className="text-sm font-semibold text-white leading-snug">{group?.label || 'Untitled Group'}</p>
                               </div>
-                              <div className={`mt-2 flex items-center ${viewMode === 'grid' ? 'justify-between' : 'justify-start gap-3'} text-xs`}>
-                                <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
-                                <span className="text-slate-500">{proof.status === 'Admitted' ? (proof.admitted_exhibit_num || '—') : proof.status === 'Demonstrative' ? (proof.demonstrative_exhibit_num || '—') : getProofTypeLabel(proof)}</span>
-                              </div>
-                              <p className="mt-1 text-xs text-slate-400">{proof.status}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
-                              {proofTab === 'Depositions' && children.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {children.slice(0, 4).map((child) => (
-                                    <button key={child.id} type="button" onClick={(event) => { event.stopPropagation(); setSelectedKey(`proof:${child.id}`); }} className="rounded-lg border border-slate-700 bg-slate-900/70 p-1.5 hover:border-blue-500">
-                                      <ProofThumbPreview proof={child} size="sm" />
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
+                              {viewMode === 'list' && <p className="mt-1 text-xs text-slate-400">Question Group</p>}
+                              {viewMode === 'grid' && <p className="mt-2 text-[11px] text-slate-400">No Proof</p>}
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-2">
-                            {(isAdmitted || isDemo) && (
-                              <CheckCircle2 className={`w-5 h-5 ${isDemo ? 'text-blue-400' : 'text-red-400'}`} />
-                            )}
-                            <ProofCardMenu proof={proof} selectedParty={selectedParty} localDecision={localDecisionMap[proof.id]} onAction={(action, patch) => handleProofAction(proof, action, patch)} />
-                          </div>
+                          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">Group</span>
                         </div>
                       </div>
                     );
-                  })}
-                </div>
+                  }
+
+                  const proof = proofsById[entry.id];
+                  const children = proofs.filter((item) => item.parent_proof_id === proof.id);
+                  const isDemo = proof.status === 'Demonstrative';
+                  const isAdmitted = proof.status === 'Admitted';
+
+                  return (
+                    <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'} ${viewMode === 'list' ? 'flex items-start gap-4' : ''}`}>
+                      <div className={`flex items-start justify-between gap-2 ${viewMode === 'list' ? 'w-full' : ''}`}>
+                        <div className="flex items-start gap-4 min-w-0">
+                          <ProofThumbPreview proof={proof} size={viewMode === 'grid' ? 'md' : 'sm'} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              {rootProofOrderNumberMap[proof.id] && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600/20 px-1.5 text-[11px] font-semibold text-blue-300">{rootProofOrderNumberMap[proof.id]}</span>}
+                              <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
+                            </div>
+                            <div className={`mt-2 flex items-center ${viewMode === 'grid' ? 'justify-between' : 'justify-start gap-3'} text-xs`}>
+                              <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
+                              <span className="text-slate-500">{proof.status === 'Admitted' ? (proof.admitted_exhibit_num || '—') : proof.status === 'Demonstrative' ? (proof.demonstrative_exhibit_num || '—') : getProofTypeLabel(proof)}</span>
+                            </div>
+                            <p className="mt-1 text-xs text-slate-400">{proof.status}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
+                            {proofTab === 'Depositions' && children.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {children.slice(0, 4).map((child) => (
+                                  <button key={child.id} type="button" onClick={(event) => { event.stopPropagation(); setSelectedKey(`proof:${child.id}`); }} className="rounded-lg border border-slate-700 bg-slate-900/70 p-1.5 hover:border-blue-500">
+                                    <ProofThumbPreview proof={child} size="sm" />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          {(isAdmitted || isDemo) && <CheckCircle2 className={`w-5 h-5 ${isDemo ? 'text-blue-400' : 'text-red-400'}`} />}
+                          <ProofCardMenu proof={proof} selectedParty={selectedParty} localDecision={localDecisionMap[proof.id]} onAction={(action, patch) => handleProofAction(proof, action, patch)} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
