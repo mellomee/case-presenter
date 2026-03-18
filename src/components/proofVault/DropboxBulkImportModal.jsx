@@ -207,7 +207,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           proof_type_category_id: proofTypeCategoryId,
           category_id: categoryId,
           party_id: partyIds[0],
-          party_ids: partyIds,
+          party_ids: { ids: partyIds },
           file_source: 'dropbox',
           file_url: '',
           video_url: '',
@@ -230,7 +230,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
             proof_type_category_id: proofTypeCategoryId,
             category_id: categoryId,
             party_id: partyIds[0],
-            party_ids: partyIds,
+            party_ids: { ids: partyIds },
             status: 'Draft',
           };
         }
