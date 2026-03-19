@@ -231,7 +231,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
            status: 'Draft',
            draft_exhibit_num: fileDraftExhibitNum,
            proof_type_category_id: fileProofTypeId,
-           category_id: categoryId,
+           category_id: null,
            party_id: filePartyId,
            party_ids: filePartyId ? { ids: [filePartyId] } : null,
            file_source: 'dropbox',
