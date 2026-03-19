@@ -141,6 +141,14 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     });
 
     setBrowserSelectedKeys([]);
+
+    // Scroll right panel to bottom to show newly added files
+    setTimeout(() => {
+      const scrollContainer = document.querySelector('[data-role="selected-files-scroll"]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }, 0);
   };
 
   const removeFile = (fileKey) => {
