@@ -28,6 +28,11 @@ function getBaseName(fileName) {
   return String(fileName || 'document.pdf').replace(/\.pdf$/i, '');
 }
 
+function getDropboxFolderUrl(path) {
+  const normalizedPath = normalizePath(path);
+  return `https://www.dropbox.com/home${normalizedPath.split('/').map(encodeURIComponent).join('/')}`;
+}
+
 async function streamToUint8Array(stream) {
   const chunks = [];
   let totalLength = 0;
@@ -187,19 +192,20 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
   if (addPageNumbers) {
     const startIndex = addCoverPage ? 1 : 0;
     const totalPages = pdfDoc.getPageCount() - startIndex;
-    const margin = 54;
+    const rightMargin = 72;
+    const bottomMargin = 54;
 
     for (let index = startIndex; index < pdfDoc.getPageCount(); index += 1) {
       const page = pdfDoc.getPage(index);
       const label = `Page ${index - startIndex + 1} of ${totalPages}`;
-      const size = 18;
-      const textWidth = helvetica.widthOfTextAtSize(label, size);
-      const x = page.getWidth() - textWidth - margin;
+      const size = 25;
+      const textWidth = helveticaBold.widthOfTextAtSize(label, size);
+      const x = page.getWidth() - textWidth - rightMargin;
       page.drawText(label, {
         x,
-        y: margin,
+        y: bottomMargin,
         size,
-        font: helvetica,
+        font: helveticaBold,
         color: rgb(0.35, 0.39, 0.45),
       });
     }
@@ -279,6 +285,9 @@ Deno.serve(async (req) => {
       dropbox_file_id: uploadedFile.id,
       dropbox_path: uploadedFile.path_display,
       dropbox_file_name: uploadedFile.name,
+      processed_file_name: uploadedFile.name,
+      dropbox_folder_path: saveFolder,
+      dropbox_folder_url: getDropboxFolderUrl(saveFolder),
       original_dropbox_file_id: fileId || '',
       original_dropbox_path: originalPath || '',
       original_dropbox_file_name: fileName || '',
