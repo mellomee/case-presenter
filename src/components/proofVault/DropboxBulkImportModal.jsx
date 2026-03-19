@@ -449,7 +449,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
               {selectedFiles.length === 0 ? (
                 <p className="text-sm text-slate-500">Add Dropbox files from the browser above.</p>
               ) : (
-                <div className="space-y-3 flex-1 overflow-y-auto pr-1 min-h-0">
+                <div className="space-y-3 flex-1 overflow-y-auto pr-1 min-h-0" data-role="selected-files-scroll">
                   {selectedFiles.map((file) => {
                     const fileKey = file.id || file.path_display;
                     const baseName = getBaseName(file.name);
