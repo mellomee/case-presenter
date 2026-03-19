@@ -11,6 +11,8 @@ export default function PdfOptimizationDialog({
   description,
   confirmLabel,
   isSubmitting = false,
+  progressValue = 0,
+  progressLabel = '',
   initialOptions = { addCoverPage: true, addPageNumbers: true, optimizePdf: true },
   onSubmit,
 }) {
@@ -43,6 +45,21 @@ export default function PdfOptimizationDialog({
           optimizePdf={optimizePdf}
           onOptimizePdfChange={setOptimizePdf}
         />
+
+        {isSubmitting && (
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center justify-between text-xs text-slate-600">
+              <span>{progressLabel || 'Processing PDF...'}</span>
+              <span>{Math.round(progressValue)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${Math.max(8, progressValue)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>

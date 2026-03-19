@@ -53,6 +53,7 @@ export default function ProofActionMenu({
   const [deleteError, setDeleteError] = useState(null);
   const [deleteErrorOpen, setDeleteErrorOpen] = useState(false);
   const [optimizeDialogOpen, setOptimizeDialogOpen] = useState(false);
+  const [optimizeProgress, setOptimizeProgress] = useState({ value: 0, label: '' });
   const [processingSummary, setProcessingSummary] = useState(null);
   const queryClient = useQueryClient();
 
@@ -97,7 +98,9 @@ export default function ProofActionMenu({
 
   const optimizeMutation = useMutation({
     mutationFn: async (options) => {
+      setOptimizeProgress({ value: 15, label: `Processing ${proof.name}...` });
       const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({ proof, options }));
+      setOptimizeProgress({ value: 82, label: 'Updating proof record...' });
       await base44.entities.Proof.update(proof.id, {
         file_source: 'dropbox',
         file_url: '',
@@ -108,6 +111,7 @@ export default function ProofActionMenu({
     },
     onSuccess: (processedData) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
+      setOptimizeProgress({ value: 100, label: 'Done' });
       setOptimizeDialogOpen(false);
       setProcessingSummary({
         title: 'PDF processing complete',
@@ -118,6 +122,7 @@ export default function ProofActionMenu({
       });
     },
     onError: (error) => {
+      setOptimizeProgress({ value: 0, label: '' });
       alert(`Could not optimize PDF: ${error.message}`);
     },
   });
@@ -207,11 +212,16 @@ export default function ProofActionMenu({
 
       <PdfOptimizationDialog
         open={optimizeDialogOpen}
-        onOpenChange={setOptimizeDialogOpen}
+        onOpenChange={(open) => {
+          setOptimizeDialogOpen(open);
+          if (!open && !optimizeMutation.isPending) setOptimizeProgress({ value: 0, label: '' });
+        }}
         title="Optimize Dropbox PDF"
         description="This saves a new processed copy into your Dropbox save folder and makes this proof use that new file."
         confirmLabel="Save processed PDF"
         isSubmitting={optimizeMutation.isPending}
+        progressValue={optimizeProgress.value}
+        progressLabel={optimizeProgress.label}
         onSubmit={(options) => optimizeMutation.mutate(options)}
       />
 

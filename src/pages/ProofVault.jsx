@@ -100,6 +100,7 @@ export default function ProofVault() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isBulkOptimizing, setIsBulkOptimizing] = useState(false);
   const [showBulkOptimizationDialog, setShowBulkOptimizationDialog] = useState(false);
+  const [bulkOptimizeProgress, setBulkOptimizeProgress] = useState({ value: 0, label: '' });
   const [processingSummary, setProcessingSummary] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -358,13 +359,19 @@ export default function ProofVault() {
     if (eligibleSelectedProofs.length === 0) return;
 
     setIsBulkOptimizing(true);
+    setBulkOptimizeProgress({ value: 5, label: `Starting ${eligibleSelectedProofs.length} PDF${eligibleSelectedProofs.length === 1 ? '' : 's'}...` });
     const failures = [];
     const processedFiles = [];
     let folderUrl = '';
     let folderPath = '';
 
-    for (const proof of eligibleSelectedProofs) {
+    for (let index = 0; index < eligibleSelectedProofs.length; index += 1) {
+      const proof = eligibleSelectedProofs[index];
       try {
+        setBulkOptimizeProgress({
+          value: Math.max(8, (index / eligibleSelectedProofs.length) * 100),
+          label: `Processing ${proof.name} (${index + 1} of ${eligibleSelectedProofs.length})...`,
+        });
         const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({ proof, options }));
         await base44.entities.Proof.update(proof.id, {
           file_source: 'dropbox',
@@ -378,12 +385,18 @@ export default function ProofVault() {
       } catch (error) {
         failures.push(`${proof.name}: ${error.message}`);
       }
+
+      setBulkOptimizeProgress({
+        value: ((index + 1) / eligibleSelectedProofs.length) * 100,
+        label: `Finished ${index + 1} of ${eligibleSelectedProofs.length}`,
+      });
     }
 
     await queryClient.invalidateQueries({ queryKey: ['proofs'] });
     const successCount = eligibleSelectedProofs.length - failures.length;
     const skippedCount = selectedProofIds.length - eligibleSelectedProofs.length;
     setIsBulkOptimizing(false);
+    setBulkOptimizeProgress({ value: 100, label: 'Done' });
     setShowBulkOptimizationDialog(false);
     setSelectedProofIds([]);
 
@@ -529,11 +542,16 @@ export default function ProofVault() {
 
         <PdfOptimizationDialog
           open={showBulkOptimizationDialog}
-          onOpenChange={setShowBulkOptimizationDialog}
+          onOpenChange={(open) => {
+            setShowBulkOptimizationDialog(open);
+            if (!open && !isBulkOptimizing) setBulkOptimizeProgress({ value: 0, label: '' });
+          }}
           title="Optimize selected Dropbox PDFs"
           description="Each selected proof will get a new processed Dropbox copy saved to your Dropbox save folder, and the proof will start using that new file."
           confirmLabel="Process selected PDFs"
           isSubmitting={isBulkOptimizing}
+          progressValue={bulkOptimizeProgress.value}
+          progressLabel={bulkOptimizeProgress.label}
           onSubmit={handleBulkOptimize}
         />
 

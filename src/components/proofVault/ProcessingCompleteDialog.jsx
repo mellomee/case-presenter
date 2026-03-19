@@ -41,6 +41,7 @@ export default function ProcessingCompleteDialog({
               Dropbox save folder
             </div>
             <div className="truncate text-xs text-blue-700">{folderPath || folderUrl}</div>
+            <div className="mt-1 text-[11px] text-blue-700/80">Desktop file explorer cannot be opened directly from the browser.</div>
           </div>
         )}
 
@@ -49,7 +50,7 @@ export default function ProcessingCompleteDialog({
             <Button asChild variant="outline">
               <a href={folderUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4" />
-                Open folder
+                Open Dropbox folder
               </a>
             </Button>
           )}

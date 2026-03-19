@@ -185,8 +185,8 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       ? `${proofCategory === 'Exhibit' ? 'Exhibit' : (proofCategory || 'Proof')} ${exhibitNumber}`
       : (proofCategory || 'Proof');
 
-    drawCenteredText(coverPage, title, 620, helveticaBold, 22, rgb(0.1, 0.1, 0.1));
-    drawCenteredText(coverPage, subtitle, 585, helvetica, 13, rgb(0.29, 0.33, 0.39));
+    drawCenteredText(coverPage, title, 620, helveticaBold, 30, rgb(0, 0, 0));
+    drawCenteredText(coverPage, subtitle, 580, helvetica, 15, rgb(0.2, 0.2, 0.2));
   }
 
   if (addPageNumbers) {
@@ -198,7 +198,7 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
     for (let index = startIndex; index < pdfDoc.getPageCount(); index += 1) {
       const page = pdfDoc.getPage(index);
       const label = `Page ${index - startIndex + 1} of ${totalPages}`;
-      const size = 25;
+      const size = 30;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
       const x = page.getWidth() - textWidth - rightMargin;
       page.drawText(label, {
@@ -206,7 +206,7 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
         y: bottomMargin,
         size,
         font: helveticaBold,
-        color: rgb(0.35, 0.39, 0.45),
+        color: rgb(0, 0, 0),
       });
     }
   }
