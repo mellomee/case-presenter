@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronUp, ChevronDown, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, X, Pause, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function OptimizationProgressBar({
@@ -9,6 +9,9 @@ export default function OptimizationProgressBar({
   onClose,
   progressValue = 0,
   progressLabel = '',
+  isPaused = false,
+  onPauseToggle,
+  onStop,
 }) {
   if (!isVisible) return null;
 
@@ -53,9 +56,35 @@ export default function OptimizationProgressBar({
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-slate-200">
             <div
-              className="h-full bg-blue-600 transition-all duration-300"
+              className={`h-full transition-all duration-300 ${isPaused ? 'bg-amber-500' : 'bg-blue-600'}`}
               style={{ width: `${Math.max(5, progressValue)}%` }}
             />
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs gap-1"
+              onClick={onPauseToggle}
+            >
+              {isPaused ? (
+                <>
+                  <Play className="w-3 h-3" /> Resume
+                </>
+              ) : (
+                <>
+                  <Pause className="w-3 h-3" /> Pause
+                </>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs gap-1 text-red-600 hover:text-red-700"
+              onClick={onStop}
+            >
+              <Square className="w-3 h-3" /> Stop
+            </Button>
           </div>
         </div>
       )}
