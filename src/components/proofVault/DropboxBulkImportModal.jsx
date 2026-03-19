@@ -226,25 +226,19 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
          };
 
         if (fileType === 'PDF') {
-          const responseData = processDropboxPdfEnabled
-            ? await processDropboxPdf(buildProcessDropboxPdfPayload({
-                file,
-                options: {
-                  addCoverPage,
-                  addPageNumbers,
-                  optimizePdf: optimizePdfEnabled,
-                },
-                metadata: {
-                  proofName: baseName,
-                  formalName: baseName,
-                  proofCategory,
-                },
-              }))
-            : (await base44.functions.invoke('prepareDropboxProof', {
-                fileId: file.id,
-                path: file.path_display,
-                name: file.name,
-              })).data;
+          const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
+            file,
+            options: {
+              addCoverPage: true,
+              addPageNumbers: true,
+              optimizePdf: true,
+            },
+            metadata: {
+              proofName: baseName,
+              formalName: baseName,
+              proofCategory,
+            },
+          }));
 
           payload = {
             ...payload,
@@ -252,18 +246,16 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
             name: internalName,
             formal_name: baseName,
             proof_type_category_id: fileProofTypeId,
-            category_id: categoryId,
+            category_id: null,
             party_id: filePartyId,
             party_ids: filePartyId ? { ids: [filePartyId] } : null,
             status: 'Draft',
             draft_exhibit_num: fileDraftExhibitNum,
           };
 
-          if (processDropboxPdfEnabled) {
-            processedFiles.push(responseData.processed_file_name || responseData.dropbox_file_name || file.name);
-            folderUrl = folderUrl || responseData.dropbox_folder_url || '';
-            folderPath = folderPath || responseData.dropbox_folder_path || '';
-          }
+          processedFiles.push(responseData.processed_file_name || responseData.dropbox_file_name || file.name);
+          folderUrl = folderUrl || responseData.dropbox_folder_url || '';
+          folderPath = folderPath || responseData.dropbox_folder_path || '';
         }
 
         const createdProof = await base44.entities.Proof.create(payload);
