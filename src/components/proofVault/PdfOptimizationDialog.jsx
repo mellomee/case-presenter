@@ -72,7 +72,6 @@ export default function PdfOptimizationDialog({
             onClick={() => {
               onSubmit({ addCoverPage, addPageNumbers, optimizePdf });
               onOpenChange(false);
-              toast({ title: 'Optimization started', description: 'Processing will continue in the background.' });
             }}
           >
             {confirmLabel}
