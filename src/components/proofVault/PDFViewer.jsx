@@ -494,6 +494,58 @@ export default function PDFViewer({
       )}
 
       <div className="flex flex-1 overflow-hidden">
+        {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
+          <div
+            ref={thumbnailRailRef}
+            className="proof-thumb-rail h-full min-h-0 bg-zinc-950 overflow-y-auto overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
+            style={{ width: selectableThumbnails ? 76 : 88 }}
+          >
+            {pageNumbers.map((pageNumber, index) => {
+              const pageIndex = index + 1;
+              const isCurrentPage = currentPage === pageIndex;
+              const isSelected = selectedPages.includes(pageNumber);
+
+              return (
+                <div
+                  key={`${pageNumber}-${pageIndex}`}
+                  ref={isCurrentPage ? activeThumbnailRef : null}
+                  onClick={(event) => {
+                    if (selectableThumbnails) {
+                      handleThumbnailSelection(pageNumber, event);
+                    }
+                    goToPage(pageIndex);
+                  }}
+                  className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-400/70' : isCurrentPage ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
+                >
+                  <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
+                    <Document
+                      file={fileUrl}
+                      loading={<div className="h-[80px] bg-zinc-700" />}
+                      error={<div className="h-[80px] bg-zinc-700" />}
+                    >
+                      <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
+                    </Document>
+                  </div>
+                  {hasOriginalPageMap ? (
+                    <div className="mt-1 flex flex-col items-center leading-tight">
+                      <span className={`text-[11px] font-semibold ${isSelected ? 'text-blue-300' : 'text-amber-300'}`}>
+                        {pageIndex}
+                      </span>
+                      <span className="text-[9px] text-zinc-500">
+                        Source Pg: {pageNumber}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>
+                      {pageNumber}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <Document
           file={fileUrl}
           onLoadSuccess={({ numPages: nextPageCount }) => {
@@ -507,66 +559,6 @@ export default function PDFViewer({
           error={<div className="text-red-400 text-sm p-8 text-center">Failed to load PDF.<br />Check file URL.</div>}
           className="flex flex-1 overflow-hidden w-full"
         >
-          {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
-            <div
-              ref={thumbnailRailRef}
-              className="proof-thumb-rail h-full min-h-0 bg-zinc-950 overflow-y-auto overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
-              style={{
-                width: selectableThumbnails ? 76 : 88,
-                touchAction: 'pan-y',
-                WebkitOverflowScrolling: 'touch',
-                overscrollBehaviorY: 'contain',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#52525b #09090b',
-              }}
-              onTouchStart={handleThumbnailRailTouchStart}
-              onTouchMove={handleThumbnailRailTouchMove}
-              onTouchEnd={handleThumbnailRailTouchEnd}
-            >
-              {pageNumbers.map((pageNumber, index) => {
-                const pageIndex = index + 1;
-                const isCurrentPage = currentPage === pageIndex;
-                const isSelected = selectedPages.includes(pageNumber);
-
-                return (
-                  <div
-                    key={`${pageNumber}-${pageIndex}`}
-                    ref={isCurrentPage ? activeThumbnailRef : null}
-                    onClick={(event) => {
-                      if (ignoreThumbnailTapRef.current) {
-                        ignoreThumbnailTapRef.current = false;
-                        return;
-                      }
-                      if (selectableThumbnails) {
-                        handleThumbnailSelection(pageNumber, event);
-                      }
-                      goToPage(pageIndex);
-                    }}
-                    className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-400/70' : isCurrentPage ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
-                  >
-                    <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
-                      <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
-                    </div>
-                    {hasOriginalPageMap ? (
-                      <div className="mt-1 flex flex-col items-center leading-tight">
-                        <span className={`text-[11px] font-semibold ${isSelected ? 'text-blue-300' : 'text-amber-300'}`}>
-                          {pageIndex}
-                        </span>
-                        <span className="text-[9px] text-zinc-500">
-                          Source Pg: {pageNumber}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>
-                        {pageNumber}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           <div
             ref={containerRef}
             className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
