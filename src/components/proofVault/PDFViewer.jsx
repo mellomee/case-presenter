@@ -47,6 +47,8 @@ export default function PDFViewer({
   const activeThumbnailRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
+  const thumbnailTouchRef = useRef({ active: false, y: 0, scrollTop: 0 });
+  const ignoreThumbnailTapRef = useRef(false);
   const selectionAnchorRef = useRef(null);
   const panXRef = useRef(0);
   const panYRef = useRef(0);
@@ -163,6 +165,30 @@ export default function PDFViewer({
     selectionAnchorRef.current = pageNumbers[0] || null;
   }, [selectableThumbnails, onSelectedPagesChange, pageNumbers]);
 
+  const handleThumbnailRailTouchStart = useCallback((event) => {
+    if (event.touches.length !== 1 || !thumbnailRailRef.current) return;
+    ignoreThumbnailTapRef.current = false;
+    thumbnailTouchRef.current = {
+      active: true,
+      y: event.touches[0].clientY,
+      scrollTop: thumbnailRailRef.current.scrollTop,
+    };
+  }, []);
+
+  const handleThumbnailRailTouchMove = useCallback((event) => {
+    if (event.touches.length !== 1 || !thumbnailRailRef.current || !thumbnailTouchRef.current.active) return;
+    const deltaY = event.touches[0].clientY - thumbnailTouchRef.current.y;
+    if (Math.abs(deltaY) > 6) {
+      ignoreThumbnailTapRef.current = true;
+    }
+    thumbnailRailRef.current.scrollTop = thumbnailTouchRef.current.scrollTop - deltaY;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleThumbnailRailTouchEnd = useCallback(() => {
+    thumbnailTouchRef.current = { active: false, y: 0, scrollTop: 0 };
+  }, []);
 
   const applyZoom = useCallback(
     (nextZoom) => {
@@ -517,7 +543,12 @@ export default function PDFViewer({
                 touchAction: 'pan-y',
                 WebkitOverflowScrolling: 'touch',
                 overscrollBehaviorY: 'contain',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#52525b #09090b',
               }}
+              onTouchStart={handleThumbnailRailTouchStart}
+              onTouchMove={handleThumbnailRailTouchMove}
+              onTouchEnd={handleThumbnailRailTouchEnd}
             >
               {pageNumbers.map((pageNumber, index) => {
                 const pageIndex = index + 1;
@@ -529,6 +560,10 @@ export default function PDFViewer({
                     key={`${pageNumber}-${pageIndex}`}
                     ref={isCurrentPage ? activeThumbnailRef : null}
                     onClick={(event) => {
+                      if (ignoreThumbnailTapRef.current) {
+                        ignoreThumbnailTapRef.current = false;
+                        return;
+                      }
                       if (selectableThumbnails) {
                         handleThumbnailSelection(pageNumber, event);
                       }
