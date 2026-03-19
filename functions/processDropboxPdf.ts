@@ -196,12 +196,13 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
     for (let index = startIndex; index < pdfDoc.getPageCount(); index += 1) {
       const page = pdfDoc.getPage(index);
       const label = `Page ${index - startIndex + 1} of ${totalPages}`;
-      const size = 10;
+      const size = 18;
       const textWidth = helvetica.widthOfTextAtSize(label, size);
-      const x = (page.getWidth() - textWidth) / 2;
+      const margin = 54;
+      const x = page.getWidth() - textWidth - margin;
       page.drawText(label, {
         x,
-        y: 18,
+        y: margin,
         size,
         font: helvetica,
         color: rgb(0.35, 0.39, 0.45),
