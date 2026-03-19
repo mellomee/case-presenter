@@ -32,6 +32,7 @@ import PdfOptimizationDialog from '@/components/proofVault/PdfOptimizationDialog
 import PdfOptimizationSelectionBar from '@/components/proofVault/PdfOptimizationSelectionBar.jsx';
 import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
 import PdfOptimizationResultDialog from '@/components/proofVault/PdfOptimizationResultDialog.jsx';
+import OptimizationProgressBar from '@/components/proofVault/OptimizationProgressBar.jsx';
 import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizeSearchValue(value) {
@@ -107,6 +108,8 @@ export default function ProofVault() {
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isRetryingOptimization, setIsRetryingOptimization] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showProgressBar, setShowProgressBar] = useState(false);
+  const [isProgressBarMinimized, setIsProgressBarMinimized] = useState(false);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -415,6 +418,8 @@ export default function ProofVault() {
     setIsBulkOptimizing(false);
     setBulkOptimizeProgress({ value: 100, label: 'Done' });
     setShowBulkOptimizationDialog(false);
+    setShowProgressBar(false);
+    setIsProgressBarMinimized(false);
 
     // Only clear selection if this was the initial optimization
     if (!proofsToProcess) {
@@ -600,6 +605,8 @@ export default function ProofVault() {
           progressLabel={bulkOptimizeProgress.label}
           onSubmit={(options) => {
             setShowBulkOptimizationDialog(false);
+            setShowProgressBar(true);
+            setIsProgressBarMinimized(false);
             // Run optimization in background without awaiting
             handleBulkOptimize(options);
           }}
@@ -622,6 +629,15 @@ export default function ProofVault() {
           onRetryAll={handleRetryAllFailed}
           onRetrySelected={handleRetrySelected}
           isRetrying={isRetryingOptimization}
+        />
+
+        <OptimizationProgressBar
+          isVisible={showProgressBar && isBulkOptimizing}
+          isMinimized={isProgressBarMinimized}
+          onToggleMinimize={() => setIsProgressBarMinimized(!isProgressBarMinimized)}
+          onClose={() => setShowProgressBar(false)}
+          progressValue={bulkOptimizeProgress.value}
+          progressLabel={bulkOptimizeProgress.label}
         />
 
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
