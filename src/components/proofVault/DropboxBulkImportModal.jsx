@@ -55,18 +55,10 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [browserSelectedKeys, setBrowserSelectedKeys] = useState([]);
   const [proofCategory, setProofCategory] = useState('Exhibit');
-  const [proofTypeCategoryId, setProofTypeCategoryId] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [partyIds, setPartyIds] = useState([]);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState('');
   const [completed, setCompleted] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
-  const [processDropboxPdfEnabled, setProcessDropboxPdfEnabled] = useState(false);
-  const [addCoverPage, setAddCoverPage] = useState(true);
-  const [addPageNumbers, setAddPageNumbers] = useState(true);
-  const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
-  const [showMetadataEditor, setShowMetadataEditor] = useState(false);
 
   const { data: appSettings = [] } = useQuery({
     queryKey: ['appSettings'],
