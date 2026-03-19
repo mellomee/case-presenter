@@ -91,7 +91,8 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
   useEffect(() => {
     if (!open) return;
-    const rootPath = appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '';
+    const browsePath = appSettings[0]?.dropbox_browse_folder?.trim();
+    const rootPath = browsePath || appSettings[0]?.dropbox_save_folder || '';
     setCurrentPath(normalizePath(rootPath));
     setSearch('');
     setSelectedFiles([]);
