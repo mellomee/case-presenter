@@ -42,6 +42,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
+  const [proofTypeId, setProofTypeId] = useState('');
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
