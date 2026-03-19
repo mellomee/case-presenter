@@ -4,7 +4,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, PanelLeftClose, PanelLeft, Loader2, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, Layers, Loader2, Download } from 'lucide-react';
 import debounce from 'lodash/debounce';
 import { normalizeHighlightGroups } from './highlightGroupUtils';
 
@@ -43,12 +43,9 @@ export default function PDFViewer({
   const [showThumbs, setShowThumbs] = useState(true);
   const containerRef = useRef();
   const pageSurfaceRef = useRef();
-  const thumbnailRailRef = useRef();
-  const activeThumbnailRef = useRef();
+  const bottomRailRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
-  const thumbnailTouchRef = useRef({ active: false, y: 0, scrollTop: 0 });
-  const ignoreThumbnailTapRef = useRef(false);
   const selectionAnchorRef = useRef(null);
   const panXRef = useRef(0);
   const panYRef = useRef(0);
@@ -110,9 +107,13 @@ export default function PDFViewer({
     }
   }, [pageNumbers, currentPage]);
 
+  // Auto-scroll the bottom thumbnail rail to keep active thumb visible
   useEffect(() => {
-    if (!showThumbs || mode !== 'controller') return;
-    activeThumbnailRef.current?.scrollIntoView({ block: 'nearest' });
+    if (!showThumbs || mode !== 'controller' || !bottomRailRef.current) return;
+    const activeThumb = bottomRailRef.current.querySelector('[data-active="true"]');
+    if (activeThumb) {
+      activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
   }, [currentPage, showThumbs, mode]);
 
   const goToPage = useCallback(
@@ -164,31 +165,6 @@ export default function PDFViewer({
     onSelectedPagesChange(pageNumbers);
     selectionAnchorRef.current = pageNumbers[0] || null;
   }, [selectableThumbnails, onSelectedPagesChange, pageNumbers]);
-
-  const handleThumbnailRailTouchStart = useCallback((event) => {
-    if (event.touches.length !== 1 || !thumbnailRailRef.current) return;
-    ignoreThumbnailTapRef.current = false;
-    thumbnailTouchRef.current = {
-      active: true,
-      y: event.touches[0].clientY,
-      scrollTop: thumbnailRailRef.current.scrollTop,
-    };
-  }, []);
-
-  const handleThumbnailRailTouchMove = useCallback((event) => {
-    if (event.touches.length !== 1 || !thumbnailRailRef.current || !thumbnailTouchRef.current.active) return;
-    const deltaY = event.touches[0].clientY - thumbnailTouchRef.current.y;
-    if (Math.abs(deltaY) > 6) {
-      ignoreThumbnailTapRef.current = true;
-    }
-    thumbnailRailRef.current.scrollTop = thumbnailTouchRef.current.scrollTop - deltaY;
-    event.preventDefault();
-    event.stopPropagation();
-  }, []);
-
-  const handleThumbnailRailTouchEnd = useCallback(() => {
-    thumbnailTouchRef.current = { active: false, y: 0, scrollTop: 0 };
-  }, []);
 
   const applyZoom = useCallback(
     (nextZoom) => {
@@ -416,12 +392,16 @@ export default function PDFViewer({
     [searchText]
   );
 
+  // Whether to show the bottom thumbnail strip
+  const showBottomStrip = showThumbs && mode === 'controller' && numPages && numPages > 1;
+  const STRIP_HEIGHT = 110;
+
   return (
     <div className="flex flex-col h-full bg-zinc-900 select-none overflow-hidden" style={{ position: 'relative' }}>
       {mode === 'controller' && (
         <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => setShowThumbs((value) => !value)}>
-            {showThumbs ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => setShowThumbs((v) => !v)}>
+            <Layers className="w-3.5 h-3.5" />
           </Button>
           <div className="w-px h-4 bg-zinc-600 mx-1" />
           <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>
@@ -462,7 +442,7 @@ export default function PDFViewer({
           >
             <RotateCcw className="w-3 h-3" />
           </Button>
-          <Button variant="ghost" size="icon" className={`h-7 w-7 ${showSearch ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`} onClick={() => setShowSearch((value) => !value)}>
+          <Button variant="ghost" size="icon" className={`h-7 w-7 ${showSearch ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`} onClick={() => setShowSearch((v) => !v)}>
             <Search className="w-3.5 h-3.5" />
           </Button>
           {selectableThumbnails && pageNumbers.length > 0 && (
@@ -520,7 +500,11 @@ export default function PDFViewer({
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      {/* Main PDF area — padded at bottom to make room for the thumbnail strip */}
+      <div
+        className="flex-1 overflow-hidden"
+        style={{ paddingBottom: showBottomStrip ? STRIP_HEIGHT : 0 }}
+      >
         <Document
           file={fileUrl}
           onLoadSuccess={({ numPages: nextPageCount }) => {
@@ -532,68 +516,8 @@ export default function PDFViewer({
           }}
           loading={<div className="flex items-center justify-center w-full h-full"><Loader2 className="w-8 h-8 animate-spin text-zinc-500" /></div>}
           error={<div className="text-red-400 text-sm p-8 text-center">Failed to load PDF.<br />Check file URL.</div>}
-          className="flex flex-1 overflow-hidden w-full"
+          className="flex h-full w-full overflow-hidden"
         >
-          {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
-            <div
-              ref={thumbnailRailRef}
-              className="proof-thumb-rail h-full min-h-0 bg-zinc-950 overflow-y-auto overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
-              style={{
-                width: selectableThumbnails ? 76 : 88,
-                touchAction: 'pan-y',
-                WebkitOverflowScrolling: 'touch',
-                overscrollBehaviorY: 'contain',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#52525b #09090b',
-              }}
-              onTouchStart={handleThumbnailRailTouchStart}
-              onTouchMove={handleThumbnailRailTouchMove}
-              onTouchEnd={handleThumbnailRailTouchEnd}
-            >
-              {pageNumbers.map((pageNumber, index) => {
-                const pageIndex = index + 1;
-                const isCurrentPage = currentPage === pageIndex;
-                const isSelected = selectedPages.includes(pageNumber);
-
-                return (
-                  <div
-                    key={`${pageNumber}-${pageIndex}`}
-                    ref={isCurrentPage ? activeThumbnailRef : null}
-                    onClick={(event) => {
-                      if (ignoreThumbnailTapRef.current) {
-                        ignoreThumbnailTapRef.current = false;
-                        return;
-                      }
-                      if (selectableThumbnails) {
-                        handleThumbnailSelection(pageNumber, event);
-                      }
-                      goToPage(pageIndex);
-                    }}
-                    className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-400/70' : isCurrentPage ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
-                  >
-                    <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
-                      <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
-                    </div>
-                    {hasOriginalPageMap ? (
-                      <div className="mt-1 flex flex-col items-center leading-tight">
-                        <span className={`text-[11px] font-semibold ${isSelected ? 'text-blue-300' : 'text-amber-300'}`}>
-                          {pageIndex}
-                        </span>
-                        <span className="text-[9px] text-zinc-500">
-                          Source Pg: {pageNumber}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>
-                        {pageNumber}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           <div
             ref={containerRef}
             className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
@@ -607,7 +531,14 @@ export default function PDFViewer({
           >
             <div style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})`, transformOrigin: 'top center', userSelect: 'none' }}>
               <div ref={pageSurfaceRef} className="relative shadow-2xl">
-                <Page pageNumber={activePageNumber} width={600} renderTextLayer={true} renderAnnotationLayer={true} customTextRenderer={textRenderer} loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />} />
+                <Page
+                  pageNumber={activePageNumber}
+                  width={600}
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                  customTextRenderer={textRenderer}
+                  loading={<div className="w-[600px] h-[800px] bg-zinc-800 animate-pulse rounded" />}
+                />
                 {activeHighlights.map((highlight) => (
                   <div
                     key={`${highlight.__groupId || 'legacy'}-${highlight.__highlightIndex ?? `${highlight.x}-${highlight.y}`}`}
@@ -632,15 +563,19 @@ export default function PDFViewer({
         </Document>
       </div>
 
-      {/* NEW INDEPENDENT BOTTOM THUMBNAIL STRIP */}
-      {numPages && numPages > 1 && mode === 'controller' && fileUrl && (
+      {/* BOTTOM HORIZONTAL THUMBNAIL STRIP — rendered outside Document so it controls its own flex layout */}
+      {showBottomStrip && (
         <div
+          ref={bottomRailRef}
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            height: '110px',
+            height: `${STRIP_HEIGHT}px`,
+            background: 'rgba(24,24,27,0.95)',
+            borderTop: '1px solid #3f3f46',
+            zIndex: 20,
             overflowX: 'auto',
             overflowY: 'hidden',
             display: 'flex',
@@ -648,21 +583,25 @@ export default function PDFViewer({
             alignItems: 'center',
             gap: '6px',
             padding: '6px 8px',
-            background: 'rgba(24,24,27,0.93)',
-            borderTop: '1px solid #3f3f46',
-            zIndex: 20,
             WebkitOverflowScrolling: 'touch',
             touchAction: 'pan-x',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#52525b #09090b',
           }}
         >
-          <Document file={fileUrl} loading={null} error={null}>
-            {Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => {
-              const isActive = pageNum === activePageNumber;
+          {/* We render Page components directly — no nested Document wrapper */}
+          <Document file={fileUrl} loading={null} error={null} className="flex flex-row gap-1.5 items-center h-full">
+            {Array.from({ length: numPages }, (_, i) => {
+              const pageNum = i + 1;
+              const pageIndex = pageNumbers.indexOf(pageNum);
+              const isActive = currentPage === (pageIndex >= 0 ? pageIndex + 1 : pageNum);
+              const isSelected = selectableThumbnails && selectedPages.includes(pageNum);
               return (
                 <div
-                  key={`bottom-thumb-${pageNum}`}
-                  onClick={() => {
-                    const pageIndex = pageNumbers.indexOf(pageNum);
+                  key={`bthumb-${pageNum}`}
+                  data-active={isActive ? 'true' : 'false'}
+                  onClick={(event) => {
+                    if (selectableThumbnails) handleThumbnailSelection(pageNum, event);
                     goToPage(pageIndex >= 0 ? pageIndex + 1 : pageNum);
                   }}
                   style={{
@@ -674,12 +613,18 @@ export default function PDFViewer({
                     gap: '3px',
                     padding: '3px',
                     borderRadius: '4px',
-                    background: isActive ? '#44403c' : 'transparent',
-                    border: isActive ? '1px solid #f59e0b' : '1px solid transparent',
+                    background: isActive ? '#44403c' : isSelected ? 'rgba(59,130,246,0.1)' : 'transparent',
+                    border: isActive ? '1px solid #f59e0b' : isSelected ? '1px solid rgba(96,165,250,0.7)' : '1px solid transparent',
                   }}
                 >
                   <div style={{ overflow: 'hidden', borderRadius: '2px', border: '1px solid #52525b', background: 'white' }}>
-                    <Page pageNumber={pageNum} width={55} renderTextLayer={false} renderAnnotationLayer={false} loading={<div style={{ width: 55, height: 72, background: '#3f3f46' }} />} />
+                    <Page
+                      pageNumber={pageNum}
+                      width={55}
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                      loading={<div style={{ width: 55, height: 72, background: '#3f3f46' }} />}
+                    />
                   </div>
                   <span style={{ fontSize: '9px', color: isActive ? '#f59e0b' : '#71717a' }}>{pageNum}</span>
                 </div>
