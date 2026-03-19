@@ -296,15 +296,16 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
     setIsImporting(false);
     setCompleted(true);
+    setShowProgressBar(false);
+    setIsProgressBarMinimized(false);
+    setImportProgress({ value: 100, label: shouldStop ? 'Stopped' : 'Done', currentFile: '' });
     onImportComplete?.();
 
     if (importedFiles.length > 0) {
       setImportSummary({
         title: 'Dropbox import complete',
-        message: processDropboxPdfEnabled && processedFiles.length > 0
-          ? `Imported ${importedFiles.length} proof${importedFiles.length === 1 ? '' : 's'} and saved ${processedFiles.length} processed PDF cop${processedFiles.length === 1 ? 'y' : 'ies'} to your Dropbox save folder.${failureCount > 0 ? ` ${failureCount} failed.` : ''}`
-          : `Imported ${importedFiles.length} proof${importedFiles.length === 1 ? '' : 's'} from Dropbox.${failureCount > 0 ? ` ${failureCount} failed.` : ''}`,
-        fileNames: processedFiles.length > 0 ? processedFiles : importedFiles,
+        message: `Imported ${importedFiles.length} proof${importedFiles.length === 1 ? '' : 's'} from Dropbox.${failureCount > 0 ? ` ${failureCount} failed.` : ''}`,
+        fileNames: importedFiles,
         folderUrl,
         folderPath,
       });
