@@ -60,6 +60,10 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
   const [error, setError] = useState('');
   const [completed, setCompleted] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
+  const [showProgressBar, setShowProgressBar] = useState(false);
+  const [isProgressBarMinimized, setIsProgressBarMinimized] = useState(false);
+  const [importProgress, setImportProgress] = useState({ value: 0, label: '', currentFile: '' });
+  const [isImportPaused, setIsImportPaused] = useState(false);
 
   const { data: appSettings = [] } = useQuery({
     queryKey: ['appSettings'],
