@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle2, ChevronLeft, File, Folder, Link2, Loader2, T
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
 import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
 import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
+import BulkImportProgressBar from '@/components/proofVault/BulkImportProgressBar.jsx';
 import { buildProcessDropboxPdfPayload, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePath(path) {
