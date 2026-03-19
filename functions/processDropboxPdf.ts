@@ -212,7 +212,7 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       : (proofCategory || 'Proof');
     const subtitle = formalName || proofName || 'Untitled Proof';
 
-    drawCenteredText(coverPage, heading, 580, helveticaBold, 40, rgb(1, 0.84, 0));
+    drawCenteredText(coverPage, heading, 580, helveticaBold, 40, rgb(0, 0, 0));
     drawCenteredParagraph(coverPage, subtitle, 620, helvetica, 12, rgb(0.2, 0.2, 0.2), 520, 18);
   }
 
