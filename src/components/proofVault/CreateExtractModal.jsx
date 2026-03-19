@@ -227,6 +227,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
      // If using original Dropbox source, process it with optimization
      if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
        try {
+         const overwritePath = isEditing && parentProof.dropbox_path ? parentProof.dropbox_path : null;
          const processedData = await processDropboxPdf(
            buildProcessDropboxPdfPayload({
              proof: actualParentProof,
@@ -236,6 +237,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                optimizePdf: true,
              },
              targetFolder: 'extract',
+             overwritePath,
            })
          );
          saveMutation.mutate({ ...extractData, ...processedData });
