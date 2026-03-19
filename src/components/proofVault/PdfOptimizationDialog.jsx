@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
 
 export default function PdfOptimizationDialog({
