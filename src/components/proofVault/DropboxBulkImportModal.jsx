@@ -171,26 +171,29 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
       return;
     }
 
-    if (!proofTypeCategoryId) {
-      setError('Proof Type is required.');
-      return;
-    }
-
-    if (processDropboxPdfEnabled && !addCoverPage && !addPageNumbers && !optimizePdfEnabled) {
-      setError('Select at least one PDF processing option.');
-      return;
-    }
-
     setError('');
     setIsImporting(true);
     setCompleted(false);
+    setShowProgressBar(true);
+    setIsProgressBarMinimized(false);
+    setImportProgress({ value: 5, label: `Starting ${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'}...`, currentFile: '' });
+
     const importedFiles = [];
     const processedFiles = [];
     let folderUrl = '';
     let folderPath = '';
     let failureCount = 0;
+    let shouldStop = false;
 
-    for (const file of selectedFiles) {
+    for (let idx = 0; idx < selectedFiles.length; idx += 1) {
+      if (shouldStop) break;
+
+      // Wait while paused
+      while (isImportPaused && !shouldStop) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const file = selectedFiles[idx];
       const fileKey = file.id || file.path_display;
       const interval = startProgress(fileKey);
 
