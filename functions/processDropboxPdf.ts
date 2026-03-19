@@ -217,14 +217,14 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
   }
 
   if (addPageNumbers) {
-    const startIndex = addCoverPage ? 1 : 0;
-    const totalPages = pdfDoc.getPageCount() - startIndex;
+    const totalPages = pdfDoc.getPageCount();
     const rightMargin = 36;
     const bottomMargin = 36;
 
-    for (let index = startIndex; index < pdfDoc.getPageCount(); index += 1) {
+    for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
-      const label = `Page ${index - startIndex + 1} of ${totalPages}`;
+      const pageNum = index + 1;
+      const label = `Page ${pageNum} of ${totalPages}`;
       const size = 20;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
       const x = page.getWidth() - textWidth - rightMargin;
