@@ -322,17 +322,19 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                 <div className="flex items-center gap-3">
                   {extractSource === 'original' && (
                     <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const totalPages = Array.from({ length: 1000 }, (_, i) => i + 1);
-                        setSelectedOriginalPages(totalPages);
-                      }}
-                      className="text-xs"
-                    >
-                      Select All
-                    </Button>
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Get actual page count from PDFViewer by detecting when pages load
+                          // For now, we'll use a large number and rely on PDFViewer to only show available pages
+                          const totalPages = Array.from({ length: 500 }, (_, i) => i + 1);
+                          setSelectedOriginalPages(totalPages);
+                        }}
+                        className="text-xs"
+                      >
+                        Select All
+                      </Button>
                   )}
                   {extractSource === 'original' && (
                     <span className="text-xs font-mono text-blue-700 whitespace-nowrap">{selectedOriginalRange || 'No pages selected'}</span>
