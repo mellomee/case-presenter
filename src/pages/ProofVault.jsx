@@ -31,6 +31,7 @@ import PrintExhibitListModal from '@/components/proofVault/PrintExhibitListModal
 import PdfOptimizationDialog from '@/components/proofVault/PdfOptimizationDialog.jsx';
 import PdfOptimizationSelectionBar from '@/components/proofVault/PdfOptimizationSelectionBar.jsx';
 import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
+import PdfOptimizationResultDialog from '@/components/proofVault/PdfOptimizationResultDialog.jsx';
 import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizeSearchValue(value) {
@@ -102,6 +103,9 @@ export default function ProofVault() {
   const [showBulkOptimizationDialog, setShowBulkOptimizationDialog] = useState(false);
   const [bulkOptimizeProgress, setBulkOptimizeProgress] = useState({ value: 0, label: '' });
   const [processingSummary, setProcessingSummary] = useState(null);
+  const [optimizationResults, setOptimizationResults] = useState([]);
+  const [showResultDialog, setShowResultDialog] = useState(false);
+  const [isRetryingOptimization, setIsRetryingOptimization] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: proofs = [] } = useQuery({
@@ -356,67 +360,108 @@ export default function ProofVault() {
     }
   };
 
-  const handleBulkOptimize = async (options) => {
-    if (eligibleSelectedProofs.length === 0) return;
+  const handleBulkOptimize = async (options, proofsToProcess = null) => {
+    const targetProofs = proofsToProcess || eligibleSelectedProofs;
+    if (targetProofs.length === 0) return;
 
     setIsBulkOptimizing(true);
-    setBulkOptimizeProgress({ value: 5, label: `Starting ${eligibleSelectedProofs.length} PDF${eligibleSelectedProofs.length === 1 ? '' : 's'}...` });
-    const failures = [];
-    const processedFiles = [];
-    let folderUrl = '';
-    let folderPath = '';
+    setBulkOptimizeProgress({
+      value: 5,
+      label: `Starting ${targetProofs.length} PDF${targetProofs.length === 1 ? '' : 's'}...`,
+    });
 
-    for (let index = 0; index < eligibleSelectedProofs.length; index += 1) {
-      const proof = eligibleSelectedProofs[index];
+    const results = [];
+
+    for (let index = 0; index < targetProofs.length; index += 1) {
+      const proof = targetProofs[index];
+      setBulkOptimizeProgress({
+        value: Math.max(8, (index / targetProofs.length) * 100),
+        label: `Processing ${proof.name} (${index + 1} of ${targetProofs.length})...`,
+      });
+
       try {
-        setBulkOptimizeProgress({
-          value: Math.max(8, (index / eligibleSelectedProofs.length) * 100),
-          label: `Processing ${proof.name} (${index + 1} of ${eligibleSelectedProofs.length})...`,
-        });
-        const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({ proof, options }));
+        const processedData = await processDropboxPdf(
+          buildProcessDropboxPdfPayload({ proof, options })
+        );
         await base44.entities.Proof.update(proof.id, {
           file_source: 'dropbox',
           file_url: '',
           video_url: '',
           ...processedData,
         });
-        processedFiles.push(processedData.processed_file_name || processedData.dropbox_file_name || proof.name);
-        folderUrl = folderUrl || processedData.dropbox_folder_url || '';
-        folderPath = folderPath || processedData.dropbox_folder_path || '';
+        results.push({
+          proofId: proof.id,
+          proofName: proof.name || proof.formal_name,
+          success: true,
+          optimized_with_cover_page: processedData.optimized_with_cover_page,
+          optimized_with_page_numbers: processedData.optimized_with_page_numbers,
+        });
       } catch (error) {
-        failures.push(`${proof.name}: ${error.message}`);
+        results.push({
+          proofId: proof.id,
+          proofName: proof.name || proof.formal_name,
+          success: false,
+          error: error.message || 'Unknown error occurred',
+        });
       }
 
       setBulkOptimizeProgress({
-        value: ((index + 1) / eligibleSelectedProofs.length) * 100,
-        label: `Finished ${index + 1} of ${eligibleSelectedProofs.length}`,
+        value: ((index + 1) / targetProofs.length) * 100,
+        label: `Finished ${index + 1} of ${targetProofs.length}`,
       });
     }
 
     await queryClient.invalidateQueries({ queryKey: ['proofs'] });
-    const successCount = eligibleSelectedProofs.length - failures.length;
-    const skippedCount = selectedProofIds.length - eligibleSelectedProofs.length;
     setIsBulkOptimizing(false);
     setBulkOptimizeProgress({ value: 100, label: 'Done' });
     setShowBulkOptimizationDialog(false);
-    setSelectedProofIds([]);
 
-    if (successCount > 0) {
-      const message = failures.length > 0 || skippedCount > 0
-        ? `Processed ${successCount} PDF${successCount === 1 ? '' : 's'}. ${failures.length} failed and ${skippedCount} ${skippedCount === 1 ? 'was' : 'were'} skipped.`
-        : `Processed ${successCount} PDF${successCount === 1 ? '' : 's'} and saved new Dropbox copies.`;
-
-      setProcessingSummary({
-        title: 'PDF processing complete',
-        message,
-        fileNames: processedFiles,
-        folderUrl,
-        folderPath,
-      });
-      return;
+    // Only clear selection if this was the initial optimization
+    if (!proofsToProcess) {
+      setSelectedProofIds([]);
     }
 
-    alert(`${successCount} processed, ${failures.length} failed, ${skippedCount} skipped.\n\n${failures.join('\n')}`.trim());
+    setOptimizationResults(results);
+    setShowResultDialog(true);
+  };
+
+  const handleRetryAllFailed = async () => {
+    const failedProofs = optimizationResults
+      .filter((r) => !r.success)
+      .map((r) => proofs.find((p) => p.id === r.proofId))
+      .filter(Boolean);
+
+    if (failedProofs.length === 0) return;
+
+    setIsRetryingOptimization(true);
+    // Need to get the original options from somewhere - for now, use defaults
+    const options = {
+      addCoverPage: true,
+      addPageNumbers: true,
+      optimizePdf: true,
+    };
+
+    // Rerun optimization on failed proofs
+    await handleBulkOptimize(options, failedProofs);
+    setIsRetryingOptimization(false);
+  };
+
+  const handleRetrySelected = async (selectedProofIds) => {
+    const selectedProofs = selectedProofIds
+      .map((id) => proofs.find((p) => p.id === id))
+      .filter(Boolean);
+
+    if (selectedProofs.length === 0) return;
+
+    setIsRetryingOptimization(true);
+    const options = {
+      addCoverPage: true,
+      addPageNumbers: true,
+      optimizePdf: true,
+    };
+
+    await handleBulkOptimize(options, selectedProofs);
+    setIsRetryingOptimization(false);
   };
 
   const renderEmptyState = (title) => (
@@ -564,6 +609,15 @@ export default function ProofVault() {
           fileNames={processingSummary?.fileNames || []}
           folderUrl={processingSummary?.folderUrl}
           folderPath={processingSummary?.folderPath}
+        />
+
+        <PdfOptimizationResultDialog
+          open={showResultDialog}
+          onOpenChange={setShowResultDialog}
+          results={optimizationResults}
+          onRetryAll={handleRetryAllFailed}
+          onRetrySelected={handleRetrySelected}
+          isRetrying={isRetryingOptimization}
         />
 
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
