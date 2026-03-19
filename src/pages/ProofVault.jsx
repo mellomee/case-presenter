@@ -160,7 +160,8 @@ export default function ProofVault() {
       throw new Error('Remove this proof from all Questions first.');
     }
 
-    return base44.entities.Proof.delete(id);
+    const response = await base44.functions.invoke('deleteProofWithDropboxCleanup', { proofId: id });
+    return response.data;
   };
 
   const deleteMutation = useMutation({
