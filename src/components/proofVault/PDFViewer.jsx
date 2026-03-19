@@ -163,31 +163,6 @@ export default function PDFViewer({
     selectionAnchorRef.current = pageNumbers[0] || null;
   }, [selectableThumbnails, onSelectedPagesChange, pageNumbers]);
 
-  const handleThumbnailRailTouchStart = useCallback((event) => {
-    if (event.touches.length !== 1 || !thumbnailRailRef.current) return;
-    ignoreThumbnailTapRef.current = false;
-    thumbnailTouchRef.current = {
-      active: true,
-      y: event.touches[0].clientY,
-      scrollTop: thumbnailRailRef.current.scrollTop,
-    };
-  }, []);
-
-  const handleThumbnailRailTouchMove = useCallback((event) => {
-    if (event.touches.length !== 1 || !thumbnailRailRef.current || !thumbnailTouchRef.current.active) return;
-    const deltaY = event.touches[0].clientY - thumbnailTouchRef.current.y;
-    if (Math.abs(deltaY) > 6) {
-      ignoreThumbnailTapRef.current = true;
-    }
-    thumbnailRailRef.current.scrollTop = thumbnailTouchRef.current.scrollTop - deltaY;
-    event.preventDefault();
-    event.stopPropagation();
-  }, []);
-
-  const handleThumbnailRailTouchEnd = useCallback(() => {
-    thumbnailTouchRef.current = { active: false, y: 0, scrollTop: 0 };
-  }, []);
-
   const applyZoom = useCallback(
     (nextZoom) => {
       const z = Math.min(Math.max(nextZoom, 0.2), 5);
