@@ -261,6 +261,7 @@ Deno.serve(async (req) => {
     const formalName = String(payload.formalName || '').trim();
     const exhibitNumber = String(payload.exhibitNumber || '').trim();
     const proofCategory = String(payload.proofCategory || 'Exhibit').trim();
+    const targetFolder = String(payload.targetFolder || 'save').trim();
 
     if (!fileId && !originalPath) {
       return Response.json({ error: 'A Dropbox PDF is required.' }, { status: 400 });
