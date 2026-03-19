@@ -218,7 +218,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        party_ids: selectedPartyIds,
        status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
        category_id: parentProof.category_id || null,
-       proof_type_category_id: parentProof.proof_type_category_id,
+       proof_type_category_id: proofTypeId || parentProof.proof_type_category_id,
        extract_pages: extractSource === 'original' ? selectedOriginalRange : pageRange.trim(),
        draft_exhibit_num: draftExhibitNum.trim() || null,
        ...inheritedFileFields,
