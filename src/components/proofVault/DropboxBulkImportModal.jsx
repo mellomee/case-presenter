@@ -328,6 +328,24 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           <DialogDescription>Files stay in Dropbox — the app stores Dropbox references and uses the filename to prefill the proof names.</DialogDescription>
         </DialogHeader>
 
+        <BulkImportProgressBar
+          isVisible={showProgressBar && isImporting}
+          isMinimized={isProgressBarMinimized}
+          onToggleMinimize={() => setIsProgressBarMinimized(!isProgressBarMinimized)}
+          onClose={() => setShowProgressBar(false)}
+          progressValue={importProgress.value}
+          progressLabel={importProgress.label}
+          currentFile={importProgress.currentFile}
+          isPaused={isImportPaused}
+          onPauseToggle={() => setIsImportPaused(!isImportPaused)}
+          onStop={() => {
+            setIsImporting(false);
+            setIsImportPaused(false);
+            setShowProgressBar(false);
+            setImportProgress({ value: 0, label: '', currentFile: '' });
+          }}
+        />
+
         <ProcessingCompleteDialog
           open={Boolean(importSummary)}
           onOpenChange={(open) => !open && setImportSummary(null)}
