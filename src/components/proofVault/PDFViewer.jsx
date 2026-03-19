@@ -510,12 +510,14 @@ export default function PDFViewer({
           {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
             <div
               ref={thumbnailRailRef}
-              className="bg-zinc-950 overflow-y-auto shrink-0 border-r border-zinc-700 py-1"
+              className="proof-thumb-rail bg-zinc-950 overflow-y-scroll overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
               style={{
                 width: selectableThumbnails ? 76 : 88,
                 touchAction: 'pan-y',
                 WebkitOverflowScrolling: 'touch',
                 overscrollBehaviorY: 'contain',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#52525b #09090b',
               }}
             >
               {pageNumbers.map((pageNumber, index) => {
