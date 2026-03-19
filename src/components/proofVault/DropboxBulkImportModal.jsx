@@ -201,8 +201,8 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
         const baseName = getBaseName(file.name);
          const internalName = file.internalName || baseName;
-         const filePartyId = file.filePartyId || partyIds[0] || '';
-         const fileProofTypeId = file.fileProofTypeId || proofTypeCategoryId;
+         const filePartyId = file.filePartyId || '';
+         const fileProofTypeId = file.fileProofTypeId || '';
          const fileDraftExhibitNum = file.draftExhibitNum || '';
 
          let payload = {
