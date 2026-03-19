@@ -123,11 +123,17 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       setWarningMsg('');
       setShowWarning(false);
       setSelectedPartyIds(normalizePartyIds(parentProof));
+      setProofTypeId(parentProof.proof_type_category_id || '');
       return;
     }
 
     resetForm();
+    // Auto-populate from parent proof
+    setInternalName(actualParentProof?.name || '');
+    setFormalName(actualParentProof?.formal_name || '');
+    setDraftExhibitNum(actualParentProof?.draft_exhibit_num || '');
     setSelectedPartyIds(normalizePartyIds(actualParentProof));
+    setProofTypeId(actualParentProof?.proof_type_category_id || '');
   }, [open, parentProof, isEditing, actualParentProof]);
 
   const validatePageRange = (range) => {
