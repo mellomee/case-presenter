@@ -423,13 +423,14 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
               {selectedFiles.length === 0 ? (
                 <p className="text-sm text-slate-500">Add Dropbox files from the browser above.</p>
               ) : (
-                <div className="space-y-3 max-h-[20rem] overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-[22rem] overflow-y-auto pr-1">
                   {selectedFiles.map((file) => {
                     const fileKey = file.id || file.path_display;
+                    const baseName = getBaseName(file.name);
                     return (
                       <div key={fileKey} className="rounded-lg border border-slate-200 bg-white p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-slate-900 truncate">{file.name}</p>
                             <p className="text-xs text-slate-500 truncate">{file.path_display}</p>
                             <p className="text-xs text-slate-400 mt-1">{formatFileSize(file.size)}</p>
@@ -441,8 +442,77 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                           )}
                         </div>
 
+                        {!(isImporting || completed) && (
+                          <div className="space-y-2 border-t pt-3">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Internal Name</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={file.internalName || baseName}
+                                  onChange={(e) => updateSelectedFile(fileKey, { internalName: e.target.value })}
+                                  placeholder={baseName}
+                                  className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 placeholder:text-slate-400"
+                                  disabled={isImporting}
+                                />
+                                {file.internalName && (
+                                  <button
+                                    type="button"
+                                    onClick={() => updateSelectedFile(fileKey, { internalName: '' })}
+                                    className="text-slate-400 hover:text-slate-600"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Party</label>
+                              <select
+                                value={file.filePartyId || ''}
+                                onChange={(e) => updateSelectedFile(fileKey, { filePartyId: e.target.value })}
+                                className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 bg-white"
+                                disabled={isImporting}
+                              >
+                                <option value="">{partyIds.length > 0 ? 'Use default' : 'Not assigned'}</option>
+                                {parties.map((party) => (
+                                  <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Proof Type</label>
+                              <select
+                                value={file.fileProofTypeId || ''}
+                                onChange={(e) => updateSelectedFile(fileKey, { fileProofTypeId: e.target.value })}
+                                className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 bg-white"
+                                disabled={isImporting}
+                              >
+                                <option value="">{proofTypeCategoryId ? 'Use default' : 'Select type'}</option>
+                                {proofTypes.map((type) => (
+                                  <option key={type.id} value={type.id}>{type.name}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Draft Exhibit #</label>
+                              <input
+                                type="text"
+                                value={file.draftExhibitNum || ''}
+                                onChange={(e) => updateSelectedFile(fileKey, { draftExhibitNum: e.target.value })}
+                                placeholder="e.g., A-1"
+                                className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 placeholder:text-slate-400"
+                                disabled={isImporting}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {(isImporting || completed) && (
-                          <div className="mt-3 space-y-2">
+                          <div className="space-y-2">
                             <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
                               <div
                                 className={`h-full transition-all ${file.status === 'error' ? 'bg-red-500' : file.status === 'done' ? 'bg-green-500' : 'bg-blue-600'}`}
