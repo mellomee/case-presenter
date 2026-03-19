@@ -417,7 +417,7 @@ export default function PDFViewer({
   );
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 select-none overflow-hidden">
+    <div className="flex flex-col h-full bg-zinc-900 select-none overflow-hidden" style={{ position: 'relative' }}>
       {mode === 'controller' && (
         <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
           <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => setShowThumbs((value) => !value)}>
