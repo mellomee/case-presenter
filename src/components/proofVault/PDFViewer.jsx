@@ -495,7 +495,7 @@ export default function PDFViewer({
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         <Document
           file={fileUrl}
           onLoadSuccess={({ numPages: nextPageCount }) => {
@@ -507,17 +507,20 @@ export default function PDFViewer({
           }}
           loading={<div className="flex items-center justify-center w-full h-full"><Loader2 className="w-8 h-8 animate-spin text-zinc-500" /></div>}
           error={<div className="text-red-400 text-sm p-8 text-center">Failed to load PDF.<br />Check file URL.</div>}
-          className="flex flex-1 overflow-hidden w-full"
+          className="flex h-full min-h-0 flex-1 overflow-hidden w-full"
         >
           {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
             <div
               ref={thumbnailRailRef}
-              className="proof-thumb-rail h-full min-h-0 bg-zinc-950 overflow-y-auto overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
+              className="proof-thumb-rail h-full max-h-full min-h-0 bg-zinc-950 overflow-y-scroll overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
               style={{
                 width: selectableThumbnails ? 76 : 88,
+                height: '100%',
+                maxHeight: '100%',
                 touchAction: 'pan-y',
                 WebkitOverflowScrolling: 'touch',
                 overscrollBehaviorY: 'contain',
+                scrollbarGutter: 'stable',
               }}
             >
               {pageNumbers.map((pageNumber, index) => {
