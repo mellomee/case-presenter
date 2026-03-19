@@ -195,23 +195,51 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
         };
 
     const extractData = {
-      proof_category: parentProof.proof_category,
-      file_type: 'PDF',
-      proof_child_type: 'Extract',
-      name: internalName.trim(),
-      formal_name: formalName.trim(),
-      parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
-      party_id: selectedPartyIds[0] || null,
-      party_ids: selectedPartyIds,
-      status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
-      category_id: parentProof.category_id || null,
-      proof_type_category_id: parentProof.proof_type_category_id,
-      extract_pages: extractSource === 'original' ? selectedOriginalRange : pageRange.trim(),
-      draft_exhibit_num: draftExhibitNum.trim() || null,
-      ...inheritedFileFields,
-    };
+       proof_category: parentProof.proof_category,
+       file_type: 'PDF',
+       proof_child_type: 'Extract',
+       name: internalName.trim(),
+       formal_name: formalName.trim(),
+       parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
+       party_id: selectedPartyIds[0] || null,
+       party_ids: selectedPartyIds,
+       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
+       category_id: parentProof.category_id || null,
+       proof_type_category_id: parentProof.proof_type_category_id,
+       extract_pages: extractSource === 'original' ? selectedOriginalRange : pageRange.trim(),
+       draft_exhibit_num: draftExhibitNum.trim() || null,
+       ...inheritedFileFields,
+     };
 
-    saveMutation.mutate(extractData);
+     // If using original Dropbox source, process it with optimization
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
+       saveMutation.mutate(extractData, {
+         onMutate: async () => {
+           try {
+             const processedData = await processDropboxPdf(
+               buildProcessDropboxPdfPayload({
+                 proof: actualParentProof,
+                 options: {
+                   addCoverPage: true,
+                   addPageNumbers: true,
+                   optimizePdf: true,
+                 },
+               })
+             );
+             return { ...extractData, ...processedData };
+           } catch (error) {
+             console.warn('PDF processing failed, saving extract without optimization:', error.message);
+             return extractData;
+           }
+         },
+         onSuccess: (result) => {
+           saveMutation.mutate(result);
+         },
+       });
+       return;
+     }
+
+     saveMutation.mutate(extractData);
   };
 
   if (!parentProof) return null;
