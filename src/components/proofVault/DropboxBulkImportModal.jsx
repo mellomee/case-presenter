@@ -508,7 +508,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                                 className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 bg-white"
                                 disabled={isImporting}
                               >
-                                <option value="">{proofTypeCategoryId ? 'Use default' : 'Select type'}</option>
+                                <option value="">{file.fileProofTypeId ? 'Use default' : 'Select type'}</option>
                                 {proofTypes.map((type) => (
                                   <option key={type.id} value={type.id}>{type.name}</option>
                                 ))}
