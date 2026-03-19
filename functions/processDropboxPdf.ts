@@ -173,6 +173,33 @@ function drawCenteredText(page, text, y, font, size, color) {
   page.drawText(text, { x, y, size, font, color });
 }
 
+function drawCenteredParagraph(page, text, y, font, size, color, maxWidth, lineHeight = size * 1.3) {
+  const cleanedText = String(text || '').trim();
+  if (!cleanedText) return;
+
+  const words = cleanedText.split(/\s+/);
+  const lines = [];
+  let currentLine = words[0] || '';
+
+  for (let index = 1; index < words.length; index += 1) {
+    const nextLine = `${currentLine} ${words[index]}`;
+    if (font.widthOfTextAtSize(nextLine, size) <= maxWidth) {
+      currentLine = nextLine;
+    } else {
+      lines.push(currentLine);
+      currentLine = words[index];
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  lines.forEach((line, index) => {
+    drawCenteredText(page, line, y - index * lineHeight, font, size, color);
+  });
+}
+
 async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, proofName, formalName, exhibitNumber, proofCategory }) {
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -180,25 +207,25 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
   if (addCoverPage) {
     const coverPage = pdfDoc.insertPage(0, [612, 792]);
-    const title = formalName || proofName || 'Untitled Proof';
-    const subtitle = exhibitNumber
+    const heading = exhibitNumber
       ? `${proofCategory === 'Exhibit' ? 'Exhibit' : (proofCategory || 'Proof')} ${exhibitNumber}`
       : (proofCategory || 'Proof');
+    const subtitle = formalName || proofName || 'Untitled Proof';
 
-    drawCenteredText(coverPage, title, 620, helveticaBold, 30, rgb(0, 0, 0));
-    drawCenteredText(coverPage, subtitle, 580, helvetica, 15, rgb(0.2, 0.2, 0.2));
+    drawCenteredText(coverPage, heading, 620, helveticaBold, 30, rgb(0, 0, 0));
+    drawCenteredParagraph(coverPage, subtitle, 580, helvetica, 15, rgb(0.2, 0.2, 0.2), 480, 22);
   }
 
   if (addPageNumbers) {
     const startIndex = addCoverPage ? 1 : 0;
     const totalPages = pdfDoc.getPageCount() - startIndex;
-    const rightMargin = 72;
-    const bottomMargin = 54;
+    const rightMargin = 36;
+    const bottomMargin = 36;
 
     for (let index = startIndex; index < pdfDoc.getPageCount(); index += 1) {
       const page = pdfDoc.getPage(index);
       const label = `Page ${index - startIndex + 1} of ${totalPages}`;
-      const size = 30;
+      const size = 20;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
       const x = page.getWidth() - textWidth - rightMargin;
       page.drawText(label, {
