@@ -17,6 +17,7 @@ import PDFViewer from './PDFViewer';
 import { compressPageRange, parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
+import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePartyIds(currentProof) {
   if (Array.isArray(currentProof?.party_ids) && currentProof.party_ids.length > 0) {
