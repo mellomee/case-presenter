@@ -452,14 +452,15 @@ export default function ProofVault() {
     if (failedProofs.length === 0) return;
 
     setIsRetryingOptimization(true);
-    // Need to get the original options from somewhere - for now, use defaults
+    setShowResultDialog(false);
+    setShowProgressBar(true);
+    setIsProgressBarMinimized(false);
     const options = {
       addCoverPage: true,
       addPageNumbers: true,
       optimizePdf: true,
     };
 
-    // Rerun optimization on failed proofs
     await handleBulkOptimize(options, failedProofs);
     setIsRetryingOptimization(false);
   };
@@ -472,6 +473,9 @@ export default function ProofVault() {
     if (selectedProofs.length === 0) return;
 
     setIsRetryingOptimization(true);
+    setShowResultDialog(false);
+    setShowProgressBar(true);
+    setIsProgressBarMinimized(false);
     const options = {
       addCoverPage: true,
       addPageNumbers: true,
