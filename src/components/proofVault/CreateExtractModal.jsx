@@ -53,6 +53,11 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     queryFn: () => base44.entities.Party.list(),
   });
 
+  const { data: proofTypes = [] } = useQuery({
+    queryKey: ['proofTypes'],
+    queryFn: () => base44.entities.ProofTypeCategory.list(),
+  });
+
   const actualParentProof = isEditing
     ? proofs.find((proof) => proof.id === parentProof?.parent_proof_id) || parentProof
     : parentProof;
