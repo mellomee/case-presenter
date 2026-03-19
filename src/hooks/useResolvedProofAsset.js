@@ -3,16 +3,14 @@ import { base44 } from '@/api/base44Client';
 import { isDropboxProof } from '@/components/proofVault/proofAssetUtils';
 
 export default function useResolvedProofAsset(proof) {
-  const preferredDropboxFileId = proof?.greyscale_dropbox_file_id || proof?.dropbox_file_id;
-  const preferredDropboxPath = proof?.greyscale_dropbox_path || proof?.dropbox_path;
-  const isDropbox = Boolean(preferredDropboxFileId || preferredDropboxPath || isDropboxProof(proof));
+  const isDropbox = isDropboxProof(proof);
 
   const query = useQuery({
-    queryKey: ['resolvedProofAsset', proof?.id, preferredDropboxFileId, preferredDropboxPath, proof?.updated_date],
+    queryKey: ['resolvedProofAsset', proof?.id, proof?.dropbox_file_id, proof?.dropbox_path, proof?.updated_date],
     queryFn: async () => {
       const response = await base44.functions.invoke('getDropboxTemporaryLink', {
-        fileId: preferredDropboxFileId,
-        path: preferredDropboxPath,
+        fileId: proof?.dropbox_file_id,
+        path: proof?.dropbox_path,
       });
       return response.data?.url || '';
     },

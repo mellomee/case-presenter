@@ -18,7 +18,6 @@ import {
   Circle,
   Trash2,
   Copy,
-  Image,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -28,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { proofHasLinkedFile } from './proofAssetUtils';
 
@@ -49,24 +48,6 @@ export default function ProofActionMenu({
 }) {
   const [deleteError, setDeleteError] = useState(null);
   const [deleteErrorOpen, setDeleteErrorOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  const greyscaleMutation = useMutation({
-    mutationFn: async () => {
-      const response = await base44.functions.invoke('createGreyscalePdf', {
-        proofId: proof.id,
-        proof,
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proofs'] });
-      alert('Greyscale PDF is ready and will open automatically for this proof.');
-    },
-    onError: (error) => {
-      alert(error.message || 'Greyscale conversion failed.');
-    },
-  });
 
   const { data: childProofs = [] } = useQuery({
     queryKey: ['childProofs', proof.id],
@@ -122,16 +103,6 @@ export default function ProofActionMenu({
       actions.push({ id: 'view', label: 'View', icon: Eye, action: onView, color: 'text-slate-600' });
     }
 
-    if (isPDF && hasAttachment) {
-      actions.push({
-        id: 'greyscale',
-        label: proof.greyscale_dropbox_path ? 'Refresh Greyscale PDF' : 'Create Greyscale PDF',
-        icon: Image,
-        action: () => greyscaleMutation.mutate(),
-        color: 'text-slate-600',
-      });
-    }
-
     if (isPDF && isTopLevel && hasAttachment) {
       actions.push({ id: 'extract', label: 'Extract', icon: Scissors, action: onExtract, color: 'text-orange-600' });
     }
@@ -185,17 +156,9 @@ export default function ProofActionMenu({
             return (
               <div key={action.id}>
                 {action.separator && <DropdownMenuSeparator />}
-                <DropdownMenuItem
-                  onClick={action.action}
-                  disabled={greyscaleMutation.isPending && action.id === 'greyscale'}
-                  className="cursor-pointer"
-                >
+                <DropdownMenuItem onClick={action.action} className="cursor-pointer">
                   <Icon className={`w-4 h-4 mr-2 ${action.color}`} />
-                  <span>
-                    {greyscaleMutation.isPending && action.id === 'greyscale'
-                      ? 'Converting to Greyscale...'
-                      : action.label}
-                  </span>
+                  <span>{action.label}</span>
                 </DropdownMenuItem>
               </div>
             );
