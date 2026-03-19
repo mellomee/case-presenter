@@ -47,8 +47,6 @@ export default function PDFViewer({
   const activeThumbnailRef = useRef();
   const touchRef = useRef({});
   const dragRef = useRef({});
-  const thumbnailTouchRef = useRef({ active: false, y: 0, scrollTop: 0 });
-  const ignoreThumbnailTapRef = useRef(false);
   const selectionAnchorRef = useRef(null);
   const panXRef = useRef(0);
   const panYRef = useRef(0);
