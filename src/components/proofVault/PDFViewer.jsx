@@ -514,7 +514,31 @@ export default function PDFViewer({
                 <div
                   key={`${pageNumber}-${pageIndex}`}
                   ref={isCurrentPage ? activeThumbnailRef : null}
-...
+                  onClick={(event) => {
+                    if (selectableThumbnails) {
+                      handleThumbnailSelection(pageNumber, event);
+                    }
+                    goToPage(pageIndex);
+                  }}
+                  className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-400/70' : isCurrentPage ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
+                >
+                  <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
+                    <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
+                  </div>
+                  {hasOriginalPageMap ? (
+                    <div className="mt-1 flex flex-col items-center leading-tight">
+                      <span className={`text-[11px] font-semibold ${isSelected ? 'text-blue-300' : 'text-amber-300'}`}>
+                        {pageIndex}
+                      </span>
+                      <span className="text-[9px] text-zinc-500">
+                        Source Pg: {pageNumber}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className={`mt-1 text-[9px] ${isSelected ? 'font-semibold text-blue-300' : 'text-zinc-500'}`}>
+                      {pageNumber}
+                    </span>
+                  )}
                 </div>
               );
             })}
