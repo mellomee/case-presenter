@@ -522,6 +522,20 @@ export default function PDFViewer({
       )}
 
       <div className="flex flex-1 overflow-hidden">
+        {/* NEW standalone thumbnail rail — sibling of Document, owns its own scroll container */}
+        {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
+          <Document file={fileUrl} loading={null} error={null} className="contents">
+            <PDFThumbnailRail
+              pageNumbers={pageNumbers}
+              currentPage={currentPage}
+              onPageClick={goToPage}
+              thumbnailWidth={thumbnailWidth}
+              selectableThumbnails={selectableThumbnails}
+              selectedPages={selectedPages}
+              hasOriginalPageMap={hasOriginalPageMap}
+            />
+          </Document>
+        )}
         <Document
           file={fileUrl}
           onLoadSuccess={({ numPages: nextPageCount }) => {
