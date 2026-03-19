@@ -64,8 +64,9 @@ export default function PdfOptimizationResultDialog({
         </div>
 
         {/* Results Table */}
-        <ScrollArea className="flex-1 border border-slate-200 rounded-lg">
-          <Table>
+        <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+          <ScrollArea className="flex-1">
+            <Table>
             <TableHeader className="bg-slate-50 sticky top-0">
               <TableRow>
                 <TableHead className="w-8" />
@@ -135,8 +136,9 @@ export default function PdfOptimizationResultDialog({
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-        </ScrollArea>
+            </Table>
+          </ScrollArea>
+        </div>
 
         <DialogFooter className="flex items-center justify-between">
           <div>
