@@ -92,17 +92,10 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     setSelectedFiles([]);
     setBrowserSelectedKeys([]);
     setProofCategory('Exhibit');
-    setProofTypeCategoryId('');
-    setCategoryId('');
-    setPartyIds([]);
     setIsImporting(false);
     setError('');
     setCompleted(false);
     setImportSummary(null);
-    setProcessDropboxPdfEnabled(false);
-    setAddCoverPage(true);
-    setAddPageNumbers(true);
-    setOptimizePdfEnabled(true);
   }, [open, appSettings]);
 
   const { data, isLoading } = useQuery({
