@@ -195,6 +195,14 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
       const file = selectedFiles[idx];
       const fileKey = file.id || file.path_display;
+      const fileName = file.name;
+
+      setImportProgress({
+        value: Math.max(8, (idx / selectedFiles.length) * 100),
+        label: `Processing ${idx + 1} of ${selectedFiles.length}...`,
+        currentFile: fileName,
+      });
+
       const interval = startProgress(fileKey);
 
       try {
