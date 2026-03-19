@@ -322,7 +322,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Bulk link Dropbox files</DialogTitle>
           <DialogDescription>Files stay in Dropbox — the app stores Dropbox references and uses the filename to prefill the proof names.</DialogDescription>
@@ -356,9 +356,9 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           folderPath={importSummary?.folderPath}
         />
 
-        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr] flex-1 overflow-hidden min-h-0">
+          <div className="space-y-4 flex flex-col min-h-0">
+            <div className="flex flex-col gap-2 flex-shrink-0">
               <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                 <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-slate-600">
                   <Button type="button" variant="outline" size="sm" onClick={() => setCurrentPath(getParentPath(currentPath))} disabled={!currentPath} className="gap-1">
@@ -376,7 +376,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 max-h-[22rem] overflow-y-auto overflow-x-hidden">
+            <div className="rounded-lg border border-slate-200 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12 text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Dropbox files...
@@ -432,8 +432,8 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
               )}
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col min-h-0">
+              <div className="flex items-center justify-between gap-2 mb-3 flex-shrink-0">
                 <p className="text-sm font-semibold text-slate-900">Selected Dropbox files</p>
                 <p className="text-xs text-slate-500">{selectedFiles.length} selected</p>
               </div>
@@ -441,7 +441,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
               {selectedFiles.length === 0 ? (
                 <p className="text-sm text-slate-500">Add Dropbox files from the browser above.</p>
               ) : (
-                <div className="space-y-3 max-h-[22rem] overflow-y-auto pr-1">
+                <div className="space-y-3 flex-1 overflow-y-auto pr-1 min-h-0">
                   {selectedFiles.map((file) => {
                     const fileKey = file.id || file.path_display;
                     const baseName = getBaseName(file.name);
