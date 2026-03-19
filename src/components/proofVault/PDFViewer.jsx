@@ -631,6 +631,57 @@ export default function PDFViewer({
           </div>
         </Document>
       </div>
+
+      {/* NEW INDEPENDENT BOTTOM THUMBNAIL STRIP */}
+      {numPages && numPages > 1 && mode === 'controller' && (
+        <div
+          style={{
+            height: '110px',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 8px',
+            background: '#18181b',
+            borderTop: '1px solid #3f3f46',
+            flexShrink: 0,
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x',
+          }}
+        >
+          {Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => {
+            const isActive = pageNum === activePageNumber;
+            return (
+              <div
+                key={`bottom-thumb-${pageNum}`}
+                onClick={() => {
+                  const pageIndex = pageNumbers.indexOf(pageNum);
+                  goToPage(pageIndex >= 0 ? pageIndex + 1 : pageNum);
+                }}
+                style={{
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '3px',
+                  padding: '3px',
+                  borderRadius: '4px',
+                  background: isActive ? '#44403c' : 'transparent',
+                  border: isActive ? '1px solid #f59e0b' : '1px solid transparent',
+                }}
+              >
+                <div style={{ overflow: 'hidden', borderRadius: '2px', border: '1px solid #52525b', background: 'white' }}>
+                  <Page pageNumber={pageNum} width={55} renderTextLayer={false} renderAnnotationLayer={false} loading={<div style={{ width: 55, height: 72, background: '#3f3f46' }} />} />
+                </div>
+                <span style={{ fontSize: '9px', color: isActive ? '#f59e0b' : '#71717a' }}>{pageNum}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
