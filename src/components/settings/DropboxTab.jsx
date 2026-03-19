@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 
 export default function DropboxTab() {
   const [dropboxSaveFolder, setDropboxSaveFolder] = useState('/Case Presenter/OCR');
+  const [dropboxExtractFolder, setDropboxExtractFolder] = useState('/Case Presenter/Extracts');
   const [dropboxBrowseFolder, setDropboxBrowseFolder] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const queryClient = useQueryClient();
@@ -18,6 +19,7 @@ export default function DropboxTab() {
   useEffect(() => {
     if (!settings.length) return;
     setDropboxSaveFolder(settings[0].dropbox_save_folder || '/Case Presenter/OCR');
+    setDropboxExtractFolder(settings[0].dropbox_extract_folder || '/Case Presenter/Extracts');
     setDropboxBrowseFolder(settings[0].dropbox_browse_folder || '');
     setHasChanges(false);
   }, [settings]);
@@ -26,6 +28,7 @@ export default function DropboxTab() {
     mutationFn: async () => {
       const payload = {
         dropbox_save_folder: dropboxSaveFolder.trim() || '/Case Presenter/OCR',
+        dropbox_extract_folder: dropboxExtractFolder.trim() || '/Case Presenter/Extracts',
         dropbox_browse_folder: dropboxBrowseFolder.trim(),
       };
       if (settings.length > 0) {
@@ -52,7 +55,7 @@ export default function DropboxTab() {
 
       <div className="space-y-6 bg-white p-6 rounded-lg border border-slate-200">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Dropbox Save Folder</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Dropbox Source Folder</label>
           <Input
             value={dropboxSaveFolder}
             onChange={(e) => {
@@ -62,7 +65,22 @@ export default function DropboxTab() {
             placeholder="/Case Presenter/OCR"
           />
           <p className="text-xs text-slate-500 mt-1">
-            OCR-processed Dropbox PDFs are saved here.
+            Optimized parent proofs (source PDFs) are saved here. Used when viewing original PDFs.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Dropbox Extract Folder</label>
+          <Input
+            value={dropboxExtractFolder}
+            onChange={(e) => {
+              setDropboxExtractFolder(e.target.value);
+              setHasChanges(true);
+            }}
+            placeholder="/Case Presenter/Extracts"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Extract PDFs and extract clips are saved here. Used when viewing extracts and clips.
           </p>
         </div>
 
@@ -77,7 +95,7 @@ export default function DropboxTab() {
             placeholder="/PracticePanther/Lisa Chan"
           />
           <p className="text-xs text-slate-500 mt-1">
-            Add Proof → Dropbox link opens here by default. Leave blank to keep using the save folder.
+            Add Proof → Dropbox link opens here by default. Leave blank to keep using the source folder.
           </p>
         </div>
       </div>
