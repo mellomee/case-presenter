@@ -28,6 +28,9 @@ import ProofImportModal from '@/components/proofVault/ProofImportModal';
 import ProofImportSourceModal from '@/components/proofVault/ProofImportSourceModal.jsx';
 import DropboxBulkImportModal from '@/components/proofVault/DropboxBulkImportModal.jsx';
 import PrintExhibitListModal from '@/components/proofVault/PrintExhibitListModal';
+import PdfOptimizationDialog from '@/components/proofVault/PdfOptimizationDialog.jsx';
+import PdfOptimizationSelectionBar from '@/components/proofVault/PdfOptimizationSelectionBar.jsx';
+import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizeSearchValue(value) {
   return String(value || '').trim().toLowerCase();
@@ -94,6 +97,8 @@ export default function ProofVault() {
   const [highlightedChildId, setHighlightedChildId] = useState(null);
   const [selectedProofIds, setSelectedProofIds] = useState([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkOptimizing, setIsBulkOptimizing] = useState(false);
+  const [showBulkOptimizationDialog, setShowBulkOptimizationDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: proofs = [] } = useQuery({
@@ -301,6 +306,10 @@ export default function ProofVault() {
   };
 
   const visibleProofs = activeTab === 'exhibits' ? filteredExhibits : filteredDepositions;
+  const eligibleSelectedProofs = useMemo(
+    () => proofs.filter((proof) => selectedProofIds.includes(proof.id) && isOptimizableDropboxPdf(proof)),
+    [proofs, selectedProofIds]
+  );
 
   const toggleProofSelection = (proofId) => {
     setSelectedProofIds((current) => (
@@ -341,6 +350,41 @@ export default function ProofVault() {
     if (failures.length > 0) {
       alert(`${deletedCount} deleted, ${failures.length} failed.\n\n${failures.join('\n')}`);
     }
+  };
+
+  const handleBulkOptimize = async (options) => {
+    if (eligibleSelectedProofs.length === 0) return;
+
+    setIsBulkOptimizing(true);
+    const failures = [];
+
+    for (const proof of eligibleSelectedProofs) {
+      try {
+        const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({ proof, options }));
+        await base44.entities.Proof.update(proof.id, {
+          file_source: 'dropbox',
+          file_url: '',
+          video_url: '',
+          ...processedData,
+        });
+      } catch (error) {
+        failures.push(`${proof.name}: ${error.message}`);
+      }
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['proofs'] });
+    const successCount = eligibleSelectedProofs.length - failures.length;
+    const skippedCount = selectedProofIds.length - eligibleSelectedProofs.length;
+    setIsBulkOptimizing(false);
+    setShowBulkOptimizationDialog(false);
+    setSelectedProofIds([]);
+
+    if (failures.length > 0 || skippedCount > 0) {
+      alert(`${successCount} processed, ${failures.length} failed, ${skippedCount} skipped.\n\n${failures.join('\n')}`.trim());
+      return;
+    }
+
+    alert(`Processed ${successCount} PDF${successCount === 1 ? '' : 's'} and saved new Dropbox copies.`);
   };
 
   const renderEmptyState = (title) => (
@@ -465,6 +509,16 @@ export default function ProofVault() {
           onSuccess={handleChildCreated}
         />
 
+        <PdfOptimizationDialog
+          open={showBulkOptimizationDialog}
+          onOpenChange={setShowBulkOptimizationDialog}
+          title="Optimize selected Dropbox PDFs"
+          description="Each selected proof will get a new processed Dropbox copy saved to your Dropbox save folder, and the proof will start using that new file."
+          confirmLabel="Process selected PDFs"
+          isSubmitting={isBulkOptimizing}
+          onSubmit={handleBulkOptimize}
+        />
+
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -524,6 +578,12 @@ export default function ProofVault() {
                   onClear={handleClearSelection}
                   onDelete={handleBulkDelete}
                 />
+                <PdfOptimizationSelectionBar
+                  selectedCount={selectedProofIds.length}
+                  eligibleCount={eligibleSelectedProofs.length}
+                  isProcessing={isBulkOptimizing}
+                  onOptimize={() => setShowBulkOptimizationDialog(true)}
+                />
                 {filteredExhibits.length === 0 ? (
                    renderEmptyState(searchQuery ? 'No exhibits match your search.' : 'No exhibits in this category.')
                  ) : (
@@ -564,6 +624,12 @@ export default function ProofVault() {
                   onSelectAll={handleSelectAllVisible}
                   onClear={handleClearSelection}
                   onDelete={handleBulkDelete}
+                />
+                <PdfOptimizationSelectionBar
+                  selectedCount={selectedProofIds.length}
+                  eligibleCount={eligibleSelectedProofs.length}
+                  isProcessing={isBulkOptimizing}
+                  onOptimize={() => setShowBulkOptimizationDialog(true)}
                 />
                 {filteredDepositions.length === 0 ? (
                   renderEmptyState(searchQuery ? 'No depositions match your search.' : 'No depositions added yet.')

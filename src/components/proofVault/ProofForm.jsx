@@ -14,6 +14,8 @@ import {
 import { X, Upload, Link2, Link as LinkIcon } from 'lucide-react';
 import DropboxFilePickerModal from '@/components/proofVault/DropboxFilePickerModal';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
+import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
+import { buildProcessDropboxPdfPayload, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function OptionCard({ active, onClick, title, subtitle, disabled = false }) {
   return (
@@ -86,6 +88,10 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         }
       : null
   );
+  const [processDropboxPdfEnabled, setProcessDropboxPdfEnabled] = useState(false);
+  const [addCoverPage, setAddCoverPage] = useState(true);
+  const [addPageNumbers, setAddPageNumbers] = useState(true);
+  const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
@@ -292,7 +298,37 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
       const fileChanged = !proof || proof.file_source !== 'dropbox' || proof.dropbox_file_id !== dropboxSelection.id || proof.dropbox_path !== dropboxSelection.path_display;
 
-      if (fileChanged && fileType === 'PDF') {
+      if (fileType === 'PDF' && processDropboxPdfEnabled) {
+        const processingSource = fileChanged
+          ? dropboxSelection
+          : {
+              id: formData.original_dropbox_file_id || dropboxSelection.id,
+              path_display: formData.original_dropbox_path || dropboxSelection.path_display,
+              name: formData.original_dropbox_file_name || dropboxSelection.name,
+            };
+
+        const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({
+          file: processingSource,
+          options: {
+            addCoverPage,
+            addPageNumbers,
+            optimizePdf: optimizePdfEnabled,
+          },
+          metadata: {
+            proofName: nextPayload.name,
+            formalName: nextPayload.formal_name,
+            proofCategory,
+            exhibitNumber: nextPayload.admitted_exhibit_num || nextPayload.demonstrative_exhibit_num || nextPayload.joint_exhibit_num || nextPayload.draft_exhibit_num || '',
+          },
+        }));
+
+        nextPayload = {
+          ...nextPayload,
+          ...processedData,
+          file_url: '',
+          video_url: '',
+        };
+      } else if (fileChanged && fileType === 'PDF') {
         const response = await base44.functions.invoke('prepareDropboxProof', {
           fileId: dropboxSelection.id,
           path: dropboxSelection.path_display,
@@ -348,6 +384,11 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
     if (sourceType === 'dropbox' && !nextPayload.dropbox_file_id && !nextPayload.dropbox_path) {
       alert('Dropbox file is required.');
+      return;
+    }
+
+    if (sourceType === 'dropbox' && fileType === 'PDF' && processDropboxPdfEnabled && !addCoverPage && !addPageNumbers && !optimizePdfEnabled) {
+      alert('Select at least one PDF processing option.');
       return;
     }
 
@@ -583,9 +624,25 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
                 </Button>
               )}
               {fileType === 'PDF' && (
-                <p className="text-xs text-slate-500 mt-2">Dropbox PDFs are OCR-checked automatically and saved back to the Dropbox folder set in Settings.</p>
+                <p className="text-xs text-slate-500 mt-2">Dropbox PDFs are OCR-checked automatically. You can also create a processed Dropbox copy in the save folder set in Settings.</p>
               )}
             </div>
+
+            {fileType === 'PDF' && (
+              <div className="mt-4">
+                <PdfProcessingOptions
+                  enabled={processDropboxPdfEnabled}
+                  onEnabledChange={setProcessDropboxPdfEnabled}
+                  showMasterToggle
+                  addCoverPage={addCoverPage}
+                  onAddCoverPageChange={setAddCoverPage}
+                  addPageNumbers={addPageNumbers}
+                  onAddPageNumbersChange={setAddPageNumbers}
+                  optimizePdf={optimizePdfEnabled}
+                  onOptimizePdfChange={setOptimizePdfEnabled}
+                />
+              </div>
+            )}
           </div>
         )}
 

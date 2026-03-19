@@ -18,6 +18,7 @@ import {
   Circle,
   Trash2,
   Copy,
+  FileText,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -27,9 +28,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { proofHasLinkedFile } from './proofAssetUtils';
+import PdfOptimizationDialog from '@/components/proofVault/PdfOptimizationDialog.jsx';
+import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 export default function ProofActionMenu({
   proof,
@@ -48,6 +51,8 @@ export default function ProofActionMenu({
 }) {
   const [deleteError, setDeleteError] = useState(null);
   const [deleteErrorOpen, setDeleteErrorOpen] = useState(false);
+  const [optimizeDialogOpen, setOptimizeDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: childProofs = [] } = useQuery({
     queryKey: ['childProofs', proof.id],
@@ -88,6 +93,25 @@ export default function ProofActionMenu({
     }
   };
 
+  const optimizeMutation = useMutation({
+    mutationFn: async (options) => {
+      const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({ proof, options }));
+      await base44.entities.Proof.update(proof.id, {
+        file_source: 'dropbox',
+        file_url: '',
+        video_url: '',
+        ...processedData,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proofs'] });
+      setOptimizeDialogOpen(false);
+    },
+    onError: (error) => {
+      alert(`Could not optimize PDF: ${error.message}`);
+    },
+  });
+
   const getAvailableActions = () => {
     const isTopLevel = !proof.parent_proof_id;
     const isExtract = proof.proof_child_type === 'Extract';
@@ -112,10 +136,15 @@ export default function ProofActionMenu({
     }
 
     const isOriginalPdfProof = isPDF && isTopLevel && !proof.proof_child_type;
+    const canOptimizePdf = isOptimizableDropboxPdf(proof);
     const canAddToJoint =
       proof.proof_category === 'Exhibit' &&
       hasAttachment &&
       (isExtract || (isTopLevel && !isOriginalPdfProof));
+
+    if (canOptimizePdf) {
+      actions.push({ id: 'optimizePdf', label: 'Optimize PDF', icon: FileText, action: () => setOptimizeDialogOpen(true), color: 'text-blue-600' });
+    }
 
     if ((currentTab === 'draft' || proof.status === 'Draft') && canAddToJoint) {
       actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
@@ -165,6 +194,16 @@ export default function ProofActionMenu({
           })}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <PdfOptimizationDialog
+        open={optimizeDialogOpen}
+        onOpenChange={setOptimizeDialogOpen}
+        title="Optimize Dropbox PDF"
+        description="This saves a new processed copy into your Dropbox save folder and makes this proof use that new file."
+        confirmLabel="Save processed PDF"
+        isSubmitting={optimizeMutation.isPending}
+        onSubmit={(options) => optimizeMutation.mutate(options)}
+      />
 
       <AlertDialog open={deleteErrorOpen} onOpenChange={setDeleteErrorOpen}>
         <AlertDialogContent>

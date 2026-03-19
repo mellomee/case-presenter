@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, CheckCircle2, ChevronLeft, File, Folder, Link2, Loader2, Trash2 } from 'lucide-react';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
+import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
+import { buildProcessDropboxPdfPayload, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePath(path) {
   if (!path || path === '/') return '';
@@ -58,6 +60,10 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState('');
   const [completed, setCompleted] = useState(false);
+  const [processDropboxPdfEnabled, setProcessDropboxPdfEnabled] = useState(false);
+  const [addCoverPage, setAddCoverPage] = useState(true);
+  const [addPageNumbers, setAddPageNumbers] = useState(true);
+  const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
 
   const { data: appSettings = [] } = useQuery({
     queryKey: ['appSettings'],
@@ -97,6 +103,10 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     setIsImporting(false);
     setError('');
     setCompleted(false);
+    setProcessDropboxPdfEnabled(false);
+    setAddCoverPage(true);
+    setAddPageNumbers(true);
+    setOptimizePdfEnabled(true);
   }, [open, appSettings]);
 
   const { data, isLoading } = useQuery({
@@ -172,6 +182,10 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
       return;
     }
 
+    if (processDropboxPdfEnabled && !addCoverPage && !addPageNumbers && !optimizePdfEnabled) {
+      setError('Select at least one PDF processing option.');
+      return;
+    }
 
     setError('');
     setIsImporting(true);
@@ -213,14 +227,29 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
         };
 
         if (fileType === 'PDF') {
-          const response = await base44.functions.invoke('prepareDropboxProof', {
-            fileId: file.id,
-            path: file.path_display,
-            name: file.name,
-          });
+          const responseData = processDropboxPdfEnabled
+            ? await processDropboxPdf(buildProcessDropboxPdfPayload({
+                file,
+                options: {
+                  addCoverPage,
+                  addPageNumbers,
+                  optimizePdf: optimizePdfEnabled,
+                },
+                metadata: {
+                  proofName: baseName,
+                  formalName: baseName,
+                  proofCategory,
+                },
+              }))
+            : (await base44.functions.invoke('prepareDropboxProof', {
+                fileId: file.id,
+                path: file.path_display,
+                name: file.name,
+              })).data;
+
           payload = {
             ...payload,
-            ...response.data,
+            ...responseData,
             name: baseName,
             formal_name: baseName,
             proof_type_category_id: proofTypeCategoryId,
@@ -445,11 +474,24 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                 onChange={setPartyIds}
                 helperText="Optional. If selected, the first party will be the primary party."
               />
+
+              <PdfProcessingOptions
+                enabled={processDropboxPdfEnabled}
+                onEnabledChange={setProcessDropboxPdfEnabled}
+                showMasterToggle
+                addCoverPage={addCoverPage}
+                onAddCoverPageChange={setAddCoverPage}
+                addPageNumbers={addPageNumbers}
+                onAddPageNumbersChange={setAddPageNumbers}
+                optimizePdf={optimizePdfEnabled}
+                onOptimizePdfChange={setOptimizePdfEnabled}
+              />
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-2">
               <p><strong>What the app fills automatically:</strong> Internal Name, Formal Name, Dropbox file ID, Dropbox path, Dropbox filename, and inferred file type.</p>
               <p><strong>How files are stored:</strong> The app keeps a Dropbox reference instead of uploading the file into the app.</p>
+              <p><strong>If PDF processing is enabled:</strong> The app saves a new processed Dropbox copy in your save folder and points the proof to that new file.</p>
               <p><strong>After import:</strong> Use the Edit details button beside any imported proof to open the normal proof form with the extracted data prefilled.</p>
             </div>
 
