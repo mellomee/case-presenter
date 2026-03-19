@@ -19,6 +19,7 @@ export default function PdfOptimizationDialog({
   const [addCoverPage, setAddCoverPage] = useState(initialOptions.addCoverPage ?? true);
   const [addPageNumbers, setAddPageNumbers] = useState(initialOptions.addPageNumbers ?? true);
   const [optimizePdf, setOptimizePdf] = useState(initialOptions.optimizePdf ?? true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!open) return;
@@ -67,9 +68,13 @@ export default function PdfOptimizationDialog({
             type="button"
             className="bg-blue-600 hover:bg-blue-700"
             disabled={isSubmitting || nothingSelected}
-            onClick={() => onSubmit({ addCoverPage, addPageNumbers, optimizePdf })}
+            onClick={() => {
+              onSubmit({ addCoverPage, addPageNumbers, optimizePdf });
+              onOpenChange(false);
+              toast({ title: 'Optimization started', description: 'Processing will continue in the background.' });
+            }}
           >
-            {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Working…</> : confirmLabel}
+            {confirmLabel}
           </Button>
         </div>
       </DialogContent>
