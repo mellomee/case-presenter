@@ -142,29 +142,29 @@ async function ensureDropboxFolder(accessToken, path) {
   }
 }
 
-async function uploadDropboxFile(accessToken, path, bytes) {
-  const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/octet-stream',
-      'Dropbox-API-Arg': JSON.stringify({
-        path,
-        mode: 'add',
-        autorename: true,
-        mute: true,
-      }),
-    },
-    body: bytes,
-  });
+async function uploadDropboxFile(accessToken, path, bytes, overwrite = false) {
+   const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
+     method: 'POST',
+     headers: {
+       Authorization: `Bearer ${accessToken}`,
+       'Content-Type': 'application/octet-stream',
+       'Dropbox-API-Arg': JSON.stringify({
+         path,
+         mode: overwrite ? 'overwrite' : 'add',
+         autorename: !overwrite,
+         mute: true,
+       }),
+     },
+     body: bytes,
+   });
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error_summary || 'Failed to upload processed PDF back to Dropbox.');
-  }
+   const data = await response.json();
+   if (!response.ok) {
+     throw new Error(data?.error_summary || 'Failed to upload processed PDF back to Dropbox.');
+   }
 
-  return data;
-}
+   return data;
+ }
 
 function drawCenteredText(page, text, y, font, size, color) {
   const pageWidth = page.getWidth();
