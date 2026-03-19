@@ -308,7 +308,9 @@ Deno.serve(async (req) => {
     await ensureDropboxFolder(accessToken, saveFolder);
 
     const outputName = `${getBaseName(fileName)}-presenter.pdf`;
-    const uploadedFile = await uploadDropboxFile(accessToken, `${saveFolder}/${outputName}`, nextBytes);
+    const shouldOverwrite = targetFolder === 'extract' && payload.overwritePath;
+    const uploadPath = shouldOverwrite ? payload.overwritePath : `${saveFolder}/${outputName}`;
+    const uploadedFile = await uploadDropboxFile(accessToken, uploadPath, nextBytes, shouldOverwrite);
 
     return Response.json({
       file_source: 'dropbox',
