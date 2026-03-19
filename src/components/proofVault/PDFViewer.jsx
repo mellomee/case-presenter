@@ -510,19 +510,14 @@ export default function PDFViewer({
           {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
             <div
               ref={thumbnailRailRef}
-              className="proof-thumb-rail h-full min-h-0 bg-zinc-950 overflow-y-auto overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
-              onWheel={(event) => event.stopPropagation()}
-              onPointerDownCapture={(event) => event.stopPropagation()}
-              onTouchStartCapture={(event) => event.stopPropagation()}
-              onTouchMoveCapture={(event) => event.stopPropagation()}
+              className="proof-thumb-rail bg-zinc-950 overflow-y-scroll overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
               style={{
                 width: selectableThumbnails ? 76 : 88,
-                touchAction: 'pan-y pinch-zoom',
+                touchAction: 'pan-y',
                 WebkitOverflowScrolling: 'touch',
                 overscrollBehaviorY: 'contain',
-                scrollbarWidth: 'auto',
-                scrollbarColor: '#71717a #09090b',
-                scrollbarGutter: 'stable',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#52525b #09090b',
               }}
             >
               {pageNumbers.map((pageNumber, index) => {
@@ -543,9 +538,7 @@ export default function PDFViewer({
                     className={`flex flex-col items-center py-1.5 px-1 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-400/70' : isCurrentPage ? 'bg-zinc-700 ring-1 ring-inset ring-amber-500/60' : ''}`}
                   >
                     <div className="overflow-hidden rounded border border-zinc-700 bg-white" style={{ width: `${thumbnailWidth}px` }}>
-                      <div style={{ pointerEvents: 'none' }}>
-                        <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
-                      </div>
+                      <Page pageNumber={pageNumber} width={thumbnailWidth} renderTextLayer={false} renderAnnotationLayer={false} loading={<div className="h-[80px] bg-zinc-700" />} />
                     </div>
                     {hasOriginalPageMap ? (
                       <div className="mt-1 flex flex-col items-center leading-tight">

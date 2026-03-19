@@ -89,7 +89,7 @@
 
 @layer utilities {
   .proof-thumb-rail::-webkit-scrollbar {
-    width: 12px;
+    width: 10px;
   }
 
   .proof-thumb-rail::-webkit-scrollbar-track {
@@ -97,14 +97,13 @@
   }
 
   .proof-thumb-rail::-webkit-scrollbar-thumb {
-    background: #71717a;
+    background: #52525b;
     border-radius: 9999px;
     border: 2px solid #09090b;
-    min-height: 32px;
   }
 
   .proof-thumb-rail::-webkit-scrollbar-thumb:hover {
-    background: #a1a1aa;
+    background: #71717a;
   }
 
   .bg-slate-950 {
