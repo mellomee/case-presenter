@@ -176,32 +176,28 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
   if (addCoverPage) {
     const coverPage = pdfDoc.insertPage(0, [612, 792]);
     const title = formalName || proofName || 'Untitled Proof';
-    const subtitle = exhibitNumber ? `${proofCategory || 'Proof'} · Exhibit ${exhibitNumber}` : (proofCategory || 'Proof');
+    const subtitle = exhibitNumber
+      ? `${proofCategory === 'Exhibit' ? 'Exhibit' : (proofCategory || 'Proof')} ${exhibitNumber}`
+      : (proofCategory || 'Proof');
 
-    drawCenteredText(coverPage, 'Case Presenter', 700, helveticaBold, 26, rgb(0.12, 0.19, 0.37));
     drawCenteredText(coverPage, title, 620, helveticaBold, 22, rgb(0.1, 0.1, 0.1));
     drawCenteredText(coverPage, subtitle, 585, helvetica, 13, rgb(0.29, 0.33, 0.39));
-
-    if (formalName && proofName && formalName !== proofName) {
-      drawCenteredText(coverPage, `Internal Name: ${proofName}`, 540, helvetica, 12, rgb(0.29, 0.33, 0.39));
-    }
-
-    drawCenteredText(coverPage, `Prepared ${new Date().toLocaleDateString('en-US')}`, 120, helvetica, 11, rgb(0.45, 0.49, 0.55));
   }
 
   if (addPageNumbers) {
     const startIndex = addCoverPage ? 1 : 0;
     const totalPages = pdfDoc.getPageCount() - startIndex;
+    const margin = 54;
 
     for (let index = startIndex; index < pdfDoc.getPageCount(); index += 1) {
       const page = pdfDoc.getPage(index);
       const label = `Page ${index - startIndex + 1} of ${totalPages}`;
-      const size = 10;
+      const size = 18;
       const textWidth = helvetica.widthOfTextAtSize(label, size);
-      const x = (page.getWidth() - textWidth) / 2;
+      const x = page.getWidth() - textWidth - margin;
       page.drawText(label, {
         x,
-        y: 18,
+        y: margin,
         size,
         font: helvetica,
         color: rgb(0.35, 0.39, 0.45),
