@@ -264,13 +264,14 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           payload = {
             ...payload,
             ...responseData,
-            name: baseName,
+            name: internalName,
             formal_name: baseName,
-            proof_type_category_id: proofTypeCategoryId,
+            proof_type_category_id: fileProofTypeId,
             category_id: categoryId,
-            party_id: partyIds[0] || '',
-            party_ids: partyIds.length > 0 ? { ids: partyIds } : null,
+            party_id: filePartyId,
+            party_ids: filePartyId ? { ids: [filePartyId] } : null,
             status: 'Draft',
+            draft_exhibit_num: fileDraftExhibitNum,
           };
 
           if (processDropboxPdfEnabled) {
