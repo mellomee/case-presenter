@@ -66,6 +66,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
   const [addCoverPage, setAddCoverPage] = useState(true);
   const [addPageNumbers, setAddPageNumbers] = useState(true);
   const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
+  const [showMetadataEditor, setShowMetadataEditor] = useState(false);
 
   const { data: appSettings = [] } = useQuery({
     queryKey: ['appSettings'],
