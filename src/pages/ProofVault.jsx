@@ -168,8 +168,8 @@ export default function ProofVault() {
       throw new Error('Remove this proof from all Questions first.');
     }
 
-    const response = await base44.functions.invoke('deleteProofWithDropboxCleanup', { proofId: id });
-    return response.data;
+    // Delete from database only — preserve source files in Dropbox
+    await base44.entities.Proof.delete(id);
   };
 
   const deleteMutation = useMutation({
