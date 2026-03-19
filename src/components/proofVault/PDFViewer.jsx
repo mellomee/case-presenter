@@ -549,7 +549,7 @@ export default function PDFViewer({
           error={<div className="text-red-400 text-sm p-8 text-center">Failed to load PDF.<br />Check file URL.</div>}
           className="flex flex-1 overflow-hidden w-full"
         >
-          {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
+          {false && showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
             <div
               ref={thumbnailRailRef}
               className="proof-thumb-rail h-full min-h-0 bg-zinc-950 overflow-y-auto overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
