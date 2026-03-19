@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { AlertCircle, CheckCircle2, ChevronLeft, File, Folder, Link2, Loader2, Trash2 } from 'lucide-react';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
 import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
+import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
 import { buildProcessDropboxPdfPayload, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePath(path) {
@@ -60,6 +61,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState('');
   const [completed, setCompleted] = useState(false);
+  const [importSummary, setImportSummary] = useState(null);
   const [processDropboxPdfEnabled, setProcessDropboxPdfEnabled] = useState(false);
   const [addCoverPage, setAddCoverPage] = useState(true);
   const [addPageNumbers, setAddPageNumbers] = useState(true);
@@ -103,6 +105,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     setIsImporting(false);
     setError('');
     setCompleted(false);
+    setImportSummary(null);
     setProcessDropboxPdfEnabled(false);
     setAddCoverPage(true);
     setAddPageNumbers(true);
@@ -190,6 +193,11 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     setError('');
     setIsImporting(true);
     setCompleted(false);
+    const importedFiles = [];
+    const processedFiles = [];
+    let folderUrl = '';
+    let folderPath = '';
+    let failureCount = 0;
 
     for (const file of selectedFiles) {
       const fileKey = file.id || file.path_display;
@@ -258,9 +266,16 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
             party_ids: partyIds.length > 0 ? { ids: partyIds } : null,
             status: 'Draft',
           };
+
+          if (processDropboxPdfEnabled) {
+            processedFiles.push(responseData.processed_file_name || responseData.dropbox_file_name || file.name);
+            folderUrl = folderUrl || responseData.dropbox_folder_url || '';
+            folderPath = folderPath || responseData.dropbox_folder_path || '';
+          }
         }
 
         const createdProof = await base44.entities.Proof.create(payload);
+        importedFiles.push(file.name);
         window.clearInterval(interval);
         updateSelectedFile(fileKey, {
           status: 'done',
@@ -269,6 +284,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           error: '',
         });
       } catch (importError) {
+        failureCount += 1;
         window.clearInterval(interval);
         updateSelectedFile(fileKey, {
           status: 'error',
@@ -281,6 +297,18 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     setIsImporting(false);
     setCompleted(true);
     onImportComplete?.();
+
+    if (importedFiles.length > 0) {
+      setImportSummary({
+        title: 'Dropbox import complete',
+        message: processDropboxPdfEnabled && processedFiles.length > 0
+          ? `Imported ${importedFiles.length} proof${importedFiles.length === 1 ? '' : 's'} and saved ${processedFiles.length} processed PDF cop${processedFiles.length === 1 ? 'y' : 'ies'} to your Dropbox save folder.${failureCount > 0 ? ` ${failureCount} failed.` : ''}`
+          : `Imported ${importedFiles.length} proof${importedFiles.length === 1 ? '' : 's'} from Dropbox.${failureCount > 0 ? ` ${failureCount} failed.` : ''}`,
+        fileNames: processedFiles.length > 0 ? processedFiles : importedFiles,
+        folderUrl,
+        folderPath,
+      });
+    }
   };
 
   useEffect(() => {
@@ -298,6 +326,16 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           <DialogTitle>Bulk link Dropbox files</DialogTitle>
           <DialogDescription>Files stay in Dropbox — the app stores Dropbox references and uses the filename to prefill the proof names.</DialogDescription>
         </DialogHeader>
+
+        <ProcessingCompleteDialog
+          open={Boolean(importSummary)}
+          onOpenChange={(open) => !open && setImportSummary(null)}
+          title={importSummary?.title}
+          message={importSummary?.message}
+          fileNames={importSummary?.fileNames || []}
+          folderUrl={importSummary?.folderUrl}
+          folderPath={importSummary?.folderPath}
+        />
 
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <div className="space-y-4">

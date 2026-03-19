@@ -30,6 +30,7 @@ import DropboxBulkImportModal from '@/components/proofVault/DropboxBulkImportMod
 import PrintExhibitListModal from '@/components/proofVault/PrintExhibitListModal';
 import PdfOptimizationDialog from '@/components/proofVault/PdfOptimizationDialog.jsx';
 import PdfOptimizationSelectionBar from '@/components/proofVault/PdfOptimizationSelectionBar.jsx';
+import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
 import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizeSearchValue(value) {
@@ -99,6 +100,7 @@ export default function ProofVault() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isBulkOptimizing, setIsBulkOptimizing] = useState(false);
   const [showBulkOptimizationDialog, setShowBulkOptimizationDialog] = useState(false);
+  const [processingSummary, setProcessingSummary] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: proofs = [] } = useQuery({
@@ -357,6 +359,9 @@ export default function ProofVault() {
 
     setIsBulkOptimizing(true);
     const failures = [];
+    const processedFiles = [];
+    let folderUrl = '';
+    let folderPath = '';
 
     for (const proof of eligibleSelectedProofs) {
       try {
@@ -367,6 +372,9 @@ export default function ProofVault() {
           video_url: '',
           ...processedData,
         });
+        processedFiles.push(processedData.processed_file_name || processedData.dropbox_file_name || proof.name);
+        folderUrl = folderUrl || processedData.dropbox_folder_url || '';
+        folderPath = folderPath || processedData.dropbox_folder_path || '';
       } catch (error) {
         failures.push(`${proof.name}: ${error.message}`);
       }
@@ -379,12 +387,22 @@ export default function ProofVault() {
     setShowBulkOptimizationDialog(false);
     setSelectedProofIds([]);
 
-    if (failures.length > 0 || skippedCount > 0) {
-      alert(`${successCount} processed, ${failures.length} failed, ${skippedCount} skipped.\n\n${failures.join('\n')}`.trim());
+    if (successCount > 0) {
+      const message = failures.length > 0 || skippedCount > 0
+        ? `Processed ${successCount} PDF${successCount === 1 ? '' : 's'}. ${failures.length} failed and ${skippedCount} ${skippedCount === 1 ? 'was' : 'were'} skipped.`
+        : `Processed ${successCount} PDF${successCount === 1 ? '' : 's'} and saved new Dropbox copies.`;
+
+      setProcessingSummary({
+        title: 'PDF processing complete',
+        message,
+        fileNames: processedFiles,
+        folderUrl,
+        folderPath,
+      });
       return;
     }
 
-    alert(`Processed ${successCount} PDF${successCount === 1 ? '' : 's'} and saved new Dropbox copies.`);
+    alert(`${successCount} processed, ${failures.length} failed, ${skippedCount} skipped.\n\n${failures.join('\n')}`.trim());
   };
 
   const renderEmptyState = (title) => (
@@ -517,6 +535,16 @@ export default function ProofVault() {
           confirmLabel="Process selected PDFs"
           isSubmitting={isBulkOptimizing}
           onSubmit={handleBulkOptimize}
+        />
+
+        <ProcessingCompleteDialog
+          open={Boolean(processingSummary)}
+          onOpenChange={(open) => !open && setProcessingSummary(null)}
+          title={processingSummary?.title}
+          message={processingSummary?.message}
+          fileNames={processingSummary?.fileNames || []}
+          folderUrl={processingSummary?.folderUrl}
+          folderPath={processingSummary?.folderPath}
         />
 
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>

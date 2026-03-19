@@ -32,6 +32,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { proofHasLinkedFile } from './proofAssetUtils';
 import PdfOptimizationDialog from '@/components/proofVault/PdfOptimizationDialog.jsx';
+import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
 import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 export default function ProofActionMenu({
@@ -52,6 +53,7 @@ export default function ProofActionMenu({
   const [deleteError, setDeleteError] = useState(null);
   const [deleteErrorOpen, setDeleteErrorOpen] = useState(false);
   const [optimizeDialogOpen, setOptimizeDialogOpen] = useState(false);
+  const [processingSummary, setProcessingSummary] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: childProofs = [] } = useQuery({
@@ -102,10 +104,18 @@ export default function ProofActionMenu({
         video_url: '',
         ...processedData,
       });
+      return processedData;
     },
-    onSuccess: () => {
+    onSuccess: (processedData) => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
       setOptimizeDialogOpen(false);
+      setProcessingSummary({
+        title: 'PDF processing complete',
+        message: 'Your processed Dropbox copy is ready.',
+        fileNames: [processedData.processed_file_name || processedData.dropbox_file_name || proof.name],
+        folderUrl: processedData.dropbox_folder_url,
+        folderPath: processedData.dropbox_folder_path,
+      });
     },
     onError: (error) => {
       alert(`Could not optimize PDF: ${error.message}`);
@@ -203,6 +213,16 @@ export default function ProofActionMenu({
         confirmLabel="Save processed PDF"
         isSubmitting={optimizeMutation.isPending}
         onSubmit={(options) => optimizeMutation.mutate(options)}
+      />
+
+      <ProcessingCompleteDialog
+        open={Boolean(processingSummary)}
+        onOpenChange={(open) => !open && setProcessingSummary(null)}
+        title={processingSummary?.title}
+        message={processingSummary?.message}
+        fileNames={processingSummary?.fileNames || []}
+        folderUrl={processingSummary?.folderUrl}
+        folderPath={processingSummary?.folderPath}
       />
 
       <AlertDialog open={deleteErrorOpen} onOpenChange={setDeleteErrorOpen}>
