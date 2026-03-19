@@ -636,6 +636,10 @@ export default function PDFViewer({
       {numPages && numPages > 1 && mode === 'controller' && fileUrl && (
         <div
           style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
             height: '110px',
             overflowX: 'auto',
             overflowY: 'hidden',
@@ -644,9 +648,9 @@ export default function PDFViewer({
             alignItems: 'center',
             gap: '6px',
             padding: '6px 8px',
-            background: '#18181b',
+            background: 'rgba(24,24,27,0.93)',
             borderTop: '1px solid #3f3f46',
-            flexShrink: 0,
+            zIndex: 20,
             WebkitOverflowScrolling: 'touch',
             touchAction: 'pan-x',
           }}
