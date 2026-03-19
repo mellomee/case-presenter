@@ -538,46 +538,6 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                   <option value="Deposition">Deposition</option>
                 </select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Proof Type *</label>
-                <select value={proofTypeCategoryId} onChange={(event) => setProofTypeCategoryId(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-                  <option value="">Select proof type</option>
-                  {proofTypes.map((type) => (
-                    <option key={type.id} value={type.id}>{type.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
-                  <option value="">No category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>{category.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <PartyMultiSelectField
-                label="Assign to Parties"
-                parties={parties}
-                value={partyIds}
-                onChange={setPartyIds}
-                helperText="Optional. If selected, the first party will be the primary party."
-              />
-
-              <PdfProcessingOptions
-                enabled={processDropboxPdfEnabled}
-                onEnabledChange={setProcessDropboxPdfEnabled}
-                showMasterToggle
-                addCoverPage={addCoverPage}
-                onAddCoverPageChange={setAddCoverPage}
-                addPageNumbers={addPageNumbers}
-                onAddPageNumbersChange={setAddPageNumbers}
-                optimizePdf={optimizePdfEnabled}
-                onOptimizePdfChange={setOptimizePdfEnabled}
-              />
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-2">
