@@ -319,9 +319,25 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                     <p className="text-xs text-slate-500">Use the thumbnail rail to select original pages while keeping search, zoom, gestures, and page jump controls.</p>
                   )}
                 </div>
-                {extractSource === 'original' && (
-                  <span className="text-xs font-mono text-blue-700 whitespace-nowrap pt-1">{selectedOriginalRange || 'No pages selected'}</span>
-                )}
+                <div className="flex items-center gap-3">
+                  {extractSource === 'original' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const totalPages = Array.from({ length: 1000 }, (_, i) => i + 1);
+                        setSelectedOriginalPages(totalPages);
+                      }}
+                      className="text-xs"
+                    >
+                      Select All
+                    </Button>
+                  )}
+                  {extractSource === 'original' && (
+                    <span className="text-xs font-mono text-blue-700 whitespace-nowrap">{selectedOriginalRange || 'No pages selected'}</span>
+                  )}
+                </div>
               </div>
 
               <div className="bg-slate-900 rounded-lg overflow-hidden h-[32rem] border border-slate-200">
