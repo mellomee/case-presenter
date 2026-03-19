@@ -141,14 +141,6 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     });
 
     setBrowserSelectedKeys([]);
-
-    // Scroll right panel to bottom to show newly added files
-    setTimeout(() => {
-      const scrollContainer = document.querySelector('[data-role="selected-files-scroll"]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }, 0);
   };
 
   const removeFile = (fileKey) => {
@@ -449,7 +441,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
               {selectedFiles.length === 0 ? (
                 <p className="text-sm text-slate-500">Add Dropbox files from the browser above.</p>
               ) : (
-                <div className="space-y-3 flex-1 overflow-y-auto pr-1 min-h-0" data-role="selected-files-scroll">
+                <div className="space-y-3 flex-1 overflow-y-auto pr-1 min-h-0">
                   {selectedFiles.map((file) => {
                     const fileKey = file.id || file.path_display;
                     const baseName = getBaseName(file.name);
