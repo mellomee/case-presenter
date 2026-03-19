@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import PDFThumbnailRail from './PDFThumbnailRail';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Button } from '@/components/ui/button';
@@ -522,20 +521,6 @@ export default function PDFViewer({
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* NEW standalone thumbnail rail — sibling of Document, owns its own scroll container */}
-        {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
-          <Document file={fileUrl} loading={null} error={null} className="contents">
-            <PDFThumbnailRail
-              pageNumbers={pageNumbers}
-              currentPage={currentPage}
-              onPageClick={goToPage}
-              thumbnailWidth={thumbnailWidth}
-              selectableThumbnails={selectableThumbnails}
-              selectedPages={selectedPages}
-              hasOriginalPageMap={hasOriginalPageMap}
-            />
-          </Document>
-        )}
         <Document
           file={fileUrl}
           onLoadSuccess={({ numPages: nextPageCount }) => {
@@ -549,7 +534,7 @@ export default function PDFViewer({
           error={<div className="text-red-400 text-sm p-8 text-center">Failed to load PDF.<br />Check file URL.</div>}
           className="flex flex-1 overflow-hidden w-full"
         >
-          {false && showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
+          {showThumbs && pageNumbers.length > 0 && mode === 'controller' && (
             <div
               ref={thumbnailRailRef}
               className="proof-thumb-rail h-full min-h-0 bg-zinc-950 overflow-y-auto overflow-x-hidden shrink-0 border-r border-zinc-700 py-1"
