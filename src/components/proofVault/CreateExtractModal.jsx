@@ -374,6 +374,20 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             helperText="Choose one or more parties for this extract."
           />
 
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">Proof Type</label>
+            <select
+              value={proofTypeId}
+              onChange={(e) => setProofTypeId(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+            >
+              <option value="">Select proof type</option>
+              {proofTypes.map((type) => (
+                <option key={type.id} value={type.id}>{type.name}</option>
+              ))}
+            </select>
+          </div>
+
           {parentProof.proof_category === 'Exhibit' && (
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
