@@ -215,25 +215,30 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
         }
 
         const baseName = getBaseName(file.name);
-        let payload = {
-          proof_category: proofCategory,
-          file_type: fileType,
-          name: baseName,
-          formal_name: baseName,
-          description: '',
-          status: 'Draft',
-          draft_exhibit_num: '',
-          proof_type_category_id: proofTypeCategoryId,
-          category_id: categoryId,
-          party_id: partyIds[0] || '',
-          party_ids: partyIds.length > 0 ? { ids: partyIds } : null,
-          file_source: 'dropbox',
-          file_url: '',
-          video_url: '',
-          dropbox_file_id: file.id,
-          dropbox_path: file.path_display,
-          dropbox_file_name: file.name,
-        };
+         const internalName = file.internalName || baseName;
+         const filePartyId = file.filePartyId || partyIds[0] || '';
+         const fileProofTypeId = file.fileProofTypeId || proofTypeCategoryId;
+         const fileDraftExhibitNum = file.draftExhibitNum || '';
+
+         let payload = {
+           proof_category: proofCategory,
+           file_type: fileType,
+           name: internalName,
+           formal_name: baseName,
+           description: '',
+           status: 'Draft',
+           draft_exhibit_num: fileDraftExhibitNum,
+           proof_type_category_id: fileProofTypeId,
+           category_id: categoryId,
+           party_id: filePartyId,
+           party_ids: filePartyId ? { ids: [filePartyId] } : null,
+           file_source: 'dropbox',
+           file_url: '',
+           video_url: '',
+           dropbox_file_id: file.id,
+           dropbox_path: file.path_display,
+           dropbox_file_name: file.name,
+         };
 
         if (fileType === 'PDF') {
           const responseData = processDropboxPdfEnabled
