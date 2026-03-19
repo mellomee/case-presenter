@@ -4,13 +4,18 @@ import { isDropboxProof } from '@/components/proofVault/proofAssetUtils';
 
 export default function useResolvedProofAsset(proof) {
   const isDropbox = isDropboxProof(proof);
+  
+  // For extracts, use the extract's own processed file, not the parent's
+  const isExtract = proof?.proof_child_type === 'Extract';
+  const fileIdToUse = isExtract ? proof?.dropbox_file_id : proof?.dropbox_file_id;
+  const pathToUse = isExtract ? proof?.dropbox_path : proof?.dropbox_path;
 
   const query = useQuery({
-    queryKey: ['resolvedProofAsset', proof?.id, proof?.dropbox_file_id, proof?.dropbox_path, proof?.updated_date],
+    queryKey: ['resolvedProofAsset', proof?.id, fileIdToUse, pathToUse, proof?.updated_date],
     queryFn: async () => {
       const response = await base44.functions.invoke('getDropboxTemporaryLink', {
-        fileId: proof?.dropbox_file_id,
-        path: proof?.dropbox_path,
+        fileId: fileIdToUse,
+        path: pathToUse,
       });
       return response.data?.url || '';
     },
