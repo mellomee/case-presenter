@@ -493,7 +493,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                                 className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 bg-white"
                                 disabled={isImporting}
                               >
-                                <option value="">{partyIds.length > 0 ? 'Use default' : 'Not assigned'}</option>
+                                <option value="">{parties.length > 0 ? 'Use default' : 'Not assigned'}</option>
                                 {parties.map((party) => (
                                   <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>
                                 ))}
