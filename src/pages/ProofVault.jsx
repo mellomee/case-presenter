@@ -593,12 +593,16 @@ export default function ProofVault() {
             if (!open && !isBulkOptimizing) setBulkOptimizeProgress({ value: 0, label: '' });
           }}
           title="Optimize selected Dropbox PDFs"
-          description="Each selected proof will get a new processed Dropbox copy saved to your Dropbox save folder, and the proof will start using that new file."
-          confirmLabel="Process selected PDFs"
+          description="Each selected proof will get a new processed Dropbox copy saved to your Dropbox save folder, and the proof will start using that new file. Optimization will run in the background."
+          confirmLabel="Start optimization"
           isSubmitting={isBulkOptimizing}
           progressValue={bulkOptimizeProgress.value}
           progressLabel={bulkOptimizeProgress.label}
-          onSubmit={handleBulkOptimize}
+          onSubmit={(options) => {
+            setShowBulkOptimizationDialog(false);
+            // Run optimization in background without awaiting
+            handleBulkOptimize(options);
+          }}
         />
 
         <ProcessingCompleteDialog
