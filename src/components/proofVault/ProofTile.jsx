@@ -176,8 +176,13 @@ export default function ProofTile({
                   <div className="text-xs text-slate-500 truncate">Formal Name: {proof.formal_name}</div>
                 )}
                 {proof.proof_child_type === 'Extract' && parentProof && (
-                  <div className="text-[11px] text-slate-500 truncate mt-1">
-                    Source PDF: {parentProof.formal_name || parentProof.name}{parentProof.draft_exhibit_num ? ` · D: ${parentProof.draft_exhibit_num}` : ''}
+                  <div className="text-[11px] text-slate-500 truncate mt-1 space-y-0.5">
+                    <div>
+                      Source PDF: {parentProof.formal_name || parentProof.name}{parentProof.draft_exhibit_num ? ` · D: ${parentProof.draft_exhibit_num}` : ''}
+                    </div>
+                    {proof.dropbox_file_name && (
+                      <div>Extract File: {proof.dropbox_file_name}</div>
+                    )}
                   </div>
                 )}
                 {proof.file_source === 'dropbox' && proof.dropbox_file_name && (
