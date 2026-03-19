@@ -276,7 +276,15 @@ export default function ProofTile({
               onAdmitAsDemonstrative={() => onAdmitAsDemonstrative(proof)}
               onRemoveFromJoint={() => onRemoveFromJoint(proof)}
               onUnAdmit={() => onUnAdmit(proof)}
-              onDelete={onDelete}
+              onDelete={(p) => {
+                // Delete extract file from Dropbox if applicable
+                if (p.proof_child_type === 'Extract' && p.file_source === 'dropbox' && p.dropbox_path) {
+                  base44.functions.invoke('deleteExtractFromDropbox', { dropboxPath: p.dropbox_path }).catch((err) => {
+                    console.warn('Failed to delete extract file from Dropbox:', err.message);
+                  });
+                }
+                onDelete(p);
+              }}
             />
           </div>
         </div>
