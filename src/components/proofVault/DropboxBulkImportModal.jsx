@@ -243,19 +243,22 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
          };
 
         if (fileType === 'PDF') {
-          const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
-            file,
-            options: {
-              addCoverPage: true,
-              addPageNumbers: true,
-              optimizePdf: true,
-            },
-            metadata: {
-              proofName: baseName,
-              formalName: baseName,
-              proofCategory,
-            },
-          }));
+           const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
+             file,
+             options: {
+               addCoverPage: true,
+               addPageNumbers: true,
+               optimizePdf: true,
+             },
+             metadata: {
+               proofName: internalName,
+               formalName: baseName,
+               proofCategory,
+               party_id: filePartyId || null,
+               proof_type_category_id: fileProofTypeId || null,
+               draft_exhibit_num: fileDraftExhibitNum || null,
+             },
+           }));
 
           payload = {
             ...payload,
