@@ -110,6 +110,7 @@ export default function ProofVault() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showProgressBar, setShowProgressBar] = useState(false);
   const [isProgressBarMinimized, setIsProgressBarMinimized] = useState(false);
+  const [isOptimizationPaused, setIsOptimizationPaused] = useState(false);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -368,14 +369,23 @@ export default function ProofVault() {
     if (targetProofs.length === 0) return;
 
     setIsBulkOptimizing(true);
+    setIsOptimizationPaused(false);
     setBulkOptimizeProgress({
       value: 5,
       label: `Starting ${targetProofs.length} PDF${targetProofs.length === 1 ? '' : 's'}...`,
     });
 
     const results = [];
+    let shouldStop = false;
 
     for (let index = 0; index < targetProofs.length; index += 1) {
+      if (shouldStop) break;
+
+      // Wait while paused
+      while (isOptimizationPaused && !shouldStop) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
       const proof = targetProofs[index];
       setBulkOptimizeProgress({
         value: Math.max(8, (index / targetProofs.length) * 100),
@@ -416,7 +426,8 @@ export default function ProofVault() {
 
     await queryClient.invalidateQueries({ queryKey: ['proofs'] });
     setIsBulkOptimizing(false);
-    setBulkOptimizeProgress({ value: 100, label: 'Done' });
+    setIsOptimizationPaused(false);
+    setBulkOptimizeProgress({ value: 100, label: shouldStop ? 'Stopped' : 'Done' });
     setShowBulkOptimizationDialog(false);
     setShowProgressBar(false);
     setIsProgressBarMinimized(false);
@@ -427,7 +438,9 @@ export default function ProofVault() {
     }
 
     setOptimizationResults(results);
-    setShowResultDialog(true);
+    if (!shouldStop) {
+      setShowResultDialog(true);
+    }
   };
 
   const handleRetryAllFailed = async () => {
@@ -638,6 +651,14 @@ export default function ProofVault() {
           onClose={() => setShowProgressBar(false)}
           progressValue={bulkOptimizeProgress.value}
           progressLabel={bulkOptimizeProgress.label}
+          isPaused={isOptimizationPaused}
+          onPauseToggle={() => setIsOptimizationPaused(!isOptimizationPaused)}
+          onStop={() => {
+            setIsBulkOptimizing(false);
+            setIsOptimizationPaused(false);
+            setBulkOptimizeProgress({ value: 0, label: '' });
+            setShowProgressBar(false);
+          }}
         />
 
         <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
