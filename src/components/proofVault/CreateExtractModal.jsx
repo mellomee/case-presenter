@@ -403,8 +403,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
 
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={saveMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
-              {saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract')}
+            <Button onClick={handleSubmit} disabled={saveMutation.isPending || isProcessing} className="bg-blue-600 hover:bg-blue-700">
+              {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing PDF…</> : saveMutation.isPending ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Save Extract')}
             </Button>
           </div>
         </div>
