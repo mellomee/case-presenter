@@ -105,7 +105,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setShowWarning(false);
     setSelectedPartyIds([]);
     setProofTypeId('');
-    setNumPages(0);
   };
 
   useEffect(() => {
