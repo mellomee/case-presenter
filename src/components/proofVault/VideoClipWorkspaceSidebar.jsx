@@ -1,10 +1,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Play, Trash2, GripVertical, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Trash2, GripVertical, Plus, Pause } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-function SegmentItem({ segment, index, onDelete }) {
+function SegmentItem({ segment, index, onDelete, onTogglePause }) {
   return (
     <Draggable draggableId={segment.id} index={index}>
       {(provided, snapshot) => (
@@ -19,10 +19,26 @@ function SegmentItem({ segment, index, onDelete }) {
           <div className="min-w-0 flex-1 text-xs">
             <div className="font-medium text-slate-900 truncate">{segment.label || `Segment ${index + 1}`}</div>
             <div className="text-slate-500 font-mono">{segment.start} → {segment.end}</div>
+            {segment.pause_after && (
+              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                <Pause className="w-3 h-3" /> Pause after
+              </div>
+            )}
           </div>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(segment.id)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant={segment.pause_after ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => onTogglePause(segment.id)}
+              className={`h-8 w-8 ${segment.pause_after ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'text-slate-500 hover:text-amber-700 hover:bg-amber-50'}`}
+            >
+              <Pause className="w-4 h-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={() => onDelete(segment.id)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
     </Draggable>
@@ -44,6 +60,8 @@ export default function VideoClipWorkspaceSidebar({
   onTempStartTimeChange,
   tempEndTime,
   onTempEndTimeChange,
+  tempPauseAfter,
+  onTempPauseAfterChange,
   segmentLabel,
   onSegmentLabelChange,
   onMarkStart,
@@ -53,6 +71,7 @@ export default function VideoClipWorkspaceSidebar({
   durationLabel,
   segments,
   onDeleteSegment,
+  onToggleSegmentPause,
   onDragEnd,
 }) {
   if (isCollapsed) {
@@ -102,6 +121,23 @@ export default function VideoClipWorkspaceSidebar({
             <label className="text-xs font-medium text-slate-700 mb-1 block">Segment Label</label>
             <Input value={segmentLabel} onChange={(e) => onSegmentLabelChange(e.target.value)} placeholder="Optional label" className="h-8 text-xs" />
           </div>
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="text-xs font-medium text-slate-700">Pause after this segment</div>
+                <div className="text-[11px] text-slate-500">Playback will stop before the next segment starts.</div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={tempPauseAfter ? 'secondary' : 'outline'}
+                onClick={() => onTempPauseAfterChange(!tempPauseAfter)}
+                className={tempPauseAfter ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'text-slate-600'}
+              >
+                <Pause className="w-3 h-3" /> {tempPauseAfter ? 'On' : 'Off'}
+              </Button>
+            </div>
+          </div>
           <Button onClick={onAddSegment} className="w-full h-8 bg-green-600 hover:bg-green-700 text-xs">
             <Plus className="w-3.5 h-3.5" /> Add Segment
           </Button>
@@ -119,7 +155,13 @@ export default function VideoClipWorkspaceSidebar({
                     className={`space-y-1.5 ${snapshot.isDraggingOver ? 'rounded-lg bg-blue-50 p-1' : ''}`}
                   >
                     {segments.map((segment, idx) => (
-                      <SegmentItem key={segment.id} segment={segment} index={idx} onDelete={onDeleteSegment} />
+                      <SegmentItem
+                        key={segment.id}
+                        segment={segment}
+                        index={idx}
+                        onDelete={onDeleteSegment}
+                        onTogglePause={onToggleSegmentPause}
+                      />
                     ))}
                     {provided.placeholder}
                   </div>
