@@ -51,6 +51,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [processingOptions, setProcessingOptions] = useState({
     performOcr: true,
     optimizePdf: false,
+    addCoverPage: false,
+    addPageNumbers: false,
   });
 
   const { data: proofs = [] } = useQuery({
