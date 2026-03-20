@@ -25,6 +25,7 @@ export default function ProofTile({
   onUnAdmit,
   expandedProofId,
   highlightedChildId,
+  depth = 0,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
