@@ -357,7 +357,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
             </div>
 
             <div className="rounded-lg border border-slate-200 max-h-[22rem] overflow-y-auto overflow-x-hidden">
-              {isLoading ? (
+              {currentPath === null || isLoading ? (
                 <div className="flex items-center justify-center py-12 text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Dropbox files...
                 </div>

@@ -83,7 +83,7 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
           </div>
 
           <div className="rounded-lg border border-slate-200 max-h-[28rem] overflow-y-auto overflow-x-hidden">
-            {isLoading ? (
+            {currentPath === null || isLoading ? (
               <div className="flex items-center justify-center py-12 text-slate-500">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Dropbox files...
               </div>
