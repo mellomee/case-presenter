@@ -325,19 +325,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           file_url: '',
           video_url: '',
         };
-      } else if (fileChanged && fileType === 'PDF') {
-        const response = await base44.functions.invoke('prepareDropboxProof', {
-          fileId: dropboxSelection.id,
-          path: dropboxSelection.path_display,
-          name: dropboxSelection.name,
-        });
-
-        nextPayload = {
-          ...nextPayload,
-          ...response.data,
-          file_url: '',
-          video_url: '',
-        };
       } else {
         nextPayload = {
           ...nextPayload,
