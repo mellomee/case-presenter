@@ -269,6 +269,8 @@ Deno.serve(async (req) => {
     const formalName = String(payload.formalName || '').trim();
     const exhibitNumber = String(payload.exhibitNumber || '').trim();
     const proofCategory = String(payload.proofCategory || 'Exhibit').trim();
+    // Optional: comma-separated 1-based page numbers to extract (e.g. "1,3,5,6")
+    const extractPagesParam = payload.extractPages ? String(payload.extractPages).trim() : null;
 
     if (!fileId && !originalPath) {
       return Response.json({ error: 'A Dropbox PDF is required.' }, { status: 400 });
