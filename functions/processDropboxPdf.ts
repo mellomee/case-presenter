@@ -308,6 +308,7 @@ Deno.serve(async (req) => {
     }
 
     if (addCoverPage || addPageNumbers) {
+      console.log('Adding cover/page numbers:', { addCoverPage, addPageNumbers, proofName, formalName, exhibitNumber });
       nextBytes = await addCoverAndPageNumbers(nextBytes, {
         addCoverPage,
         addPageNumbers,
@@ -316,6 +317,7 @@ Deno.serve(async (req) => {
         exhibitNumber,
         proofCategory,
       });
+      console.log('Cover/page numbers completed, new PDF size:', nextBytes.length);
     }
 
     if (optimizePdf) {
