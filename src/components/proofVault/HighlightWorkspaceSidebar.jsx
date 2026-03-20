@@ -136,7 +136,8 @@ export default function HighlightWorkspaceSidebar({
             <span className="text-slate-400">{colorPanelCollapsed ? '▶' : '▼'}</span>
           </button>
 
-          {!colorPanelCollapsed && (<>
+          {!colorPanelCollapsed && (
+          <div className="space-y-3">
           {/* Current color + native picker trigger */}
           <div className="flex items-center gap-2">
             <button
