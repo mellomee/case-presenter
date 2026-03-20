@@ -525,7 +525,7 @@ export default function ProofVault() {
             <DialogHeader>
               <DialogTitle>{editingProof ? 'Edit Proof' : 'Add Proof'}</DialogTitle>
             </DialogHeader>
-            <ProofForm proof={editingProof} onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending || updateMutation.isPending} />
+            <ProofForm proof={editingProof} onSubmit={handleSubmit} onCancel={handleCancel} />
           </DialogContent>
         </Dialog>
 

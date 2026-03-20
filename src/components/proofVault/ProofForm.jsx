@@ -47,7 +47,7 @@ function normalizePartyIds(currentProof) {
   return currentProof?.party_id ? [currentProof.party_id] : [];
 }
 
-export default function ProofForm({ proof, onSubmit, onCancel, isSubmitting = false }) {
+export default function ProofForm({ proof, onSubmit, onCancel }) {
   const initialSourceType = proof?.file_source === 'dropbox'
     ? 'dropbox'
     : (proof?.file_type === 'Video' && proof?.video_url && !proof?.file_url ? 'url' : 'upload');
@@ -89,8 +89,8 @@ export default function ProofForm({ proof, onSubmit, onCancel, isSubmitting = fa
       : null
   );
   const [processDropboxPdfEnabled, setProcessDropboxPdfEnabled] = useState(false);
-  const [addCoverPage, setAddCoverPage] = useState(false);
-  const [addPageNumbers, setAddPageNumbers] = useState(false);
+  const [addCoverPage, setAddCoverPage] = useState(true);
+  const [addPageNumbers, setAddPageNumbers] = useState(true);
   const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
 
   const { data: parties = [] } = useQuery({
@@ -329,28 +329,18 @@ export default function ProofForm({ proof, onSubmit, onCancel, isSubmitting = fa
           video_url: '',
         };
       } else if (fileChanged && fileType === 'PDF') {
-        try {
-          const response = await base44.functions.invoke('prepareDropboxProof', {
-            fileId: dropboxSelection.id,
-            path: dropboxSelection.path_display,
-            name: dropboxSelection.name,
-          });
+        const response = await base44.functions.invoke('prepareDropboxProof', {
+          fileId: dropboxSelection.id,
+          path: dropboxSelection.path_display,
+          name: dropboxSelection.name,
+        });
 
-          if (response.data?.error) {
-            alert(`Failed to prepare Dropbox file: ${response.data.error}`);
-            return;
-          }
-
-          nextPayload = {
-            ...nextPayload,
-            ...response.data,
-            file_url: '',
-            video_url: '',
-          };
-        } catch (error) {
-          alert(`Error preparing Dropbox file: ${error.message}`);
-          return;
-        }
+        nextPayload = {
+          ...nextPayload,
+          ...response.data,
+          file_url: '',
+          video_url: '',
+        };
       } else {
         nextPayload = {
           ...nextPayload,
@@ -683,10 +673,8 @@ export default function ProofForm({ proof, onSubmit, onCancel, isSubmitting = fa
         </div>
 
         <div className="flex justify-end gap-3 pt-2 border-t border-slate-200">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : (proof ? 'Update Proof' : 'Save Proof')}
-          </Button>
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">{proof ? 'Update Proof' : 'Save Proof'}</Button>
         </div>
       </form>
 

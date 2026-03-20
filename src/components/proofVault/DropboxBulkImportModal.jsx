@@ -259,8 +259,8 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
          const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
            file,
            options: {
-             addCoverPage: false,
-             addPageNumbers: false,
+             addCoverPage: true,
+             addPageNumbers: true,
              optimizePdf: true,
            },
            metadata: {
