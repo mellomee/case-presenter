@@ -61,6 +61,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const [warning, setWarning] = useState('');
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
+  const [proofTypeId, setProofTypeId] = useState('');
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -74,6 +75,11 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
     queryFn: () => base44.entities.Party.list(),
+  });
+
+  const { data: proofTypes = [] } = useQuery({
+    queryKey: ['proofTypes'],
+    queryFn: () => base44.entities.ProofTypeCategory.list(),
   });
 
   const { url: resolvedParentUrl, isLoading: isResolvingParentUrl } = useResolvedProofAsset(actualParentExtract);
@@ -112,6 +118,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setWarning('');
     setWorkspaceCollapsed(false);
     setSelectedPartyIds([]);
+    setProofTypeId('');
   };
 
   useEffect(() => {
@@ -133,11 +140,13 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setDraftHighlight(null);
       setWarning('');
       setSelectedPartyIds(normalizePartyIds(parentExtract));
+      setProofTypeId(parentExtract.proof_type_category_id || actualParentExtract?.proof_type_category_id || '');
       return;
     }
 
     resetForm();
     setSelectedPartyIds(normalizePartyIds(actualParentExtract));
+    setProofTypeId(actualParentExtract?.proof_type_category_id || '');
   }, [open, parentExtract, actualParentExtract, isEditing]);
 
   const usesExtractedPdfFile = Boolean(
@@ -345,7 +354,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       party_ids: { ids: selectedPartyIds },
       status: actualParentExtract.status,
       category_id: actualParentExtract.category_id || null,
-      proof_type_category_id: actualParentExtract.proof_type_category_id,
+      proof_type_category_id: proofTypeId || actualParentExtract.proof_type_category_id,
       file_source: actualParentExtract.file_source || 'base44',
       file_url: actualParentExtract.file_url || '',
       dropbox_file_id: actualParentExtract.dropbox_file_id || '',
@@ -475,6 +484,9 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 onDraftExhibitNumChange={setDraftExhibitNum}
                 description={description}
                 onDescriptionChange={setDescription}
+                proofTypeId={proofTypeId}
+                onProofTypeIdChange={setProofTypeId}
+                proofTypes={proofTypes}
                 onCreateGroup={() => createGroupForCurrentPage()}
                 selectedGroupId={selectedGroupId}
                 onDeleteSelectedGroup={deleteSelectedGroup}

@@ -55,6 +55,9 @@ export default function HighlightWorkspaceSidebar({
   onDraftExhibitNumChange,
   description,
   onDescriptionChange,
+  proofTypeId,
+  onProofTypeIdChange,
+  proofTypes,
   onCreateGroup,
   selectedGroupId,
   onDeleteSelectedGroup,
@@ -259,6 +262,19 @@ export default function HighlightWorkspaceSidebar({
           <div>
             <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description</label>
             <Input value={description} onChange={(e) => onDescriptionChange(e.target.value)} placeholder="Additional notes" className="h-8" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-700 mb-1.5 block">Proof Type</label>
+            <select
+              value={proofTypeId}
+              onChange={(e) => onProofTypeIdChange(e.target.value)}
+              className="h-8 w-full rounded-md border border-input bg-background px-3 text-xs text-slate-900"
+            >
+              <option value="">Select proof type</option>
+              {proofTypes.map((type) => (
+                <option key={type.id} value={type.id}>{type.name}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
