@@ -127,8 +127,16 @@ export default function HighlightWorkspaceSidebar({
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Color &amp; Style</div>
+          <button
+            type="button"
+            className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
+            onClick={() => setColorPanelCollapsed((v) => !v)}
+          >
+            <span>Color &amp; Style</span>
+            <span className="text-slate-400">{colorPanelCollapsed ? '▶' : '▼'}</span>
+          </button>
 
+          {!colorPanelCollapsed && (<>
           {/* Current color + native picker trigger */}
           <div className="flex items-center gap-2">
             <button
