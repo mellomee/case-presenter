@@ -33,7 +33,7 @@ const PRESET_COLORS = [
   '#F5F3FF', // Violet
 ];
 
-export default function HighlightWorkspaceSidebar_UNUSED({
+export default function HighlightWorkspaceSidebar({
   isCollapsed,
   onToggleCollapsed,
   groupsOnCurrentPage,
