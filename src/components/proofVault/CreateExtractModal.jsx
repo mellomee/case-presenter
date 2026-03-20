@@ -413,6 +413,27 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             </div>
           )}
 
+          {extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <label className="text-sm font-medium text-slate-700 block">PDF Processing (optional)</label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={addCoverPage} onChange={(e) => setAddCoverPage(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                  <span className="text-sm text-slate-700">Add cover page</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={addPageNumbers} onChange={(e) => setAddPageNumbers(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                  <span className="text-sm text-slate-700">Add page numbers</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={optimizePdf} onChange={(e) => setOptimizePdf(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                  <span className="text-sm text-slate-700">Optimize PDF (compress & linearize)</span>
+                </label>
+              </div>
+              <p className="text-xs text-slate-600">If OCR is needed, it will be applied automatically only if the PDF isn't already searchable.</p>
+            </div>
+          )}
+
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={saveMutation.isPending || isProcessing} className="bg-blue-600 hover:bg-blue-700">
