@@ -294,6 +294,19 @@ Deno.serve(async (req) => {
 
     let nextBytes = alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
 
+    // If specific pages are requested, extract only those pages using pdf-lib
+    if (extractPagesParam) {
+      const pageNumbers = extractPagesParam.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n) && n >= 1);
+      if (pageNumbers.length > 0) {
+        const srcDoc = await PDFDocument.load(nextBytes);
+        const extractDoc = await PDFDocument.create();
+        const zeroIndexed = pageNumbers.map((n) => n - 1).filter((i) => i < srcDoc.getPageCount());
+        const copiedPages = await extractDoc.copyPages(srcDoc, zeroIndexed);
+        copiedPages.forEach((page) => extractDoc.addPage(page));
+        nextBytes = await extractDoc.save();
+      }
+    }
+
     if (addCoverPage || addPageNumbers) {
       nextBytes = await addCoverAndPageNumbers(nextBytes, {
         addCoverPage,
