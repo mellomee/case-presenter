@@ -64,7 +64,6 @@ export default function HighlightWorkspaceSidebar({
 }) {
   const colorInputRef = useRef(null);
   const [recentColors, setRecentColors] = React.useState(loadRecentColors);
-  const [colorPanelCollapsed, setColorPanelCollapsed] = React.useState(false);
 
   const handleColorPicked = (hex) => {
     saveRecentColor(hex);
@@ -127,17 +126,8 @@ export default function HighlightWorkspaceSidebar({
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-3">
-          <button
-            type="button"
-            className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
-            onClick={() => setColorPanelCollapsed((v) => !v)}
-          >
-            <span>Color &amp; Style</span>
-            <span className="text-slate-400">{colorPanelCollapsed ? '▶' : '▼'}</span>
-          </button>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Color &amp; Style</div>
 
-          {!colorPanelCollapsed && (
-          <div className="space-y-3">
           {/* Current color + native picker trigger */}
           <div className="flex items-center gap-2">
             <button
@@ -200,7 +190,6 @@ export default function HighlightWorkspaceSidebar({
             <div className="text-xs text-slate-600">Opacity {Math.round(selectedOpacity * 100)}%</div>
             <input type="range" min="0.1" max="1" step="0.05" value={selectedOpacity} onChange={(e) => onOpacityChange(e.target.value)} className="w-full" />
           </div>
-          </div>)}
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">

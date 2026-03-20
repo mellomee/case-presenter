@@ -12,13 +12,9 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const parentExtract = allProofs.find((p) => p.id === proof.parent_proof_id);
   const originalPDF = parentExtract ? allProofs.find((p) => p.id === parentExtract.parent_proof_id) : null;
   const { url, isLoading } = useResolvedProofAsset(proof);
-  // If the extract has a cover page added, the actual PDF has one more page than
-  // the original extract_pages range — pass null so PDFViewer uses the real page count.
-  const visiblePages = parentExtract?.optimized_with_cover_page
-    ? null
-    : parsePageRange(parentExtract?.extract_pages || '');
+  const visiblePages = parsePageRange(parentExtract?.extract_pages || '');
   const getViewerPageIndex = (storedPage) => {
-    if (!visiblePages || !visiblePages.length) return storedPage || 1;
+    if (!visiblePages.length) return storedPage || 1;
     const isWithinClipRange = storedPage >= 1 && storedPage <= visiblePages.length;
     const matchingSourceIndex = visiblePages.indexOf(storedPage);
     if (!isWithinClipRange && matchingSourceIndex >= 0) {
@@ -27,7 +23,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
     return storedPage || 1;
   };
   const getSourcePage = (storedPage) => {
-    if (!visiblePages || !visiblePages.length) return null;
+    if (!visiblePages.length) return null;
     if (storedPage >= 1 && storedPage <= visiblePages.length) {
       return visiblePages[storedPage - 1] || null;
     }
@@ -139,7 +135,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
               highlights={filteredHighlights}
               focusTarget={focusTarget}
               clippedPage={initialPage}
-              visiblePages={visiblePages && visiblePages.length > 0 ? visiblePages : null}
+              visiblePages={visiblePages.length > 0 ? visiblePages : null}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>
