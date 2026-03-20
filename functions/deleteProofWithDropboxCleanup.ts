@@ -71,7 +71,9 @@ Deno.serve(async (req) => {
 
     let dropboxCleanup = { deleted: false, skipped: true };
 
-    if (proof.file_source === 'dropbox') {
+    // Only delete the Dropbox file if it's an app-generated processed copy (optimized_for_viewer = true).
+    // Shared/original files (e.g. an Extract inheriting the parent's Dropbox path) must never be deleted here.
+    if (proof.file_source === 'dropbox' && proof.optimized_for_viewer === true) {
       const reference = getDropboxReference(proof);
       if (reference) {
         const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
