@@ -6,7 +6,12 @@ import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
 export default function ExtractViewer({ proof, mode = 'controller', syncState, onStateChange }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
-  const visiblePages = parsePageRange(proof?.extract_pages || '');
+
+  // Only restrict visible pages when the extract is pointing at the original parent PDF
+  // (i.e. same file as the parent). If it has been processed into its own Dropbox file
+  // (optimized_for_viewer = true), the PDF is already trimmed — no page restriction needed.
+  const isOwnFile = proof?.optimized_for_viewer === true;
+  const visiblePages = isOwnFile ? null : parsePageRange(proof?.extract_pages || '');
 
   if (isLoading) {
     return (
