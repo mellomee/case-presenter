@@ -187,12 +187,15 @@ export default function ProofImportModal({ open, onClose, onImportComplete }) {
           }
 
           if (fileType === 'PDF') {
+            const response = await base44.functions.invoke('prepareDropboxProof', {
+              fileId: dropboxFileId || undefined,
+              path: dropboxPath || undefined,
+              name: dropboxFileName,
+            });
+
             proof = {
               ...proof,
-              file_source: 'dropbox',
-              dropbox_file_id: dropboxFileId,
-              dropbox_path: dropboxPath,
-              dropbox_file_name: dropboxFileName,
+              ...response.data,
               file_url: '',
               video_url: '',
             };
