@@ -56,20 +56,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Proof not found.' }, { status: 404 });
     }
 
-    const childProofs = await base44.entities.Proof.filter({ parent_proof_id: proof.id });
+    const [childProofs, attachedQuestions] = await Promise.all([
+      base44.entities.Proof.filter({ parent_proof_id: proof.id }),
+      base44.entities.Question.filter({ proof_ids: proof.id }),
+    ]);
+
     if (childProofs.length > 0) {
       return Response.json({ error: `This proof has ${childProofs.length} child proof${childProofs.length > 1 ? 's' : ''}. Delete all children first.` }, { status: 400 });
     }
-
-    const questions = await base44.entities.Question.list();
-    const attachedQuestions = questions.filter((question) => {
-      const proofIds = Array.isArray(question.proof_ids)
-        ? question.proof_ids
-        : Array.isArray(question.proof_ids?.ids)
-          ? question.proof_ids.ids
-          : [];
-      return proofIds.includes(proof.id);
-    });
 
     if (attachedQuestions.length > 0) {
       return Response.json({ error: `This proof is attached to ${attachedQuestions.length} question${attachedQuestions.length > 1 ? 's' : ''}. Remove from all questions first.` }, { status: 400 });
