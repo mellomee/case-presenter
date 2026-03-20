@@ -241,26 +241,21 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        setIsProcessing(true);
        try {
          const processedData = await base44.functions.invoke('processExtractPdf', {
-           fileId: actualParentProof.original_dropbox_file_id || actualParentProof.dropbox_file_id || '',
-           path: actualParentProof.original_dropbox_path || actualParentProof.dropbox_path || '',
-           name: actualParentProof.original_dropbox_file_name || actualParentProof.dropbox_file_name || 'extract.pdf',
+           fileId: actualParentProof.dropbox_file_id || undefined,
+           path: actualParentProof.dropbox_path || undefined,
+           name: actualParentProof.dropbox_file_name || 'extract.pdf',
+           performOcr: processingOptions.performOcr,
+           optimizePdf: processingOptions.optimizePdf,
            addCoverPage: processingOptions.addCoverPage,
            addPageNumbers: processingOptions.addPageNumbers,
-           optimizePdf: processingOptions.optimizePdf,
-           performOcr: processingOptions.performOcr,
            proofName: internalName.trim(),
            formalName: formalName.trim(),
-           exhibitNumber: draftExhibitNum.trim(),
-           proofCategory: parentProof.proof_category,
-           extractPages: selectedOriginalRange,
          });
-         setIsProcessing(false);
          saveMutation.mutate({ ...extractData, ...processedData.data });
        } catch (error) {
          setIsProcessing(false);
-         setWarningMsg(`PDF processing failed: ${error.message}`);
-         setShowWarning(true);
-         return;
+         console.warn('PDF processing failed, saving extract without processing:', error.message);
+         saveMutation.mutate(extractData);
        }
        return;
      }
