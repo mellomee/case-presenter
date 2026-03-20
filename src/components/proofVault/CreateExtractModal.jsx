@@ -241,17 +241,17 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source, process it and then save once
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
+     // If using original Dropbox source and processing is enabled
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (addCoverPage || addPageNumbers || optimizePdf)) {
        setIsProcessing(true);
        try {
          const processedData = await processDropboxPdf(
            buildProcessDropboxPdfPayload({
              proof: actualParentProof,
              options: {
-               addCoverPage: true,
-               addPageNumbers: true,
-               optimizePdf: true,
+               addCoverPage,
+               addPageNumbers,
+               optimizePdf,
              },
              metadata: {
                proofName: internalName.trim(),
