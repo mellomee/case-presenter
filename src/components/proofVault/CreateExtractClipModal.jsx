@@ -72,6 +72,21 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     ? proofs.find((proof) => proof.id === parentExtract?.parent_proof_id) || parentExtract
     : parentExtract;
 
+  const extractSourcePages = useMemo(
+    () => parsePageRange(actualParentExtract?.extract_pages || ''),
+    [actualParentExtract?.extract_pages]
+  );
+
+  const mapStoredPageToEditorPage = (storedPage) => {
+    if (!extractSourcePages.length) return storedPage || 1;
+    const isWithinClipRange = storedPage >= 1 && storedPage <= extractSourcePages.length;
+    const matchingSourceIndex = extractSourcePages.indexOf(storedPage);
+    if (!isWithinClipRange && matchingSourceIndex >= 0) {
+      return matchingSourceIndex + 1;
+    }
+    return storedPage || 1;
+  };
+
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
     queryFn: () => base44.entities.Party.list(),
@@ -125,7 +140,11 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     if (!open || !parentExtract) return;
 
     if (isEditing) {
-      const normalizedGroups = normalizeHighlightGroups(parentExtract.highlights, parentExtract.clipped_page || 1);
+      const normalizedGroups = normalizeHighlightGroups(parentExtract.highlights, parentExtract.clipped_page || 1)
+        .map((group) => ({
+          ...group,
+          page: mapStoredPageToEditorPage(group.page),
+        }));
       setClipName(parentExtract.name || '');
       setFormalName(parentExtract.formal_name || '');
       setDraftExhibitNum(parentExtract.draft_exhibit_num || '');
@@ -136,7 +155,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       setHighlightGroups(normalizedGroups);
       setSelectedGroupId(normalizedGroups[0]?.id || null);
       setSelectedHighlight(null);
-      setCurrentPage(getInitialHighlightPage(parentExtract.highlights, parentExtract.clipped_page || 1));
+      setCurrentPage(normalizedGroups[0]?.page || mapStoredPageToEditorPage(parentExtract.clipped_page || 1));
       setDraftHighlight(null);
       setWarning('');
       setSelectedPartyIds(normalizePartyIds(parentExtract));
