@@ -144,7 +144,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
               highlights={filteredHighlights}
               focusTarget={focusTarget}
               clippedPage={initialPage}
-              visiblePages={visiblePages.length > 0 ? visiblePages : null}
+              visiblePages={pdfVisiblePages}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>
