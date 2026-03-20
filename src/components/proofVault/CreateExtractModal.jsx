@@ -20,10 +20,14 @@ import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField
 import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePartyIds(currentProof) {
-  if (Array.isArray(currentProof?.party_ids) && currentProof.party_ids.length > 0) {
-    return currentProof.party_ids.filter(Boolean);
+  const raw = currentProof?.party_ids;
+  // Handle { ids: [...] } format
+  if (raw && !Array.isArray(raw) && Array.isArray(raw.ids)) {
+    return raw.ids.filter(Boolean);
   }
-
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.filter(Boolean);
+  }
   return currentProof?.party_id ? [currentProof.party_id] : [];
 }
 
