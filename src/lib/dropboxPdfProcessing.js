@@ -26,6 +26,8 @@ export function buildProcessDropboxPdfPayload({ proof = null, file = null, optio
     formalName: metadata.formalName || proof?.formal_name || '',
     proofCategory: metadata.proofCategory || proof?.proof_category || 'Exhibit',
     exhibitNumber: metadata.exhibitNumber || getPrimaryExhibitNumber(proof),
+    // Pass comma-separated 1-based page numbers to extract from the source PDF
+    extractPages: metadata.extractPages || null,
   };
 }
 
