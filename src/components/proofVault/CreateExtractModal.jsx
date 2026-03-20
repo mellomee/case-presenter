@@ -115,6 +115,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
+    setProcessingOptions({ performOcr: true, optimizePdf: false });
   };
 
   useEffect(() => {
