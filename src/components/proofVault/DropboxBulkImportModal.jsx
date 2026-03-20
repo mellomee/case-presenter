@@ -487,18 +487,13 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                             </div>
 
                             <div>
-                              <label className="block text-xs font-medium text-slate-700 mb-1">Party</label>
-                              <select
-                                value={file.filePartyId || ''}
-                                onChange={(e) => updateSelectedFile(fileKey, { filePartyId: e.target.value })}
-                                className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 bg-white"
-                                disabled={isImporting}
-                              >
-                                <option value="">{partyIds.length > 0 ? 'Use default' : 'Not assigned'}</option>
-                                {parties.map((party) => (
-                                  <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>
-                                ))}
-                              </select>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Parties</label>
+                              <PartyMultiSelectField
+                                label=""
+                                parties={parties}
+                                value={file.filePartyIds || []}
+                                onChange={(ids) => updateSelectedFile(fileKey, { filePartyIds: ids })}
+                              />
                             </div>
 
                             <div>
@@ -509,9 +504,24 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
                                 className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 bg-white"
                                 disabled={isImporting}
                               >
-                                <option value="">{proofTypeCategoryId ? 'Use default' : 'Select type'}</option>
+                                <option value="">Select type (optional)</option>
                                 {proofTypes.map((type) => (
                                   <option key={type.id} value={type.id}>{type.name}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Category</label>
+                              <select
+                                value={file.fileCategoryId || ''}
+                                onChange={(e) => updateSelectedFile(fileKey, { fileCategoryId: e.target.value })}
+                                className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs text-slate-900 bg-white"
+                                disabled={isImporting}
+                              >
+                                <option value="">No category (optional)</option>
+                                {categories.map((cat) => (
+                                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                               </select>
                             </div>
