@@ -48,10 +48,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
   const [proofTypeId, setProofTypeId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [addCoverPage, setAddCoverPage] = useState(true);
-  const [addPageNumbers, setAddPageNumbers] = useState(true);
-  const [optimizePdf, setOptimizePdf] = useState(true);
-  const [applyOcr, setApplyOcr] = useState(true);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -115,11 +111,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
-    setAddCoverPage(true);
-    setAddPageNumbers(true);
-    setOptimizePdf(true);
-    setApplyOcr(true);
-    };
+  };
 
   useEffect(() => {
     if (!open || !parentProof) return;
@@ -138,10 +130,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       setShowWarning(false);
       setSelectedPartyIds(normalizePartyIds(parentProof));
       setProofTypeId(parentProof.proof_type_category_id || '');
-      setAddCoverPage(true);
-      setAddPageNumbers(true);
-      setOptimizePdf(true);
-      setApplyOcr(true);
       return;
     }
 
@@ -152,11 +140,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setDraftExhibitNum(actualParentProof?.draft_exhibit_num || '');
     setSelectedPartyIds(normalizePartyIds(actualParentProof));
     setProofTypeId(actualParentProof?.proof_type_category_id || '');
-     setAddCoverPage(true);
-     setAddPageNumbers(true);
-     setOptimizePdf(true);
-     setApplyOcr(true);
-    }, [open, parentProof, isEditing, actualParentProof]);
+  }, [open, parentProof, isEditing, actualParentProof]);
 
   const validatePageRange = (range) => {
     if (!range.trim()) {
@@ -245,23 +229,27 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source and processing is enabled
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (addCoverPage || addPageNumbers || optimizePdf || applyOcr)) {
+     // If using original Dropbox source, process it and then save once
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
        setIsProcessing(true);
        try {
-         const response = await base44.functions.invoke('processExtractPdf', {
-           fileUrl: resolvedParentUrl,
-           fileName: actualParentProof.dropbox_file_name || 'extract.pdf',
-           addCoverPage,
-           addPageNumbers,
-           optimizePdf,
-           applyOcr,
-           proofName: internalName.trim(),
-           formalName: formalName.trim(),
-           exhibitNumber: draftExhibitNum.trim(),
-           proofCategory: parentProof.proof_category,
-         });
-         saveMutation.mutate({ ...extractData, ...response.data });
+         const processedData = await processDropboxPdf(
+           buildProcessDropboxPdfPayload({
+             proof: actualParentProof,
+             options: {
+               addCoverPage: true,
+               addPageNumbers: true,
+               optimizePdf: true,
+             },
+             metadata: {
+               proofName: internalName.trim(),
+               formalName: formalName.trim(),
+               isExtract: true,
+               extractPages: selectedOriginalPages.join(','),
+             },
+           })
+         );
+         saveMutation.mutate({ ...extractData, ...processedData });
        } catch (error) {
          setIsProcessing(false);
          console.warn('PDF processing failed, saving extract without optimization:', error.message);
@@ -411,31 +399,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
               <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
               <Input placeholder="e.g. A-1a" value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} />
             </div>
-          )}
-
-          {extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (
-           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
-             <label className="text-sm font-medium text-slate-700 block">PDF Processing (optional)</label>
-             <div className="space-y-2">
-               <label className="flex items-center gap-2 cursor-pointer">
-                 <input type="checkbox" checked={addCoverPage} onChange={(e) => setAddCoverPage(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                 <span className="text-sm text-slate-700">Add cover page</span>
-               </label>
-               <label className="flex items-center gap-2 cursor-pointer">
-                 <input type="checkbox" checked={addPageNumbers} onChange={(e) => setAddPageNumbers(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                 <span className="text-sm text-slate-700">Add page numbers</span>
-               </label>
-               <label className="flex items-center gap-2 cursor-pointer">
-                 <input type="checkbox" checked={optimizePdf} onChange={(e) => setOptimizePdf(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                 <span className="text-sm text-slate-700">Optimize PDF (compress & linearize)</span>
-               </label>
-               <label className="flex items-center gap-2 cursor-pointer">
-                 <input type="checkbox" checked={applyOcr} onChange={(e) => setApplyOcr(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                 <span className="text-sm text-slate-700">Apply OCR if needed</span>
-               </label>
-             </div>
-             <p className="text-xs text-slate-600">OCR will be applied only if enabled and the PDF isn't already searchable.</p>
-           </div>
           )}
 
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">

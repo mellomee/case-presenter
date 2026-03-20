@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
-import { PDFDocument, StandardFonts, rgb, degrees } from 'npm:pdf-lib@1.17.1';
+import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
 import pdfParse from 'npm:pdf-parse@1.1.1';
 import { Buffer } from 'node:buffer';
 import { Readable } from 'node:stream';
@@ -212,63 +212,36 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       : (proofCategory || 'Proof');
     const subtitle = formalName || proofName || 'Untitled Proof';
 
-    drawCenteredText(coverPage, heading, 400, helveticaBold, 40, rgb(0, 0, 0));
-    drawCenteredParagraph(coverPage, subtitle, 320, helvetica, 12, rgb(0.2, 0.2, 0.2), 520, 18);
+    drawCenteredText(coverPage, heading, 580, helveticaBold, 40, rgb(0, 0, 0));
+    drawCenteredParagraph(coverPage, subtitle, 620, helvetica, 12, rgb(0.2, 0.2, 0.2), 520, 18);
   }
 
   if (addPageNumbers) {
     const totalPages = pdfDoc.getPageCount();
+    // Standard letter page width in PDF points (8.5" × 72pt/in = 612pt)
+    // Target ~1cm printed height on letter = 28.35pt font at 612pt width
+    // Scale proportionally for non-letter page sizes
     const LETTER_WIDTH_PT = 612;
     const TARGET_FONT_SIZE_AT_LETTER = 28;
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
-      const pageHeight = page.getHeight();
-      const rotation = page.getRotation();
-      const rotationAngle = rotation ? rotation.angle : 0;
-
       const scaleFactor = pageWidth / LETTER_WIDTH_PT;
       const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
       const rightMargin = Math.round(36 * scaleFactor);
       const bottomMargin = Math.round(36 * scaleFactor);
 
       const pageNum = index + 1;
-      const totalPagesLabel = totalPages;
-      const label = `Page ${pageNum} of ${totalPagesLabel}`;
+      const label = `Page ${pageNum} of ${totalPages}`;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
-
-      let x, y, textRotation;
-
-      if (rotationAngle === 0 || rotationAngle === 360) {
-        x = pageWidth - textWidth - rightMargin;
-        y = bottomMargin;
-        textRotation = 0;
-      } else if (rotationAngle === 90) {
-        x = pageHeight - bottomMargin;
-        y = rightMargin;
-        textRotation = -90;
-      } else if (rotationAngle === 180) {
-        x = rightMargin + textWidth;
-        y = pageHeight - bottomMargin;
-        textRotation = 180;
-      } else if (rotationAngle === 270) {
-        x = bottomMargin;
-        y = pageWidth - rightMargin;
-        textRotation = 90;
-      } else {
-        x = pageWidth - textWidth - rightMargin;
-        y = bottomMargin;
-        textRotation = 0;
-      }
-
+      const x = pageWidth - textWidth - rightMargin;
       page.drawText(label, {
         x,
-        y,
+        y: bottomMargin,
         size,
         font: helveticaBold,
         color: rgb(0, 0, 0),
-        rotate: degrees(textRotation),
       });
     }
   }
@@ -292,7 +265,6 @@ Deno.serve(async (req) => {
     const addCoverPage = Boolean(payload.addCoverPage);
     const addPageNumbers = Boolean(payload.addPageNumbers);
     const optimizePdf = Boolean(payload.optimizePdf);
-    const applyOcr = payload.applyOcr !== false;
     const proofName = String(payload.proofName || '').trim();
     const formalName = String(payload.formalName || '').trim();
     const exhibitNumber = String(payload.exhibitNumber || '').trim();
@@ -313,14 +285,14 @@ Deno.serve(async (req) => {
     }
 
     const sourceReference = fileId
-       ? (String(fileId).startsWith('id:') ? fileId : `id:${fileId}`)
-       : originalPath;
+      ? (String(fileId).startsWith('id:') ? fileId : `id:${fileId}`)
+      : originalPath;
 
-     const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
-     const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
-     const alreadySearchable = applyOcr ? await isSearchablePdf(originalBytes) : true;
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
+    const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
+    const alreadySearchable = await isSearchablePdf(originalBytes);
 
-     let nextBytes = !applyOcr || alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
+    let nextBytes = alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
 
     // If specific pages are requested, extract only those pages using pdf-lib
     if (extractPagesParam) {
@@ -377,7 +349,7 @@ Deno.serve(async (req) => {
       optimized_with_cover_page: addCoverPage,
       optimized_with_page_numbers: addPageNumbers,
       already_searchable: alreadySearchable,
-      ocr_applied: applyOcr && !alreadySearchable,
+      ocr_applied: !alreadySearchable,
       optimization_applied: optimizePdf,
     });
   } catch (error) {

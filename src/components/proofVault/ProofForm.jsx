@@ -143,7 +143,10 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
     setIsUploading(true);
     try {
-      const fileUrl = (await base44.integrations.Core.UploadFile({ file })).file_url;
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const fileUrl = isPdf
+        ? (await base44.functions.invoke('ensureSearchablePdf', { file })).data.file_url
+        : (await base44.integrations.Core.UploadFile({ file })).file_url;
 
       setUploadedFileName(file.name);
       setSelectedDropboxFile(null);
@@ -325,6 +328,19 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           file_url: '',
           video_url: '',
         };
+      } else if (fileChanged && fileType === 'PDF') {
+        const response = await base44.functions.invoke('prepareDropboxProof', {
+          fileId: dropboxSelection.id,
+          path: dropboxSelection.path_display,
+          name: dropboxSelection.name,
+        });
+
+        nextPayload = {
+          ...nextPayload,
+          ...response.data,
+          file_url: '',
+          video_url: '',
+        };
       } else {
         nextPayload = {
           ...nextPayload,
@@ -371,7 +387,10 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       return;
     }
 
-
+    if (sourceType === 'dropbox' && fileType === 'PDF' && processDropboxPdfEnabled && !addCoverPage && !addPageNumbers && !optimizePdfEnabled) {
+      alert('Select at least one PDF processing option.');
+      return;
+    }
 
     if (sourceType === 'url' && fileType === 'Video' && !nextPayload.video_url) {
       alert('Video URL is required.');
@@ -605,7 +624,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
                 </Button>
               )}
               {fileType === 'PDF' && (
-                <p className="text-xs text-slate-500 mt-2">The proof will be linked directly from Dropbox. You can process the PDF later from the Proof form.</p>
+                <p className="text-xs text-slate-500 mt-2">Dropbox PDFs are OCR-checked automatically. You can also create a processed Dropbox copy in the save folder set in Settings.</p>
               )}
             </div>
 
