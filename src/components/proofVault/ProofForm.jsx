@@ -242,6 +242,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (!formData.name.trim()) {
       alert('Internal Name is required.');
