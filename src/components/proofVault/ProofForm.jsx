@@ -143,10 +143,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
     setIsUploading(true);
     try {
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      const fileUrl = isPdf
-        ? (await base44.functions.invoke('ensureSearchablePdf', { file })).data.file_url
-        : (await base44.integrations.Core.UploadFile({ file })).file_url;
+      const fileUrl = (await base44.integrations.Core.UploadFile({ file })).file_url;
 
       setUploadedFileName(file.name);
       setSelectedDropboxFile(null);
