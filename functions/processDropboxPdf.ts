@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
-import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
+import { PDFDocument, StandardFonts, rgb, degrees } from 'npm:pdf-lib@1.17.1';
 import pdfParse from 'npm:pdf-parse@1.1.1';
 import { Buffer } from 'node:buffer';
 import { Readable } from 'node:stream';
@@ -218,15 +218,16 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
   if (addPageNumbers) {
     const totalPages = pdfDoc.getPageCount();
-    // Standard letter page width in PDF points (8.5" × 72pt/in = 612pt)
-    // Target ~1cm printed height on letter = 28.35pt font at 612pt width
-    // Scale proportionally for non-letter page sizes
     const LETTER_WIDTH_PT = 612;
     const TARGET_FONT_SIZE_AT_LETTER = 28;
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
+      const pageHeight = page.getHeight();
+      const rotation = page.getRotation();
+      const rotationAngle = rotation ? rotation.angle : 0;
+
       const scaleFactor = pageWidth / LETTER_WIDTH_PT;
       const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
       const rightMargin = Math.round(36 * scaleFactor);
@@ -235,13 +236,38 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       const pageNum = index + 1;
       const label = `Page ${pageNum} of ${totalPages}`;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
-      const x = pageWidth - textWidth - rightMargin;
+
+      let x, y, textRotation;
+
+      if (rotationAngle === 0 || rotationAngle === 360) {
+        x = pageWidth - textWidth - rightMargin;
+        y = bottomMargin;
+        textRotation = 0;
+      } else if (rotationAngle === 90) {
+        x = pageHeight - bottomMargin;
+        y = rightMargin;
+        textRotation = -90;
+      } else if (rotationAngle === 180) {
+        x = rightMargin + textWidth;
+        y = pageHeight - bottomMargin;
+        textRotation = 180;
+      } else if (rotationAngle === 270) {
+        x = bottomMargin;
+        y = pageWidth - rightMargin;
+        textRotation = 90;
+      } else {
+        x = pageWidth - textWidth - rightMargin;
+        y = bottomMargin;
+        textRotation = 0;
+      }
+
       page.drawText(label, {
         x,
-        y: bottomMargin,
+        y,
         size,
         font: helveticaBold,
         color: rgb(0, 0, 0),
+        rotate: degrees(textRotation),
       });
     }
   }
