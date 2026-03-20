@@ -89,18 +89,21 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     enabled: open,
   });
 
-  const didInitRef = useRef(false);
+  const initializedForOpen = useRef(false);
 
+  // Reset state when modal closes
   useEffect(() => {
     if (!open) {
-      didInitRef.current = false;
-      return;
+      initializedForOpen.current = false;
     }
-    // Only reset/init once per open, and only after appSettings have loaded
-    if (didInitRef.current) return;
-    if (appSettings.length === 0) return; // wait for settings to load
-    didInitRef.current = true;
+  }, [open]);
 
+  // Set the browse path once — when modal opens AND settings are loaded
+  useEffect(() => {
+    if (!open || initializedForOpen.current) return;
+    if (appSettings.length === 0) return; // wait for settings
+
+    initializedForOpen.current = true;
     const rootPath = appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '';
     setCurrentPath(normalizePath(rootPath));
     setSearch('');
