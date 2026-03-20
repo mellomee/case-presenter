@@ -72,11 +72,9 @@ export default function HighlightWorkspaceSidebar({
             <Button type="button" size="icon" variant={mode === 'pan' ? 'default' : 'ghost'} onClick={() => onModeChange('pan')} className={mode === 'pan' ? 'bg-blue-600 hover:bg-blue-700 h-8 w-8' : 'h-8 w-8'}>
               <Hand className="w-4 h-4" />
             </Button>
-            {selectedHighlight && (
-              <Button type="button" size="icon" variant="ghost" onClick={onDeleteSelectedHighlight} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
+            <Button type="button" size="icon" variant="ghost" onClick={onDeleteSelectedHighlight} disabled={!selectedHighlight} title="Delete selected highlight" className={`h-8 w-8 ${selectedHighlight ? 'text-red-600 hover:text-red-700 hover:bg-red-50' : 'text-slate-300'}`}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
           <div className="text-xs text-slate-500">
             {mode === 'highlight'
