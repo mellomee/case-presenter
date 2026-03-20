@@ -498,6 +498,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                       allowPan={mode === 'pan'}
                       pageOverlay={pageOverlay}
                       visiblePages={visibleExtractPages && visibleExtractPages.length > 0 ? visibleExtractPages : null}
+                      selectableThumbnails={false}
                     />
                   </div>
                 )}
