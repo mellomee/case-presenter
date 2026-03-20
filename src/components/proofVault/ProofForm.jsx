@@ -393,26 +393,31 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     const currentStatus = nextPayload.status || proof?.status || 'Draft';
     if (proofCategory === 'Exhibit' && currentStatus !== 'Draft' && !nextPayload.formal_name?.trim()) {
       alert('Formal Name is required once an exhibit leaves Draft.');
+      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'upload' && !nextPayload.file_url) {
       alert(`${fileType} file is required.`);
+      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'dropbox' && !nextPayload.dropbox_file_id && !nextPayload.dropbox_path) {
       alert('Dropbox file is required.');
+      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'dropbox' && fileType === 'PDF' && processDropboxPdfEnabled && !addCoverPage && !addPageNumbers && !optimizePdfEnabled) {
       alert('Select at least one PDF processing option.');
+      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'url' && fileType === 'Video' && !nextPayload.video_url) {
       alert('Video URL is required.');
+      setIsSubmitting(false);
       return;
     }
 
