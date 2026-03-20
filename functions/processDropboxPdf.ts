@@ -357,7 +357,7 @@ Deno.serve(async (req) => {
       optimized_with_cover_page: addCoverPage,
       optimized_with_page_numbers: addPageNumbers,
       already_searchable: alreadySearchable,
-      ocr_applied: !alreadySearchable,
+      ocr_applied: ocrApplied,
       optimization_applied: optimizePdf,
     });
   } catch (error) {
