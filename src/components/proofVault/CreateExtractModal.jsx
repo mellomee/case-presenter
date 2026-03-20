@@ -234,30 +234,23 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source, process it and then save once
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
+     // If using original Dropbox source and processing options are enabled, process it
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf)) {
        setIsProcessing(true);
        try {
-         const processedData = await processDropboxPdf(
-           buildProcessDropboxPdfPayload({
-             proof: actualParentProof,
-             options: {
-               addCoverPage: true,
-               addPageNumbers: true,
-               optimizePdf: true,
-             },
-             metadata: {
-               proofName: internalName.trim(),
-               formalName: formalName.trim(),
-               isExtract: true,
-               extractPages: selectedOriginalPages.join(','),
-             },
-           })
-         );
-         saveMutation.mutate({ ...extractData, ...processedData });
+         const processedData = await base44.functions.invoke('processExtractPdf', {
+           fileId: actualParentProof.dropbox_file_id || undefined,
+           path: actualParentProof.dropbox_path || undefined,
+           name: actualParentProof.dropbox_file_name || 'extract.pdf',
+           performOcr: processingOptions.performOcr,
+           optimizePdf: processingOptions.optimizePdf,
+           proofName: internalName.trim(),
+           formalName: formalName.trim(),
+         });
+         saveMutation.mutate({ ...extractData, ...processedData.data });
        } catch (error) {
          setIsProcessing(false);
-         console.warn('PDF processing failed, saving extract without optimization:', error.message);
+         console.warn('PDF processing failed, saving extract without processing:', error.message);
          saveMutation.mutate(extractData);
        }
        return;
