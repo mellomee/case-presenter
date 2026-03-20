@@ -18,7 +18,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
     ? null
     : parsePageRange(parentExtract?.extract_pages || '');
   const getViewerPageIndex = (storedPage) => {
-    if (!visiblePages.length) return storedPage || 1;
+    if (!visiblePages || !visiblePages.length) return storedPage || 1;
     const isWithinClipRange = storedPage >= 1 && storedPage <= visiblePages.length;
     const matchingSourceIndex = visiblePages.indexOf(storedPage);
     if (!isWithinClipRange && matchingSourceIndex >= 0) {
