@@ -218,17 +218,28 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
   if (addPageNumbers) {
     const totalPages = pdfDoc.getPageCount();
+    const LETTER_WIDTH = 612; // 8.5" at 72pt/inch
+    const TARGET_SIZE = 28; // Font size for standard letter width to achieve ~1cm printed
     const rightMargin = 36;
     const bottomMargin = 36;
-    const fontSize = 10; // Fixed smaller font size that always fits
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
 
+      // Scale font size proportionally to page width
+      let fontSize = (pageWidth / LETTER_WIDTH) * TARGET_SIZE;
       const pageNum = index + 1;
       const label = `Page ${pageNum} of ${totalPages}`;
-      const textWidth = helveticaBold.widthOfTextAtSize(label, fontSize);
+
+      // If text doesn't fit, reduce size until it does
+      const maxWidth = pageWidth - rightMargin - 20;
+      let textWidth = helveticaBold.widthOfTextAtSize(label, fontSize);
+      while (textWidth > maxWidth && fontSize > 8) {
+        fontSize -= 1;
+        textWidth = helveticaBold.widthOfTextAtSize(label, fontSize);
+      }
+
       const x = Math.max(20, pageWidth - textWidth - rightMargin);
 
       page.drawText(label, {
@@ -237,6 +248,7 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
         size: fontSize,
         font: helveticaBold,
         color: rgb(0, 0, 0),
+        angle: 0,
       });
     }
   }
