@@ -89,7 +89,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     enabled: open,
   });
 
-  const didInitRef = React.useRef(false);
+  const didInitRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
