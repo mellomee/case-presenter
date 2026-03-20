@@ -246,6 +246,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
            name: actualParentProof.dropbox_file_name || 'extract.pdf',
            performOcr: processingOptions.performOcr,
            optimizePdf: processingOptions.optimizePdf,
+           addCoverPage: processingOptions.addCoverPage,
+           addPageNumbers: processingOptions.addPageNumbers,
            proofName: internalName.trim(),
            formalName: formalName.trim(),
          });
