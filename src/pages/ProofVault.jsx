@@ -174,8 +174,12 @@ export default function ProofVault() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteProofById,
+    onMutate: (id) => {
+      queryClient.setQueryData(['proofs'], (old = []) => old.filter((p) => p.id !== id));
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
-    onError: (error) => {
+    onError: (error, id) => {
+      queryClient.invalidateQueries({ queryKey: ['proofs'] });
       alert(`Cannot delete: ${error.message}`);
     },
   });
