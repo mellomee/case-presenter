@@ -143,10 +143,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
     setIsUploading(true);
     try {
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      const fileUrl = isPdf
-        ? (await base44.functions.invoke('ensureSearchablePdf', { file })).data.file_url
-        : (await base44.integrations.Core.UploadFile({ file })).file_url;
+      const fileUrl = (await base44.integrations.Core.UploadFile({ file })).file_url;
 
       setUploadedFileName(file.name);
       setSelectedDropboxFile(null);
@@ -328,19 +325,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           file_url: '',
           video_url: '',
         };
-      } else if (fileChanged && fileType === 'PDF') {
-        const response = await base44.functions.invoke('prepareDropboxProof', {
-          fileId: dropboxSelection.id,
-          path: dropboxSelection.path_display,
-          name: dropboxSelection.name,
-        });
-
-        nextPayload = {
-          ...nextPayload,
-          ...response.data,
-          file_url: '',
-          video_url: '',
-        };
       } else {
         nextPayload = {
           ...nextPayload,
@@ -350,6 +334,13 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           dropbox_file_name: dropboxSelection.name,
           file_url: '',
           video_url: '',
+          original_dropbox_file_id: '',
+          original_dropbox_path: '',
+          original_dropbox_file_name: '',
+          optimized_for_viewer: false,
+          optimized_date: null,
+          optimized_with_cover_page: false,
+          optimized_with_page_numbers: false,
         };
       }
     } else if (sourceType === 'upload') {
@@ -359,6 +350,13 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         dropbox_file_id: '',
         dropbox_path: '',
         dropbox_file_name: '',
+        original_dropbox_file_id: '',
+        original_dropbox_path: '',
+        original_dropbox_file_name: '',
+        optimized_for_viewer: false,
+        optimized_date: null,
+        optimized_with_cover_page: false,
+        optimized_with_page_numbers: false,
       };
     } else {
       nextPayload = {
@@ -368,6 +366,13 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         dropbox_file_id: '',
         dropbox_path: '',
         dropbox_file_name: '',
+        original_dropbox_file_id: '',
+        original_dropbox_path: '',
+        original_dropbox_file_name: '',
+        optimized_for_viewer: false,
+        optimized_date: null,
+        optimized_with_cover_page: false,
+        optimized_with_page_numbers: false,
       };
     }
 
@@ -624,7 +629,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
                 </Button>
               )}
               {fileType === 'PDF' && (
-                <p className="text-xs text-slate-500 mt-2">Dropbox PDFs are OCR-checked automatically. You can also create a processed Dropbox copy in the save folder set in Settings.</p>
+                <p className="text-xs text-slate-500 mt-2">Dropbox PDFs link straight to the source file by default. Turn on PDF processing only if you want a processed Dropbox copy.</p>
               )}
             </div>
 
