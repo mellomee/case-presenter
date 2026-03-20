@@ -410,6 +410,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     }
 
     onSubmit(nextPayload);
+    setIsSubmitting(false);
   };
 
   return (
