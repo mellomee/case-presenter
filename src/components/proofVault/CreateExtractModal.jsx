@@ -51,8 +51,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [processingOptions, setProcessingOptions] = useState({
     performOcr: true,
     optimizePdf: false,
-    addCoverPage: false,
-    addPageNumbers: false,
   });
 
   const { data: proofs = [] } = useQuery({
@@ -117,12 +115,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
-    setProcessingOptions({
-      performOcr: true,
-      optimizePdf: false,
-      addCoverPage: false,
-      addPageNumbers: false,
-    });
+    setProcessingOptions({ performOcr: true, optimizePdf: false });
   };
 
   useEffect(() => {
@@ -242,29 +235,23 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
      };
 
      // If using original Dropbox source and processing options are enabled, process it
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf || processingOptions.addCoverPage || processingOptions.addPageNumbers)) {
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf)) {
        setIsProcessing(true);
        try {
-         const processedData = await base44.functions.invoke('processDropboxPdf', {
+         const processedData = await base44.functions.invoke('processExtractPdf', {
            fileId: actualParentProof.dropbox_file_id || undefined,
            path: actualParentProof.dropbox_path || undefined,
            name: actualParentProof.dropbox_file_name || 'extract.pdf',
            performOcr: processingOptions.performOcr,
            optimizePdf: processingOptions.optimizePdf,
-           addCoverPage: processingOptions.addCoverPage,
-           addPageNumbers: processingOptions.addPageNumbers,
            proofName: internalName.trim(),
            formalName: formalName.trim(),
-           extractPages: selectedOriginalRange,
-           proofCategory: parentProof.proof_category,
-           exhibitNumber: draftExhibitNum.trim() || undefined,
-           isExtract: true,
          });
          saveMutation.mutate({ ...extractData, ...processedData.data });
        } catch (error) {
          setIsProcessing(false);
-         setWarningMsg(`PDF processing failed: ${error.message}`);
-         setShowWarning(true);
+         console.warn('PDF processing failed, saving extract without processing:', error.message);
+         saveMutation.mutate(extractData);
        }
        return;
      }
@@ -432,24 +419,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                   className="h-4 w-4 rounded border-slate-300 text-blue-600"
                 />
                 <span className="text-sm text-slate-700">Optimize & compress PDF</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.addCoverPage}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, addCoverPage: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
-                />
-                <span className="text-sm text-slate-700">Add cover page</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.addPageNumbers}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, addPageNumbers: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
-                />
-                <span className="text-sm text-slate-700">Add page numbers</span>
               </label>
               <p className="text-xs text-slate-500 mt-2">Processing will save the output to your extracts folder in Dropbox.</p>
             </div>
