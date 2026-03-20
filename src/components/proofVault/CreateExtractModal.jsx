@@ -215,7 +215,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        formal_name: formalName.trim(),
        parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
        party_id: selectedPartyIds[0] || null,
-       party_ids: selectedPartyIds.length > 0 ? { ids: selectedPartyIds } : null,
+       party_ids: selectedPartyIds,
        status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
        category_id: parentProof.category_id || null,
        proof_type_category_id: proofTypeId || parentProof.proof_type_category_id,
@@ -319,25 +319,9 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                     <p className="text-xs text-slate-500">Use the thumbnail rail to select original pages while keeping search, zoom, gestures, and page jump controls.</p>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
-                  {extractSource === 'original' && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const totalPages = Array.from({ length: 1000 }, (_, i) => i + 1);
-                        setSelectedOriginalPages(totalPages);
-                      }}
-                      className="text-xs"
-                    >
-                      Select All
-                    </Button>
-                  )}
-                  {extractSource === 'original' && (
-                    <span className="text-xs font-mono text-blue-700 whitespace-nowrap">{selectedOriginalRange || 'No pages selected'}</span>
-                  )}
-                </div>
+                {extractSource === 'original' && (
+                  <span className="text-xs font-mono text-blue-700 whitespace-nowrap pt-1">{selectedOriginalRange || 'No pages selected'}</span>
+                )}
               </div>
 
               <div className="bg-slate-900 rounded-lg overflow-hidden h-[32rem] border border-slate-200">
