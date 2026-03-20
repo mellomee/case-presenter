@@ -248,7 +248,6 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
         size: fontSize,
         font: helveticaBold,
         color: rgb(0, 0, 0),
-        angle: 0,
       });
     }
   }
