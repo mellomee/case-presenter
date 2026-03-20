@@ -407,6 +407,35 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             </div>
           )}
 
+          {extractSource === 'original' && actualParentProof?.file_source === 'dropbox' && (
+            <PdfProcessingOptions
+              showMasterToggle={false}
+              addCoverPage={addCoverPage}
+              onAddCoverPageChange={setAddCoverPage}
+              addPageNumbers={addPageNumbers}
+              onAddPageNumbersChange={setAddPageNumbers}
+              optimizePdf={optimizePdf}
+              onOptimizePdfChange={setOptimizePdf}
+            />
+          )}
+
+          {extractSource === 'original' && actualParentProof?.file_source === 'dropbox' && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={applyOcr}
+                  onChange={(e) => setApplyOcr(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <div className="text-sm font-medium text-slate-900">Apply OCR (if needed)</div>
+                  <div className="text-xs text-slate-500 mt-1">Adds searchable text if the PDF doesn't already have it. Skips OCR if text is detected.</div>
+                </div>
+              </label>
+            </div>
+          )}
+
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={saveMutation.isPending || isProcessing} className="bg-blue-600 hover:bg-blue-700">
