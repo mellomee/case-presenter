@@ -35,10 +35,13 @@ function getInitialVideoClipModalSize() {
 }
 
 function normalizePartyIds(currentProof) {
-  if (Array.isArray(currentProof?.party_ids) && currentProof.party_ids.length > 0) {
-    return currentProof.party_ids.filter(Boolean);
+  const raw = currentProof?.party_ids;
+  if (raw && !Array.isArray(raw) && Array.isArray(raw.ids)) {
+    return raw.ids.filter(Boolean);
   }
-
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.filter(Boolean);
+  }
   return currentProof?.party_id ? [currentProof.party_id] : [];
 }
 
@@ -244,7 +247,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       formal_name: formalName.trim(),
       parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
       party_id: selectedPartyIds[0] || null,
-      party_ids: selectedPartyIds,
+      party_ids: { ids: selectedPartyIds },
       status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
       category_id: parentProof.category_id || null,
       proof_type_category_id: parentProof.proof_type_category_id,
