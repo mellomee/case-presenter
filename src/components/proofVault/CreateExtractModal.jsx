@@ -48,12 +48,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
   const [proofTypeId, setProofTypeId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingOptions, setProcessingOptions] = useState({
-    addOcr: true,
-    addCoverPage: true,
-    addPageNumbers: true,
-    optimizePdf: true,
-  });
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -117,12 +111,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
-    setProcessingOptions({
-      addOcr: true,
-      addCoverPage: true,
-      addPageNumbers: true,
-      optimizePdf: true,
-    });
   };
 
   useEffect(() => {
@@ -241,18 +229,17 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source and any processing is enabled, process it
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && Object.values(processingOptions).some(Boolean)) {
+     // If using original Dropbox source, process it and then save once
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
        setIsProcessing(true);
        try {
          const processedData = await processDropboxPdf(
            buildProcessDropboxPdfPayload({
              proof: actualParentProof,
              options: {
-               addCoverPage: processingOptions.addCoverPage,
-               addPageNumbers: processingOptions.addPageNumbers,
-               optimizePdf: processingOptions.optimizePdf,
-               addOcr: processingOptions.addOcr,
+               addCoverPage: true,
+               addPageNumbers: true,
+               optimizePdf: true,
              },
              metadata: {
                proofName: internalName.trim(),
@@ -411,64 +398,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
               <Input placeholder="e.g. A-1a" value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} />
-            </div>
-          )}
-
-          {extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
-              <div className="text-sm font-medium text-slate-900">PDF Processing Options (optional)</div>
-              
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.addOcr}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, addOcr: e.target.checked })}
-                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
-                />
-                <div>
-                  <div className="text-sm font-medium text-slate-900">Optical Character Recognition (OCR)</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Make text searchable. Skipped if PDF is already searchable.</div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.addCoverPage}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, addCoverPage: e.target.checked })}
-                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
-                />
-                <div>
-                  <div className="text-sm font-medium text-slate-900">Add Cover Page</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Insert a title page with the extract name and exhibit number.</div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.addPageNumbers}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, addPageNumbers: e.target.checked })}
-                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
-                />
-                <div>
-                  <div className="text-sm font-medium text-slate-900">Add Page Numbers</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Number each page for easier reference in court.</div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.optimizePdf}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, optimizePdf: e.target.checked })}
-                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
-                />
-                <div>
-                  <div className="text-sm font-medium text-slate-900">Optimize for Viewer</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Compress and linearize the PDF for faster loading.</div>
-                </div>
-              </label>
             </div>
           )}
 

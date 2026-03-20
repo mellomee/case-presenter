@@ -218,43 +218,28 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
   if (addPageNumbers) {
     const totalPages = pdfDoc.getPageCount();
-    const LETTER_WIDTH = 612; // 8.5" at 72pt/inch
-    const TARGET_SIZE = 28; // Font size for standard letter width to achieve ~1cm printed
-    const rightMargin = 36;
-    const bottomMargin = 36;
+    // Standard letter page width in PDF points (8.5" × 72pt/in = 612pt)
+    // Target ~1cm printed height on letter = 28.35pt font at 612pt width
+    // Scale proportionally for non-letter page sizes
+    const LETTER_WIDTH_PT = 612;
+    const TARGET_FONT_SIZE_AT_LETTER = 28;
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
-      let pageWidth = page.getWidth();
-      let pageHeight = page.getHeight();
+      const pageWidth = page.getWidth();
+      const scaleFactor = pageWidth / LETTER_WIDTH_PT;
+      const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
+      const rightMargin = Math.round(36 * scaleFactor);
+      const bottomMargin = Math.round(36 * scaleFactor);
 
-      // If page appears to be in landscape (wider than tall), use height as width for calculation
-      if (pageHeight > pageWidth) {
-        const temp = pageWidth;
-        pageWidth = pageHeight;
-        pageHeight = temp;
-      }
-
-      // Scale font size proportionally to page width
-      let fontSize = (pageWidth / LETTER_WIDTH) * TARGET_SIZE;
       const pageNum = index + 1;
       const label = `Page ${pageNum} of ${totalPages}`;
-
-      // If text doesn't fit, reduce size until it does
-      const maxWidth = pageWidth - rightMargin - 20;
-      let textWidth = helveticaBold.widthOfTextAtSize(label, fontSize);
-      while (textWidth > maxWidth && fontSize > 8) {
-        fontSize -= 1;
-        textWidth = helveticaBold.widthOfTextAtSize(label, fontSize);
-      }
-
-      const x = Math.max(20, pageWidth - textWidth - rightMargin);
-      const y = Math.max(20, bottomMargin);
-
+      const textWidth = helveticaBold.widthOfTextAtSize(label, size);
+      const x = pageWidth - textWidth - rightMargin;
       page.drawText(label, {
         x,
-        y,
-        size: fontSize,
+        y: bottomMargin,
+        size,
         font: helveticaBold,
         color: rgb(0, 0, 0),
       });
@@ -277,7 +262,6 @@ Deno.serve(async (req) => {
     const fileId = payload.fileId;
     const originalPath = payload.path;
     const fileName = payload.name;
-    const addOcr = Boolean(payload.addOcr);
     const addCoverPage = Boolean(payload.addCoverPage);
     const addPageNumbers = Boolean(payload.addPageNumbers);
     const optimizePdf = Boolean(payload.optimizePdf);
@@ -296,7 +280,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Only Dropbox PDF files can be processed.' }, { status: 400 });
     }
 
-    if (!addOcr && !addCoverPage && !addPageNumbers && !optimizePdf) {
+    if (!addCoverPage && !addPageNumbers && !optimizePdf) {
       return Response.json({ error: 'Select at least one PDF processing option.' }, { status: 400 });
     }
 
@@ -308,14 +292,7 @@ Deno.serve(async (req) => {
     const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
     const alreadySearchable = await isSearchablePdf(originalBytes);
 
-    let nextBytes = originalBytes;
-    let ocrApplied = false;
-
-    // Only apply OCR if requested and PDF is not already searchable
-    if (addOcr && !alreadySearchable) {
-      nextBytes = await runAdobeOcr(nextBytes);
-      ocrApplied = true;
-    }
+    let nextBytes = alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
 
     // If specific pages are requested, extract only those pages using pdf-lib
     if (extractPagesParam) {
@@ -372,7 +349,7 @@ Deno.serve(async (req) => {
       optimized_with_cover_page: addCoverPage,
       optimized_with_page_numbers: addPageNumbers,
       already_searchable: alreadySearchable,
-      ocr_applied: ocrApplied,
+      ocr_applied: !alreadySearchable,
       optimization_applied: optimizePdf,
     });
   } catch (error) {
