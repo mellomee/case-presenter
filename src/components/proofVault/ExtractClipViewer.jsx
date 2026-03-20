@@ -32,11 +32,11 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
     return storedPage || 1;
   };
   const getSourcePage = (storedPage) => {
-    if (!visiblePages.length) return null;
-    if (storedPage >= 1 && storedPage <= visiblePages.length) {
-      return visiblePages[storedPage - 1] || null;
+    if (!extractSourcePages.length) return null;
+    if (storedPage >= 1 && storedPage <= extractSourcePages.length) {
+      return extractSourcePages[storedPage - 1] || null;
     }
-    return visiblePages.includes(storedPage) ? storedPage : null;
+    return extractSourcePages.includes(storedPage) ? storedPage : null;
   };
   const initialPage = getViewerPageIndex(getInitialHighlightPage(proof.highlights, proof.clipped_page || 1));
   const groupCount = countHighlightGroups(proof.highlights, proof.clipped_page || 1);
