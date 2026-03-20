@@ -29,7 +29,7 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
   useEffect(() => {
     if (!open) return;
     const rootPath = appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '';
-    setCurrentPath(rootPath);
+    setCurrentPath(normalizePath(rootPath));
     setSearch('');
   }, [open, appSettings]);
 
