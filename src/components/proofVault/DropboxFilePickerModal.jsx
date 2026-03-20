@@ -43,7 +43,7 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
       });
       return response.data;
     },
-    enabled: open,
+    enabled: open && currentPath !== null,
   });
 
   const filteredEntries = useMemo(() => {

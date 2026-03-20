@@ -120,7 +120,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
       const response = await base44.functions.invoke('browseDropboxFiles', { path: currentPath });
       return response.data;
     },
-    enabled: open,
+    enabled: open && currentPath !== null,
   });
 
   const filteredEntries = useMemo(() => {
@@ -568,7 +568,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-2">
               <p><strong>What the app fills automatically:</strong> Internal Name, Formal Name, Dropbox file ID, Dropbox path, Dropbox filename, and inferred file type.</p>
               <p><strong>How files are stored:</strong> The app keeps a Dropbox reference instead of uploading the file into the app.</p>
-              <p><strong>If PDF processing is enabled:</strong> The app saves a new processed Dropbox copy in your save folder and points the proof to that new file.</p>
+              <p><strong>PDF imports:</strong> PDFs now link straight to the source Dropbox file with no cover page, page numbers, OCR, or optimization added during import.</p>
               <p><strong>After import:</strong> Use the Edit details button beside any imported proof to open the normal proof form with the extracted data prefilled.</p>
             </div>
 
