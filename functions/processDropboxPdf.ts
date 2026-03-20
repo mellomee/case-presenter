@@ -218,20 +218,13 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
   if (addPageNumbers) {
     const totalPages = pdfDoc.getPageCount();
-    // Standard letter page width in PDF points (8.5" × 72pt/in = 612pt)
-    // Target ~1cm printed height on letter = 28.35pt font at 612pt width
-    // Scale proportionally for non-letter page sizes
-    const LETTER_WIDTH_PT = 612;
-    const TARGET_FONT_SIZE_AT_LETTER = 28;
+    const size = 18;
+    const rightMargin = 36;
+    const bottomMargin = 36;
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
-      const scaleFactor = pageWidth / LETTER_WIDTH_PT;
-      const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
-      const rightMargin = Math.round(36 * scaleFactor);
-      const bottomMargin = Math.round(36 * scaleFactor);
-
       const pageNum = index + 1;
       const label = `Page ${pageNum} of ${totalPages}`;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
@@ -262,6 +255,7 @@ Deno.serve(async (req) => {
     const fileId = payload.fileId;
     const originalPath = payload.path;
     const fileName = payload.name;
+    const runOcr = payload.runOcr === undefined ? true : Boolean(payload.runOcr);
     const addCoverPage = Boolean(payload.addCoverPage);
     const addPageNumbers = Boolean(payload.addPageNumbers);
     const optimizePdf = Boolean(payload.optimizePdf);
@@ -280,7 +274,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Only Dropbox PDF files can be processed.' }, { status: 400 });
     }
 
-    if (!addCoverPage && !addPageNumbers && !optimizePdf) {
+    if (!runOcr && !addCoverPage && !addPageNumbers && !optimizePdf) {
       return Response.json({ error: 'Select at least one PDF processing option.' }, { status: 400 });
     }
 
@@ -292,7 +286,10 @@ Deno.serve(async (req) => {
     const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
     const alreadySearchable = await isSearchablePdf(originalBytes);
 
-    let nextBytes = alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
+    let nextBytes = originalBytes;
+    if (runOcr && !alreadySearchable) {
+      nextBytes = await runAdobeOcr(originalBytes);
+    }
 
     // If specific pages are requested, extract only those pages using pdf-lib
     if (extractPagesParam) {
@@ -349,7 +346,7 @@ Deno.serve(async (req) => {
       optimized_with_cover_page: addCoverPage,
       optimized_with_page_numbers: addPageNumbers,
       already_searchable: alreadySearchable,
-      ocr_applied: !alreadySearchable,
+      ocr_applied: runOcr && !alreadySearchable,
       optimization_applied: optimizePdf,
     });
   } catch (error) {
