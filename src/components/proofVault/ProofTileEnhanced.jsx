@@ -285,7 +285,7 @@ export default function ProofTileEnhanced({
 
         {expanded && hasChildren && (
           <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
-            <div className="ml-3 border-l-2 border-slate-200 pl-4 space-y-3">
+            <div className="ml-6 border-l-2 border-slate-300 pl-4 space-y-3">
               {children.map((child) => (
                 <ProofTileEnhanced
                   key={child.id}
