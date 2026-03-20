@@ -205,7 +205,6 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // Insert cover page at the beginning if requested
   if (addCoverPage) {
     const coverPage = pdfDoc.insertPage(0, [612, 792]);
     const heading = exhibitNumber
@@ -213,84 +212,34 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       : (proofCategory || 'Proof');
     const subtitle = formalName || proofName || 'Untitled Proof';
 
-    // Draw heading
-    const headingFontSize = 40;
-    const headingWidth = helveticaBold.widthOfTextAtSize(heading, headingFontSize);
-    coverPage.drawText(heading, {
-      x: (612 - headingWidth) / 2,
-      y: 580,
-      size: headingFontSize,
-      font: helveticaBold,
-      color: rgb(0, 0, 0),
-    });
-
-    // Draw subtitle (wrapped)
-    const subtitleLines = [];
-    const words = subtitle.split(/\s+/);
-    let currentLine = '';
-    const maxWidth = 520;
-    const subtitleFontSize = 12;
-
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const lineWidth = helvetica.widthOfTextAtSize(testLine, subtitleFontSize);
-      if (lineWidth > maxWidth && currentLine) {
-        subtitleLines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = testLine;
-      }
-    }
-    if (currentLine) subtitleLines.push(currentLine);
-
-    let subtitleY = 520;
-    for (const line of subtitleLines) {
-      const lineWidth = helvetica.widthOfTextAtSize(line, subtitleFontSize);
-      coverPage.drawText(line, {
-        x: (612 - lineWidth) / 2,
-        y: subtitleY,
-        size: subtitleFontSize,
-        font: helvetica,
-        color: rgb(0.2, 0.2, 0.2),
-      });
-      subtitleY -= 18;
-    }
+    drawCenteredText(coverPage, heading, 580, helveticaBold, 40, rgb(0, 0, 0));
+    drawCenteredParagraph(coverPage, subtitle, 620, helvetica, 12, rgb(0.2, 0.2, 0.2), 520, 18);
   }
 
-  // Add page numbers and TEST text to all pages
   if (addPageNumbers) {
-    const startIndex = addCoverPage ? 1 : 0;
     const totalPages = pdfDoc.getPageCount();
+    // Standard letter page width in PDF points (8.5" × 72pt/in = 612pt)
+    // Target ~1cm printed height on letter = 28.35pt font at 612pt width
+    // Scale proportionally for non-letter page sizes
+    const LETTER_WIDTH_PT = 612;
+    const TARGET_FONT_SIZE_AT_LETTER = 28;
 
-    for (let index = startIndex; index < totalPages; index += 1) {
+    for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
-      const pageHeight = page.getHeight();
+      const scaleFactor = pageWidth / LETTER_WIDTH_PT;
+      const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
+      const rightMargin = Math.round(36 * scaleFactor);
+      const bottomMargin = Math.round(36 * scaleFactor);
 
-      // Page number at bottom right
-      const pageNum = addCoverPage ? index : index + 1;
-      const totalContentPages = totalPages - (addCoverPage ? 1 : 0);
-      const label = `Page ${pageNum} of ${totalContentPages}`;
-      const labelFontSize = 12;
-      const labelWidth = helveticaBold.widthOfTextAtSize(label, labelFontSize);
-      
+      const pageNum = index + 1;
+      const label = `Page ${pageNum} of ${totalPages}`;
+      const textWidth = helveticaBold.widthOfTextAtSize(label, size);
+      const x = pageWidth - textWidth - rightMargin;
       page.drawText(label, {
-        x: pageWidth - labelWidth - 36,
-        y: 36,
-        size: labelFontSize,
-        font: helveticaBold,
-        color: rgb(0, 0, 0),
-      });
-
-      // TEST text in center
-      const testFontSize = 60;
-      const testText = 'TEST';
-      const testWidth = helveticaBold.widthOfTextAtSize(testText, testFontSize);
-      
-      page.drawText(testText, {
-        x: (pageWidth - testWidth) / 2,
-        y: pageHeight / 2,
-        size: testFontSize,
+        x,
+        y: bottomMargin,
+        size,
         font: helveticaBold,
         color: rgb(0, 0, 0),
       });

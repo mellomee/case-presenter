@@ -48,8 +48,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
   const [proofTypeId, setProofTypeId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [addCoverPage, setAddCoverPage] = useState(true);
-  const [addPageNumbers, setAddPageNumbers] = useState(true);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -113,8 +111,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
-    setAddCoverPage(true);
-    setAddPageNumbers(true);
   };
 
   useEffect(() => {
@@ -238,22 +234,21 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        setIsProcessing(true);
        try {
          const processedData = await processDropboxPdf(
-            buildProcessDropboxPdfPayload({
-              proof: actualParentProof,
-              options: {
-                addCoverPage,
-                addPageNumbers,
-                optimizePdf: true,
-              },
-              metadata: {
-                proofName: internalName.trim(),
-                formalName: formalName.trim(),
-                proofCategory: actualParentProof.proof_category,
-                isExtract: true,
-                extractPages: selectedOriginalPages.length > 0 ? selectedOriginalPages.map(String).join(',') : null,
-              },
-            })
-          );
+           buildProcessDropboxPdfPayload({
+             proof: actualParentProof,
+             options: {
+               addCoverPage: true,
+               addPageNumbers: true,
+               optimizePdf: true,
+             },
+             metadata: {
+               proofName: internalName.trim(),
+               formalName: formalName.trim(),
+               isExtract: true,
+               extractPages: selectedOriginalPages.join(','),
+             },
+           })
+         );
          saveMutation.mutate({ ...extractData, ...processedData });
        } catch (error) {
          setIsProcessing(false);
@@ -327,21 +322,9 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1 block">PDF Preview</label>
                   {extractSource === 'original' && (
-                           <div className="space-y-2">
-                             <p className="text-xs text-slate-500">Use the thumbnail rail to select original pages while keeping search, zoom, gestures, and page jump controls.</p>
-                             <div className="flex gap-4">
-                               <label className="flex items-center gap-2 cursor-pointer">
-                                 <input type="checkbox" checked={addCoverPage} onChange={(e) => setAddCoverPage(e.target.checked)} className="w-4 h-4 rounded" />
-                                 <span className="text-sm text-slate-700">Add cover page</span>
-                               </label>
-                               <label className="flex items-center gap-2 cursor-pointer">
-                                 <input type="checkbox" checked={addPageNumbers} onChange={(e) => setAddPageNumbers(e.target.checked)} className="w-4 h-4 rounded" />
-                                 <span className="text-sm text-slate-700">Add page numbers</span>
-                               </label>
-                             </div>
-                           </div>
-                          )}
-                        </div>
+                    <p className="text-xs text-slate-500">Use the thumbnail rail to select original pages while keeping search, zoom, gestures, and page jump controls.</p>
+                  )}
+                </div>
                 {extractSource === 'original' && (
                   <span className="text-xs font-mono text-blue-700 whitespace-nowrap pt-1">{selectedOriginalRange || 'No pages selected'}</span>
                 )}
