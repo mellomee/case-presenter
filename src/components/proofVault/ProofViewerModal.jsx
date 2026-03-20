@@ -101,6 +101,8 @@ export default function ProofViewerModal({ proof, allProofs, isOpen, onClose }) 
       setPos({ x: newX, y: newY });
     };
     const onUp = () => {
+      // Save the final size to localStorage
+      saveSizeToStorage({ w: resizeRef.current.startW + (size.w - resizeRef.current.startW), h: resizeRef.current.startH + (size.h - resizeRef.current.startH) });
       resizeRef.current = null;
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
