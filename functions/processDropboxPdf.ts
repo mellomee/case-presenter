@@ -225,7 +225,15 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
-      const pageWidth = page.getWidth();
+      let pageWidth = page.getWidth();
+      let pageHeight = page.getHeight();
+
+      // If page appears to be in landscape (wider than tall), use height as width for calculation
+      if (pageHeight > pageWidth) {
+        const temp = pageWidth;
+        pageWidth = pageHeight;
+        pageHeight = temp;
+      }
 
       // Scale font size proportionally to page width
       let fontSize = (pageWidth / LETTER_WIDTH) * TARGET_SIZE;
@@ -241,10 +249,11 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       }
 
       const x = Math.max(20, pageWidth - textWidth - rightMargin);
+      const y = Math.max(20, bottomMargin);
 
       page.drawText(label, {
         x,
-        y: bottomMargin,
+        y,
         size: fontSize,
         font: helveticaBold,
         color: rgb(0, 0, 0),
