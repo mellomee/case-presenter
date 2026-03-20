@@ -317,8 +317,25 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                   )}
                 </div>
                 {extractSource === 'original' && (
-                  <span className="text-xs font-mono text-blue-700 whitespace-nowrap pt-1">{selectedOriginalRange || 'No pages selected'}</span>
-                )}
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-xs font-mono text-blue-700 whitespace-nowrap">{selectedOriginalRange || 'No pages selected'}</span>
+                  {numPages > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedOriginalPages.length === numPages) {
+                          setSelectedOriginalPages([]);
+                        } else {
+                          setSelectedOriginalPages(Array.from({ length: numPages }, (_, i) => i + 1));
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {selectedOriginalPages.length === numPages ? 'Deselect all' : `Select all (${numPages} pages)`}
+                    </button>
+                  )}
+                </div>
+              )}
               </div>
 
               <div className="bg-slate-900 rounded-lg overflow-hidden h-[32rem] border border-slate-200">
