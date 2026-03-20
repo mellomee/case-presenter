@@ -227,6 +227,7 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
+      const pageHeight = page.getHeight();
       const scaleFactor = pageWidth / LETTER_WIDTH_PT;
       const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
       const rightMargin = Math.round(36 * scaleFactor);
@@ -240,6 +241,20 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
         x,
         y: bottomMargin,
         size,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+      });
+
+      // Draw "TEST" in the middle of the page in big font
+      const testFontSize = Math.round(80 * scaleFactor);
+      const testText = 'TEST';
+      const testTextWidth = helveticaBold.widthOfTextAtSize(testText, testFontSize);
+      const testX = Math.max(50, (pageWidth - testTextWidth) / 2);
+      const testY = pageHeight / 2;
+      page.drawText(testText, {
+        x: testX,
+        y: testY,
+        size: testFontSize,
         font: helveticaBold,
         color: rgb(0, 0, 0),
       });
