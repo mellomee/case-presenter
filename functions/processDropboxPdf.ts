@@ -301,7 +301,10 @@ Deno.serve(async (req) => {
     }
 
     const settings = await base44.asServiceRole.entities.AppSettings.list();
-    const saveFolder = normalizePath(settings[0]?.dropbox_save_folder || '/Case Presenter/OCR');
+    const isExtract = Boolean(payload.isExtract);
+    const saveFolder = isExtract
+      ? normalizePath(settings[0]?.dropbox_extract_folder || '/Case Presenter/Extracts')
+      : normalizePath(settings[0]?.dropbox_save_folder || '/Case Presenter/OCR');
     await ensureDropboxFolder(accessToken, saveFolder);
 
     const outputName = `${getBaseName(fileName)}-presenter.pdf`;
