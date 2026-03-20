@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Folder, File, ChevronLeft, Link2, Loader2 } from 'lucide-react';
 
+function normalizePath(path) {
+  if (!path || path === '/') return '';
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
 function getParentPath(path) {
   if (!path || path === '/') return '';
   const segments = path.split('/').filter(Boolean);
