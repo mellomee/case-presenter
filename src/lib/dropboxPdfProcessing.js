@@ -20,6 +20,7 @@ export function buildProcessDropboxPdfPayload({ proof = null, file = null, optio
     addCoverPage: Boolean(options.addCoverPage),
     addPageNumbers: Boolean(options.addPageNumbers),
     optimizePdf: Boolean(options.optimizePdf),
+    isExtract: Boolean(metadata.isExtract),
     proofName: metadata.proofName || proof?.name || sourceName.replace(/\.[^/.]+$/, ''),
     formalName: metadata.formalName || proof?.formal_name || '',
     proofCategory: metadata.proofCategory || proof?.proof_category || 'Exhibit',
