@@ -27,7 +27,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
     return storedPage || 1;
   };
   const getSourcePage = (storedPage) => {
-    if (!visiblePages.length) return null;
+    if (!visiblePages || !visiblePages.length) return null;
     if (storedPage >= 1 && storedPage <= visiblePages.length) {
       return visiblePages[storedPage - 1] || null;
     }
