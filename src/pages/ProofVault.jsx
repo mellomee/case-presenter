@@ -261,8 +261,11 @@ export default function ProofVault() {
 
   const handleChildCreated = (createdProof) => {
     if (!createdProof) return;
-    setExpandedProofId(createdProof.parent_proof_id || null);
-    setHighlightedChildId(createdProof.id);
+    // Small delay to let the query cache refresh before expanding
+    setTimeout(() => {
+      setExpandedProofId(createdProof.parent_proof_id || null);
+      setHighlightedChildId(createdProof.id);
+    }, 400);
   };
 
   useEffect(() => {
