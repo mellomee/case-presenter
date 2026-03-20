@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Folder, File, ChevronLeft, Link2, Loader2 } from 'lucide-react';
 
+function normalizePath(path) {
+  if (!path || path === '/') return '';
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
 function getParentPath(path) {
   if (!path || path === '/') return '';
   const segments = path.split('/').filter(Boolean);
@@ -13,20 +18,21 @@ function getParentPath(path) {
 }
 
 export default function DropboxFilePickerModal({ open, onClose, fileType, onSelect }) {
-  const [currentPath, setCurrentPath] = useState('');
+  const [currentPath, setCurrentPath] = useState(null);
   const [search, setSearch] = useState('');
 
-  const { data: appSettings = [] } = useQuery({
+  const { data: appSettings = [], isFetched: isAppSettingsFetched } = useQuery({
     queryKey: ['appSettings'],
     queryFn: () => base44.entities.AppSettings.list(),
+    enabled: open,
   });
 
   useEffect(() => {
-    if (!open) return;
-    const rootPath = appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '';
+    if (!open || !isAppSettingsFetched) return;
+    const rootPath = normalizePath(appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '');
     setCurrentPath(rootPath);
     setSearch('');
-  }, [open, appSettings]);
+  }, [open, appSettings, isAppSettingsFetched]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['browseDropboxFiles', currentPath, fileType],

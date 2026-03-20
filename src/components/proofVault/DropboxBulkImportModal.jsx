@@ -9,7 +9,6 @@ import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField
 import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
 import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
 import BulkImportProgressBar from '@/components/proofVault/BulkImportProgressBar.jsx';
-import { buildProcessDropboxPdfPayload, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePath(path) {
   if (!path || path === '/') return '';
@@ -51,7 +50,7 @@ function buildInitialSelection(file) {
 }
 
 export default function DropboxBulkImportModal({ open, onClose, onImportComplete, onEditImported }) {
-  const [currentPath, setCurrentPath] = useState('');
+  const [currentPath, setCurrentPath] = useState(null);
   const [search, setSearch] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [browserSelectedKeys, setBrowserSelectedKeys] = useState([]);
@@ -65,7 +64,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
   const [importProgress, setImportProgress] = useState({ value: 0, label: '', currentFile: '' });
   const [isImportPaused, setIsImportPaused] = useState(false);
 
-  const { data: appSettings = [] } = useQuery({
+  const { data: appSettings = [], isFetched: isAppSettingsFetched } = useQuery({
     queryKey: ['appSettings'],
     queryFn: () => base44.entities.AppSettings.list(),
     enabled: open,
@@ -100,8 +99,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
   // Set the browse path once — when modal opens AND settings are loaded
   useEffect(() => {
-    if (!open || initializedForOpen.current) return;
-    if (appSettings.length === 0) return; // wait for settings
+    if (!open || initializedForOpen.current || !isAppSettingsFetched) return;
 
     initializedForOpen.current = true;
     const rootPath = appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '';
@@ -114,7 +112,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     setError('');
     setCompleted(false);
     setImportSummary(null);
-  }, [open, appSettings]);
+  }, [open, appSettings, isAppSettingsFetched]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['bulkBrowseDropboxFiles', currentPath],
@@ -255,38 +253,6 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           dropbox_file_name: file.name,
         };
 
-        if (fileType === 'PDF') {
-         const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
-           file,
-           options: {
-             addCoverPage: true,
-             addPageNumbers: true,
-             optimizePdf: true,
-           },
-           metadata: {
-             proofName: baseName,
-             formalName: baseName,
-             proofCategory,
-           },
-         }));
-
-         payload = {
-           ...payload,
-           ...responseData,
-           name: internalName,
-           formal_name: baseName,
-           proof_type_category_id: fileProofTypeId || null,
-           category_id: fileCategoryId || null,
-           party_id: filePartyIds[0] || null,
-           party_ids: { ids: filePartyIds },
-           status: 'Draft',
-           draft_exhibit_num: fileDraftExhibitNum,
-         };
-
-          processedFiles.push(responseData.processed_file_name || responseData.dropbox_file_name || file.name);
-          folderUrl = folderUrl || responseData.dropbox_folder_url || '';
-          folderPath = folderPath || responseData.dropbox_folder_path || '';
-        }
 
         const createdProof = await base44.entities.Proof.create(payload);
         importedFiles.push(file.name);
