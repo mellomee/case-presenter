@@ -222,7 +222,7 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
     // Target ~1cm printed height on letter = 28.35pt font at 612pt width
     // Scale proportionally for non-letter page sizes
     const LETTER_WIDTH_PT = 612;
-    const TARGET_FONT_SIZE_AT_LETTER = 10;
+    const TARGET_FONT_SIZE_AT_LETTER = 18;
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
