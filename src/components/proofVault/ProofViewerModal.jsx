@@ -11,13 +11,38 @@ const DEFAULT_W = 900;
 const DEFAULT_H = 680;
 const MIN_W = 400;
 const MIN_H = 300;
+const STORAGE_KEY = 'proofViewerSize';
+
+function getSavedSize() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.w >= MIN_W && parsed.h >= MIN_H && parsed.w <= window.innerWidth && parsed.h <= window.innerHeight) {
+        return parsed;
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return { w: DEFAULT_W, h: DEFAULT_H };
+}
+
+function saveSizeToStorage(size) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ w: size.w, h: size.h }));
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 export default function ProofViewerModal({ proof, allProofs, isOpen, onClose }) {
   const [viewerState, setViewerState] = useState({ currentPage: 1, zoom: 1, panX: 0, panY: 0 });
   const { url, isLoading } = useResolvedProofAsset(isOpen ? proof : null);
 
-  const [pos, setPos] = useState({ x: Math.max(0, (window.innerWidth - DEFAULT_W) / 2), y: Math.max(0, (window.innerHeight - DEFAULT_H) / 2) });
-  const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
+  const savedSize = getSavedSize();
+  const [pos, setPos] = useState({ x: Math.max(0, (window.innerWidth - savedSize.w) / 2), y: Math.max(0, (window.innerHeight - savedSize.h) / 2) });
+  const [size, setSize] = useState(savedSize);
   const [maximized, setMaximized] = useState(false);
   const [prevRect, setPrevRect] = useState(null);
 
