@@ -234,8 +234,8 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       const rightMargin = Math.round(36 * scaleFactor);
       const bottomMargin = Math.round(36 * scaleFactor);
 
-      const pageNum = index + 1;
-      const totalPagesLabel = totalPages;
+      const pageNum = index - startIndex + 1;
+      const totalPagesLabel = totalPages - startIndex;
       const label = `Page ${pageNum} of ${totalPagesLabel}`;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
 
@@ -263,17 +263,14 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
         textRotation = 0;
       }
 
-      // Ensure coordinates are valid
-      if (!isNaN(x) && !isNaN(y)) {
-        page.drawText(label, {
-          x,
-          y,
-          size,
-          font: helveticaBold,
-          color: rgb(0, 0, 0),
-          rotate: degrees(textRotation),
-        });
-      }
+      page.drawText(label, {
+        x,
+        y,
+        size,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+        rotate: degrees(textRotation),
+      });
     }
   }
 
