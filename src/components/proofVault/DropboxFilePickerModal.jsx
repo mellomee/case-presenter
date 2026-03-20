@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Folder, File, ChevronLeft, Link2, Loader2 } from 'lucide-react';
 
+function normalizePath(path) {
+  if (!path || path === '/') return '';
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
 function getParentPath(path) {
   if (!path || path === '/') return '';
   const segments = path.split('/').filter(Boolean);
@@ -24,7 +29,7 @@ export default function DropboxFilePickerModal({ open, onClose, fileType, onSele
   useEffect(() => {
     if (!open) return;
     const rootPath = appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '';
-    setCurrentPath(rootPath);
+    setCurrentPath(normalizePath(rootPath));
     setSearch('');
   }, [open, appSettings]);
 
