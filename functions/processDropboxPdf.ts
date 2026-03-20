@@ -261,7 +261,6 @@ Deno.serve(async (req) => {
     const formalName = String(payload.formalName || '').trim();
     const exhibitNumber = String(payload.exhibitNumber || '').trim();
     const proofCategory = String(payload.proofCategory || 'Exhibit').trim();
-    const targetFolder = String(payload.targetFolder || 'save').trim();
 
     if (!fileId && !originalPath) {
       return Response.json({ error: 'A Dropbox PDF is required.' }, { status: 400 });
@@ -302,9 +301,7 @@ Deno.serve(async (req) => {
     }
 
     const settings = await base44.asServiceRole.entities.AppSettings.list();
-    const folderKey = targetFolder === 'extract' ? 'dropbox_extract_folder' : 'dropbox_save_folder';
-    const defaultFolder = targetFolder === 'extract' ? '/Case Presenter/Extracts' : '/Case Presenter/OCR';
-    const saveFolder = normalizePath(settings[0]?.[folderKey] || defaultFolder);
+    const saveFolder = normalizePath(settings[0]?.dropbox_save_folder || '/Case Presenter/OCR');
     await ensureDropboxFolder(accessToken, saveFolder);
 
     const outputName = `${getBaseName(fileName)}-presenter.pdf`;
