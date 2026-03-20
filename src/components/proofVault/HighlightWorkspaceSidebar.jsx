@@ -64,6 +64,7 @@ export default function HighlightWorkspaceSidebar({
 }) {
   const colorInputRef = useRef(null);
   const [recentColors, setRecentColors] = React.useState(loadRecentColors);
+  const [colorPanelCollapsed, setColorPanelCollapsed] = React.useState(false);
 
   const handleColorPicked = (hex) => {
     saveRecentColor(hex);
