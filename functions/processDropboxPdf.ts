@@ -304,27 +304,36 @@ Deno.serve(async (req) => {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
     const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
+    logSize('processDropboxPdf original', originalBytes);
     const alreadySearchable = await isSearchablePdf(originalBytes);
+    console.log(`processDropboxPdf searchable: ${alreadySearchable}`);
 
     let nextBytes = originalBytes;
     if (runOcr && !alreadySearchable) {
+      const beforeOcrBytes = nextBytes;
       nextBytes = await runAdobeOcr(originalBytes);
+      logSizeChange('processDropboxPdf OCR', beforeOcrBytes, nextBytes);
+    } else if (runOcr) {
+      console.log('processDropboxPdf OCR skipped: PDF already searchable');
     }
 
     // If specific pages are requested, extract only those pages using pdf-lib
     if (extractPagesParam) {
       const pageNumbers = extractPagesParam.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n) && n >= 1);
       if (pageNumbers.length > 0) {
+        const beforeExtractBytes = nextBytes;
         const srcDoc = await PDFDocument.load(nextBytes);
         const extractDoc = await PDFDocument.create();
         const zeroIndexed = pageNumbers.map((n) => n - 1).filter((i) => i < srcDoc.getPageCount());
         const copiedPages = await extractDoc.copyPages(srcDoc, zeroIndexed);
         copiedPages.forEach((page) => extractDoc.addPage(page));
         nextBytes = await extractDoc.save();
+        logSizeChange('processDropboxPdf extract pages', beforeExtractBytes, nextBytes);
       }
     }
 
     if (addCoverPage || addPageNumbers) {
+      const beforeCoverAndNumbersBytes = nextBytes;
       nextBytes = await addCoverAndPageNumbers(nextBytes, {
         addCoverPage,
         addPageNumbers,
@@ -333,27 +342,38 @@ Deno.serve(async (req) => {
         exhibitNumber,
         proofCategory,
       });
+      logSizeChange('processDropboxPdf cover/page numbers', beforeCoverAndNumbersBytes, nextBytes);
     }
 
     if (optimizePdf) {
       try {
+        const beforeCompressBytes = nextBytes;
         nextBytes = await runAdobeCompress(nextBytes);
+        logSizeChange('processDropboxPdf compress', beforeCompressBytes, nextBytes);
       } catch (error) {
-        const message = String(error?.message || error || '').toLowerCase();
-        if (!message.includes('already compressed')) {
+        const message = String(error?.message || error || '');
+        const normalizedMessage = message.toLowerCase();
+        console.log(`processDropboxPdf compress skipped/error: ${message}`);
+        if (!normalizedMessage.includes('already compressed')) {
           throw error;
         }
       }
 
       try {
+        const beforeLinearizeBytes = nextBytes;
         nextBytes = await runAdobeLinearize(nextBytes);
+        logSizeChange('processDropboxPdf linearize', beforeLinearizeBytes, nextBytes);
       } catch (error) {
-        const message = String(error?.message || error || '').toLowerCase();
-        if (!message.includes('already linearized') && !message.includes('already optimized')) {
+        const message = String(error?.message || error || '');
+        const normalizedMessage = message.toLowerCase();
+        console.log(`processDropboxPdf linearize skipped/error: ${message}`);
+        if (!normalizedMessage.includes('already linearized') && !normalizedMessage.includes('already optimized')) {
           throw error;
         }
       }
     }
+
+    logSizeChange('processDropboxPdf final', originalBytes, nextBytes);
 
     const settings = await base44.asServiceRole.entities.AppSettings.list();
     const isExtract = Boolean(payload.isExtract);
