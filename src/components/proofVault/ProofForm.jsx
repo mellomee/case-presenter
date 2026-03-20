@@ -329,18 +329,28 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           video_url: '',
         };
       } else if (fileChanged && fileType === 'PDF') {
-        const response = await base44.functions.invoke('prepareDropboxProof', {
-          fileId: dropboxSelection.id,
-          path: dropboxSelection.path_display,
-          name: dropboxSelection.name,
-        });
+        try {
+          const response = await base44.functions.invoke('prepareDropboxProof', {
+            fileId: dropboxSelection.id,
+            path: dropboxSelection.path_display,
+            name: dropboxSelection.name,
+          });
 
-        nextPayload = {
-          ...nextPayload,
-          ...response.data,
-          file_url: '',
-          video_url: '',
-        };
+          if (response.data?.error) {
+            alert(`Failed to prepare Dropbox file: ${response.data.error}`);
+            return;
+          }
+
+          nextPayload = {
+            ...nextPayload,
+            ...response.data,
+            file_url: '',
+            video_url: '',
+          };
+        } catch (error) {
+          alert(`Error preparing Dropbox file: ${error.message}`);
+          return;
+        }
       } else {
         nextPayload = {
           ...nextPayload,
