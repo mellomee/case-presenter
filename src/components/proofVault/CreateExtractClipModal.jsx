@@ -140,10 +140,12 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setSelectedPartyIds(normalizePartyIds(actualParentExtract));
   }, [open, parentExtract, actualParentExtract, isEditing]);
 
-  const visibleExtractPages = useMemo(
-    () => parsePageRange(actualParentExtract?.extract_pages || ''),
-    [actualParentExtract?.extract_pages]
-  );
+  const visibleExtractPages = useMemo(() => {
+    // If the extract has a cover page added, the actual PDF has one more page than
+    // the original extract_pages range. Pass null so PDFViewer uses the real page count.
+    if (actualParentExtract?.optimized_with_cover_page) return null;
+    return parsePageRange(actualParentExtract?.extract_pages || '');
+  }, [actualParentExtract?.extract_pages, actualParentExtract?.optimized_with_cover_page]);
 
   const groupsOnCurrentPage = useMemo(
     () => highlightGroups.filter((group) => group.page === currentPage),
