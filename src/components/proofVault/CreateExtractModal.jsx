@@ -51,6 +51,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [addCoverPage, setAddCoverPage] = useState(true);
   const [addPageNumbers, setAddPageNumbers] = useState(true);
   const [optimizePdf, setOptimizePdf] = useState(true);
+  const [applyOcr, setApplyOcr] = useState(true);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -139,6 +140,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       setAddCoverPage(true);
       setAddPageNumbers(true);
       setOptimizePdf(true);
+      setApplyOcr(true);
       return;
     }
 
@@ -242,7 +244,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
      };
 
      // If using original Dropbox source and processing is enabled
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (addCoverPage || addPageNumbers || optimizePdf)) {
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (addCoverPage || addPageNumbers || optimizePdf || applyOcr)) {
        setIsProcessing(true);
        try {
          const processedData = await processDropboxPdf(
@@ -252,6 +254,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                addCoverPage,
                addPageNumbers,
                optimizePdf,
+               applyOcr,
              },
              metadata: {
                proofName: internalName.trim(),
@@ -414,24 +417,28 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
           )}
 
           {extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
-              <label className="text-sm font-medium text-slate-700 block">PDF Processing (optional)</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={addCoverPage} onChange={(e) => setAddCoverPage(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                  <span className="text-sm text-slate-700">Add cover page</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={addPageNumbers} onChange={(e) => setAddPageNumbers(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                  <span className="text-sm text-slate-700">Add page numbers</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={optimizePdf} onChange={(e) => setOptimizePdf(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                  <span className="text-sm text-slate-700">Optimize PDF (compress & linearize)</span>
-                </label>
-              </div>
-              <p className="text-xs text-slate-600">If OCR is needed, it will be applied automatically only if the PDF isn't already searchable.</p>
-            </div>
+           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+             <label className="text-sm font-medium text-slate-700 block">PDF Processing (optional)</label>
+             <div className="space-y-2">
+               <label className="flex items-center gap-2 cursor-pointer">
+                 <input type="checkbox" checked={addCoverPage} onChange={(e) => setAddCoverPage(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                 <span className="text-sm text-slate-700">Add cover page</span>
+               </label>
+               <label className="flex items-center gap-2 cursor-pointer">
+                 <input type="checkbox" checked={addPageNumbers} onChange={(e) => setAddPageNumbers(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                 <span className="text-sm text-slate-700">Add page numbers</span>
+               </label>
+               <label className="flex items-center gap-2 cursor-pointer">
+                 <input type="checkbox" checked={optimizePdf} onChange={(e) => setOptimizePdf(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                 <span className="text-sm text-slate-700">Optimize PDF (compress & linearize)</span>
+               </label>
+               <label className="flex items-center gap-2 cursor-pointer">
+                 <input type="checkbox" checked={applyOcr} onChange={(e) => setApplyOcr(e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
+                 <span className="text-sm text-slate-700">Apply OCR if needed</span>
+               </label>
+             </div>
+             <p className="text-xs text-slate-600">OCR will be applied only if enabled and the PDF isn't already searchable.</p>
+           </div>
           )}
 
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
