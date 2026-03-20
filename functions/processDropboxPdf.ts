@@ -293,7 +293,14 @@ Deno.serve(async (req) => {
     const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
     const alreadySearchable = await isSearchablePdf(originalBytes);
 
-    let nextBytes = alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
+    let nextBytes = originalBytes;
+    let ocrApplied = false;
+
+    // Only apply OCR if requested and PDF is not already searchable
+    if (addOcr && !alreadySearchable) {
+      nextBytes = await runAdobeOcr(nextBytes);
+      ocrApplied = true;
+    }
 
     // If specific pages are requested, extract only those pages using pdf-lib
     if (extractPagesParam) {
