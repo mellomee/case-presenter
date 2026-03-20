@@ -113,6 +113,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
+    setAddCoverPage(true);
+    setAddPageNumbers(true);
   };
 
   useEffect(() => {
