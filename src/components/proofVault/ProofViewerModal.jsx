@@ -14,7 +14,7 @@ const MIN_H = 300;
 
 export default function ProofViewerModal({ proof, allProofs, isOpen, onClose }) {
   const [viewerState, setViewerState] = useState({ currentPage: 1, zoom: 1, panX: 0, panY: 0 });
-  const { url, isLoading } = useResolvedProofAsset(proof);
+  const { url, isLoading } = useResolvedProofAsset(isOpen ? proof : null);
 
   const [pos, setPos] = useState({ x: Math.max(0, (window.innerWidth - DEFAULT_W) / 2), y: Math.max(0, (window.innerHeight - DEFAULT_H) / 2) });
   const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
