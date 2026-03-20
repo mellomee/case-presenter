@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
 import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups } from './highlightGroupUtils';
@@ -276,15 +275,7 @@ export default function ProofTile({
               onAdmitAsDemonstrative={() => onAdmitAsDemonstrative(proof)}
               onRemoveFromJoint={() => onRemoveFromJoint(proof)}
               onUnAdmit={() => onUnAdmit(proof)}
-              onDelete={(p) => {
-                // Delete extract file from Dropbox if applicable
-                if (p.proof_child_type === 'Extract' && p.file_source === 'dropbox' && p.dropbox_path) {
-                  base44.functions.invoke('deleteExtractFromDropbox', { dropboxPath: p.dropbox_path }).catch((err) => {
-                    console.warn('Failed to delete extract file from Dropbox:', err.message);
-                  });
-                }
-                onDelete(p);
-              }}
+              onDelete={onDelete}
             />
           </div>
         </div>
