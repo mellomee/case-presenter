@@ -292,6 +292,7 @@ Deno.serve(async (req) => {
     const addCoverPage = Boolean(payload.addCoverPage);
     const addPageNumbers = Boolean(payload.addPageNumbers);
     const optimizePdf = Boolean(payload.optimizePdf);
+    const applyOcr = payload.applyOcr !== false;
     const proofName = String(payload.proofName || '').trim();
     const formalName = String(payload.formalName || '').trim();
     const exhibitNumber = String(payload.exhibitNumber || '').trim();
@@ -312,14 +313,14 @@ Deno.serve(async (req) => {
     }
 
     const sourceReference = fileId
-      ? (String(fileId).startsWith('id:') ? fileId : `id:${fileId}`)
-      : originalPath;
+       ? (String(fileId).startsWith('id:') ? fileId : `id:${fileId}`)
+       : originalPath;
 
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
-    const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
-    const alreadySearchable = await isSearchablePdf(originalBytes);
+     const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
+     const originalBytes = await downloadDropboxFile(accessToken, sourceReference);
+     const alreadySearchable = applyOcr ? await isSearchablePdf(originalBytes) : true;
 
-    let nextBytes = alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
+     let nextBytes = !applyOcr || alreadySearchable ? originalBytes : await runAdobeOcr(originalBytes);
 
     // If specific pages are requested, extract only those pages using pdf-lib
     if (extractPagesParam) {
@@ -376,7 +377,7 @@ Deno.serve(async (req) => {
       optimized_with_cover_page: addCoverPage,
       optimized_with_page_numbers: addPageNumbers,
       already_searchable: alreadySearchable,
-      ocr_applied: !alreadySearchable,
+      ocr_applied: applyOcr && !alreadySearchable,
       optimization_applied: optimizePdf,
     });
   } catch (error) {
