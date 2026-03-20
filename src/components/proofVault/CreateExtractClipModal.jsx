@@ -336,7 +336,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       description: description.trim() || null,
       parent_proof_id: isEditing ? parentExtract.parent_proof_id : actualParentExtract.id,
       party_id: selectedPartyIds[0] || null,
-      party_ids: selectedPartyIds,
+      party_ids: { ids: selectedPartyIds },
       status: actualParentExtract.status,
       category_id: actualParentExtract.category_id || null,
       proof_type_category_id: actualParentExtract.proof_type_category_id,
