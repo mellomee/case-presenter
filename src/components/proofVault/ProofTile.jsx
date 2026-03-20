@@ -277,26 +277,31 @@ export default function ProofTile({
         </div>
 
         {expanded && hasChildren && (
-          <div className="border-t border-slate-200 bg-slate-50">
-            {children.map((child) => (
-              <ProofTile
-                key={child.id}
-                proof={child}
-                allProofs={allProofs}
-                currentTab={currentTab}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onExtract={(p) => onExtract(p)}
-                onClip={(p) => onClip(p)}
-                onAddToJoint={onAddToJoint}
-                onAdmitAsExhibit={onAdmitAsExhibit}
-                onAdmitAsDemonstrative={onAdmitAsDemonstrative}
-                onRemoveFromJoint={onRemoveFromJoint}
-                onUnAdmit={onUnAdmit}
-                expandedProofId={expandedProofId}
-                highlightedChildId={highlightedChildId}
-              />
-            ))}
+          <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="ml-4 border-l-2 border-slate-300 pl-4 space-y-3">
+              {children.map((child) => (
+                <ProofTile
+                  key={child.id}
+                  proof={child}
+                  allProofs={allProofs}
+                  parties={parties}
+                  categories={categories}
+                  currentTab={currentTab}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onExtract={(p) => onExtract(p)}
+                  onClip={(p) => onClip(p)}
+                  onAddToJoint={onAddToJoint}
+                  onAdmitAsExhibit={onAdmitAsExhibit}
+                  onAdmitAsDemonstrative={onAdmitAsDemonstrative}
+                  onRemoveFromJoint={onRemoveFromJoint}
+                  onUnAdmit={onUnAdmit}
+                  expandedProofId={expandedProofId}
+                  highlightedChildId={highlightedChildId}
+                  depth={depth + 1}
+                />
+              ))}
+            </div>
           </div>
         )}
       </Card>
