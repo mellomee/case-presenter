@@ -218,38 +218,23 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
   if (addPageNumbers) {
     const totalPages = pdfDoc.getPageCount();
-    // Standard letter page width in PDF points (8.5" × 72pt/in = 612pt)
-    // Target ~1cm printed height on letter = 28.35pt font at 612pt width
-    // Scale proportionally for non-letter page sizes
-    const LETTER_WIDTH_PT = 612;
-    const TARGET_FONT_SIZE_AT_LETTER = 28;
+    const rightMargin = 36;
+    const bottomMargin = 36;
+    const fontSize = 10; // Fixed smaller font size that always fits
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
-      const pageHeight = page.getHeight();
-      const scaleFactor = pageWidth / LETTER_WIDTH_PT;
-      let size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
-      const rightMargin = Math.round(36 * scaleFactor);
-      const bottomMargin = Math.round(36 * scaleFactor);
 
       const pageNum = index + 1;
       const label = `Page ${pageNum} of ${totalPages}`;
-      let textWidth = helveticaBold.widthOfTextAtSize(label, size);
-
-      // If text exceeds available space, reduce font size until it fits
-      const maxWidth = pageWidth - rightMargin - 20;
-      while (textWidth > maxWidth && size > 8) {
-        size -= 1;
-        textWidth = helveticaBold.widthOfTextAtSize(label, size);
-      }
-
+      const textWidth = helveticaBold.widthOfTextAtSize(label, fontSize);
       const x = Math.max(20, pageWidth - textWidth - rightMargin);
-      const y = Math.max(20, bottomMargin);
+
       page.drawText(label, {
         x,
-        y,
-        size,
+        y: bottomMargin,
+        size: fontSize,
         font: helveticaBold,
         color: rgb(0, 0, 0),
       });
