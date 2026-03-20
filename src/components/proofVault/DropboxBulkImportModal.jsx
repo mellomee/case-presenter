@@ -104,7 +104,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
     if (appSettings.length === 0) return; // wait for settings
 
     initializedForOpen.current = true;
-    const rootPath = appSettings[0]?.dropbox_browse_folder || appSettings[0]?.dropbox_save_folder || '';
+    const rootPath = appSettings[0]?.dropbox_browse_folder || '';
     setCurrentPath(normalizePath(rootPath));
     setSearch('');
     setSelectedFiles([]);
