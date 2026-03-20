@@ -5,6 +5,7 @@ export function isOptimizableDropboxPdf(proof) {
 }
 
 export function getPrimaryExhibitNumber(proof = {}) {
+  if (!proof) return '';
   return proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || proof.draft_exhibit_num || '';
 }
 
