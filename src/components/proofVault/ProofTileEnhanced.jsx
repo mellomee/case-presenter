@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ProofViewerModal from './ProofViewerModal';
 import ProofActionMenu from './ProofActionMenu';
+import InlineProofNameEditor from './InlineProofNameEditor.jsx';
 import PdfPageCountBadge from './PdfPageCountBadge';
 import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups } from './highlightGroupUtils';
 import { proofHasLinkedFile } from './proofAssetUtils';
@@ -187,7 +188,7 @@ export default function ProofTileEnhanced({
             <div className="flex items-start gap-2 mb-2">
               <span className="text-lg mt-0.5">{getFileTypeIcon()}</span>
               <div className="min-w-0">
-                <h3 className="font-semibold text-slate-900 truncate">{proof.name}</h3>
+                <InlineProofNameEditor proofId={proof.id} name={proof.name} />
                 {proof.formal_name && (
                   <div className="text-xs text-slate-500 truncate">Formal Name: {proof.formal_name}</div>
                 )}
