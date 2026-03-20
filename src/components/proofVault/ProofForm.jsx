@@ -307,40 +307,50 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
               name: formData.original_dropbox_file_name || dropboxSelection.name,
             };
 
-        const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({
-          file: processingSource,
-          options: {
-            addCoverPage,
-            addPageNumbers,
-            optimizePdf: optimizePdfEnabled,
-          },
-          metadata: {
-            proofName: nextPayload.name,
-            formalName: nextPayload.formal_name,
-            proofCategory,
-            exhibitNumber: nextPayload.admitted_exhibit_num || nextPayload.demonstrative_exhibit_num || nextPayload.joint_exhibit_num || nextPayload.draft_exhibit_num || '',
-          },
-        }));
+        try {
+          const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({
+            file: processingSource,
+            options: {
+              addCoverPage,
+              addPageNumbers,
+              optimizePdf: optimizePdfEnabled,
+            },
+            metadata: {
+              proofName: nextPayload.name,
+              formalName: nextPayload.formal_name,
+              proofCategory,
+              exhibitNumber: nextPayload.admitted_exhibit_num || nextPayload.demonstrative_exhibit_num || nextPayload.joint_exhibit_num || nextPayload.draft_exhibit_num || '',
+            },
+          }));
 
-        nextPayload = {
-          ...nextPayload,
-          ...processedData,
-          file_url: '',
-          video_url: '',
-        };
+          nextPayload = {
+            ...nextPayload,
+            ...processedData,
+            file_url: '',
+            video_url: '',
+          };
+        } catch (err) {
+          alert(`PDF processing failed: ${err.message}`);
+          return;
+        }
       } else if (fileChanged && fileType === 'PDF') {
-        const response = await base44.functions.invoke('prepareDropboxProof', {
-          fileId: dropboxSelection.id,
-          path: dropboxSelection.path_display,
-          name: dropboxSelection.name,
-        });
+        try {
+          const response = await base44.functions.invoke('prepareDropboxProof', {
+            fileId: dropboxSelection.id,
+            path: dropboxSelection.path_display,
+            name: dropboxSelection.name,
+          });
 
-        nextPayload = {
-          ...nextPayload,
-          ...response.data,
-          file_url: '',
-          video_url: '',
-        };
+          nextPayload = {
+            ...nextPayload,
+            ...response.data,
+            file_url: '',
+            video_url: '',
+          };
+        } catch (err) {
+          alert(`Failed to prepare Dropbox file: ${err.message}`);
+          return;
+        }
       } else {
         nextPayload = {
           ...nextPayload,
