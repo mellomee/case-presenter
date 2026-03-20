@@ -12,7 +12,11 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const parentExtract = allProofs.find((p) => p.id === proof.parent_proof_id);
   const originalPDF = parentExtract ? allProofs.find((p) => p.id === parentExtract.parent_proof_id) : null;
   const { url, isLoading } = useResolvedProofAsset(proof);
-  const visiblePages = parsePageRange(parentExtract?.extract_pages || '');
+  // If the extract has a cover page added, the actual PDF has one more page than
+  // the original extract_pages range — pass null so PDFViewer uses the real page count.
+  const visiblePages = parentExtract?.optimized_with_cover_page
+    ? null
+    : parsePageRange(parentExtract?.extract_pages || '');
   const getViewerPageIndex = (storedPage) => {
     if (!visiblePages.length) return storedPage || 1;
     const isWithinClipRange = storedPage >= 1 && storedPage <= visiblePages.length;
