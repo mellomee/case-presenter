@@ -239,8 +239,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
            buildProcessDropboxPdfPayload({
              proof: actualParentProof,
              options: {
-               addCoverPage: true,
-               addPageNumbers: true,
+               addCoverPage,
+               addPageNumbers,
                optimizePdf: true,
              },
              metadata: {
