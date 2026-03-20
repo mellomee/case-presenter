@@ -214,7 +214,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        formal_name: formalName.trim(),
        parent_proof_id: isEditing ? parentProof.parent_proof_id : parentProof.id,
        party_id: selectedPartyIds[0] || null,
-       party_ids: selectedPartyIds,
+       party_ids: { ids: selectedPartyIds },
        status: parentProof.status === 'Draft' ? 'Draft' : parentProof.status,
        category_id: parentProof.category_id || null,
        proof_type_category_id: proofTypeId || parentProof.proof_type_category_id,
