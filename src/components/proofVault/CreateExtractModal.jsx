@@ -238,21 +238,22 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        setIsProcessing(true);
        try {
          const processedData = await processDropboxPdf(
-           buildProcessDropboxPdfPayload({
-             proof: actualParentProof,
-             options: {
-               addCoverPage,
-               addPageNumbers,
-               optimizePdf: true,
-             },
-             metadata: {
-               proofName: internalName.trim(),
-               formalName: formalName.trim(),
-               isExtract: true,
-               extractPages: selectedOriginalPages.join(','),
-             },
-           })
-         );
+            buildProcessDropboxPdfPayload({
+              proof: actualParentProof,
+              options: {
+                addCoverPage,
+                addPageNumbers,
+                optimizePdf: true,
+              },
+              metadata: {
+                proofName: internalName.trim(),
+                formalName: formalName.trim(),
+                proofCategory: actualParentProof.proof_category,
+                isExtract: true,
+                extractPages: selectedOriginalPages.length > 0 ? selectedOriginalPages.map(String).join(',') : null,
+              },
+            })
+          );
          saveMutation.mutate({ ...extractData, ...processedData });
        } catch (error) {
          setIsProcessing(false);
