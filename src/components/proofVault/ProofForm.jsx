@@ -605,7 +605,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
                 </Button>
               )}
               {fileType === 'PDF' && (
-                <p className="text-xs text-slate-500 mt-2">Dropbox PDFs are OCR-checked automatically. You can also create a processed Dropbox copy in the save folder set in Settings.</p>
+                <p className="text-xs text-slate-500 mt-2">The proof will be linked directly from Dropbox. You can process the PDF later from the Proof form.</p>
               )}
             </div>
 
