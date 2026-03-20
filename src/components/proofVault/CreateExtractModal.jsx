@@ -249,24 +249,19 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
      if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (addCoverPage || addPageNumbers || optimizePdf || applyOcr)) {
        setIsProcessing(true);
        try {
-         const processedData = await processDropboxPdf(
-           buildProcessDropboxPdfPayload({
-             proof: actualParentProof,
-             options: {
-               addCoverPage,
-               addPageNumbers,
-               optimizePdf,
-               applyOcr,
-             },
-             metadata: {
-               proofName: internalName.trim(),
-               formalName: formalName.trim(),
-               isExtract: true,
-               extractPages: selectedOriginalPages.join(','),
-             },
-           })
-         );
-         saveMutation.mutate({ ...extractData, ...processedData });
+         const response = await base44.functions.invoke('processExtractPdf', {
+           fileUrl: resolvedParentUrl,
+           fileName: actualParentProof.dropbox_file_name || 'extract.pdf',
+           addCoverPage,
+           addPageNumbers,
+           optimizePdf,
+           applyOcr,
+           proofName: internalName.trim(),
+           formalName: formalName.trim(),
+           exhibitNumber: draftExhibitNum.trim(),
+           proofCategory: parentProof.proof_category,
+         });
+         saveMutation.mutate({ ...extractData, ...response.data });
        } catch (error) {
          setIsProcessing(false);
          console.warn('PDF processing failed, saving extract without optimization:', error.message);
