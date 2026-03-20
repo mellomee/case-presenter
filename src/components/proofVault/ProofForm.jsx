@@ -345,6 +345,10 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
             name: dropboxSelection.name,
           });
 
+          if (response.data?.error) {
+            throw new Error(response.data.error);
+          }
+
           nextPayload = {
             ...nextPayload,
             ...response.data,
@@ -353,6 +357,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           };
         } catch (err) {
           alert(`Failed to prepare Dropbox file: ${err.message}`);
+          setIsSubmitting(false);
           return;
         }
       } else {
