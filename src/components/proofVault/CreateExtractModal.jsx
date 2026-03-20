@@ -324,9 +324,21 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1 block">PDF Preview</label>
                   {extractSource === 'original' && (
-                    <p className="text-xs text-slate-500">Use the thumbnail rail to select original pages while keeping search, zoom, gestures, and page jump controls.</p>
-                  )}
-                </div>
+                           <div className="space-y-2">
+                             <p className="text-xs text-slate-500">Use the thumbnail rail to select original pages while keeping search, zoom, gestures, and page jump controls.</p>
+                             <div className="flex gap-4">
+                               <label className="flex items-center gap-2 cursor-pointer">
+                                 <input type="checkbox" checked={addCoverPage} onChange={(e) => setAddCoverPage(e.target.checked)} className="w-4 h-4 rounded" />
+                                 <span className="text-sm text-slate-700">Add cover page</span>
+                               </label>
+                               <label className="flex items-center gap-2 cursor-pointer">
+                                 <input type="checkbox" checked={addPageNumbers} onChange={(e) => setAddPageNumbers(e.target.checked)} className="w-4 h-4 rounded" />
+                                 <span className="text-sm text-slate-700">Add page numbers</span>
+                               </label>
+                             </div>
+                           </div>
+                          )}
+                        </div>
                 {extractSource === 'original' && (
                   <span className="text-xs font-mono text-blue-700 whitespace-nowrap pt-1">{selectedOriginalRange || 'No pages selected'}</span>
                 )}
