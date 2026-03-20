@@ -226,22 +226,29 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
 
      // If using original Dropbox source, process it with optimization
      if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
-       try {
-         const processedData = await processDropboxPdf(
-           buildProcessDropboxPdfPayload({
-             proof: actualParentProof,
-             options: {
-               addCoverPage: true,
-               addPageNumbers: true,
-               optimizePdf: true,
-             },
-           })
-         );
-         saveMutation.mutate({ ...extractData, ...processedData });
-       } catch (error) {
-         console.warn('PDF processing failed, saving extract without optimization:', error.message);
-         saveMutation.mutate(extractData);
-       }
+       saveMutation.mutate(extractData, {
+         onMutate: async () => {
+           try {
+             const processedData = await processDropboxPdf(
+               buildProcessDropboxPdfPayload({
+                 proof: actualParentProof,
+                 options: {
+                   addCoverPage: true,
+                   addPageNumbers: true,
+                   optimizePdf: true,
+                 },
+               })
+             );
+             return { ...extractData, ...processedData };
+           } catch (error) {
+             console.warn('PDF processing failed, saving extract without optimization:', error.message);
+             return extractData;
+           }
+         },
+         onSuccess: (result) => {
+           saveMutation.mutate(result);
+         },
+       });
        return;
      }
 
