@@ -336,6 +336,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
           };
         } catch (err) {
           alert(`PDF processing failed: ${err.message}`);
+          setIsSubmitting(false);
           return;
         }
       } else if (fileChanged && fileType === 'PDF') {
