@@ -262,14 +262,17 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
         textRotation = 0;
       }
 
-      page.drawText(label, {
-        x,
-        y,
-        size,
-        font: helveticaBold,
-        color: rgb(0, 0, 0),
-        rotate: degrees(textRotation),
-      });
+      // Ensure coordinates are valid
+      if (!isNaN(x) && !isNaN(y)) {
+        page.drawText(label, {
+          x,
+          y,
+          size,
+          font: helveticaBold,
+          color: rgb(0, 0, 0),
+          rotate: degrees(textRotation),
+        });
+      }
     }
   }
 
