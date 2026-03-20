@@ -1,7 +1,37 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Trash2, Highlighter, MousePointer2, Hand, Move, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Highlighter, MousePointer2, Hand, Move, Plus, Star } from 'lucide-react';
+
+const RECENT_COLORS_KEY = 'highlight_recent_colors';
+const MAX_RECENT = 10;
+
+function loadRecentColors() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_COLORS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentColor(hex) {
+  const recent = loadRecentColors().filter((c) => c !== hex);
+  recent.unshift(hex);
+  localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)));
+}
+
+const PRESET_COLORS = [
+  '#FEF3C7', // Yellow
+  '#D1FAE5', // Green
+  '#DBEAFE', // Blue
+  '#FEE2E2', // Red
+  '#EDE9FE', // Purple
+  '#FFE4E6', // Pink
+  '#ECFDF5', // Mint
+  '#FFF7ED', // Orange
+  '#F0F9FF', // Sky
+  '#F5F3FF', // Violet
+];
 
 export default function HighlightWorkspaceSidebar({
   isCollapsed,
@@ -32,6 +62,14 @@ export default function HighlightWorkspaceSidebar({
   onSelectGroup,
   onRenameGroup,
 }) {
+  const colorInputRef = useRef(null);
+  const [recentColors, setRecentColors] = React.useState(loadRecentColors);
+
+  const handleColorPicked = (hex) => {
+    saveRecentColor(hex);
+    setRecentColors(loadRecentColors());
+    onSelectColor(hex);
+  };
   if (isCollapsed) {
     return (
       <div className="h-full border-r border-slate-200 bg-slate-50 p-2">
