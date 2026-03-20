@@ -89,8 +89,8 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       : null
   );
   const [processDropboxPdfEnabled, setProcessDropboxPdfEnabled] = useState(false);
-  const [addCoverPage, setAddCoverPage] = useState(true);
-  const [addPageNumbers, setAddPageNumbers] = useState(true);
+  const [addCoverPage, setAddCoverPage] = useState(false);
+  const [addPageNumbers, setAddPageNumbers] = useState(false);
   const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
 
   const { data: parties = [] } = useQuery({
