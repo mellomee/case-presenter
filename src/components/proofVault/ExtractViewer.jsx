@@ -31,7 +31,7 @@ export default function ExtractViewer({ proof, mode = 'controller', syncState, o
       mode={mode}
       syncState={syncState}
       onStateChange={onStateChange}
-      visiblePages={visiblePages.length > 0 ? visiblePages : null}
+      visiblePages={visiblePages && visiblePages.length > 0 ? visiblePages : null}
     />
   );
 }
