@@ -233,7 +233,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           proof_type_category_id: fileProofTypeId || null,
           category_id: fileCategoryId || null,
           party_id: filePartyIds[0] || null,
-          party_ids: filePartyIds,
+          party_ids: { ids: filePartyIds },
           file_source: 'dropbox',
           file_url: '',
           video_url: '',
