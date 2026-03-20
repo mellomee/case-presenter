@@ -12,11 +12,20 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const parentExtract = allProofs.find((p) => p.id === proof.parent_proof_id);
   const originalPDF = parentExtract ? allProofs.find((p) => p.id === parentExtract.parent_proof_id) : null;
   const { url, isLoading } = useResolvedProofAsset(proof);
-  const visiblePages = parsePageRange(parentExtract?.extract_pages || '');
+  const extractSourcePages = parsePageRange(parentExtract?.extract_pages || '');
+  const usesExtractedPdfFile = Boolean(
+    parentExtract?.proof_child_type === 'Extract'
+    && parentExtract?.optimized_for_viewer
+    && ((parentExtract?.original_dropbox_file_id && parentExtract?.original_dropbox_file_id !== parentExtract?.dropbox_file_id)
+      || (parentExtract?.original_dropbox_path && parentExtract?.original_dropbox_path !== parentExtract?.dropbox_path))
+  );
+  const pdfVisiblePages = usesExtractedPdfFile || parentExtract?.optimized_with_cover_page
+    ? null
+    : (extractSourcePages.length > 0 ? extractSourcePages : null);
   const getViewerPageIndex = (storedPage) => {
-    if (!visiblePages.length) return storedPage || 1;
-    const isWithinClipRange = storedPage >= 1 && storedPage <= visiblePages.length;
-    const matchingSourceIndex = visiblePages.indexOf(storedPage);
+    if (!extractSourcePages.length) return storedPage || 1;
+    const isWithinClipRange = storedPage >= 1 && storedPage <= extractSourcePages.length;
+    const matchingSourceIndex = extractSourcePages.indexOf(storedPage);
     if (!isWithinClipRange && matchingSourceIndex >= 0) {
       return matchingSourceIndex + 1;
     }
