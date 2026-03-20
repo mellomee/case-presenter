@@ -17,7 +17,7 @@ import PDFViewer from './PDFViewer';
 import { compressPageRange, parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
-import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
+import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePartyIds(currentProof) {
   const raw = currentProof?.party_ids;
@@ -48,10 +48,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
   const [proofTypeId, setProofTypeId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [addCoverPage, setAddCoverPage] = useState(true);
-  const [addPageNumbers, setAddPageNumbers] = useState(true);
-  const [optimizePdf, setOptimizePdf] = useState(true);
-  const [applyOcr, setApplyOcr] = useState(true);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -115,10 +111,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
-    setAddCoverPage(true);
-    setAddPageNumbers(true);
-    setOptimizePdf(true);
-    setApplyOcr(true);
   };
 
   useEffect(() => {
@@ -237,25 +229,27 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source and any processing is enabled, process it
-     if (extractSource === 'original' && actualParentProof?.file_source === 'dropbox' && (applyOcr || addCoverPage || addPageNumbers || optimizePdf)) {
+     // If using original Dropbox source, process it and then save once
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
        setIsProcessing(true);
        try {
-         const response = await base44.functions.invoke('processExtractPdf', {
-           fileId: actualParentProof.dropbox_file_id || undefined,
-           path: actualParentProof.dropbox_path || undefined,
-           name: actualParentProof.dropbox_file_name,
-           addCoverPage,
-           addPageNumbers,
-           optimizePdf,
-           applyOcr,
-           proofName: internalName.trim(),
-           formalName: formalName.trim(),
-           exhibitNumber: draftExhibitNum.trim(),
-           proofCategory: actualParentProof.proof_category,
-           extractPages: selectedOriginalPages.length > 0 ? selectedOriginalPages.join(',') : null,
-         });
-         saveMutation.mutate({ ...extractData, ...response.data });
+         const processedData = await processDropboxPdf(
+           buildProcessDropboxPdfPayload({
+             proof: actualParentProof,
+             options: {
+               addCoverPage: true,
+               addPageNumbers: true,
+               optimizePdf: true,
+             },
+             metadata: {
+               proofName: internalName.trim(),
+               formalName: formalName.trim(),
+               isExtract: true,
+               extractPages: selectedOriginalPages.join(','),
+             },
+           })
+         );
+         saveMutation.mutate({ ...extractData, ...processedData });
        } catch (error) {
          setIsProcessing(false);
          console.warn('PDF processing failed, saving extract without optimization:', error.message);
@@ -404,35 +398,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
               <Input placeholder="e.g. A-1a" value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} />
-            </div>
-          )}
-
-          {extractSource === 'original' && actualParentProof?.file_source === 'dropbox' && (
-            <PdfProcessingOptions
-              showMasterToggle={false}
-              addCoverPage={addCoverPage}
-              onAddCoverPageChange={setAddCoverPage}
-              addPageNumbers={addPageNumbers}
-              onAddPageNumbersChange={setAddPageNumbers}
-              optimizePdf={optimizePdf}
-              onOptimizePdfChange={setOptimizePdf}
-            />
-          )}
-
-          {extractSource === 'original' && actualParentProof?.file_source === 'dropbox' && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={applyOcr}
-                  onChange={(e) => setApplyOcr(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                <div>
-                  <div className="text-sm font-medium text-slate-900">Apply OCR (if needed)</div>
-                  <div className="text-xs text-slate-500 mt-1">Adds searchable text if the PDF doesn't already have it. Skips OCR if text is detected.</div>
-                </div>
-              </label>
             </div>
           )}
 
