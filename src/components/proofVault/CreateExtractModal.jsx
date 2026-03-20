@@ -235,7 +235,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                addPageNumbers: true,
                optimizePdf: true,
              },
-             targetFolder: 'extract',
            })
          );
          saveMutation.mutate({ ...extractData, ...processedData });
