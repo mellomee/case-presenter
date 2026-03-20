@@ -399,6 +399,31 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             </div>
           )}
 
+          {extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <div className="text-sm font-medium text-slate-900">PDF Processing (optional)</div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.performOcr}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, performOcr: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                />
+                <span className="text-sm text-slate-700">Perform OCR (skips if PDF is already searchable)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.optimizePdf}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, optimizePdf: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                />
+                <span className="text-sm text-slate-700">Optimize & compress PDF</span>
+              </label>
+              <p className="text-xs text-slate-500 mt-2">Processing will save the output to your extracts folder in Dropbox.</p>
+            </div>
+          )}
+
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={saveMutation.isPending || isProcessing} className="bg-blue-600 hover:bg-blue-700">
