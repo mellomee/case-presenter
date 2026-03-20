@@ -178,38 +178,24 @@ export default function ProofImportModal({ open, onClose, onImportComplete }) {
         };
 
         if (fileSource === 'dropbox') {
-          const dropboxFileId = normalizeValue(row.dropbox_file_id);
-          const dropboxPath = normalizeValue(row.dropbox_path);
-          const dropboxFileName = normalizeValue(row.dropbox_file_name) || name;
+           const dropboxFileId = normalizeValue(row.dropbox_file_id);
+           const dropboxPath = normalizeValue(row.dropbox_path);
+           const dropboxFileName = normalizeValue(row.dropbox_file_name) || name;
 
-          if (!dropboxFileId && !dropboxPath) {
-            throw new Error(`Row ${rowNumber}: Dropbox rows need dropbox_file_id or dropbox_path.`);
-          }
+           if (!dropboxFileId && !dropboxPath) {
+             throw new Error(`Row ${rowNumber}: Dropbox rows need dropbox_file_id or dropbox_path.`);
+           }
 
-          if (fileType === 'PDF') {
-            const response = await base44.functions.invoke('prepareDropboxProof', {
-              fileId: dropboxFileId || undefined,
-              path: dropboxPath || undefined,
-              name: dropboxFileName,
-            });
-
-            proof = {
-              ...proof,
-              ...response.data,
-              file_url: '',
-              video_url: '',
-            };
-          } else {
-            proof = {
-              ...proof,
-              file_source: 'dropbox',
-              dropbox_file_id: dropboxFileId,
-              dropbox_path: dropboxPath,
-              dropbox_file_name: dropboxFileName,
-              file_url: '',
-              video_url: '',
-            };
-          }
+           // No processing for imports — just link the file as-is
+           proof = {
+             ...proof,
+             file_source: 'dropbox',
+             dropbox_file_id: dropboxFileId,
+             dropbox_path: dropboxPath,
+             dropbox_file_name: dropboxFileName,
+             file_url: '',
+             video_url: '',
+           };
         } else {
           proof = {
             ...proof,
