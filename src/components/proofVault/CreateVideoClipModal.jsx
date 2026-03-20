@@ -60,6 +60,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
   const [segmentLabel, setSegmentLabel] = useState('');
   const [tempStartTime, setTempStartTime] = useState('00:00:00');
   const [tempEndTime, setTempEndTime] = useState('00:00:00');
+  const [tempPauseAfter, setTempPauseAfter] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
@@ -132,6 +133,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
     setSegmentLabel('');
     setTempStartTime('00:00:00');
     setTempEndTime('00:00:00');
+    setTempPauseAfter(false);
     setCurrentTime(0);
     setWarningMsg('');
     setShowWarning(false);
@@ -151,11 +153,13 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
         (Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []).map((segment, idx) => ({
           ...segment,
           id: segment.id || `seg-${idx}-${Date.now()}`,
+          pause_after: Boolean(segment.pause_after),
         }))
       );
       setSegmentLabel('');
       setTempStartTime('00:00:00');
       setTempEndTime('00:00:00');
+      setTempPauseAfter(false);
       setCurrentTime(0);
       setWarningMsg('');
       setShowWarning(false);
@@ -202,14 +206,22 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       start: tempStartTime,
       end: tempEndTime,
       label: segmentLabel.trim() || '',
+      pause_after: tempPauseAfter,
     };
 
     setSegments([...segments, newSegment]);
     setSegmentLabel('');
+    setTempPauseAfter(false);
   };
 
   const handleDeleteSegment = (id) => {
     setSegments(segments.filter((s) => s.id !== id));
+  };
+
+  const handleToggleSegmentPause = (id) => {
+    setSegments((currentSegments) => currentSegments.map((segment) => (
+      segment.id === id ? { ...segment, pause_after: !segment.pause_after } : segment
+    )));
   };
 
   const handleDragEnd = (result) => {
@@ -255,7 +267,10 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       file_url: parentProof.file_url || null,
       draft_exhibit_num: exhibitNum.trim() || null,
       description: description.trim() || null,
-      video_clips: segments.map(({ id, ...segment }) => segment),
+      video_clips: segments.map(({ id, ...segment }) => ({
+        ...segment,
+        pause_after: Boolean(segment.pause_after),
+      })),
     };
 
     saveMutation.mutate(clipData);
@@ -329,6 +344,8 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
                   onTempStartTimeChange={setTempStartTime}
                   tempEndTime={tempEndTime}
                   onTempEndTimeChange={setTempEndTime}
+                  tempPauseAfter={tempPauseAfter}
+                  onTempPauseAfterChange={setTempPauseAfter}
                   segmentLabel={segmentLabel}
                   onSegmentLabelChange={setSegmentLabel}
                   onMarkStart={handleMarkStart}
@@ -338,6 +355,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
                   durationLabel={secondsToTime(duration)}
                   segments={segments}
                   onDeleteSegment={handleDeleteSegment}
+                  onToggleSegmentPause={handleToggleSegmentPause}
                   onDragEnd={handleDragEnd}
                 />
 
