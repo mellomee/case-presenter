@@ -371,10 +371,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
       return;
     }
 
-    if (sourceType === 'dropbox' && fileType === 'PDF' && processDropboxPdfEnabled && !addCoverPage && !addPageNumbers && !optimizePdfEnabled) {
-      alert('Select at least one PDF processing option.');
-      return;
-    }
+
 
     if (sourceType === 'url' && fileType === 'Video' && !nextPayload.video_url) {
       alert('Video URL is required.');
