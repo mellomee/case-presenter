@@ -481,7 +481,19 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
                 }}
               />
 
-              <div className="flex-1 min-w-0 min-h-0 bg-slate-900">
+              <div className="flex-1 min-w-0 min-h-0 bg-slate-900 flex flex-col">
+                {selectedHighlight && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border-b border-red-200">
+                    <span className="text-xs text-red-700 font-medium flex-1">Highlight selected</span>
+                    <button
+                      type="button"
+                      onClick={deleteSelectedHighlight}
+                      className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-100 transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete highlight
+                    </button>
+                  </div>
+                )}
                 {isResolvingParentUrl ? (
                   <div className="flex items-center gap-2 text-sm text-slate-500 h-full justify-center">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading extract PDF...
