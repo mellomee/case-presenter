@@ -297,6 +297,7 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
       if (!dropboxSelection) {
         alert('Select a Dropbox file first.');
+        setIsSubmitting(false);
         return;
       }
 
