@@ -140,12 +140,18 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setSelectedPartyIds(normalizePartyIds(actualParentExtract));
   }, [open, parentExtract, actualParentExtract, isEditing]);
 
+  const usesExtractedPdfFile = Boolean(
+    actualParentExtract?.proof_child_type === 'Extract'
+    && actualParentExtract?.optimized_for_viewer
+    && ((actualParentExtract?.original_dropbox_file_id && actualParentExtract?.original_dropbox_file_id !== actualParentExtract?.dropbox_file_id)
+      || (actualParentExtract?.original_dropbox_path && actualParentExtract?.original_dropbox_path !== actualParentExtract?.dropbox_path))
+  );
+
   const visibleExtractPages = useMemo(() => {
-    // If the extract has a cover page added, the actual PDF has one more page than
-    // the original extract_pages range. Pass null so PDFViewer uses the real page count.
-    if (actualParentExtract?.optimized_with_cover_page) return null;
+    // When the extract already has its own generated PDF file, use the real page count.
+    if (usesExtractedPdfFile || actualParentExtract?.optimized_with_cover_page) return null;
     return parsePageRange(actualParentExtract?.extract_pages || '');
-  }, [actualParentExtract?.extract_pages, actualParentExtract?.optimized_with_cover_page]);
+  }, [usesExtractedPdfFile, actualParentExtract?.extract_pages, actualParentExtract?.optimized_with_cover_page]);
 
   const groupsOnCurrentPage = useMemo(
     () => highlightGroups.filter((group) => group.page === currentPage),
