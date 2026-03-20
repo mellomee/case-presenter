@@ -118,7 +118,8 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setAddCoverPage(true);
     setAddPageNumbers(true);
     setOptimizePdf(true);
-  };
+    setApplyOcr(true);
+    };
 
   useEffect(() => {
     if (!open || !parentProof) return;
