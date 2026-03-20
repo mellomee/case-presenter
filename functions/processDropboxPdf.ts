@@ -316,8 +316,23 @@ Deno.serve(async (req) => {
     }
 
     if (optimizePdf) {
-      nextBytes = await runAdobeCompress(nextBytes);
-      nextBytes = await runAdobeLinearize(nextBytes);
+      try {
+        nextBytes = await runAdobeCompress(nextBytes);
+      } catch (error) {
+        const message = String(error?.message || error || '').toLowerCase();
+        if (!message.includes('already compressed')) {
+          throw error;
+        }
+      }
+
+      try {
+        nextBytes = await runAdobeLinearize(nextBytes);
+      } catch (error) {
+        const message = String(error?.message || error || '').toLowerCase();
+        if (!message.includes('already linearized') && !message.includes('already optimized')) {
+          throw error;
+        }
+      }
     }
 
     const settings = await base44.asServiceRole.entities.AppSettings.list();
