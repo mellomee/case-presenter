@@ -186,14 +186,7 @@ export default function ProofVault() {
 
   const handleSubmit = (formData) => {
     if (editingProof) {
-      updateMutation.mutate(
-        { id: editingProof.id, data: formData },
-        {
-          onError: () => {
-            // ProofForm's isSubmitting will be reset by the mutation error
-          },
-        }
-      );
+      updateMutation.mutate({ id: editingProof.id, data: formData });
     } else {
       createMutation.mutate(formData);
     }
@@ -532,7 +525,7 @@ export default function ProofVault() {
             <DialogHeader>
               <DialogTitle>{editingProof ? 'Edit Proof' : 'Add Proof'}</DialogTitle>
             </DialogHeader>
-            <ProofForm proof={editingProof} onSubmit={handleSubmit} onCancel={handleCancel} />
+            <ProofForm proof={editingProof} onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending || updateMutation.isPending} />
           </DialogContent>
         </Dialog>
 
