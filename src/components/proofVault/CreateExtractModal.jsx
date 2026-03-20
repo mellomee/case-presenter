@@ -231,6 +231,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
 
      // If using original Dropbox source, process it and then save once
      if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
+       setIsProcessing(true);
        try {
          const processedData = await processDropboxPdf(
            buildProcessDropboxPdfPayload({
@@ -244,11 +245,13 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                proofName: internalName.trim(),
                formalName: formalName.trim(),
                isExtract: true,
+               extractPages: selectedOriginalPages.join(','),
              },
            })
          );
          saveMutation.mutate({ ...extractData, ...processedData });
        } catch (error) {
+         setIsProcessing(false);
          console.warn('PDF processing failed, saving extract without optimization:', error.message);
          saveMutation.mutate(extractData);
        }
