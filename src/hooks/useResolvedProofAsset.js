@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { isDropboxProof } from '@/components/proofVault/proofAssetUtils';
 
 export default function useResolvedProofAsset(proof) {
-  const isDropbox = isDropboxProof(proof);
+  const isDropbox = proof ? isDropboxProof(proof) : false;
 
   const query = useQuery({
     queryKey: ['resolvedProofAsset', proof?.id, proof?.dropbox_file_id, proof?.dropbox_path, proof?.updated_date],
