@@ -328,7 +328,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                   selectableThumbnails={extractSource === 'original'}
                   selectedPages={selectedOriginalPages}
                   onSelectedPagesChange={setSelectedOriginalPages}
-                  onNumPagesChange={setNumPages}
                   thumbnailWidth={54}
                 />
               </div>
