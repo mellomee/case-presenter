@@ -125,8 +125,14 @@ export default function HighlightWorkspaceSidebar({
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Color &amp; Style</div>
+        <details className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-3 group">
+          <summary className="text-xs font-semibold uppercase tracking-wide text-slate-500 cursor-pointer list-none flex items-center justify-between hover:text-slate-700">
+            Color &amp; Style
+            <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </summary>
+          <div className="space-y-3 pt-1">
 
           {/* Current color + native picker trigger */}
           <div className="flex items-center gap-2">
