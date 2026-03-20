@@ -200,7 +200,7 @@ export default function HighlightWorkspaceSidebar({
             <div className="text-xs text-slate-600">Opacity {Math.round(selectedOpacity * 100)}%</div>
             <input type="range" min="0.1" max="1" step="0.05" value={selectedOpacity} onChange={(e) => onOpacityChange(e.target.value)} className="w-full" />
           </div>
-          </>)}
+          </div>)}
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
