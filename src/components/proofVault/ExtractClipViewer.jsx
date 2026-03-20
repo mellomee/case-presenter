@@ -47,7 +47,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
       page: getViewerPageIndex(group.page),
       sourcePage: getSourcePage(group.page),
     })),
-    [proof.highlights, proof.clipped_page, visiblePages]
+    [proof.highlights, proof.clipped_page, extractSourcePages]
   );
   const [selectedGroupId, setSelectedGroupId] = useState('all');
   const [showHighlights, setShowHighlights] = useState(true);
