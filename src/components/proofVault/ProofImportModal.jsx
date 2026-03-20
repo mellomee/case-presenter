@@ -186,16 +186,30 @@ export default function ProofImportModal({ open, onClose, onImportComplete }) {
             throw new Error(`Row ${rowNumber}: Dropbox rows need dropbox_file_id or dropbox_path.`);
           }
 
-          // Don't process Dropbox files during import — link directly from Dropbox
-          proof = {
-            ...proof,
-            file_source: 'dropbox',
-            dropbox_file_id: dropboxFileId,
-            dropbox_path: dropboxPath,
-            dropbox_file_name: dropboxFileName,
-            file_url: '',
-            video_url: '',
-          };
+          if (fileType === 'PDF') {
+            const response = await base44.functions.invoke('prepareDropboxProof', {
+              fileId: dropboxFileId || undefined,
+              path: dropboxPath || undefined,
+              name: dropboxFileName,
+            });
+
+            proof = {
+              ...proof,
+              ...response.data,
+              file_url: '',
+              video_url: '',
+            };
+          } else {
+            proof = {
+              ...proof,
+              file_source: 'dropbox',
+              dropbox_file_id: dropboxFileId,
+              dropbox_path: dropboxPath,
+              dropbox_file_name: dropboxFileName,
+              file_url: '',
+              video_url: '',
+            };
+          }
         } else {
           proof = {
             ...proof,

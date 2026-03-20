@@ -48,10 +48,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
   const [proofTypeId, setProofTypeId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingOptions, setProcessingOptions] = useState({
-    performOcr: true,
-    optimizePdf: false,
-  });
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -115,7 +111,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
-    setProcessingOptions({ performOcr: true, optimizePdf: false });
   };
 
   useEffect(() => {
@@ -234,23 +229,30 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source and processing options are enabled, process it
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf)) {
+     // If using original Dropbox source, process it and then save once
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
        setIsProcessing(true);
        try {
-         const processedData = await base44.functions.invoke('processExtractPdf', {
-           fileId: actualParentProof.dropbox_file_id || undefined,
-           path: actualParentProof.dropbox_path || undefined,
-           name: actualParentProof.dropbox_file_name || 'extract.pdf',
-           performOcr: processingOptions.performOcr,
-           optimizePdf: processingOptions.optimizePdf,
-           proofName: internalName.trim(),
-           formalName: formalName.trim(),
-         });
-         saveMutation.mutate({ ...extractData, ...processedData.data });
+         const processedData = await processDropboxPdf(
+           buildProcessDropboxPdfPayload({
+             proof: actualParentProof,
+             options: {
+               addCoverPage: true,
+               addPageNumbers: true,
+               optimizePdf: true,
+             },
+             metadata: {
+               proofName: internalName.trim(),
+               formalName: formalName.trim(),
+               isExtract: true,
+               extractPages: selectedOriginalPages.join(','),
+             },
+           })
+         );
+         saveMutation.mutate({ ...extractData, ...processedData });
        } catch (error) {
          setIsProcessing(false);
-         console.warn('PDF processing failed, saving extract without processing:', error.message);
+         console.warn('PDF processing failed, saving extract without optimization:', error.message);
          saveMutation.mutate(extractData);
        }
        return;
@@ -396,31 +398,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Draft Exhibit # (optional)</label>
               <Input placeholder="e.g. A-1a" value={draftExhibitNum} onChange={(e) => setDraftExhibitNum(e.target.value)} />
-            </div>
-          )}
-
-          {extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
-              <div className="text-sm font-medium text-slate-900">PDF Processing (optional)</div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.performOcr}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, performOcr: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
-                />
-                <span className="text-sm text-slate-700">Perform OCR (skips if PDF is already searchable)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={processingOptions.optimizePdf}
-                  onChange={(e) => setProcessingOptions({ ...processingOptions, optimizePdf: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
-                />
-                <span className="text-sm text-slate-700">Optimize & compress PDF</span>
-              </label>
-              <p className="text-xs text-slate-500 mt-2">Processing will save the output to your extracts folder in Dropbox.</p>
             </div>
           )}
 
