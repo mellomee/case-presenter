@@ -9,7 +9,7 @@ import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField
 import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
 import ProcessingCompleteDialog from '@/components/proofVault/ProcessingCompleteDialog.jsx';
 import BulkImportProgressBar from '@/components/proofVault/BulkImportProgressBar.jsx';
-import { buildProcessDropboxPdfPayload, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
+
 
 function normalizePath(path) {
   if (!path || path === '/') return '';
@@ -255,38 +255,7 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
           dropbox_file_name: file.name,
         };
 
-        if (fileType === 'PDF') {
-         const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
-           file,
-           options: {
-             addCoverPage: true,
-             addPageNumbers: true,
-             optimizePdf: true,
-           },
-           metadata: {
-             proofName: baseName,
-             formalName: baseName,
-             proofCategory,
-           },
-         }));
-
-         payload = {
-           ...payload,
-           ...responseData,
-           name: internalName,
-           formal_name: baseName,
-           proof_type_category_id: fileProofTypeId || null,
-           category_id: fileCategoryId || null,
-           party_id: filePartyIds[0] || null,
-           party_ids: { ids: filePartyIds },
-           status: 'Draft',
-           draft_exhibit_num: fileDraftExhibitNum,
-         };
-
-          processedFiles.push(responseData.processed_file_name || responseData.dropbox_file_name || file.name);
-          folderUrl = folderUrl || responseData.dropbox_folder_url || '';
-          folderPath = folderPath || responseData.dropbox_folder_path || '';
-        }
+        // No PDF processing for bulk Dropbox links — just link straight from source
 
         const createdProof = await base44.entities.Proof.create(payload);
         importedFiles.push(file.name);

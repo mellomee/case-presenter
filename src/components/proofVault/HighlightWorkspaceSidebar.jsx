@@ -80,6 +80,8 @@ export default function HighlightWorkspaceSidebar({
     );
   }
 
+  const [colorPanelCollapsed, setColorPanelCollapsed] = React.useState(false);
+
   return (
     <aside className="w-72 max-w-full h-full min-h-0 overflow-hidden border-r border-slate-200 bg-slate-50 flex flex-col">
       <div className="p-2.5 border-b border-slate-200 flex items-center justify-between gap-2">
@@ -126,8 +128,17 @@ export default function HighlightWorkspaceSidebar({
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Color &amp; Style</div>
+          <button
+            type="button"
+            onClick={() => setColorPanelCollapsed(!colorPanelCollapsed)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Color &amp; Style</div>
+            <ChevronLeft className={`w-3.5 h-3.5 text-slate-400 transition-transform ${colorPanelCollapsed ? '-rotate-90' : 'rotate-90'}`} />
+          </button>
 
+          {!colorPanelCollapsed && (
+          <>
           {/* Current color + native picker trigger */}
           <div className="flex items-center gap-2">
             <button
@@ -187,10 +198,12 @@ export default function HighlightWorkspaceSidebar({
 
           {/* Opacity */}
           <div className="space-y-1.5">
-            <div className="text-xs text-slate-600">Opacity {Math.round(selectedOpacity * 100)}%</div>
-            <input type="range" min="0.1" max="1" step="0.05" value={selectedOpacity} onChange={(e) => onOpacityChange(e.target.value)} className="w-full" />
+           <div className="text-xs text-slate-600">Opacity {Math.round(selectedOpacity * 100)}%</div>
+           <input type="range" min="0.1" max="1" step="0.05" value={selectedOpacity} onChange={(e) => onOpacityChange(e.target.value)} className="w-full" />
           </div>
-        </div>
+          </>
+          )}
+          </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
           <div className="flex items-center justify-between gap-2">
