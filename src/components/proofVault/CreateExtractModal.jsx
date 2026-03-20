@@ -17,6 +17,7 @@ import PDFViewer from './PDFViewer';
 import { compressPageRange, parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
+import PdfProcessingOptions from '@/components/proofVault/PdfProcessingOptions.jsx';
 import { buildProcessDropboxPdfPayload, isOptimizableDropboxPdf, processDropboxPdf } from '@/lib/dropboxPdfProcessing';
 
 function normalizePartyIds(currentProof) {
@@ -47,6 +48,10 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const [warningMsg, setWarningMsg] = useState('');
   const [selectedPartyIds, setSelectedPartyIds] = useState([]);
   const [proofTypeId, setProofTypeId] = useState('');
+  const [runOcr, setRunOcr] = useState(true);
+  const [addCoverPage, setAddCoverPage] = useState(true);
+  const [addPageNumbers, setAddPageNumbers] = useState(true);
+  const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { data: proofs = [] } = useQuery({
@@ -96,6 +101,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
   const canChangeExtractSource = !isEditing || childClips.length === 0;
   const previewUrl = extractSource === 'original' ? resolvedParentUrl : uploadedFile;
   const selectedOriginalRange = useMemo(() => compressPageRange(selectedOriginalPages), [selectedOriginalPages]);
+  const canProcessDropboxExtract = extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof);
 
   const resetForm = () => {
     setExtractSource('original');
@@ -110,6 +116,10 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setShowWarning(false);
     setSelectedPartyIds([]);
     setProofTypeId('');
+    setRunOcr(true);
+    setAddCoverPage(true);
+    setAddPageNumbers(true);
+    setOptimizePdfEnabled(true);
     setIsProcessing(false);
   };
 
@@ -313,6 +323,26 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
           {extractSource === 'original' && isResolvingParentUrl && (
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading original PDF...
+            </div>
+          )}
+
+          {canProcessDropboxExtract && (
+            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Extract PDF options</label>
+                <p className="text-xs text-slate-500">All options start on. If OCR is on, it will only run when the source PDF is not already searchable.</p>
+              </div>
+              <PdfProcessingOptions
+                showOcrOption
+                runOcr={runOcr}
+                onRunOcrChange={setRunOcr}
+                addCoverPage={addCoverPage}
+                onAddCoverPageChange={setAddCoverPage}
+                addPageNumbers={addPageNumbers}
+                onAddPageNumbersChange={setAddPageNumbers}
+                optimizePdf={optimizePdfEnabled}
+                onOptimizePdfChange={setOptimizePdfEnabled}
+              />
             </div>
           )}
 
