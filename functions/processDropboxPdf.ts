@@ -220,8 +220,9 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
     const totalPages = pdfDoc.getPageCount();
     const LETTER_WIDTH_PT = 612;
     const TARGET_FONT_SIZE_AT_LETTER = 28;
+    const startIndex = addCoverPage ? 1 : 0;
 
-    for (let index = 0; index < totalPages; index += 1) {
+    for (let index = startIndex; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
       const pageWidth = page.getWidth();
       const pageHeight = page.getHeight();
