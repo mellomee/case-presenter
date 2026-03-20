@@ -140,6 +140,10 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       setShowWarning(false);
       setSelectedPartyIds(normalizePartyIds(parentProof));
       setProofTypeId(parentProof.proof_type_category_id || '');
+      setRunOcr(true);
+      setAddCoverPage(parentProof.optimized_with_cover_page ?? true);
+      setAddPageNumbers(parentProof.optimized_with_page_numbers ?? true);
+      setOptimizePdfEnabled(parentProof.optimized_for_viewer ?? true);
       return;
     }
 
@@ -239,17 +243,17 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source, process it and then save once
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
+     if (canProcessDropboxExtract && (runOcr || addCoverPage || addPageNumbers || optimizePdfEnabled)) {
        setIsProcessing(true);
        try {
          const processedData = await processDropboxPdf(
            buildProcessDropboxPdfPayload({
              proof: actualParentProof,
              options: {
-               addCoverPage: true,
-               addPageNumbers: true,
-               optimizePdf: true,
+               runOcr,
+               addCoverPage,
+               addPageNumbers,
+               optimizePdf: optimizePdfEnabled,
              },
              metadata: {
                proofName: internalName.trim(),
