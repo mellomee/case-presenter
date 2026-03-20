@@ -246,11 +246,13 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
     if (!formData.name.trim()) {
       alert('Internal Name is required.');
+      setIsSubmitting(false);
       return;
     }
 
     if (!formData.proof_type_category_id) {
       alert('Proof Type is required.');
+      setIsSubmitting(false);
       return;
     }
 
