@@ -218,16 +218,24 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
 
   if (addPageNumbers) {
     const totalPages = pdfDoc.getPageCount();
-    const rightMargin = 36;
-    const bottomMargin = 36;
+    // Standard letter page width in PDF points (8.5" × 72pt/in = 612pt)
+    // Target ~1cm printed height on letter = 28.35pt font at 612pt width
+    // Scale proportionally for non-letter page sizes
+    const LETTER_WIDTH_PT = 612;
+    const TARGET_FONT_SIZE_AT_LETTER = 28;
 
     for (let index = 0; index < totalPages; index += 1) {
       const page = pdfDoc.getPage(index);
+      const pageWidth = page.getWidth();
+      const scaleFactor = pageWidth / LETTER_WIDTH_PT;
+      const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
+      const rightMargin = Math.round(36 * scaleFactor);
+      const bottomMargin = Math.round(36 * scaleFactor);
+
       const pageNum = index + 1;
       const label = `Page ${pageNum} of ${totalPages}`;
-      const size = 20;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
-      const x = page.getWidth() - textWidth - rightMargin;
+      const x = pageWidth - textWidth - rightMargin;
       page.drawText(label, {
         x,
         y: bottomMargin,
