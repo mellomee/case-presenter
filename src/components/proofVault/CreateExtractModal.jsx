@@ -253,14 +253,13 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
            formalName: formalName.trim(),
            exhibitNumber: draftExhibitNum.trim(),
            proofCategory: actualParentProof.proof_category,
-           extractPages: selectedOriginalRange,
+           extractPages: selectedOriginalPages.length > 0 ? selectedOriginalPages.join(',') : null,
          });
          saveMutation.mutate({ ...extractData, ...response.data });
        } catch (error) {
          setIsProcessing(false);
-         setWarningMsg(`PDF processing failed: ${error.message}`);
-         setShowWarning(true);
-         return;
+         console.warn('PDF processing failed, saving extract without optimization:', error.message);
+         saveMutation.mutate(extractData);
        }
        return;
      }
