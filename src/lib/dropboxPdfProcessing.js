@@ -18,6 +18,7 @@ export function buildProcessDropboxPdfPayload({ proof = null, file = null, optio
     fileId: sourceFileId,
     path: sourcePath,
     name: sourceName,
+    addOcr: Boolean(options.addOcr),
     addCoverPage: Boolean(options.addCoverPage),
     addPageNumbers: Boolean(options.addPageNumbers),
     optimizePdf: Boolean(options.optimizePdf),
