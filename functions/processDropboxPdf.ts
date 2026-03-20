@@ -229,7 +229,7 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       const rotationAngle = rotation ? rotation.angle : 0;
 
       const scaleFactor = pageWidth / LETTER_WIDTH_PT;
-      const size = Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor);
+      const size = Math.max(10, Math.round(TARGET_FONT_SIZE_AT_LETTER * scaleFactor));
       const rightMargin = Math.round(36 * scaleFactor);
       const bottomMargin = Math.round(36 * scaleFactor);
 
@@ -238,29 +238,12 @@ async function addCoverAndPageNumbers(pdfBytes, { addCoverPage, addPageNumbers, 
       const label = `Page ${pageNum} of ${totalPagesLabel}`;
       const textWidth = helveticaBold.widthOfTextAtSize(label, size);
 
-      let x, y, textRotation;
+      let x = pageWidth - textWidth - rightMargin;
+      let y = bottomMargin;
+      let textRotation = 0;
 
-      if (rotationAngle === 0 || rotationAngle === 360) {
-        x = pageWidth - textWidth - rightMargin;
-        y = bottomMargin;
-        textRotation = 0;
-      } else if (rotationAngle === 90) {
-        x = pageHeight - bottomMargin;
-        y = rightMargin;
-        textRotation = -90;
-      } else if (rotationAngle === 180) {
-        x = rightMargin + textWidth;
-        y = pageHeight - bottomMargin;
-        textRotation = 180;
-      } else if (rotationAngle === 270) {
-        x = bottomMargin;
-        y = pageWidth - rightMargin;
-        textRotation = 90;
-      } else {
-        x = pageWidth - textWidth - rightMargin;
-        y = bottomMargin;
-        textRotation = 0;
-      }
+      // Clamp x to keep text on page
+      x = Math.max(rightMargin, Math.min(x, pageWidth - rightMargin - 10));
 
       page.drawText(label, {
         x,
