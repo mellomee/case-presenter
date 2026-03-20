@@ -152,10 +152,11 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setDraftExhibitNum(actualParentProof?.draft_exhibit_num || '');
     setSelectedPartyIds(normalizePartyIds(actualParentProof));
     setProofTypeId(actualParentProof?.proof_type_category_id || '');
-    setAddCoverPage(true);
-    setAddPageNumbers(true);
-    setOptimizePdf(true);
-  }, [open, parentProof, isEditing, actualParentProof]);
+     setAddCoverPage(true);
+     setAddPageNumbers(true);
+     setOptimizePdf(true);
+     setApplyOcr(true);
+    }, [open, parentProof, isEditing, actualParentProof]);
 
   const validatePageRange = (range) => {
     if (!range.trim()) {
