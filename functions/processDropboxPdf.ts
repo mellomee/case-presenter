@@ -262,6 +262,7 @@ Deno.serve(async (req) => {
     const fileId = payload.fileId;
     const originalPath = payload.path;
     const fileName = payload.name;
+    const addOcr = Boolean(payload.addOcr);
     const addCoverPage = Boolean(payload.addCoverPage);
     const addPageNumbers = Boolean(payload.addPageNumbers);
     const optimizePdf = Boolean(payload.optimizePdf);
@@ -280,7 +281,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Only Dropbox PDF files can be processed.' }, { status: 400 });
     }
 
-    if (!addCoverPage && !addPageNumbers && !optimizePdf) {
+    if (!addOcr && !addCoverPage && !addPageNumbers && !optimizePdf) {
       return Response.json({ error: 'Select at least one PDF processing option.' }, { status: 400 });
     }
 
