@@ -117,7 +117,12 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
     setSelectedPartyIds([]);
     setProofTypeId('');
     setIsProcessing(false);
-    setProcessingOptions({ performOcr: true, optimizePdf: false });
+    setProcessingOptions({
+      performOcr: true,
+      optimizePdf: false,
+      addCoverPage: false,
+      addPageNumbers: false,
+    });
   };
 
   useEffect(() => {
@@ -237,7 +242,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
      };
 
      // If using original Dropbox source and processing options are enabled, process it
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf)) {
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf || processingOptions.addCoverPage || processingOptions.addPageNumbers)) {
        setIsProcessing(true);
        try {
          const processedData = await base44.functions.invoke('processExtractPdf', {
@@ -250,12 +255,15 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
            addPageNumbers: processingOptions.addPageNumbers,
            proofName: internalName.trim(),
            formalName: formalName.trim(),
+           extractPages: selectedOriginalRange,
+           proofCategory: parentProof.proof_category,
+           exhibitNumber: draftExhibitNum.trim() || undefined,
          });
          saveMutation.mutate({ ...extractData, ...processedData.data });
        } catch (error) {
          setIsProcessing(false);
-         console.warn('PDF processing failed, saving extract without processing:', error.message);
-         saveMutation.mutate(extractData);
+         setWarningMsg(`PDF processing failed: ${error.message}`);
+         setShowWarning(true);
        }
        return;
      }
