@@ -245,7 +245,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
      if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf || processingOptions.addCoverPage || processingOptions.addPageNumbers)) {
        setIsProcessing(true);
        try {
-         const processedData = await base44.functions.invoke('processExtractPdf', {
+         const processedData = await base44.functions.invoke('processDropboxPdf', {
            fileId: actualParentProof.dropbox_file_id || undefined,
            path: actualParentProof.dropbox_path || undefined,
            name: actualParentProof.dropbox_file_name || 'extract.pdf',
@@ -258,6 +258,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
            extractPages: selectedOriginalRange,
            proofCategory: parentProof.proof_category,
            exhibitNumber: draftExhibitNum.trim() || undefined,
+           isExtract: true,
          });
          saveMutation.mutate({ ...extractData, ...processedData.data });
        } catch (error) {
