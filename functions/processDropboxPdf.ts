@@ -19,6 +19,26 @@ const {
 
 const SEARCHABLE_TEXT_THRESHOLD = 20;
 
+function formatBytes(bytes) {
+  const size = Number(bytes || 0);
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function logSize(label, bytes) {
+  console.log(`${label}: ${formatBytes(bytes?.length || 0)} (${bytes?.length || 0} bytes)`);
+}
+
+function logSizeChange(label, beforeBytes, afterBytes) {
+  const before = beforeBytes?.length || 0;
+  const after = afterBytes?.length || 0;
+  const delta = after - before;
+  const direction = delta === 0 ? 'no change' : delta > 0 ? `+${formatBytes(delta)}` : `-${formatBytes(Math.abs(delta))}`;
+  console.log(`${label}: ${formatBytes(before)} -> ${formatBytes(after)} (${direction})`);
+}
+
+
 function normalizePath(path) {
   if (!path || path === '/') return '';
   return path.startsWith('/') ? path : `/${path}`;
