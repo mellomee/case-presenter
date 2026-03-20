@@ -22,6 +22,9 @@ export default function PdfProcessingOptions({
   enabled = true,
   onEnabledChange,
   showMasterToggle = false,
+  showOcrOption = false,
+  runOcr = true,
+  onRunOcrChange,
   addCoverPage,
   onAddCoverPageChange,
   addPageNumbers,
@@ -42,6 +45,14 @@ export default function PdfProcessingOptions({
 
       {(!showMasterToggle || enabled) && (
         <div className="space-y-3">
+          {showOcrOption && (
+            <CheckboxRow
+              checked={runOcr}
+              onChange={onRunOcrChange}
+              title="Run OCR if needed"
+              description="If the PDF is already searchable, OCR will be skipped automatically."
+            />
+          )}
           <CheckboxRow
             checked={addCoverPage}
             onChange={onAddCoverPageChange}
