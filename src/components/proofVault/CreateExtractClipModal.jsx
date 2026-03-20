@@ -17,10 +17,10 @@ import {
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
 
 const HIGHLIGHT_COLORS = [
+  { name: 'Red', hex: '#ce0909' },
   { name: 'Yellow', hex: '#FEF3C7' },
   { name: 'Green', hex: '#D1FAE5' },
   { name: 'Blue', hex: '#DBEAFE' },
-  { name: 'Red', hex: '#FEE2E2' },
   { name: 'Purple', hex: '#EDE9FE' },
 ];
 
@@ -52,7 +52,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
   const [description, setDescription] = useState('');
   const [mode, setMode] = useState('highlight');
   const [selectedColor, setSelectedColor] = useState(HIGHLIGHT_COLORS[0].hex);
-  const [selectedOpacity, setSelectedOpacity] = useState(0.45);
+  const [selectedOpacity, setSelectedOpacity] = useState(0.15);
   const [highlightGroups, setHighlightGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [selectedHighlight, setSelectedHighlight] = useState(null);
@@ -124,7 +124,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
     setDescription('');
     setMode('highlight');
     setSelectedColor(HIGHLIGHT_COLORS[0].hex);
-    setSelectedOpacity(0.45);
+    setSelectedOpacity(0.15);
     setHighlightGroups([]);
     setSelectedGroupId(null);
     setSelectedHighlight(null);
