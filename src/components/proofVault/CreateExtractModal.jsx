@@ -174,7 +174,6 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
       return;
     }
 
-
     if (extractSource === 'original' && selectedOriginalPages.length === 0) {
       setWarningMsg('Select at least one page from the original PDF');
       setShowWarning(true);
@@ -224,31 +223,29 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
        ...inheritedFileFields,
      };
 
-     // If using original Dropbox source, process it with optimization
+     // If using original Dropbox source, process it and then save once
      if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof)) {
-       saveMutation.mutate(extractData, {
-         onMutate: async () => {
-           try {
-             const processedData = await processDropboxPdf(
-               buildProcessDropboxPdfPayload({
-                 proof: actualParentProof,
-                 options: {
-                   addCoverPage: true,
-                   addPageNumbers: true,
-                   optimizePdf: true,
-                 },
-               })
-             );
-             return { ...extractData, ...processedData };
-           } catch (error) {
-             console.warn('PDF processing failed, saving extract without optimization:', error.message);
-             return extractData;
-           }
-         },
-         onSuccess: (result) => {
-           saveMutation.mutate(result);
-         },
-       });
+       try {
+         const processedData = await processDropboxPdf(
+           buildProcessDropboxPdfPayload({
+             proof: actualParentProof,
+             options: {
+               addCoverPage: true,
+               addPageNumbers: true,
+               optimizePdf: true,
+             },
+             metadata: {
+               proofName: internalName.trim(),
+               formalName: formalName.trim(),
+               isExtract: true,
+             },
+           })
+         );
+         saveMutation.mutate({ ...extractData, ...processedData });
+       } catch (error) {
+         console.warn('PDF processing failed, saving extract without optimization:', error.message);
+         saveMutation.mutate(extractData);
+       }
        return;
      }
 
