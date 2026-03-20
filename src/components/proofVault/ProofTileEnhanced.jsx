@@ -177,7 +177,7 @@ export default function ProofTileEnhanced({
 
   return (
     <>
-      <Card ref={cardRef} className={`border-slate-200 hover:shadow-md transition-all cursor-pointer ${depth > 0 ? 'shadow-sm' : ''} ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}>
+      <Card ref={cardRef} className={`hover:shadow-md transition-all cursor-pointer ${depth === 0 ? 'border-slate-200 bg-white' : depth === 1 ? 'border-blue-200 bg-blue-50' : 'border-orange-200 bg-orange-50'} ${depth > 0 ? 'shadow-sm' : ''} ${proof.id === highlightedChildId ? 'ring-2 ring-amber-400 border-amber-200 bg-amber-50/60' : expanded ? 'ring-2 ring-blue-400' : ''}`}>
         <div className="p-4 flex items-start gap-3" onClick={() => setExpanded(!expanded)}>
           {hasChildren ? (
             <div className="mt-0.5">{expanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}</div>
