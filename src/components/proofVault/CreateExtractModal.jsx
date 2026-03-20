@@ -414,6 +414,64 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
             </div>
           )}
 
+          {extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <div className="text-sm font-medium text-slate-900">PDF Processing Options (optional)</div>
+              
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.addOcr}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, addOcr: e.target.checked })}
+                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
+                />
+                <div>
+                  <div className="text-sm font-medium text-slate-900">Optical Character Recognition (OCR)</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Make text searchable. Skipped if PDF is already searchable.</div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.addCoverPage}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, addCoverPage: e.target.checked })}
+                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
+                />
+                <div>
+                  <div className="text-sm font-medium text-slate-900">Add Cover Page</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Insert a title page with the extract name and exhibit number.</div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.addPageNumbers}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, addPageNumbers: e.target.checked })}
+                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
+                />
+                <div>
+                  <div className="text-sm font-medium text-slate-900">Add Page Numbers</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Number each page for easier reference in court.</div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.optimizePdf}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, optimizePdf: e.target.checked })}
+                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600"
+                />
+                <div>
+                  <div className="text-sm font-medium text-slate-900">Optimize for Viewer</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Compress and linearize the PDF for faster loading.</div>
+                </div>
+              </label>
+            </div>
+          )}
+
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={saveMutation.isPending || isProcessing} className="bg-blue-600 hover:bg-blue-700">
