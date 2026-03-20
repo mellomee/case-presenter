@@ -125,21 +125,68 @@ export default function HighlightWorkspaceSidebar({
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Style</div>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((color) => (
-              <button
-                key={color.hex}
-                type="button"
-                onClick={() => onSelectColor(color.hex)}
-                className={`w-7 h-7 rounded border-2 transition ${selectedColor === color.hex ? 'border-slate-900 shadow-md' : 'border-slate-300 hover:border-slate-500'}`}
-                style={{ backgroundColor: color.hex }}
-                title={color.name}
-              />
-            ))}
+        <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Color &amp; Style</div>
+
+          {/* Current color + native picker trigger */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => colorInputRef.current?.click()}
+              title="Open color picker"
+              className="w-8 h-8 rounded border-2 border-slate-900 shadow-md flex-shrink-0 transition hover:scale-110"
+              style={{ backgroundColor: selectedColor }}
+            />
+            <span className="text-xs font-mono text-slate-600">{selectedColor}</span>
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={selectedColor}
+              onChange={(e) => handleColorPicked(e.target.value)}
+              className="sr-only"
+            />
           </div>
-          <div className="space-y-2">
+
+          {/* Preset swatches */}
+          <div>
+            <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-1.5">Presets</div>
+            <div className="flex flex-wrap gap-1.5">
+              {PRESET_COLORS.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  onClick={() => handleColorPicked(hex)}
+                  className={`w-6 h-6 rounded border-2 transition hover:scale-110 ${selectedColor === hex ? 'border-slate-900 shadow-md' : 'border-slate-300'}`}
+                  style={{ backgroundColor: hex }}
+                  title={hex}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Recent colors */}
+          {recentColors.length > 0 && (
+            <div>
+              <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                <Star className="w-3 h-3" /> Recent
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {recentColors.map((hex) => (
+                  <button
+                    key={hex}
+                    type="button"
+                    onClick={() => handleColorPicked(hex)}
+                    className={`w-6 h-6 rounded border-2 transition hover:scale-110 ${selectedColor === hex ? 'border-slate-900 shadow-md' : 'border-slate-300'}`}
+                    style={{ backgroundColor: hex }}
+                    title={hex}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Opacity */}
+          <div className="space-y-1.5">
             <div className="text-xs text-slate-600">Opacity {Math.round(selectedOpacity * 100)}%</div>
             <input type="range" min="0.1" max="1" step="0.05" value={selectedOpacity} onChange={(e) => onOpacityChange(e.target.value)} className="w-full" />
           </div>
