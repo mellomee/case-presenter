@@ -186,7 +186,14 @@ export default function ProofVault() {
 
   const handleSubmit = (formData) => {
     if (editingProof) {
-      updateMutation.mutate({ id: editingProof.id, data: formData });
+      updateMutation.mutate(
+        { id: editingProof.id, data: formData },
+        {
+          onError: () => {
+            // ProofForm's isSubmitting will be reset by the mutation error
+          },
+        }
+      );
     } else {
       createMutation.mutate(formData);
     }
