@@ -237,7 +237,7 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
      };
 
      // If using original Dropbox source and processing options are enabled, process it
-     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf)) {
+     if (extractSource === 'original' && isOptimizableDropboxPdf(actualParentProof) && (processingOptions.performOcr || processingOptions.optimizePdf || processingOptions.addCoverPage || processingOptions.addPageNumbers)) {
        setIsProcessing(true);
        try {
          const processedData = await base44.functions.invoke('processExtractPdf', {
