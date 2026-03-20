@@ -568,9 +568,8 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-2">
               <p><strong>What the app fills automatically:</strong> Internal Name, Formal Name, Dropbox file ID, Dropbox path, Dropbox filename, and inferred file type.</p>
-              <p><strong>How files are stored:</strong> The app keeps a Dropbox reference instead of uploading the file into the app.</p>
-              <p><strong>If PDF processing is enabled:</strong> The app saves a new processed Dropbox copy in your save folder and points the proof to that new file.</p>
-              <p><strong>After import:</strong> Use the Edit details button beside any imported proof to open the normal proof form with the extracted data prefilled.</p>
+              <p><strong>How files are stored:</strong> The app keeps a Dropbox reference instead of uploading the file into the app. The original file is imported as-is.</p>
+              <p><strong>After import:</strong> Use the Edit details button beside any imported proof to open the normal proof form with the extracted data prefilled. You can process PDFs later if needed.</p>
             </div>
 
             {error && (
