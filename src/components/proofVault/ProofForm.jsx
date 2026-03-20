@@ -92,7 +92,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
   const [addCoverPage, setAddCoverPage] = useState(false);
   const [addPageNumbers, setAddPageNumbers] = useState(false);
   const [optimizePdfEnabled, setOptimizePdfEnabled] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: parties = [] } = useQuery({
     queryKey: ['parties'],
@@ -242,17 +241,14 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     if (!formData.name.trim()) {
       alert('Internal Name is required.');
-      setIsSubmitting(false);
       return;
     }
 
     if (!formData.proof_type_category_id) {
       alert('Proof Type is required.');
-      setIsSubmitting(false);
       return;
     }
 
@@ -297,7 +293,6 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
 
       if (!dropboxSelection) {
         alert('Select a Dropbox file first.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -312,56 +307,40 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
               name: formData.original_dropbox_file_name || dropboxSelection.name,
             };
 
-        try {
-          const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({
-            file: processingSource,
-            options: {
-              addCoverPage,
-              addPageNumbers,
-              optimizePdf: optimizePdfEnabled,
-            },
-            metadata: {
-              proofName: nextPayload.name,
-              formalName: nextPayload.formal_name,
-              proofCategory,
-              exhibitNumber: nextPayload.admitted_exhibit_num || nextPayload.demonstrative_exhibit_num || nextPayload.joint_exhibit_num || nextPayload.draft_exhibit_num || '',
-            },
-          }));
+        const processedData = await processDropboxPdf(buildProcessDropboxPdfPayload({
+          file: processingSource,
+          options: {
+            addCoverPage,
+            addPageNumbers,
+            optimizePdf: optimizePdfEnabled,
+          },
+          metadata: {
+            proofName: nextPayload.name,
+            formalName: nextPayload.formal_name,
+            proofCategory,
+            exhibitNumber: nextPayload.admitted_exhibit_num || nextPayload.demonstrative_exhibit_num || nextPayload.joint_exhibit_num || nextPayload.draft_exhibit_num || '',
+          },
+        }));
 
-          nextPayload = {
-            ...nextPayload,
-            ...processedData,
-            file_url: '',
-            video_url: '',
-          };
-        } catch (err) {
-          alert(`PDF processing failed: ${err.message}`);
-          setIsSubmitting(false);
-          return;
-        }
+        nextPayload = {
+          ...nextPayload,
+          ...processedData,
+          file_url: '',
+          video_url: '',
+        };
       } else if (fileChanged && fileType === 'PDF') {
-        try {
-          const response = await base44.functions.invoke('prepareDropboxProof', {
-            fileId: dropboxSelection.id,
-            path: dropboxSelection.path_display,
-            name: dropboxSelection.name,
-          });
+        const response = await base44.functions.invoke('prepareDropboxProof', {
+          fileId: dropboxSelection.id,
+          path: dropboxSelection.path_display,
+          name: dropboxSelection.name,
+        });
 
-          if (response.data?.error) {
-            throw new Error(response.data.error);
-          }
-
-          nextPayload = {
-            ...nextPayload,
-            ...response.data,
-            file_url: '',
-            video_url: '',
-          };
-        } catch (err) {
-          alert(`Failed to prepare Dropbox file: ${err.message}`);
-          setIsSubmitting(false);
-          return;
-        }
+        nextPayload = {
+          ...nextPayload,
+          ...response.data,
+          file_url: '',
+          video_url: '',
+        };
       } else {
         nextPayload = {
           ...nextPayload,
@@ -395,36 +374,30 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
     const currentStatus = nextPayload.status || proof?.status || 'Draft';
     if (proofCategory === 'Exhibit' && currentStatus !== 'Draft' && !nextPayload.formal_name?.trim()) {
       alert('Formal Name is required once an exhibit leaves Draft.');
-      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'upload' && !nextPayload.file_url) {
       alert(`${fileType} file is required.`);
-      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'dropbox' && !nextPayload.dropbox_file_id && !nextPayload.dropbox_path) {
       alert('Dropbox file is required.');
-      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'dropbox' && fileType === 'PDF' && processDropboxPdfEnabled && !addCoverPage && !addPageNumbers && !optimizePdfEnabled) {
       alert('Select at least one PDF processing option.');
-      setIsSubmitting(false);
       return;
     }
 
     if (sourceType === 'url' && fileType === 'Video' && !nextPayload.video_url) {
       alert('Video URL is required.');
-      setIsSubmitting(false);
       return;
     }
 
     onSubmit(nextPayload);
-    setIsSubmitting(false);
   };
 
   return (
@@ -700,10 +673,8 @@ export default function ProofForm({ proof, onSubmit, onCancel }) {
         </div>
 
         <div className="flex justify-end gap-3 pt-2 border-t border-slate-200">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
-            {isSubmitting ? 'Saving…' : (proof ? 'Update Proof' : 'Save Proof')}
-          </Button>
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">{proof ? 'Update Proof' : 'Save Proof'}</Button>
         </div>
       </form>
 
