@@ -424,6 +424,24 @@ export default function CreateExtractModal({ open, onClose, parentProof, onSucce
                 />
                 <span className="text-sm text-slate-700">Optimize & compress PDF</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.addCoverPage}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, addCoverPage: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                />
+                <span className="text-sm text-slate-700">Add cover page</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={processingOptions.addPageNumbers}
+                  onChange={(e) => setProcessingOptions({ ...processingOptions, addPageNumbers: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                />
+                <span className="text-sm text-slate-700">Add page numbers</span>
+              </label>
               <p className="text-xs text-slate-500 mt-2">Processing will save the output to your extracts folder in Dropbox.</p>
             </div>
           )}
