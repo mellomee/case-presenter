@@ -77,7 +77,10 @@ Deno.serve(async (req) => {
 
     let dropboxCleanup = { deleted: false, skipped: true };
 
-    if (proof.file_source === 'dropbox') {
+    // Extracts and ExtractClips point to the parent's Dropbox file — never delete it
+    const isChildProof = proof.proof_child_type === 'Extract' || proof.proof_child_type === 'ExtractClip' || proof.proof_child_type === 'VideoClip';
+
+    if (proof.file_source === 'dropbox' && !isChildProof) {
       const reference = getDropboxReference(proof);
       if (reference) {
         const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
