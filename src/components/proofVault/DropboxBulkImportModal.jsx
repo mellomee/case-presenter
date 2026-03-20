@@ -216,58 +216,59 @@ export default function DropboxBulkImportModal({ open, onClose, onImportComplete
         }
 
         const baseName = getBaseName(file.name);
-         const internalName = file.internalName || baseName;
-         const filePartyId = file.filePartyId || '';
-         const fileProofTypeId = file.fileProofTypeId || '';
-         const fileDraftExhibitNum = file.draftExhibitNum || '';
+        const internalName = file.internalName || baseName;
+        const filePartyIds = Array.isArray(file.filePartyIds) ? file.filePartyIds : [];
+        const fileProofTypeId = file.fileProofTypeId || '';
+        const fileCategoryId = file.fileCategoryId || '';
+        const fileDraftExhibitNum = file.draftExhibitNum || '';
 
-         let payload = {
-           proof_category: proofCategory,
-           file_type: fileType,
-           name: internalName,
-           formal_name: baseName,
-           description: '',
-           status: 'Draft',
-           draft_exhibit_num: fileDraftExhibitNum,
-           proof_type_category_id: fileProofTypeId,
-           category_id: categoryId,
-           party_id: filePartyId,
-           party_ids: filePartyId ? { ids: [filePartyId] } : null,
-           file_source: 'dropbox',
-           file_url: '',
-           video_url: '',
-           dropbox_file_id: file.id,
-           dropbox_path: file.path_display,
-           dropbox_file_name: file.name,
-         };
+        let payload = {
+          proof_category: proofCategory,
+          file_type: fileType,
+          name: internalName,
+          formal_name: baseName,
+          description: '',
+          status: 'Draft',
+          draft_exhibit_num: fileDraftExhibitNum,
+          proof_type_category_id: fileProofTypeId || null,
+          category_id: fileCategoryId || null,
+          party_id: filePartyIds[0] || null,
+          party_ids: filePartyIds,
+          file_source: 'dropbox',
+          file_url: '',
+          video_url: '',
+          dropbox_file_id: file.id,
+          dropbox_path: file.path_display,
+          dropbox_file_name: file.name,
+        };
 
         if (fileType === 'PDF') {
-          const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
-            file,
-            options: {
-              addCoverPage: true,
-              addPageNumbers: true,
-              optimizePdf: true,
-            },
-            metadata: {
-              proofName: baseName,
-              formalName: baseName,
-              proofCategory,
-            },
-          }));
+         const responseData = await processDropboxPdf(buildProcessDropboxPdfPayload({
+           file,
+           options: {
+             addCoverPage: true,
+             addPageNumbers: true,
+             optimizePdf: true,
+           },
+           metadata: {
+             proofName: baseName,
+             formalName: baseName,
+             proofCategory,
+           },
+         }));
 
-          payload = {
-            ...payload,
-            ...responseData,
-            name: internalName,
-            formal_name: baseName,
-            proof_type_category_id: fileProofTypeId,
-            category_id: null,
-            party_id: filePartyId,
-            party_ids: filePartyId ? { ids: [filePartyId] } : null,
-            status: 'Draft',
-            draft_exhibit_num: fileDraftExhibitNum,
-          };
+         payload = {
+           ...payload,
+           ...responseData,
+           name: internalName,
+           formal_name: baseName,
+           proof_type_category_id: fileProofTypeId || null,
+           category_id: fileCategoryId || null,
+           party_id: filePartyIds[0] || null,
+           party_ids: filePartyIds,
+           status: 'Draft',
+           draft_exhibit_num: fileDraftExhibitNum,
+         };
 
           processedFiles.push(responseData.processed_file_name || responseData.dropbox_file_name || file.name);
           folderUrl = folderUrl || responseData.dropbox_folder_url || '';
