@@ -34,7 +34,12 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
   }, [open]);
 
   const filtered = useMemo(() => {
-    const next = proofs.filter((proof) => proof.proof_category === tab);
+    const next = proofs.filter((proof) => {
+      if (proof.proof_category !== tab) return false;
+      if (tab === 'Exhibit') return proof.status === 'Joint';
+      return true;
+    });
+
     const searchTerm = normalizeSearchValue(searchQuery);
     if (!searchTerm) return next;
 
