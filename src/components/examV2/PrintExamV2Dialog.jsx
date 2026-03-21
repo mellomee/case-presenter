@@ -135,12 +135,49 @@ export default function PrintExamV2Dialog({
           .exam-v2-print-empty { font-size: 13px; color: #64748b; font-style: italic; }
           .exam-v2-print-footer { position: absolute; right: 56px; bottom: 28px; font-size: 12px; color: #64748b; }
           @media print {
+            @page { margin: 0.5in; }
+            html, body { margin: 0 !important; padding: 0 !important; background: white !important; }
             body * { visibility: hidden !important; }
-            .exam-v2-print-shell, .exam-v2-print-shell * { visibility: visible !important; }
-            .exam-v2-print-shell { position: absolute; inset: 0; background: white; }
+            .exam-v2-print-dialog,
+            .exam-v2-print-dialog *,
+            .exam-v2-print-shell,
+            .exam-v2-print-shell * { visibility: visible !important; }
+            .exam-v2-print-dialog {
+              position: static !important;
+              inset: auto !important;
+              transform: none !important;
+              width: 100% !important;
+              max-width: none !important;
+              max-height: none !important;
+              overflow: visible !important;
+              border: 0 !important;
+              border-radius: 0 !important;
+              box-shadow: none !important;
+              padding: 0 !important;
+              background: white !important;
+            }
+            .exam-v2-print-dialog > button { display: none !important; }
+            .exam-v2-print-shell {
+              position: static !important;
+              inset: auto !important;
+              display: block !important;
+              min-height: auto !important;
+              background: white !important;
+            }
             .exam-v2-print-toolbar { display: none !important; }
-            .exam-v2-print-preview { background: white !important; overflow: visible !important; padding: 0 !important; }
-            .exam-v2-print-page { box-shadow: none !important; margin: 0 !important; min-height: 100vh; page-break-after: always; break-after: page; }
+            .exam-v2-print-preview {
+              background: white !important;
+              overflow: visible !important;
+              padding: 0 !important;
+              border-radius: 0 !important;
+            }
+            .exam-v2-print-page {
+              box-shadow: none !important;
+              margin: 0 0 24px 0 !important;
+              min-height: auto !important;
+              page-break-after: always;
+              break-after: page;
+            }
             .exam-v2-print-page:last-child { page-break-after: auto; break-after: auto; }
           }
         `}</style>
