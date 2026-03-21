@@ -11,7 +11,9 @@ import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
 import QuestionTreeEditor from '@/components/examV2/QuestionTreeEditor.jsx';
 import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEditor.jsx';
 import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
+import ExamV2ImportChooserDialog from '@/components/examV2/ExamV2ImportChooserDialog.jsx';
 import ExamV2ImportDialog from '@/components/examV2/ExamV2ImportDialog.jsx';
+import ExamV2TextImportDialog from '@/components/examV2/ExamV2TextImportDialog.jsx';
 import PrintExamV2Dialog from '@/components/examV2/PrintExamV2Dialog.jsx';
 import { collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
 
@@ -45,7 +47,9 @@ export default function ExamBuilderV2() {
   const [questionDialog, setQuestionDialog] = useState({ open: false, parentId: null, initialValue: null, title: 'Question' });
   const [overridesOpen, setOverridesOpen] = useState(false);
   const [previewDialogProof, setPreviewDialogProof] = useState(null);
+  const [importChooserOpen, setImportChooserOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [textImportDialogOpen, setTextImportDialogOpen] = useState(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [leftColumnCollapsed, setLeftColumnCollapsed] = useState(false);
 
@@ -406,8 +410,8 @@ export default function ExamBuilderV2() {
             </ToolbarSelect>
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setPickerOpen(true)}>Add Joint Proof</Button>
             <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setGroupDialog({ open: true, initialItem: null })}>Add Question Group</Button>
-            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setImportDialogOpen(true)} disabled={!selectedPartyId}>
-              <Upload className="w-4 h-4" /> Import Excel
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setImportChooserOpen(true)} disabled={!selectedPartyId}>
+              <Upload className="w-4 h-4" /> Import
             </Button>
             <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setPrintDialogOpen(true)} disabled={rootItems.length === 0}>
               <Printer className="w-4 h-4" /> Print Exam
@@ -569,6 +573,27 @@ export default function ExamBuilderV2() {
           templates={admissionTemplates}
           exhibitNum={selectedRootProof?.joint_exhibit_num || ''}
           onSave={(step_overrides) => admissionScriptItem ? base44.entities.ExamItemV2.update(admissionScriptItem.id, { step_overrides }).then(invalidate) : Promise.resolve()}
+        />
+        <ExamV2ImportChooserDialog
+          open={importChooserOpen}
+          onOpenChange={setImportChooserOpen}
+          onChooseExcel={() => {
+            setImportChooserOpen(false);
+            setImportDialogOpen(true);
+          }}
+          onChooseText={() => {
+            setImportChooserOpen(false);
+            setTextImportDialogOpen(true);
+          }}
+        />
+        <ExamV2TextImportDialog
+          open={textImportDialogOpen}
+          onOpenChange={setTextImportDialogOpen}
+          selectedParty={selectedParty}
+          selectedExamType={selectedExamType}
+          availableRootProofs={selectableProofs}
+          allProofs={proofs}
+          onImport={handleImportExamData}
         />
         <ExamV2ImportDialog
           open={importDialogOpen}
