@@ -106,6 +106,30 @@
     background: #71717a;
   }
 
+  .attorney-hub-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #e2e8f0;
+  }
+
+  .attorney-hub-scrollbar::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  .attorney-hub-scrollbar::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 9999px;
+  }
+
+  .attorney-hub-scrollbar::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 9999px;
+    border: 2px solid #e2e8f0;
+  }
+
+  .attorney-hub-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+
   .bg-slate-950 {
     @apply bg-slate-100 text-slate-900;
   }
