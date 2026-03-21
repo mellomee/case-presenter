@@ -5,6 +5,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, CheckCircle2, FileText } from 'lucide-react';
 import { parseExamV2TextImport } from '@/lib/examV2TextImport';
 
+function ImportSelect({ value, onChange, children }) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-300 focus:outline-none"
+    >
+      {children}
+    </select>
+  );
+}
+
 const EXAMPLE_TEXT = `PROOF: my new extract pages 1,3,5
 - Go to Page 3, please read the highlighted text.
   -> Read text aloud
@@ -20,12 +32,16 @@ GROUP: What human Factors
 export default function ExamV2TextImportDialog({
   open,
   onOpenChange,
-  selectedParty = null,
+  parties = [],
+  selectedPartyId = '',
+  onSelectedPartyIdChange,
   selectedExamType = 'Direct',
+  onSelectedExamTypeChange,
   availableRootProofs = [],
   allProofs = [],
   onImport,
 }) {
+  const selectedParty = parties.find((party) => party.id === selectedPartyId) || null;
   const [rawText, setRawText] = useState('');
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
@@ -88,10 +104,26 @@ export default function ExamV2TextImportDialog({
 
         {!preview ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-4">
               <p className="font-semibold text-slate-900">Import target</p>
-              <p className="mt-2">Party: {selectedParty ? `${selectedParty.first_name} ${selectedParty.last_name}` : 'Select a party first'}</p>
-              <p>Exam Type: {selectedExamType}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-900">Party</p>
+                  <ImportSelect value={selectedPartyId} onChange={onSelectedPartyIdChange}>
+                    <option value="">Select party</option>
+                    {parties.map((party) => (
+                      <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>
+                    ))}
+                  </ImportSelect>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-900">Exam Type</p>
+                  <ImportSelect value={selectedExamType} onChange={onSelectedExamTypeChange}>
+                    <option value="Direct">Direct</option>
+                    <option value="Cross">Cross</option>
+                  </ImportSelect>
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">

@@ -12,7 +12,7 @@ import QuestionTreeEditor from '@/components/examV2/QuestionTreeEditor.jsx';
 import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEditor.jsx';
 import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
 import ExamV2ImportChooserDialog from '@/components/examV2/ExamV2ImportChooserDialog.jsx';
-import ExamV2ImportDialog from '@/components/examV2/ExamV2ImportDialog.jsx';
+import ExamV2ExcelImportDialog from '@/components/examV2/ExamV2ExcelImportDialog.jsx';
 import ExamV2TextImportDialog from '@/components/examV2/ExamV2TextImportDialog.jsx';
 import PrintExamV2Dialog from '@/components/examV2/PrintExamV2Dialog.jsx';
 import { collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
@@ -589,17 +589,23 @@ export default function ExamBuilderV2() {
         <ExamV2TextImportDialog
           open={textImportDialogOpen}
           onOpenChange={setTextImportDialogOpen}
-          selectedParty={selectedParty}
+          parties={parties}
+          selectedPartyId={selectedPartyId}
+          onSelectedPartyIdChange={setSelectedPartyId}
           selectedExamType={selectedExamType}
+          onSelectedExamTypeChange={setSelectedExamType}
           availableRootProofs={selectableProofs}
           allProofs={proofs}
           onImport={handleImportExamData}
         />
-        <ExamV2ImportDialog
+        <ExamV2ExcelImportDialog
           open={importDialogOpen}
           onOpenChange={setImportDialogOpen}
-          selectedParty={selectedParty}
+          parties={parties}
+          selectedPartyId={selectedPartyId}
+          onSelectedPartyIdChange={setSelectedPartyId}
           selectedExamType={selectedExamType}
+          onSelectedExamTypeChange={setSelectedExamType}
           availableRootProofs={selectableProofs}
           allProofs={proofs}
           onImport={handleImportExamData}
