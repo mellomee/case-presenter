@@ -196,3 +196,83 @@
     @apply border-slate-200 bg-slate-100 text-slate-700;
   }
 }
+
+@media print {
+  @page {
+    margin: 0.5in;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .exam-v2-print-dialog,
+  .exam-v2-print-dialog *,
+  .exam-v2-print-shell,
+  .exam-v2-print-shell *,
+  .exam-v2-print-preview,
+  .exam-v2-print-preview * {
+    visibility: visible !important;
+  }
+
+  .exam-v2-print-dialog {
+    position: static !important;
+    inset: auto !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  .exam-v2-print-dialog > button,
+  .exam-v2-print-toolbar {
+    display: none !important;
+  }
+
+  .exam-v2-print-shell,
+  .exam-v2-print-preview {
+    position: static !important;
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    border-radius: 0 !important;
+  }
+
+  .exam-v2-print-page {
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 0 24px 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .exam-v2-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
