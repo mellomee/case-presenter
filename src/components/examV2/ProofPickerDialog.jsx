@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
 import { getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField } from '@/lib/examV2Utils';
 
 function normalizeSearchValue(value) {
@@ -22,12 +24,14 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
   const [tab, setTab] = useState('Exhibit');
   const [selectedId, setSelectedId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [previewProof, setPreviewProof] = useState(null);
 
   useEffect(() => {
     if (!open) return;
     setTab('Exhibit');
     setSelectedId('');
     setSearchQuery('');
+    setPreviewProof(null);
   }, [open]);
 
   const filtered = useMemo(() => {
@@ -52,7 +56,7 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl bg-white border-slate-200 text-slate-900">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white border-slate-200 text-slate-900">
         <DialogHeader>
           <DialogTitle>Joint Proof Picker</DialogTitle>
           <DialogDescription className="text-slate-500">Choose a parent proof to add into the V2 exam order.</DialogDescription>
@@ -75,8 +79,8 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
             className="min-w-[240px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
           />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4 min-h-[28rem]">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 overflow-y-auto">
+        <div className="grid grid-cols-1 gap-4 min-h-0 lg:min-h-[28rem] lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 overflow-y-auto max-h-[60vh] lg:max-h-[68vh]">
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
               {filtered.map((proof) => (
                 <button
@@ -97,7 +101,7 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
               ))}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col overflow-y-auto max-h-[60vh] lg:max-h-[68vh]">
             {selectedProof ? (
               <>
                 <div className="flex justify-center">
@@ -109,7 +113,10 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
                   <p className="text-slate-600">Type: <span className="text-slate-900">{getProofTypeLabel(selectedProof)}</span></p>
                   <p className="text-slate-600">Status: <span className="text-slate-900">{selectedProof.status}</span></p>
                 </div>
-                <div className="mt-auto pt-4">
+                <div className="mt-auto pt-4 space-y-2">
+                  <Button variant="outline" className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setPreviewProof(selectedProof)}>
+                    <Eye className="w-4 h-4 mr-2" /> View Proof
+                  </Button>
                   <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => { onSelect(selectedProof); onOpenChange(false); }}>
                     Add to Exam
                   </Button>
@@ -120,6 +127,12 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
             )}
           </div>
         </div>
+        <InlineProofPreviewDialog
+          open={!!previewProof}
+          onOpenChange={(nextOpen) => !nextOpen && setPreviewProof(null)}
+          proof={previewProof}
+          allProofs={proofs}
+        />
       </DialogContent>
     </Dialog>
   );
