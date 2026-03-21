@@ -244,8 +244,11 @@
     box-shadow: none !important;
   }
 
+  .exam-v2-print-dialog > :not(.exam-v2-print-shell):not(style),
   .exam-v2-print-dialog > button,
-  .exam-v2-print-toolbar {
+  .exam-v2-print-toolbar,
+  .exam-v2-print-header-title,
+  .exam-v2-print-spacer {
     display: none !important;
   }
 
@@ -262,10 +265,20 @@
     border-radius: 0 !important;
   }
 
+  .exam-v2-print-header {
+    gap: 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .exam-v2-print-divider {
+    margin: 8px 0 18px !important;
+  }
+
   .exam-v2-print-page {
     height: auto !important;
     min-height: 0 !important;
     margin: 0 0 24px 0 !important;
+    padding-top: 18px !important;
     box-shadow: none !important;
     break-after: page;
     page-break-after: always;
