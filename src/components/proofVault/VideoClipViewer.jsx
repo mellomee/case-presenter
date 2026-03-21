@@ -1,18 +1,25 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import ReactPlayer from 'react-player';
 import { Play, Pause, List, X } from 'lucide-react';
-import { getItemAnchorTime, getNextPlayableIndex, isPauseItem, isSegmentItem, normalizeVideoClipItems, timeToSeconds } from '@/lib/videoClipPlaylist';
+import {
+  getItemAnchorTime,
+  getNextPlayableIndex,
+  isPauseItem,
+  normalizeVideoClipItems,
+  timeToSeconds,
+} from '@/lib/videoClipPlaylist';
 
-export default function VideoClipViewer({ videoUrl, segments }) {
+export default function VideoClipViewer({ videoUrl, segments = [] }) {
   const playerRef = useRef(null);
   const segmentItemRefs = useRef({});
   const suppressEndCheckRef = useRef(false);
   const resumeTimeoutRef = useRef(null);
-  const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
   const [playing, setPlaying] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+
+  const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
 
   const clearResumeTimeout = useCallback(() => {
     if (resumeTimeoutRef.current) {
@@ -25,15 +32,15 @@ export default function VideoClipViewer({ videoUrl, segments }) {
     const item = items[idx];
     if (!item) return;
 
-    const shouldResume = !!options.resume && isSegmentItem(item);
-    const targetTime = isPauseItem(item) ? getItemAnchorTime(items, idx) : timeToSeconds(item.start);
+    const shouldResume = !!options.resume && !isPauseItem(item);
+    const anchorTime = isPauseItem(item) ? getItemAnchorTime(items, idx) : timeToSeconds(item.start);
 
     clearResumeTimeout();
     suppressEndCheckRef.current = true;
     setCurrentSegmentIdx(idx);
-    setCurrentTime(targetTime);
+    setCurrentTime(anchorTime);
     setPlaying(shouldResume);
-    playerRef.current?.seekTo?.(targetTime, 'seconds');
+    playerRef.current?.seekTo(anchorTime, 'seconds');
 
     resumeTimeoutRef.current = setTimeout(() => {
       suppressEndCheckRef.current = false;
@@ -61,43 +68,43 @@ export default function VideoClipViewer({ videoUrl, segments }) {
   }, [currentSegmentIdx, panelOpen]);
 
   useEffect(() => {
-    if (items.length === 0 || suppressEndCheckRef.current) return;
-
     const currentItem = items[currentSegmentIdx];
-    if (!currentItem || isPauseItem(currentItem)) return;
+    if (!currentItem || isPauseItem(currentItem) || suppressEndCheckRef.current) return;
 
     const endSec = timeToSeconds(currentItem.end);
-    if (currentTime < endSec - 0.05) return;
-
-    if (currentSegmentIdx < items.length - 1) {
-      const nextIndex = currentSegmentIdx + 1;
-      seekToItem(nextIndex, { resume: !isPauseItem(items[nextIndex]) });
-      return;
+    if (currentTime >= endSec - 0.05) {
+      if (currentSegmentIdx < items.length - 1) {
+        const nextItem = items[currentSegmentIdx + 1];
+        seekToItem(currentSegmentIdx + 1, { resume: !isPauseItem(nextItem) });
+      } else {
+        setCurrentTime(endSec);
+        setPlaying(false);
+      }
     }
-
-    setCurrentTime(endSec);
-    setPlaying(false);
   }, [currentTime, currentSegmentIdx, items, seekToItem]);
 
-  if (!items.length || !items.some((item) => isSegmentItem(item))) {
+  if (!items.length) {
     return <div className="text-slate-500 italic">No segments</div>;
   }
 
-  const currentItem = items[currentSegmentIdx] || items[0];
-  const nextPlayableIndex = isPauseItem(currentItem) ? getNextPlayableIndex(items, currentSegmentIdx) : -1;
+  const currentItem = items[currentSegmentIdx];
+  const hasNextItem = currentSegmentIdx < items.length - 1;
+  const playLabel = isPauseItem(currentItem) ? 'Resume' : (playing ? 'Pause' : 'Play');
 
   const handlePlayToggle = () => {
     if (isPauseItem(currentItem)) {
+      const nextPlayableIndex = getNextPlayableIndex(items, currentSegmentIdx);
       if (nextPlayableIndex >= 0) {
         seekToItem(nextPlayableIndex, { resume: true });
       }
       return;
     }
+
     setPlaying((value) => !value);
   };
 
   const handleNext = () => {
-    if (currentSegmentIdx >= items.length - 1) return;
+    if (!hasNextItem) return;
     const nextIndex = currentSegmentIdx + 1;
     seekToItem(nextIndex, { resume: !isPauseItem(items[nextIndex]) });
   };
@@ -112,22 +119,13 @@ export default function VideoClipViewer({ videoUrl, segments }) {
           height="100%"
           controls
           playing={playing}
-          onPlay={() => {
-            if (!isPauseItem(currentItem)) setPlaying(true);
-          }}
+          onPlay={() => !isPauseItem(currentItem) && setPlaying(true)}
           onPause={() => setPlaying(false)}
           onSeek={(seconds) => {
-            const matchingIndex = items.findIndex((item) => {
-              if (isPauseItem(item)) return false;
-              const start = timeToSeconds(item.start);
-              const end = timeToSeconds(item.end);
-              return seconds >= start && seconds <= end;
-            });
-
+            const matchingIndex = items.findIndex((item) => !isPauseItem(item) && seconds >= timeToSeconds(item.start) && seconds <= timeToSeconds(item.end));
             if (matchingIndex >= 0 && matchingIndex !== currentSegmentIdx) {
               setCurrentSegmentIdx(matchingIndex);
             }
-
             setCurrentTime(seconds);
           }}
           onProgress={(state) => {
@@ -136,12 +134,12 @@ export default function VideoClipViewer({ videoUrl, segments }) {
             }
           }}
           onReady={() => {
-            const startSec = getItemAnchorTime(items, currentSegmentIdx);
-            playerRef.current?.seekTo(startSec, 'seconds');
-            setCurrentTime(startSec);
+            const anchorTime = getItemAnchorTime(items, currentSegmentIdx);
+            playerRef.current?.seekTo(anchorTime, 'seconds');
+            setCurrentTime(anchorTime);
           }}
           config={{
-            youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1, rel: 0 } },
+            youtube: { playerVars: { showinfo: 1, modestbranding: 1, cc_load_policy: 1 } },
           }}
         />
 
@@ -150,11 +148,11 @@ export default function VideoClipViewer({ videoUrl, segments }) {
             onClick={handlePlayToggle}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-black/70 hover:bg-black/85 text-white text-xs font-medium backdrop-blur transition"
           >
-            {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            {isPauseItem(currentItem) ? 'Resume' : playing ? 'Pause' : 'Play'}
+            {playing && !isPauseItem(currentItem) ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            {playLabel}
           </button>
 
-          {currentSegmentIdx < items.length - 1 && (
+          {hasNextItem && (
             <button
               onClick={handleNext}
               className="px-3 py-2 rounded-md bg-black/60 hover:bg-black/80 text-white text-xs font-medium backdrop-blur transition"
@@ -180,7 +178,7 @@ export default function VideoClipViewer({ videoUrl, segments }) {
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <div>
               <h3 className="text-sm font-semibold text-white">Playlist</h3>
-              <p className="text-xs text-slate-400">Segments autoplay until a pause item is reached</p>
+              <p className="text-xs text-slate-400">Pause items stop playback until you resume</p>
             </div>
             <button
               onClick={() => setPanelOpen(false)}
@@ -191,26 +189,29 @@ export default function VideoClipViewer({ videoUrl, segments }) {
           </div>
 
           <div className="h-[calc(100%-61px)] overflow-y-auto p-3 space-y-2">
-            {items.map((item, idx) => (
-              <button
-                key={item.id}
-                ref={(el) => {
-                  segmentItemRefs.current[idx] = el;
-                }}
-                className={`w-full text-left p-3 rounded-lg text-sm transition border ${
-                  idx === currentSegmentIdx
-                    ? 'bg-blue-600/20 border-blue-400 text-white shadow-sm'
-                    : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
-                }`}
-                onClick={() => seekToItem(idx, { resume: isSegmentItem(item) })}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-semibold">{item.label || (isPauseItem(item) ? `Pause ${idx + 1}` : `Segment ${idx + 1}`)}</span>
-                  <span className="text-xs text-slate-400">{isPauseItem(item) ? 'Manual pause' : `${item.start} → ${item.end}`}</span>
-                </div>
-                {isPauseItem(item) && <div className="mt-1 text-xs text-amber-300 italic">Playback stops here until you resume.</div>}
-              </button>
-            ))}
+            {items.map((item, idx) => {
+              const pauseItem = isPauseItem(item);
+              return (
+                <button
+                  key={item.id || idx}
+                  ref={(el) => {
+                    segmentItemRefs.current[idx] = el;
+                  }}
+                  className={`w-full text-left p-3 rounded-lg text-sm transition border ${
+                    idx === currentSegmentIdx
+                      ? 'bg-blue-600/20 border-blue-400 text-white shadow-sm'
+                      : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
+                  }`}
+                  onClick={() => seekToItem(idx, { resume: false })}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold">{pauseItem ? `Pause ${idx + 1}` : `Segment ${idx + 1}`}</span>
+                    <span className="text-xs text-slate-400">{pauseItem ? 'Manual pause' : `${item.start} → ${item.end}`}</span>
+                  </div>
+                  {item.label && <div className="mt-1 text-xs text-slate-300 italic">{item.label}</div>}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

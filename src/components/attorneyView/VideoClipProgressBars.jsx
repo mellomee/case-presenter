@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { getPlayableRanges, isPauseItem, isSegmentItem, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
+import { getPlayableRanges, isPauseItem, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
 
 function formatTime(totalSeconds) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0));
@@ -17,24 +17,26 @@ function formatTime(totalSeconds) {
 export default function VideoClipProgressBars({ segments = [], currentSegmentIdx = 0, currentTime = 0, videoDuration = 0 }) {
   const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
   const ranges = useMemo(() => getPlayableRanges(items), [items]);
+  const currentItem = items[currentSegmentIdx] || items[0];
 
   const playlistTotal = ranges.reduce((sum, range) => sum + range.duration, 0);
-  const currentItem = items[currentSegmentIdx] || items[0];
-  const activeRange = isSegmentItem(currentItem)
-    ? ranges.find((range) => range.originalIndex === currentSegmentIdx) || ranges[0]
-    : ranges.find((range) => currentTime >= range.start - 0.25 && currentTime <= range.end + 0.25)
-      || [...ranges].reverse().find((range) => range.end <= currentTime + 0.25)
-      || ranges[0];
-
-  const elapsedBeforeCurrent = ranges
+  const elapsedBeforeCurrentItem = ranges
     .filter((range) => range.originalIndex < currentSegmentIdx)
     .reduce((sum, range) => sum + range.duration, 0);
 
-  const elapsedInsideActive = activeRange && isSegmentItem(currentItem)
+  const activeRange = !ranges.length
+    ? null
+    : !currentItem || isPauseItem(currentItem)
+      ? ranges.find((range) => currentTime >= range.start - 0.25 && currentTime <= range.end + 0.25)
+        || [...ranges].reverse().find((range) => range.end <= currentTime + 0.25)
+        || ranges[0]
+      : ranges.find((range) => range.originalIndex === currentSegmentIdx) || ranges[0];
+
+  const elapsedInsideActive = activeRange && currentItem && !isPauseItem(currentItem)
     ? Math.min(Math.max(currentTime - activeRange.start, 0), activeRange.duration)
     : 0;
 
-  const playlistElapsed = elapsedBeforeCurrent + elapsedInsideActive;
+  const playlistElapsed = elapsedBeforeCurrentItem + elapsedInsideActive;
   const playlistPercent = playlistTotal > 0 ? (playlistElapsed / playlistTotal) * 100 : 0;
   const originalPercent = videoDuration > 0 ? Math.min((currentTime / videoDuration) * 100, 100) : 0;
   const currentSegmentStartPercent = videoDuration > 0 && activeRange ? (activeRange.start / videoDuration) * 100 : 0;
@@ -48,17 +50,16 @@ export default function VideoClipProgressBars({ segments = [], currentSegmentIdx
     return cumulativePercent;
   });
 
-  let elapsedForPauseMarkers = 0;
-  const pauseMarkers = items.reduce((markers, item) => {
+  let cumulativeDuration = 0;
+  const pauseMarkers = [];
+  items.forEach((item) => {
     if (isPauseItem(item)) {
-      markers.push(playlistTotal > 0 ? (elapsedForPauseMarkers / playlistTotal) * 100 : 0);
-      return markers;
+      pauseMarkers.push(playlistTotal > 0 ? (cumulativeDuration / playlistTotal) * 100 : 0);
+      return;
     }
-
-    const matchingRange = ranges.find((range) => range.originalIndex === items.indexOf(item));
-    elapsedForPauseMarkers += matchingRange?.duration || 0;
-    return markers;
-  }, []);
+    const range = ranges.find((currentRange) => currentRange.originalIndex === items.indexOf(item));
+    cumulativeDuration += range?.duration || 0;
+  });
 
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-950 px-2.5 py-2 shadow-sm">
@@ -72,21 +73,21 @@ export default function VideoClipProgressBars({ segments = [], currentSegmentIdx
             <div className="absolute inset-y-0 left-0 bg-blue-500" style={{ width: `${playlistPercent}%` }} />
             {segmentStops.slice(0, -1).map((stop, index) => (
               <div
-                key={`segment-${index}`}
+                key={`segment-stop-${index}`}
                 className="absolute inset-y-0 w-px bg-slate-950/80"
                 style={{ left: `${stop}%` }}
               />
             ))}
             {pauseMarkers.map((stop, index) => (
               <div
-                key={`pause-${index}`}
-                className="absolute inset-y-0 w-[2px] bg-amber-300/90"
+                key={`pause-stop-${index}`}
+                className="absolute inset-y-0 w-0.5 bg-amber-400"
                 style={{ left: `${stop}%` }}
               />
             ))}
           </div>
           <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] text-slate-500">
-            <span>{isPauseItem(currentItem) ? 'Pause' : 'Segment'} {currentSegmentIdx + 1} of {items.length}</span>
+            <span>{isPauseItem(currentItem) ? `Pause item ${currentSegmentIdx + 1}` : `Segment item ${currentSegmentIdx + 1}`} of {items.length}</span>
             {activeRange && <span>{formatTime(activeRange.duration)} clip length</span>}
           </div>
         </div>
@@ -110,7 +111,7 @@ export default function VideoClipProgressBars({ segments = [], currentSegmentIdx
           </div>
           {activeRange && (
             <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] text-slate-500">
-              <span>Current clip window</span>
+              <span>{isPauseItem(currentItem) ? 'Pause anchored at clip boundary' : 'Current clip window'}</span>
               <span className="shrink-0">{formatTime(activeRange.start)} → {formatTime(activeRange.end)}</span>
             </div>
           )}

@@ -26,6 +26,7 @@ function getActiveRange(time, ranges) {
 export default function JuryVideoClipPlayer({ src, segments = [], videoTime, isPlaying }) {
   const playerRef = useRef(null);
   const [segmentEnded, setSegmentEnded] = useState(false);
+
   const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
   const ranges = useMemo(() => getPlayableRanges(items), [items]);
   const targetTime = clampToRanges(videoTime, ranges);
