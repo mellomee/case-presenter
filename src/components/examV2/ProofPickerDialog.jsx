@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
-import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
+import ProofPickerProofCard from '@/components/examV2/ProofPickerProofCard.jsx';
 import { getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField } from '@/lib/examV2Utils';
 
 function normalizeSearchValue(value) {
@@ -52,7 +51,18 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
       return values.some((value) => normalizeSearchValue(value).includes(searchTerm));
     });
   }, [proofs, tab, searchQuery, parties]);
-  const selectedProof = filtered.find((proof) => proof.id === selectedId) || filtered[0] || null;
+
+  const parentProofs = useMemo(
+    () => filtered.filter((proof) => !proof.parent_proof_id),
+    [filtered]
+  );
+
+  const selectedProof = parentProofs.find((proof) => proof.id === selectedId) || parentProofs[0] || null;
+
+  const childProofs = useMemo(
+    () => selectedProof ? filtered.filter((proof) => proof.parent_proof_id === selectedProof.id) : [],
+    [filtered, selectedProof]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,46 +89,65 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
             className="min-w-[240px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
           />
         </div>
-        <div className="grid grid-cols-1 gap-4 min-h-0 lg:min-h-[28rem] lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
+        <div className="grid grid-cols-1 gap-4 min-h-0 lg:min-h-[28rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,0.9fr)]">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 overflow-y-auto max-h-[60vh] lg:max-h-[68vh]">
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((proof) => (
-                <button
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-slate-900">Parent joint proofs</p>
+              <span className="text-xs text-slate-500">{parentProofs.length}</span>
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {parentProofs.map((proof) => (
+                <ProofPickerProofCard
                   key={proof.id}
-                  type="button"
-                  onClick={() => setSelectedId(proof.id)}
-                  className={`rounded-xl border p-3 text-left ${selectedProof?.id === proof.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                >
-                  <div className="flex justify-center">
-                    <ProofThumbPreview proof={proof} size="lg" />
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 text-xs">
-                    <span className="font-semibold text-green-400">{getJointLabel(proof)}</span>
-                    <span className="text-slate-500">{getProofTypeLabel(proof)}</span>
-                  </div>
-                  <p className="mt-2 text-sm font-semibold text-slate-900 leading-snug">{getProofDisplayName(proof)}</p>
-                </button>
+                  proof={proof}
+                  isSelected={selectedProof?.id === proof.id}
+                  onSelect={() => setSelectedId(proof.id)}
+                  onPreview={setPreviewProof}
+                />
               ))}
             </div>
+            {parentProofs.length === 0 && (
+              <div className="flex min-h-[12rem] items-center justify-center text-sm text-slate-500">No parent proofs available.</div>
+            )}
           </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 overflow-y-auto max-h-[60vh] lg:max-h-[68vh]">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-slate-900">Child proofs</p>
+              <span className="text-xs text-slate-500">{childProofs.length}</span>
+            </div>
+            {selectedProof ? (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {childProofs.map((proof) => (
+                  <ProofPickerProofCard
+                    key={proof.id}
+                    proof={proof}
+                    onPreview={setPreviewProof}
+                  />
+                ))}
+              </div>
+            ) : null}
+            {!selectedProof ? (
+              <div className="flex min-h-[12rem] items-center justify-center text-sm text-slate-500">Select a parent proof to see its child proofs.</div>
+            ) : childProofs.length === 0 ? (
+              <div className="flex min-h-[12rem] items-center justify-center text-sm text-slate-500">This proof has no child proofs.</div>
+            ) : null}
+          </div>
+
           <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col overflow-y-auto max-h-[60vh] lg:max-h-[68vh]">
             {selectedProof ? (
               <>
-                <div className="flex justify-center">
-                  <ProofThumbPreview proof={selectedProof} size="lg" />
-                </div>
-                <div className="mt-4 space-y-2 text-sm">
+                <div className="space-y-2 text-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Selected parent proof</p>
                   <p className="font-semibold text-slate-900">{getProofDisplayName(selectedProof)}</p>
                   <p className="text-slate-600">Joint Exhibit #: <span className="text-green-600 font-semibold">{getJointLabel(selectedProof)}</span></p>
                   <p className="text-slate-600">Type: <span className="text-slate-900">{getProofTypeLabel(selectedProof)}</span></p>
                   <p className="text-slate-600">Status: <span className="text-slate-900">{selectedProof.status}</span></p>
+                  <p className="text-slate-600">Child proofs: <span className="text-slate-900">{childProofs.length}</span></p>
                 </div>
-                <div className="mt-auto pt-4 space-y-2">
-                  <Button variant="outline" className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setPreviewProof(selectedProof)}>
-                    <Eye className="w-4 h-4 mr-2" /> View Proof
-                  </Button>
+                <div className="mt-auto pt-4">
                   <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => { onSelect(selectedProof); onOpenChange(false); }}>
-                    Add to Exam
+                    Add Parent Proof to Exam
                   </Button>
                 </div>
               </>
