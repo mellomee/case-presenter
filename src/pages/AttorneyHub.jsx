@@ -346,7 +346,7 @@ export default function AttorneyHub() {
                 className="h-11 w-11 rounded-md flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 title="Stop and reset"
               >
-                <Square className="w-4.5 h-4.5 fill-current" />
+                <Square className="w-[18px] h-[18px] fill-current" />
               </button>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm">
