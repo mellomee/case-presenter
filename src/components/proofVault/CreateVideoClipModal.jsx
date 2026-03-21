@@ -15,7 +15,7 @@ import { base44 } from '@/api/base44Client';
 import ReactPlayer from 'react-player';
 import VideoClipWorkspaceSidebar from './VideoClipWorkspaceSidebar.jsx';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
-import { createPauseBlock, normalizeVideoClipItems, secondsToTime, timeToSeconds } from './videoClipPlaylistUtils.js';
+import { createPauseBlock, normalizeVideoClipItems, secondsToTime, timeToSeconds } from '@/components/proofVault/videoClipPlaylistUtils.js';
 
 const VIDEO_CLIP_MODAL_SIZE_KEY = 'proofVault.videoClipModalSize';
 const DEFAULT_VIDEO_CLIP_MODAL_SIZE = { width: 1280, height: 820 };

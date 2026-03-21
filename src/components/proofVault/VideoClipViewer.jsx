@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import ReactPlayer from 'react-player';
 import { Play, Pause, List, X } from 'lucide-react';
-import { getNextPlayableItemIndex, normalizeVideoClipItems, timeToSeconds } from './videoClipPlaylistUtils.js';
+import { getNextPlayableItemIndex, normalizeVideoClipItems, timeToSeconds } from '@/components/proofVault/videoClipPlaylistUtils.js';
 
 export default function VideoClipViewer({ videoUrl, segments = [] }) {
   const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
