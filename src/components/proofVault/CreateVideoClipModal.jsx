@@ -15,6 +15,7 @@ import { base44 } from '@/api/base44Client';
 import ReactPlayer from 'react-player';
 import VideoClipWorkspaceSidebar from './VideoClipWorkspaceSidebar.jsx';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
+import { createPauseBlock, normalizeVideoClipItems, secondsToTime, timeToSeconds } from './videoClipPlaylistUtils.js';
 
 const VIDEO_CLIP_MODAL_SIZE_KEY = 'proofVault.videoClipModalSize';
 const DEFAULT_VIDEO_CLIP_MODAL_SIZE = { width: 1280, height: 820 };
@@ -60,7 +61,6 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
   const [segmentLabel, setSegmentLabel] = useState('');
   const [tempStartTime, setTempStartTime] = useState('00:00:00');
   const [tempEndTime, setTempEndTime] = useState('00:00:00');
-  const [tempPauseAfter, setTempPauseAfter] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState('');
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
@@ -133,7 +133,6 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
     setSegmentLabel('');
     setTempStartTime('00:00:00');
     setTempEndTime('00:00:00');
-    setTempPauseAfter(false);
     setCurrentTime(0);
     setWarningMsg('');
     setShowWarning(false);
@@ -149,17 +148,10 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setFormalName(parentProof.formal_name || '');
       setExhibitNum(parentProof.draft_exhibit_num || '');
       setDescription(parentProof.description || '');
-      setSegments(
-        (Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []).map((segment, idx) => ({
-          ...segment,
-          id: segment.id || `seg-${idx}-${Date.now()}`,
-          pause_after: Boolean(segment.pause_after),
-        }))
-      );
+      setSegments(normalizeVideoClipItems(Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []));
       setSegmentLabel('');
       setTempStartTime('00:00:00');
       setTempEndTime('00:00:00');
-      setTempPauseAfter(false);
       setCurrentTime(0);
       setWarningMsg('');
       setShowWarning(false);
@@ -170,18 +162,6 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
     resetForm();
     setSelectedPartyIds(normalizePartyIds(parentProof));
   }, [open, parentProof, isEditing]);
-
-  const secondsToTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  const timeToSeconds = (timeStr) => {
-    const parts = timeStr.split(':').map(Number);
-    return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  };
 
   const handleMarkStart = () => {
     setTempStartTime(secondsToTime(currentTime));
@@ -203,31 +183,28 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
 
     const newSegment = {
       id: `seg-${Date.now()}`,
+      item_type: 'segment',
       start: tempStartTime,
       end: tempEndTime,
       label: segmentLabel.trim() || '',
-      pause_after: tempPauseAfter,
     };
 
     setSegments([...segments, newSegment]);
     setSegmentLabel('');
-    setTempPauseAfter(false);
+  };
+
+  const handleAddPauseBlock = () => {
+    setSegments([...segments, createPauseBlock(`pause-${Date.now()}`)]);
   };
 
   const handleDeleteSegment = (id) => {
-    setSegments(segments.filter((s) => s.id !== id));
-  };
-
-  const handleToggleSegmentPause = (id) => {
-    setSegments((currentSegments) => currentSegments.map((segment) => (
-      segment.id === id ? { ...segment, pause_after: !segment.pause_after } : segment
-    )));
+    setSegments(segments.filter((item) => item.id !== id));
   };
 
   const handleDragEnd = (result) => {
     const { source, destination } = result;
     if (!destination || source.index === destination.index) return;
-    
+
     const newSegments = Array.from(segments);
     const [movedSegment] = newSegments.splice(source.index, 1);
     newSegments.splice(destination.index, 0, movedSegment);
@@ -241,7 +218,12 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       return;
     }
     if (segments.length === 0) {
-      setWarningMsg('Add at least one segment');
+      setWarningMsg('Add at least one playlist item');
+      setShowWarning(true);
+      return;
+    }
+    if (!segments.some((item) => item.item_type !== 'pause')) {
+      setWarningMsg('Add at least one real video segment');
       setShowWarning(true);
       return;
     }
@@ -267,9 +249,9 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       file_url: parentProof.file_url || null,
       draft_exhibit_num: exhibitNum.trim() || null,
       description: description.trim() || null,
-      video_clips: segments.map(({ id, ...segment }) => ({
-        ...segment,
-        pause_after: Boolean(segment.pause_after),
+      video_clips: segments.map(({ id, ...item }) => ({
+        ...item,
+        item_type: item.item_type === 'pause' ? 'pause' : 'segment',
       })),
     };
 
@@ -312,7 +294,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
                 <p className="text-sm font-medium text-blue-900">
                   {isEditing ? `Editing: ${parentProof.formal_name || parentProof.name}` : `From: ${parentProof.formal_name}`}
                 </p>
-                <p className="text-xs text-blue-700 mt-1">Video</p>
+                <p className="text-xs text-blue-700 mt-1">Build a draggable playlist with video segments and pause blocks.</p>
               </div>
             </div>
 
@@ -344,18 +326,16 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
                   onTempStartTimeChange={setTempStartTime}
                   tempEndTime={tempEndTime}
                   onTempEndTimeChange={setTempEndTime}
-                  tempPauseAfter={tempPauseAfter}
-                  onTempPauseAfterChange={setTempPauseAfter}
                   segmentLabel={segmentLabel}
                   onSegmentLabelChange={setSegmentLabel}
                   onMarkStart={handleMarkStart}
                   onMarkEnd={handleMarkEnd}
                   onAddSegment={handleAddSegment}
+                  onAddPauseBlock={handleAddPauseBlock}
                   currentTimeLabel={secondsToTime(currentTime)}
                   durationLabel={secondsToTime(duration)}
                   segments={segments}
                   onDeleteSegment={handleDeleteSegment}
-                  onToggleSegmentPause={handleToggleSegmentPause}
                   onDragEnd={handleDragEnd}
                 />
 
