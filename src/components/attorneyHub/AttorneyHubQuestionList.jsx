@@ -75,23 +75,32 @@ export default function AttorneyHubQuestionList({
 
   const tree = useMemo(() => buildItemTree(questionItems, parentItemId || null), [questionItems, parentItemId]);
   const selectedPreviewProof = useMemo(() => selectedProof || null, [selectedProof]);
+  const questionCount = useMemo(() => {
+    const countNodes = (nodes = []) => nodes.reduce((sum, node) => sum + 1 + countNodes(node.children || []), 0);
+    return countNodes(tree);
+  }, [tree]);
 
   return (
-    <div className="h-full rounded-2xl border border-slate-700 bg-slate-900/50 flex flex-col overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-700/70">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Proof Questions</p>
-        <p className="mt-1 text-sm font-semibold text-white truncate">{title || 'Select a proof or group'}</p>
+    <div className="h-full rounded-2xl border border-slate-200 bg-sky-50/80 flex flex-col overflow-hidden shadow-sm">
+      <div className="border-b border-slate-200 bg-sky-100/70 px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Proof Questions</p>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-900">{title || 'Select a proof or group'}</p>
+          </div>
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">{questionCount} total</span>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="attorney-hub-scrollbar flex-1 overflow-y-auto overscroll-contain p-4 pr-3 space-y-3 [touch-action:pan-y]">
         {admissionSource && (
-          <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-3 space-y-3">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 space-y-3 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <ScrollText className="w-4 h-4 text-emerald-300" />
-                <p className="text-sm font-semibold text-white">Admission Script</p>
+                <ScrollText className="w-4 h-4 text-emerald-600" />
+                <p className="text-sm font-semibold text-slate-900">Admission Script</p>
               </div>
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-xs" onClick={() => setShowSteps(true)}>
+              <Button size="sm" className="min-h-[42px] bg-emerald-600 px-4 text-xs hover:bg-emerald-700" onClick={() => setShowSteps(true)}>
                 View Script
               </Button>
             </div>
@@ -99,31 +108,32 @@ export default function AttorneyHubQuestionList({
               <button
                 type="button"
                 onClick={() => onSelectInlineProof?.(selectedPreviewProof)}
-                className="flex w-full items-center gap-3 rounded-lg border border-slate-700 bg-slate-900/70 p-2 text-left hover:border-blue-500"
+                className="flex min-h-[56px] w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 text-left transition-colors hover:border-blue-400 hover:bg-blue-50"
               >
                 <ProofThumbPreview proof={selectedPreviewProof} size="sm" />
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Selected Proof</p>
-                  <p className="mt-1 truncate text-xs font-medium text-white">{getProofDisplayName(selectedPreviewProof)}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Selected Proof</p>
+                  <p className="mt-1 truncate text-xs font-medium text-slate-900">{getProofDisplayName(selectedPreviewProof)}</p>
                 </div>
               </button>
             )}
           </div>
         )}
 
-        {tree.length > 0 ? tree.map((node) => (
+        {tree.length > 0 ? tree.map((node, index) => (
           <QuestionNode
             key={node.id}
             node={node}
+            numberLabel={`${index + 1}`}
             proofsById={proofsById}
             checkedMap={checkedMap}
             onToggle={(id) => setCheckedMap((prev) => ({ ...prev, [id]: !prev[id] }))}
             onSelectInlineProof={onSelectInlineProof}
           />
         )) : (
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/60 p-6 text-center">
-            <Badge className="bg-slate-800 text-slate-300 border border-slate-700">0 questions</Badge>
-            <p className="mt-3 text-sm text-slate-400">No V2 questions are mapped here yet.</p>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
+            <Badge className="border border-slate-200 bg-slate-100 text-slate-700">0 questions</Badge>
+            <p className="mt-3 text-sm text-slate-500">No V2 questions are mapped here yet.</p>
           </div>
         )}
       </div>
