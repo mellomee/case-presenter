@@ -11,6 +11,7 @@ import PdfPageCountBadge from './PdfPageCountBadge';
 import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups } from './highlightGroupUtils';
 import { proofHasLinkedFile } from './proofAssetUtils';
 import { parsePageRange } from './pageRangeUtils';
+import { isPauseItem, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
 
 export default function ProofTileEnhanced({
   proof,
@@ -111,6 +112,10 @@ export default function ProofTileEnhanced({
     page: getClipPage(group.page),
     sourcePage: getSourcePage(group.page),
   }));
+
+  const videoClipItems = normalizeVideoClipItems(Array.isArray(proof.video_clips) ? proof.video_clips : []);
+  const videoSegmentCount = videoClipItems.filter((item) => !isPauseItem(item)).length;
+  const videoPauseCount = videoClipItems.filter((item) => isPauseItem(item)).length;
 
   const getPartyColor = () => {
     if (!party) return 'bg-slate-100 text-slate-700';
@@ -243,15 +248,16 @@ export default function ProofTileEnhanced({
               </div>
             )}
 
-            {proof.proof_child_type === 'VideoClip' && proof.video_clips && Array.isArray(proof.video_clips) && proof.video_clips.length > 0 && (
+            {proof.proof_child_type === 'VideoClip' && videoClipItems.length > 0 && (
               <div className="text-xs text-slate-600 mb-2 space-y-1">
                 <div>
-                  <span className="text-amber-600">• {proof.video_clips.length} segment{proof.video_clips.length !== 1 ? 's' : ''}</span>
+                  <span className="text-amber-600">• {videoSegmentCount} segment{videoSegmentCount !== 1 ? 's' : ''}</span>
+                  {videoPauseCount > 0 && <span className="ml-2 text-amber-700">• {videoPauseCount} pause{videoPauseCount !== 1 ? 's' : ''}</span>}
                 </div>
                 <div className="space-y-1">
-                  {proof.video_clips.map((segment, index) => (
-                    <div key={`${segment.start}-${segment.end}-${index}`} className="text-[11px] text-slate-500">
-                      {segment.label || `Segment ${index + 1}`} — {segment.start} to {segment.end} · {formatDuration(segment.start, segment.end)}
+                  {videoClipItems.map((item, index) => (
+                    <div key={item.id} className="text-[11px] text-slate-500">
+                      {item.label || (isPauseItem(item) ? `Pause ${index + 1}` : `Segment ${index + 1}`)} — {isPauseItem(item) ? 'Manual pause' : `${item.start} to ${item.end} · ${formatDuration(item.start, item.end)}`}
                     </div>
                   ))}
                 </div>

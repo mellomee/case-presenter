@@ -1,11 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactPlayer from 'react-player';
-
-function timeToSeconds(timeStr) {
-  const parts = String(timeStr || '0:00:00').split(':').map(Number);
-  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) return 0;
-  return parts[0] * 3600 + parts[1] * 60 + parts[2];
-}
+import { getPlayableRanges, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
 
 function clampToRanges(time, ranges) {
   if (!ranges.length) return Math.max(0, time || 0);
@@ -32,10 +27,8 @@ export default function JuryVideoClipPlayer({ src, segments = [], videoTime, isP
   const playerRef = useRef(null);
   const [segmentEnded, setSegmentEnded] = useState(false);
 
-  const ranges = useMemo(
-    () => segments.map((segment) => ({ start: timeToSeconds(segment.start), end: timeToSeconds(segment.end) })),
-    [segments]
-  );
+  const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
+  const ranges = useMemo(() => getPlayableRanges(items), [items]);
 
   const targetTime = clampToRanges(videoTime, ranges);
   const activeRange = getActiveRange(targetTime, ranges);

@@ -15,6 +15,7 @@ import { base44 } from '@/api/base44Client';
 import ReactPlayer from 'react-player';
 import VideoClipWorkspaceSidebar from './VideoClipWorkspaceSidebar.jsx';
 import PartyMultiSelectField from '@/components/proofVault/PartyMultiSelectField.jsx';
+import { isSegmentItem, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
 
 const VIDEO_CLIP_MODAL_SIZE_KEY = 'proofVault.videoClipModalSize';
 const DEFAULT_VIDEO_CLIP_MODAL_SIZE = { width: 1280, height: 820 };
@@ -148,9 +149,9 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setExhibitNum(parentProof.draft_exhibit_num || '');
       setDescription(parentProof.description || '');
       setSegments(
-        (Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []).map((segment, idx) => ({
-          ...segment,
-          id: segment.id || `seg-${idx}-${Date.now()}`,
+        normalizeVideoClipItems(Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []).map((item, idx) => ({
+          ...item,
+          id: item.id || `playlist-item-${idx}-${Date.now()}`,
         }))
       );
       setSegmentLabel('');
@@ -175,8 +176,8 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
   };
 
   const timeToSeconds = (timeStr) => {
-    const parts = timeStr.split(':').map(Number);
-    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    const parts = String(timeStr || '00:00:00').split(':').map(Number);
+    return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
   };
 
   const handleMarkStart = () => {
@@ -199,23 +200,35 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
 
     const newSegment = {
       id: `seg-${Date.now()}`,
+      type: 'segment',
       start: tempStartTime,
       end: tempEndTime,
       label: segmentLabel.trim() || '',
     };
 
-    setSegments([...segments, newSegment]);
+    setSegments((currentSegments) => [...currentSegments, newSegment]);
+    setSegmentLabel('');
+  };
+
+  const handleAddPause = () => {
+    const newPause = {
+      id: `pause-${Date.now()}`,
+      type: 'pause',
+      label: segmentLabel.trim() || 'Pause',
+    };
+
+    setSegments((currentSegments) => [...currentSegments, newPause]);
     setSegmentLabel('');
   };
 
   const handleDeleteSegment = (id) => {
-    setSegments(segments.filter((s) => s.id !== id));
+    setSegments((currentSegments) => currentSegments.filter((item) => item.id !== id));
   };
 
   const handleDragEnd = (result) => {
     const { source, destination } = result;
     if (!destination || source.index === destination.index) return;
-    
+
     const newSegments = Array.from(segments);
     const [movedSegment] = newSegments.splice(source.index, 1);
     newSegments.splice(destination.index, 0, movedSegment);
@@ -228,8 +241,8 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setShowWarning(true);
       return;
     }
-    if (segments.length === 0) {
-      setWarningMsg('Add at least one segment');
+    if (segments.length === 0 || !segments.some((item) => isSegmentItem(item))) {
+      setWarningMsg('Add at least one video segment');
       setShowWarning(true);
       return;
     }
@@ -255,7 +268,11 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       file_url: parentProof.file_url || null,
       draft_exhibit_num: exhibitNum.trim() || null,
       description: description.trim() || null,
-      video_clips: segments.map(({ id, ...segment }) => segment),
+      video_clips: segments.map(({ id, ...segment }) => (
+        segment.type === 'pause'
+          ? { type: 'pause', label: segment.label || 'Pause' }
+          : { type: 'segment', start: segment.start, end: segment.end, label: segment.label || '' }
+      )),
     };
 
     saveMutation.mutate(clipData);
@@ -334,6 +351,7 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
                   onMarkStart={handleMarkStart}
                   onMarkEnd={handleMarkEnd}
                   onAddSegment={handleAddSegment}
+                  onAddPauseItem={handleAddPause}
                   currentTimeLabel={secondsToTime(currentTime)}
                   durationLabel={secondsToTime(duration)}
                   segments={segments}

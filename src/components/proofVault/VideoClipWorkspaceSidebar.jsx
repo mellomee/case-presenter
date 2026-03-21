@@ -1,24 +1,30 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Play, Trash2, GripVertical, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Trash2, GripVertical, Plus, Pause } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { isPauseItem } from '@/lib/videoClipPlaylist';
 
 function SegmentItem({ segment, index, onDelete }) {
+  const pauseItem = isPauseItem(segment);
+
   return (
     <Draggable draggableId={segment.id} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`flex items-center gap-2 rounded-lg border p-2.5 ${snapshot.isDragging ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-slate-50'}`}
+          className={`flex items-center gap-2 rounded-lg border p-2.5 ${snapshot.isDragging ? 'border-blue-300 bg-blue-50' : pauseItem ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-slate-50'}`}
         >
           <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-400">
             <GripVertical className="w-4 h-4" />
           </div>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-md ${pauseItem ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+            {pauseItem ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </div>
           <div className="min-w-0 flex-1 text-xs">
-            <div className="font-medium text-slate-900 truncate">{segment.label || `Segment ${index + 1}`}</div>
-            <div className="text-slate-500 font-mono">{segment.start} → {segment.end}</div>
+            <div className="font-medium text-slate-900 truncate">{segment.label || (pauseItem ? `Pause ${index + 1}` : `Segment ${index + 1}`)}</div>
+            <div className="text-slate-500 font-mono">{pauseItem ? 'Manual pause between segments' : `${segment.start} → ${segment.end}`}</div>
           </div>
           <Button variant="ghost" size="icon" onClick={() => onDelete(segment.id)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
             <Trash2 className="w-4 h-4" />
@@ -49,6 +55,7 @@ export default function VideoClipWorkspaceSidebar({
   onMarkStart,
   onMarkEnd,
   onAddSegment,
+  onAddPauseItem,
   currentTimeLabel,
   durationLabel,
   segments,
@@ -70,7 +77,7 @@ export default function VideoClipWorkspaceSidebar({
       <div className="p-2.5 border-b border-slate-200 flex items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-slate-900">Video Clip Workspace</div>
-          <div className="text-[11px] text-slate-500 leading-tight">{segments.length} segment{segments.length === 1 ? '' : 's'} · {currentTimeLabel} / {durationLabel}</div>
+          <div className="text-[11px] text-slate-500 leading-tight">{segments.length} playlist item{segments.length === 1 ? '' : 's'} · {currentTimeLabel} / {durationLabel}</div>
         </div>
         <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onToggleCollapsed}>
           <ChevronLeft className="w-4 h-4" />
@@ -79,7 +86,7 @@ export default function VideoClipWorkspaceSidebar({
 
       <div className="flex-1 min-h-0 overflow-y-auto p-2 pr-1.5 space-y-2">
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Mark Segment</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add Video Segment</div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-medium text-slate-700 mb-1 block">Start</label>
@@ -99,16 +106,22 @@ export default function VideoClipWorkspaceSidebar({
             </Button>
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-700 mb-1 block">Segment Label</label>
+            <label className="text-xs font-medium text-slate-700 mb-1 block">Item Label</label>
             <Input value={segmentLabel} onChange={(e) => onSegmentLabelChange(e.target.value)} placeholder="Optional label" className="h-8 text-xs" />
           </div>
-          <Button onClick={onAddSegment} className="w-full h-8 bg-green-600 hover:bg-green-700 text-xs">
-            <Plus className="w-3.5 h-3.5" /> Add Segment
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={onAddSegment} className="w-full h-8 bg-green-600 hover:bg-green-700 text-xs">
+              <Plus className="w-3.5 h-3.5" /> Add Segment
+            </Button>
+            <Button onClick={onAddPauseItem} variant="outline" className="w-full h-8 text-xs border-amber-300 text-amber-700 hover:bg-amber-50">
+              <Pause className="w-3.5 h-3.5" /> Add Pause
+            </Button>
+          </div>
+          <p className="text-[11px] text-slate-500">Pause items are reversible — drag them anywhere or delete them later.</p>
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Segments</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Playlist</div>
           {segments.length > 0 ? (
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="segments">
@@ -127,7 +140,7 @@ export default function VideoClipWorkspaceSidebar({
               </Droppable>
             </DragDropContext>
           ) : (
-            <p className="text-xs text-slate-500">No segments yet.</p>
+            <p className="text-xs text-slate-500">No playlist items yet.</p>
           )}
         </div>
 
