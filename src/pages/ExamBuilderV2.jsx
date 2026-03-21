@@ -419,8 +419,8 @@ export default function ExamBuilderV2() {
             {!currentExam && selectedPartyId && <span className="text-xs text-slate-500">Choose an item action to create this V2 exam.</span>}
           </div>
 
-          <div className={`grid grid-cols-1 min-h-[calc(100vh-10rem)] ${leftColumnCollapsed ? 'xl:grid-cols-[4.5rem_1fr]' : 'xl:grid-cols-[22rem_1fr]'}`}>
-            <div className="border-r border-slate-800 p-4 min-h-0 overflow-y-auto">
+          <div className={`grid grid-cols-1 h-[calc(100vh-10rem)] ${leftColumnCollapsed ? 'xl:grid-cols-[4.5rem_1fr]' : 'xl:grid-cols-[22rem_1fr]'}`}>
+            <div className="flex min-h-0 flex-col border-r border-slate-800 p-4">
               <div className={`mb-3 flex items-center ${leftColumnCollapsed ? 'justify-center' : 'justify-between gap-3'}`}>
                 {!leftColumnCollapsed && <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Exam Order</p>}
                 <button
@@ -435,7 +435,7 @@ export default function ExamBuilderV2() {
               {!leftColumnCollapsed && (
                 <Droppable droppableId="root-items" type="ROOT">
                   {(provided) => (
-                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="h-full space-y-3 overflow-y-auto pr-1">
                       {rootItems.map((item, index) => {
                         const proof = item.item_type === 'proof' ? proofsById[item.linked_proof_id] : null;
                         const active = selectedRootId === item.id;

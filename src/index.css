@@ -167,4 +167,32 @@
   .bg-slate-900\/60 .bg-slate-800 {
     @apply bg-white border border-slate-200;
   }
+
+  .max-w-2xl.bg-slate-950.border-slate-800.text-white textarea,
+  .max-w-2xl.bg-slate-950.border-slate-800.text-white input {
+    @apply border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500;
+  }
+
+  .max-w-2xl.bg-slate-950.border-slate-800.text-white .grid.grid-cols-2.md\:grid-cols-3.gap-3 {
+    max-height: min(30rem, 55vh);
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    align-content: start;
+  }
+
+  .max-w-2xl.bg-slate-950.border-slate-800.text-white .grid.grid-cols-2.md\:grid-cols-3.gap-3 > div {
+    @apply border-slate-200 bg-slate-50;
+  }
+
+  .max-w-2xl.bg-slate-950.border-slate-800.text-white .grid.grid-cols-2.md\:grid-cols-3.gap-3 > div > button {
+    @apply border-slate-200 bg-white text-slate-700 hover:text-slate-900;
+  }
+
+  .max-w-2xl.bg-slate-950.border-slate-800.text-white .grid.grid-cols-2.md\:grid-cols-3.gap-3 > div p {
+    @apply text-slate-700;
+  }
+
+  .max-w-6xl.bg-slate-950.border-slate-800.text-white .flex.flex-wrap.gap-2.text-xs.text-slate-400 > span {
+    @apply border-slate-200 bg-slate-100 text-slate-700;
+  }
 }
