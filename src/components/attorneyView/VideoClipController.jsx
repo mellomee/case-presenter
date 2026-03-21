@@ -2,26 +2,19 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import ReactPlayer from 'react-player';
 import { Play, Pause, List, X } from 'lucide-react';
 import VideoClipProgressBars from '@/components/attorneyView/VideoClipProgressBars.jsx';
-import {
-  getItemAnchorTime,
-  getNextPlayableIndex,
-  isPauseItem,
-  normalizeVideoClipItems,
-  timeToSeconds,
-} from '@/lib/videoClipPlaylist';
+import { getItemAnchorTime, getNextPlayableIndex, isPauseItem, isSegmentItem, normalizeVideoClipItems, timeToSeconds } from '@/lib/videoClipPlaylist';
 
 export default function VideoClipController({ videoUrl, segments = [], onStateChange }) {
   const playerRef = useRef(null);
   const segmentItemRefs = useRef({});
   const suppressEndCheckRef = useRef(false);
   const resumeTimeoutRef = useRef(null);
+  const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
   const [playing, setPlaying] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
-
-  const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
 
   const clearResumeTimeout = useCallback(() => {
     if (resumeTimeoutRef.current) {
@@ -34,15 +27,15 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
     const item = items[idx];
     if (!item) return;
 
-    const shouldResume = !!options.resume && !isPauseItem(item);
-    const nextTime = isPauseItem(item) ? getItemAnchorTime(items, idx) : timeToSeconds(item.start);
+    const shouldResume = !!options.resume && isSegmentItem(item);
+    const targetTime = isPauseItem(item) ? getItemAnchorTime(items, idx) : timeToSeconds(item.start);
 
     clearResumeTimeout();
     suppressEndCheckRef.current = true;
     setCurrentSegmentIdx(idx);
-    setCurrentTime(nextTime);
+    setCurrentTime(targetTime);
     setPlaying(shouldResume);
-    playerRef.current?.seekTo(nextTime, 'seconds');
+    playerRef.current?.seekTo?.(targetTime, 'seconds');
 
     resumeTimeoutRef.current = setTimeout(() => {
       suppressEndCheckRef.current = false;
@@ -72,33 +65,48 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
   useEffect(() => {
     if (items.length === 0 || suppressEndCheckRef.current) return;
 
-    const item = items[currentSegmentIdx];
-    if (!item || isPauseItem(item)) return;
+    const currentItem = items[currentSegmentIdx];
+    if (!currentItem || isPauseItem(currentItem)) return;
 
-    const endSec = timeToSeconds(item.end);
+    const endSec = timeToSeconds(currentItem.end);
+    if (currentTime < endSec - 0.05) return;
 
-    if (currentTime >= endSec - 0.05) {
-      if (currentSegmentIdx < items.length - 1) {
-        const nextIndex = currentSegmentIdx + 1;
-        seekToItem(nextIndex, { resume: !isPauseItem(items[nextIndex]) });
-      } else {
-        setCurrentTime(endSec);
-        setPlaying(false);
-      }
+    if (currentSegmentIdx < items.length - 1) {
+      const nextIndex = currentSegmentIdx + 1;
+      seekToItem(nextIndex, { resume: !isPauseItem(items[nextIndex]) });
+      return;
     }
+
+    setCurrentTime(endSec);
+    setPlaying(false);
   }, [currentTime, currentSegmentIdx, items, seekToItem]);
 
   useEffect(() => {
     onStateChange?.({ currentTime, playing });
   }, [currentTime, playing, onStateChange]);
 
-  if (!items.length) {
+  if (!items.length || !items.some((item) => isSegmentItem(item))) {
     return <div className="text-slate-500 italic">No segments</div>;
   }
 
-  const currentItem = items[currentSegmentIdx];
-  const currentIsPause = isPauseItem(currentItem);
-  const nextPlayableIndex = currentIsPause ? getNextPlayableIndex(items, currentSegmentIdx) : -1;
+  const currentItem = items[currentSegmentIdx] || items[0];
+  const nextPlayableIndex = isPauseItem(currentItem) ? getNextPlayableIndex(items, currentSegmentIdx) : -1;
+
+  const handlePlayToggle = () => {
+    if (isPauseItem(currentItem)) {
+      if (nextPlayableIndex >= 0) {
+        seekToItem(nextPlayableIndex, { resume: true });
+      }
+      return;
+    }
+    setPlaying((value) => !value);
+  };
+
+  const handleNext = () => {
+    if (currentSegmentIdx >= items.length - 1) return;
+    const nextIndex = currentSegmentIdx + 1;
+    seekToItem(nextIndex, { resume: !isPauseItem(items[nextIndex]) });
+  };
 
   return (
     <div className="space-y-3">
@@ -110,7 +118,9 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
           height="100%"
           controls
           playing={playing}
-          onPlay={() => !currentIsPause && setPlaying(true)}
+          onPlay={() => {
+            if (!isPauseItem(currentItem)) setPlaying(true);
+          }}
           onPause={() => setPlaying(false)}
           onDuration={(duration) => setVideoDuration(duration)}
           onSeek={(seconds) => {
@@ -133,7 +143,7 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
             }
           }}
           onReady={() => {
-            const startSec = currentIsPause ? getItemAnchorTime(items, currentSegmentIdx) : timeToSeconds(currentItem?.start);
+            const startSec = getItemAnchorTime(items, currentSegmentIdx);
             playerRef.current?.seekTo(startSec, 'seconds');
             setCurrentTime(startSec);
           }}
@@ -153,42 +163,22 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
 
         <div className="absolute top-4 left-4 z-20 flex gap-2">
           <button
-            onClick={() => {
-              if (currentIsPause) {
-                if (nextPlayableIndex >= 0) {
-                  seekToItem(nextPlayableIndex, { resume: true });
-                }
-                return;
-              }
-              setPlaying((value) => !value);
-            }}
+            onClick={handlePlayToggle}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-black/70 hover:bg-black/85 text-white text-xs font-medium backdrop-blur transition"
           >
             {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            {currentIsPause ? 'Resume' : playing ? 'Pause' : 'Play'}
+            {isPauseItem(currentItem) ? 'Resume' : playing ? 'Pause' : 'Play'}
           </button>
 
           {currentSegmentIdx < items.length - 1 && (
             <button
-              onClick={() => {
-                const nextIndex = currentSegmentIdx + 1;
-                seekToItem(nextIndex, { resume: !isPauseItem(items[nextIndex]) });
-              }}
+              onClick={handleNext}
               className="px-3 py-2 rounded-md bg-black/60 hover:bg-black/80 text-white text-xs font-medium backdrop-blur transition"
             >
               Next
             </button>
           )}
         </div>
-
-        {currentIsPause && (
-          <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent px-4 py-5 text-white">
-            <div className="rounded-lg border border-amber-300/30 bg-amber-500/10 px-4 py-3 backdrop-blur-sm">
-              <div className="text-sm font-semibold">{currentItem.label || 'Pause'}</div>
-              <div className="mt-1 text-xs text-slate-200">Attorney playback is paused here until you resume or move to the next item.</div>
-            </div>
-          </div>
-        )}
 
         <button
           onClick={() => setPanelOpen(!panelOpen)}
@@ -206,7 +196,7 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <div>
               <h3 className="text-sm font-semibold text-white">Playlist</h3>
-              <p className="text-xs text-slate-400">Segments autoplay until they hit a pause item</p>
+              <p className="text-xs text-slate-400">Attorney preview keeps autoplay and stops at pause items</p>
             </div>
             <button
               onClick={() => setPanelOpen(false)}
@@ -217,30 +207,26 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
           </div>
 
           <div className="h-[calc(100%-61px)] overflow-y-auto p-3 space-y-2">
-            {items.map((item, idx) => {
-              const itemIsPause = isPauseItem(item);
-              return (
-                <button
-                  key={item.id}
-                  ref={(el) => {
-                    segmentItemRefs.current[idx] = el;
-                  }}
-                  className={`w-full text-left p-3 rounded-lg text-sm transition border ${
-                    idx === currentSegmentIdx
-                      ? itemIsPause
-                        ? 'bg-amber-600/20 border-amber-400 text-white shadow-sm'
-                        : 'bg-blue-600/20 border-blue-400 text-white shadow-sm'
-                      : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
-                  }`}
-                  onClick={() => seekToItem(idx, { resume: !itemIsPause })}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-semibold">{item.label || (itemIsPause ? `Pause ${idx + 1}` : `Segment ${idx + 1}`)}</span>
-                    <span className="text-xs text-slate-400">{itemIsPause ? 'Manual pause' : `${item.start} → ${item.end}`}</span>
-                  </div>
-                </button>
-              );
-            })}
+            {items.map((item, idx) => (
+              <button
+                key={item.id}
+                ref={(el) => {
+                  segmentItemRefs.current[idx] = el;
+                }}
+                className={`w-full text-left p-3 rounded-lg text-sm transition border ${
+                  idx === currentSegmentIdx
+                    ? 'bg-blue-600/20 border-blue-400 text-white shadow-sm'
+                    : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
+                }`}
+                onClick={() => seekToItem(idx, { resume: isSegmentItem(item) })}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold">{item.label || (isPauseItem(item) ? `Pause ${idx + 1}` : `Segment ${idx + 1}`)}</span>
+                  <span className="text-xs text-slate-400">{isPauseItem(item) ? 'Manual pause' : `${item.start} → ${item.end}`}</span>
+                </div>
+                {isPauseItem(item) && <div className="mt-1 text-xs text-amber-300 italic">Playback stops here until resumed.</div>}
+              </button>
+            ))}
           </div>
         </div>
       </div>

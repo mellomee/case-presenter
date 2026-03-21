@@ -148,12 +148,10 @@ export default function CreateVideoClipModal({ open, onClose, parentProof, onSuc
       setFormalName(parentProof.formal_name || '');
       setExhibitNum(parentProof.draft_exhibit_num || '');
       setDescription(parentProof.description || '');
-      setSegments(
-        normalizeVideoClipItems(Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []).map((item, idx) => ({
-          ...item,
-          id: item.id || `playlist-item-${idx}-${Date.now()}`,
-        }))
-      );
+      setSegments(normalizeVideoClipItems(Array.isArray(parentProof.video_clips) ? parentProof.video_clips : []).map((item, idx) => ({
+        ...item,
+        id: item.id || `playlist-item-${idx}-${Date.now()}`,
+      })));
       setSegmentLabel('');
       setTempStartTime('00:00:00');
       setTempEndTime('00:00:00');
