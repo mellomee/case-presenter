@@ -8,6 +8,7 @@ import InlineProofNameEditor from './InlineProofNameEditor.jsx';
 import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups } from './highlightGroupUtils';
 import { proofHasLinkedFile } from './proofAssetUtils';
 import { parsePageRange } from './pageRangeUtils';
+import { isPauseItem, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
 
 export default function ProofTile({
   proof,
@@ -243,16 +244,29 @@ export default function ProofTile({
 
             {proof.proof_child_type === 'VideoClip' && proof.video_clips && Array.isArray(proof.video_clips) && proof.video_clips.length > 0 && (
               <div className="text-xs text-slate-600 mb-2 space-y-1">
-                <div>
-                  <span className="text-amber-600">• {proof.video_clips.length} segment{proof.video_clips.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="space-y-1">
-                  {proof.video_clips.map((segment, index) => (
-                    <div key={`${segment.start}-${segment.end}-${index}`} className="text-[11px] text-slate-500">
-                      {segment.label || `Segment ${index + 1}`} — {segment.start} to {segment.end} · {formatDuration(segment.start, segment.end)}
-                    </div>
-                  ))}
-                </div>
+                {(() => {
+                  const playlistItems = normalizeVideoClipItems(proof.video_clips);
+                  const segmentCount = playlistItems.filter((item) => !isPauseItem(item)).length;
+                  const pauseCount = playlistItems.filter((item) => isPauseItem(item)).length;
+
+                  return (
+                    <>
+                      <div>
+                        <span className="text-amber-600">• {segmentCount} segment{segmentCount !== 1 ? 's' : ''}</span>
+                        {pauseCount > 0 && <span className="ml-2 text-amber-700">• {pauseCount} pause{pauseCount !== 1 ? 's' : ''}</span>}
+                      </div>
+                      <div className="space-y-1">
+                        {playlistItems.map((item, index) => (
+                          <div key={`${item.type}-${item.start}-${item.end}-${index}`} className="text-[11px] text-slate-500">
+                            {isPauseItem(item)
+                              ? `${item.label || `Pause ${index + 1}`} — manual pause`
+                              : `${item.label || `Segment ${index + 1}`} — ${item.start} to ${item.end} · ${formatDuration(item.start, item.end)}`}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
