@@ -195,4 +195,94 @@
   .max-w-6xl.bg-slate-950.border-slate-800.text-white .flex.flex-wrap.gap-2.text-xs.text-slate-400 > span {
     @apply border-slate-200 bg-slate-100 text-slate-700;
   }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden {
+    background: linear-gradient(180deg, #eef4ff 0%, #e8f1ff 100%);
+    border-color: #cbd5e1;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden > .px-4.py-3.border-b.border-slate-700\/70 {
+    background: rgba(148, 163, 184, 0.18);
+    border-color: #cbd5e1;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden > .px-4.py-3.border-b.border-slate-700\/70 .text-white {
+    @apply text-slate-900;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden > .px-4.py-3.border-b.border-slate-700\/70 .text-slate-500 {
+    @apply text-slate-500;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden > .flex-1.overflow-y-auto.p-4.space-y-3 {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #e2e8f0;
+    scrollbar-gutter: stable;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden > .flex-1.overflow-y-auto.p-4.space-y-3::-webkit-scrollbar,
+  .flex-1.min-h-0.overflow-y-auto.p-2 > .flex.h-full.flex-col.items-center.gap-2.overflow-y-auto::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden > .flex-1.overflow-y-auto.p-4.space-y-3::-webkit-scrollbar-track,
+  .flex-1.min-h-0.overflow-y-auto.p-2 > .flex.h-full.flex-col.items-center.gap-2.overflow-y-auto::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 9999px;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden > .flex-1.overflow-y-auto.p-4.space-y-3::-webkit-scrollbar-thumb,
+  .flex-1.min-h-0.overflow-y-auto.p-2 > .flex.h-full.flex-col.items-center.gap-2.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 9999px;
+    border: 2px solid #e2e8f0;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden .rounded-xl.border.border-slate-700.bg-slate-800\/60.p-3 {
+    @apply border-slate-200 bg-white shadow-sm;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden button.w-full.flex.items-start.gap-3.text-left {
+    min-height: 52px;
+    touch-action: manipulation;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden button.w-full.flex.items-start.gap-3.text-left > svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden .text-sm.font-medium.text-white.leading-relaxed {
+    @apply text-slate-800;
+  }
+
+  .border-r.border-slate-800.min-h-0.p-4.xl\:flex-shrink-0.xl\:min-w-\[320px\] > .h-full.rounded-2xl.border.border-slate-700.bg-slate-900\/50.flex.flex-col.overflow-hidden .rounded-lg.border.border-slate-700.bg-slate-900\/70.p-2.hover\:border-blue-500 {
+    @apply border-slate-200 bg-slate-50;
+  }
+
+  .flex-1.min-h-0.overflow-y-auto.p-2 > .flex.h-full.flex-col.items-center.gap-2.overflow-y-auto {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-right: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #e2e8f0;
+  }
+
+  .flex-1.min-h-0.overflow-y-auto.p-2 > .flex.h-full.flex-col.items-center.gap-2.overflow-y-auto > button {
+    width: 100%;
+    max-width: 68px;
+    min-height: 88px;
+    padding: 0.5rem;
+    touch-action: manipulation;
+  }
 }
