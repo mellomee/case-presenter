@@ -122,6 +122,47 @@ export default function ExamBuilderV2() {
     () => flattenTree(visibleQuestionTree).map((item) => item.id),
     [visibleQuestionTree]
   );
+  const selectedTopQuestions = useMemo(() => {
+    const selectedSet = new Set(selectedQuestionIds);
+
+    return visibleQuestionOrder
+      .map((id) => itemsById[id])
+      .filter(Boolean)
+      .filter((item) => {
+        if (!selectedSet.has(item.id)) return false;
+
+        let parentId = item.parent_item_id;
+        while (parentId && parentId !== selectedRoot?.id) {
+          if (selectedSet.has(parentId)) return false;
+          parentId = itemsById[parentId]?.parent_item_id || null;
+        }
+
+        return true;
+      });
+  }, [itemsById, selectedQuestionIds, selectedRoot?.id, visibleQuestionOrder]);
+  const moveDestinations = useMemo(
+    () => rootItems
+      .filter((item) => item.id !== selectedRoot?.id)
+      .map((item, index) => ({
+        id: item.id,
+        label: `${index + 1}. ${item.item_type === 'proof' ? getProofDisplayName(proofsById[item.linked_proof_id]) : item.label}`,
+      })),
+    [proofsById, rootItems, selectedRoot?.id]
+  );
+  const exportRootNodes = useMemo(
+    () => (selectedTopQuestions.length > 0 ? selectedTopQuestions : visibleQuestionTree),
+    [selectedTopQuestions, visibleQuestionTree]
+  );
+  const exportText = useMemo(() => {
+    if (!selectedRoot) return '';
+
+    const heading = selectedRoot.item_type === 'proof'
+      ? `PROOF: ${getProofDisplayName(selectedRootProof || proofsById[selectedRoot.linked_proof_id])}`
+      : `GROUP: ${selectedRoot.label || 'Untitled Group'}`;
+
+    const lines = serializeQuestionTree(exportRootNodes, questionItems, proofsById);
+    return [heading, '', ...lines].join('\n');
+  }, [exportRootNodes, proofsById, questionItems, selectedRoot, selectedRootProof]);
 
   useEffect(() => {
     if (parties.length > 0 && !parties.some((party) => party.id === selectedPartyId)) {
@@ -282,6 +323,31 @@ export default function ExamBuilderV2() {
   const deleteItem = async (item) => {
     const descendantIds = collectDescendantIds(currentItems, item.id);
     await Promise.all([...descendantIds, item.id].map((id) => base44.entities.ExamItemV2.delete(id)));
+    invalidate();
+  };
+
+  const moveSelectedQuestions = async (destinationRootId) => {
+    if (!destinationRootId || selectedTopQuestions.length === 0) return;
+
+    const isChildItem = (item) => item.item_type === 'question' || item.item_type === 'admission_script';
+    const selectedTopIds = new Set(selectedTopQuestions.map((item) => item.id));
+    const sourceParentIds = [...new Set(selectedTopQuestions.map((item) => item.parent_item_id).filter(Boolean))];
+    const destinationSiblings = currentItems
+      .filter((item) => isChildItem(item) && item.parent_item_id === destinationRootId)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    const updates = [
+      ...sourceParentIds.flatMap((parentId) => currentItems
+        .filter((item) => isChildItem(item) && item.parent_item_id === parentId && !selectedTopIds.has(item.id))
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map((item, index) => ({ id: item.id, patch: { parent_item_id: parentId, sort_order: index } }))),
+      ...destinationSiblings.map((item, index) => ({ id: item.id, patch: { parent_item_id: destinationRootId, sort_order: index } })),
+      ...selectedTopQuestions.map((item, index) => ({ id: item.id, patch: { parent_item_id: destinationRootId, sort_order: destinationSiblings.length + index } })),
+    ];
+
+    await Promise.all(updates.map((updateItem) => base44.entities.ExamItemV2.update(updateItem.id, updateItem.patch)));
+    setSelectedQuestionIds([]);
+    setSelectedRootId(destinationRootId);
     invalidate();
   };
 
@@ -566,7 +632,21 @@ export default function ExamBuilderV2() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {selectedQuestionIds.length > 0 && <span className="rounded-full border border-blue-500/40 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-300">{selectedQuestionIds.length} selected</span>}
+                      <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setExportDialogOpen(true)} disabled={exportRootNodes.length === 0}>
+                        Export {selectedQuestionIds.length > 0 ? 'Selected' : 'Questions'}
+                      </Button>
+                      {selectedQuestionIds.length > 0 && (
+                        <>
+                          <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMoveDialogOpen(true)} disabled={moveDestinations.length === 0}>
+                            Move Selected
+                          </Button>
+                          <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setSelectedQuestionIds([])}>
+                            Clear Selection
+                          </Button>
+                        </>
+                      )}
                       <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setQuestionDialog({ open: true, parentId: selectedRoot.id, initialValue: null, title: 'Add Question' })}>
                         <Plus className="w-4 h-4 mr-2" /> Add Question
                       </Button>
@@ -579,6 +659,8 @@ export default function ExamBuilderV2() {
                     items={currentItems.filter((item) => item.item_type === 'question' || item.item_type === 'admission_script')}
                     proofsById={proofsById}
                     admissionStatusMeta={admissionStatusMeta}
+                    selectedQuestionIds={selectedQuestionIds}
+                    onToggleSelect={(questionId) => setSelectedQuestionIds((prev) => prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId])}
                     onEdit={(item) => setQuestionDialog({ open: true, parentId: item.parent_item_id, initialValue: { ...item, attached_proof_ids: parseIdsField(item.attached_proof_ids) }, title: 'Edit Question' })}
                     onEditScript={() => setOverridesOpen(true)}
                     onAddFollowup={(item) => setQuestionDialog({ open: true, parentId: item.id, initialValue: null, title: 'Add Follow-up' })}
@@ -607,6 +689,21 @@ export default function ExamBuilderV2() {
           initialValue={questionDialog.initialValue}
           availableProofs={availableAttachmentProofs}
           title={questionDialog.title}
+        />
+        <MoveSelectedQuestionsDialog
+          open={moveDialogOpen}
+          onOpenChange={setMoveDialogOpen}
+          count={selectedQuestionIds.length}
+          destinations={moveDestinations}
+          onMove={moveSelectedQuestions}
+        />
+        <ExportQuestionsDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          title={selectedQuestionIds.length > 0 ? 'Export Selected Questions' : 'Export Questions'}
+          description={selectedQuestionIds.length > 0 ? 'This export includes the selected question branches only.' : 'This export includes the full question section in V2 import format.'}
+          content={exportText}
+          fileName={`${String(selectedRootProof ? getProofDisplayName(selectedRootProof) : selectedRoot?.label || 'exam-builder-v2').trim().replace(/\s+/g, '-').toLowerCase()}.txt`}
         />
         <ExamBuilderSafePreviewDialog
           open={!!previewDialogProof}
