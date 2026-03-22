@@ -2,7 +2,7 @@ import React from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Eye, GripVertical, Pencil, Plus, ScrollText, Trash2 } from 'lucide-react';
-import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
 
 function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta, onEdit, onEditScript, onAddFollowup, onDelete, onSelectAttachment }) {
@@ -72,7 +72,7 @@ function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta
                                   <Eye className="w-3 h-3" />
                                 </button>
                                 <div className="flex justify-center">
-                                  <ProofThumbPreview proof={proof} size="sm" />
+                                  <ExamBuilderProofThumb proof={proof} size="sm" />
                                 </div>
                                 <p className="mt-1 max-w-14 text-[10px] text-slate-300 leading-tight">{getProofDisplayName(proof)}</p>
                               </div>

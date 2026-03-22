@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
-import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
 import { getProofDisplayName } from '@/lib/examV2Utils';
 
@@ -82,7 +82,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
                         <Eye className="w-3.5 h-3.5" />
                       </button>
                       <div className="flex justify-center">
-                        <ProofThumbPreview proof={proof} size="sm" />
+                        <ExamBuilderProofThumb proof={proof} size="sm" />
                       </div>
                       <p className="mt-2 text-[11px] text-slate-300 leading-tight">{getProofDisplayName(proof)}</p>
                     </div>

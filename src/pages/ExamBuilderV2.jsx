@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Eye, GripVertical, Pencil, Plus, Printer, ScrollText, Trash2, Upload } from 'lucide-react';
-import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
+import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
 import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
@@ -377,10 +377,12 @@ export default function ExamBuilderV2() {
       }
     }
 
-    const updates = [
-      ...nextSource.map((item, index) => ({ id: item.id, patch: { sort_order: index, parent_item_id: sourceParentId } })),
-      ...nextDest.map((item, index) => ({ id: item.id, patch: { sort_order: index, parent_item_id: destParentId } })),
-    ];
+    const updates = sourceParentId === destParentId
+      ? nextDest.map((item, index) => ({ id: item.id, patch: { sort_order: index, parent_item_id: destParentId } }))
+      : [
+          ...nextSource.map((item, index) => ({ id: item.id, patch: { sort_order: index, parent_item_id: sourceParentId } })),
+          ...nextDest.map((item, index) => ({ id: item.id, patch: { sort_order: index, parent_item_id: destParentId } })),
+        ];
 
     await Promise.all(updates.map((updateItem) => base44.entities.ExamItemV2.update(updateItem.id, updateItem.patch)));
     invalidate();
@@ -388,6 +390,7 @@ export default function ExamBuilderV2() {
 
   const onDragEnd = async ({ source, destination, draggableId, type }) => {
     if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
     if (type === 'ROOT') {
       await reorderRootItems(source.index, destination.index);
       return;
@@ -453,7 +456,7 @@ export default function ExamBuilderV2() {
                                     <GripVertical className="w-4 h-4" />
                                   </button>
                                   <div className="flex-shrink-0 relative">
-                                    {proof ? <ProofThumbPreview proof={proof} size="md" /> : <ProofThumbPreview groupLabel={item.label} size="md" />}
+                                    {proof ? <ExamBuilderProofThumb proof={proof} size="md" /> : <ExamBuilderProofThumb groupLabel={item.label} size="md" />}
                                     {proof && (
                                       <button
                                         type="button"
