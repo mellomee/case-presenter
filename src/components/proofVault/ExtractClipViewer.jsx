@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PDFViewer from './PDFViewer';
 import { FileText, Layers, Scissors, Loader2 } from 'lucide-react';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
@@ -60,6 +60,12 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
     const selectedGroup = groups.find((group) => group.id === selectedGroupId);
     return selectedGroup ? [selectedGroup] : [];
   }, [showHighlights, selectedGroupId, groups]);
+
+  useEffect(() => {
+    if (!focusTarget) return;
+    const timeoutId = window.setTimeout(() => setFocusTarget(null), 450);
+    return () => window.clearTimeout(timeoutId);
+  }, [focusTarget]);
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
