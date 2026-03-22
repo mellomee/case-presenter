@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
 import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
-import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
+import ExamBuilderSafePreviewDialog from '@/components/examV2/ExamBuilderSafePreviewDialog.jsx';
 import { getProofDisplayName } from '@/lib/examV2Utils';
 
 export default function QuestionEditorDialog({ open, onOpenChange, onSave, initialValue = null, availableProofs = [], title = 'Question' }) {
@@ -96,7 +96,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={async () => { await onSave(form); onOpenChange(false); }}>Save Question</Button>
           </div>
         </div>
-        <InlineProofPreviewDialog open={!!previewProof} onOpenChange={(nextOpen) => !nextOpen && setPreviewProof(null)} proof={previewProof} allProofs={availableProofs} />
+        <ExamBuilderSafePreviewDialog open={!!previewProof} onOpenChange={(nextOpen) => !nextOpen && setPreviewProof(null)} proof={previewProof} allProofs={availableProofs} />
       </DialogContent>
     </Dialog>
   );

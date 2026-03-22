@@ -5,12 +5,12 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Eye, GripVertical, Pencil, Plus, Printer, ScrollText, Trash2, Upload } from 'lucide-react';
 import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
-import ProofPickerDialog from '@/components/examV2/ProofPickerDialog.jsx';
+import ExamBuilderProofPickerDialog from '@/components/examV2/ExamBuilderProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
 import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
 import QuestionTreeEditor from '@/components/examV2/QuestionTreeEditor.jsx';
 import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEditor.jsx';
-import InlineProofPreviewDialog from '@/components/examV2/InlineProofPreviewDialog.jsx';
+import ExamBuilderSafePreviewDialog from '@/components/examV2/ExamBuilderSafePreviewDialog.jsx';
 import ExamV2ImportChooserDialog from '@/components/examV2/ExamV2ImportChooserDialog.jsx';
 import ExamV2ExcelImportDialog from '@/components/examV2/ExamV2ExcelImportDialog.jsx';
 import ExamV2TextImportDialog from '@/components/examV2/ExamV2TextImportDialog.jsx';
@@ -548,7 +548,7 @@ export default function ExamBuilderV2() {
           </div>
         </div>
 
-        <ProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} parties={parties} onSelect={addProofToExam} />
+        <ExamBuilderProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} parties={parties} onSelect={addProofToExam} />
         <GroupEditorDialog
           open={groupDialog.open}
           onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}
@@ -563,7 +563,7 @@ export default function ExamBuilderV2() {
           availableProofs={availableAttachmentProofs}
           title={questionDialog.title}
         />
-        <InlineProofPreviewDialog
+        <ExamBuilderSafePreviewDialog
           open={!!previewDialogProof}
           onOpenChange={(open) => !open && setPreviewDialogProof(null)}
           proof={previewDialogProof}
