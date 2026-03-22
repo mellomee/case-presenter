@@ -92,7 +92,7 @@ export default function AttorneyHubQuestionList({
         </div>
       </div>
 
-      <div className="attorney-hub-scrollbar flex-1 overflow-y-auto overscroll-contain p-4 pr-3 space-y-3 [touch-action:pan-y]">
+      <div className="attorney-hub-scrollbar flex-1 min-h-0 overflow-y-scroll overscroll-contain p-4 pr-3 space-y-3 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
         {admissionSource && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 space-y-3 shadow-sm">
             <div className="flex items-center justify-between gap-3">

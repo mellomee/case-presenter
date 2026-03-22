@@ -441,9 +441,9 @@ export default function AttorneyHub() {
               ))}
             </div>
 
-            <div className={`flex-1 min-h-0 overflow-y-auto ${leftColumnCollapsed ? 'p-2' : 'p-4'}`}>
+            <div className={`flex-1 min-h-0 ${leftColumnCollapsed ? 'overflow-hidden p-2' : 'overflow-y-auto p-4'}`}>
               {leftColumnCollapsed ? (
-                <div className="attorney-hub-scrollbar flex h-full flex-col items-center gap-2 overflow-y-auto overscroll-contain pr-1 [touch-action:pan-y]">
+                <div className="attorney-hub-scrollbar flex h-full min-h-0 flex-col items-center gap-2 overflow-y-scroll overscroll-contain pr-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
                   {displayEntries.map((entry) => {
                     const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
                     const proof = entry.kind === 'proof' ? proofsById[entry.id] : null;
