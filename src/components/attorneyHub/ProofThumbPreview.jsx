@@ -4,6 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { CheckCircle2, FileText, Film, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
+import PdfThumbErrorBoundary from '@/components/attorneyHub/PdfThumbErrorBoundary.jsx';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -124,8 +125,13 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
 
   return (
     <div className="relative">
-      <div className={`${sizing.outer} overflow-hidden rounded-lg border border-slate-700 bg-white`}>
-        <Document file={url} loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}>
+      <PdfThumbErrorBoundary resetKey={url} className={`${sizing.outer} overflow-hidden rounded-lg border border-slate-700 bg-white`}>
+        <Document
+          key={url}
+          file={url}
+          loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}
+          error={<div className="flex h-full w-full items-center justify-center bg-slate-100"><FileText className="h-5 w-5 text-slate-400" /></div>}
+        >
           <Page
             pageNumber={1}
             width={sizing.page}
@@ -134,7 +140,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
             loading={<div className="w-full h-full bg-slate-200 animate-pulse" />}
           />
         </Document>
-      </div>
+      </PdfThumbErrorBoundary>
       {statusIcon}
       {numberBadges}
     </div>
