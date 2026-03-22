@@ -316,8 +316,8 @@ export default function AttorneyHub() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 lg:p-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
+    <div className="h-screen overflow-hidden bg-slate-950 text-white p-4 lg:p-6">
+      <div className="h-full rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden flex flex-col">
         <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow-sm">
@@ -359,7 +359,7 @@ export default function AttorneyHub() {
           </div>
         </div>
 
-        <div className="min-h-[calc(100vh-10rem)] xl:flex xl:min-w-0">
+        <div className="min-h-0 flex-1 overflow-hidden xl:flex xl:min-w-0">
           <div style={{ width: `${leftPanelWidth}px` }} className={`border-r border-slate-800 flex flex-col min-h-0 xl:flex-shrink-0 ${leftColumnCollapsed ? 'xl:min-w-[72px]' : 'xl:min-w-[320px]'}`}>
             <div className={`border-b border-slate-800 ${leftColumnCollapsed ? 'px-2 py-3' : 'px-4 pt-4'}`}>
               <div className={`mb-4 ${leftColumnCollapsed ? 'space-y-2' : 'space-y-3'}`}>
@@ -441,7 +441,7 @@ export default function AttorneyHub() {
               ))}
             </div>
 
-            <div className={`flex-1 min-h-0 ${leftColumnCollapsed ? 'overflow-hidden p-2' : 'overflow-y-auto p-4'}`}>
+            <div className={`flex-1 min-h-0 ${leftColumnCollapsed ? 'overflow-hidden p-2' : 'attorney-hub-scrollbar overflow-y-auto overscroll-contain p-4 pr-3 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]'}`}>
               {leftColumnCollapsed ? (
                 <div className="attorney-hub-scrollbar flex h-full min-h-0 flex-col items-center gap-2 overflow-y-scroll overscroll-contain pr-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
                   {displayEntries.map((entry) => {
@@ -568,7 +568,7 @@ export default function AttorneyHub() {
 
           <ColumnResizeHandle onMouseDown={startDrag.left} />
 
-          <div style={{ width: `${widths.middle}px` }} className="border-r border-slate-800 min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[320px]">
+          <div style={{ width: `${widths.middle}px` }} className="border-r border-slate-800 min-h-0 overflow-hidden p-4 flex flex-col xl:flex-shrink-0 xl:min-w-[320px]">
             {(selectedProof || selectedGroup) ? (
               <AttorneyHubQuestionList
                 title={selectedProof ? getProofDisplayName(selectedProof) : selectedGroup?.label}
