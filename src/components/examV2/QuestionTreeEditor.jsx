@@ -1,11 +1,11 @@
 import React from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Eye, GripVertical, Pencil, Plus, ScrollText, Trash2 } from 'lucide-react';
+import { CheckCircle2, CheckSquare2, Eye, GripVertical, Pencil, Plus, ScrollText, Square, Trash2 } from 'lucide-react';
 import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
 
-function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta, onEdit, onEditScript, onAddFollowup, onDelete, onSelectAttachment }) {
+function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta, selectedQuestionIds = [], onToggleSelect, onEdit, onEditScript, onAddFollowup, onDelete, onSelectAttachment }) {
   const children = items
     .filter((item) => (item.parent_item_id || null) === parentId)
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -47,11 +47,15 @@ function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta
             }
 
             const attachedProofs = parseIdsField(item.attached_proof_ids).map((id) => proofsById[id]).filter(Boolean);
+            const selected = selectedQuestionIds.includes(item.id);
             return (
               <Draggable key={item.id} draggableId={item.id} index={index}>
                 {(dragProvided) => (
-                  <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+                  <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={`rounded-xl border p-3 ${selected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 bg-slate-900/70'}`}>
                     <div className="flex items-start gap-3">
+                      <button type="button" onClick={() => onToggleSelect?.(item.id)} className="mt-0.5 text-slate-400 hover:text-white">
+                        {selected ? <CheckSquare2 className="w-4 h-4 text-blue-400" /> : <Square className="w-4 h-4" />}
+                      </button>
                       <button type="button" {...dragProvided.dragHandleProps} className="mt-0.5 text-slate-500 hover:text-white">
                         <GripVertical className="w-4 h-4" />
                       </button>
@@ -93,6 +97,8 @@ function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta
                         items={items}
                         proofsById={proofsById}
                         admissionStatusMeta={admissionStatusMeta}
+                        selectedQuestionIds={selectedQuestionIds}
+                        onToggleSelect={onToggleSelect}
                         onEdit={onEdit}
                         onEditScript={onEditScript}
                         onAddFollowup={onAddFollowup}
