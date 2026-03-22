@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, X } from 'lucide-react';
 import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import ExamBuilderSafePreviewDialog from '@/components/examV2/ExamBuilderSafePreviewDialog.jsx';
 import { getProofDisplayName } from '@/lib/examV2Utils';
@@ -26,6 +26,13 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
       attached_proof_ids: prev.attached_proof_ids.includes(proofId)
         ? prev.attached_proof_ids.filter((id) => id !== proofId)
         : [...prev.attached_proof_ids, proofId],
+    }));
+  };
+
+  const removeAttachedProof = (proofId) => {
+    setForm((prev) => ({
+      ...prev,
+      attached_proof_ids: prev.attached_proof_ids.filter((id) => id !== proofId),
     }));
   };
 
@@ -59,7 +66,33 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
           />
           {availableProofs.length > 0 && (
             <div>
-              <p className="text-sm font-semibold text-white mb-2">Inline proof references</p>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-white">Inline proof references</p>
+                {form.attached_proof_ids.length > 0 && <p className="text-xs text-slate-400">Click a selected proof or use the remove button to unattach it.</p>}
+              </div>
+
+              {form.attached_proof_ids.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {form.attached_proof_ids.map((proofId) => {
+                    const attachedProof = availableProofs.find((proof) => proof.id === proofId);
+                    if (!attachedProof) return null;
+
+                    return (
+                      <button
+                        key={proofId}
+                        type="button"
+                        onClick={() => removeAttachedProof(proofId)}
+                        className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-500/20"
+                        title="Remove attached proof"
+                      >
+                        <span className="max-w-[12rem] truncate">{getProofDisplayName(attachedProof)}</span>
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {availableProofs.map((proof) => {
                   const active = form.attached_proof_ids.includes(proof.id);
@@ -85,6 +118,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
                         <ExamBuilderProofThumb proof={proof} size="sm" />
                       </div>
                       <p className="mt-2 text-[11px] text-slate-300 leading-tight">{getProofDisplayName(proof)}</p>
+                      <p className={`mt-1 text-[10px] font-medium ${active ? 'text-blue-300' : 'text-slate-500'}`}>{active ? 'Attached' : 'Click to attach'}</p>
                     </div>
                   );
                 })}
