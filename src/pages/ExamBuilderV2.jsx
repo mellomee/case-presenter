@@ -11,11 +11,13 @@ import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
 import QuestionTreeEditor from '@/components/examV2/QuestionTreeEditor.jsx';
 import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEditor.jsx';
 import ExamBuilderSafePreviewDialog from '@/components/examV2/ExamBuilderSafePreviewDialog.jsx';
+import MoveSelectedQuestionsDialog from '@/components/examV2/MoveSelectedQuestionsDialog.jsx';
+import ExportQuestionsDialog from '@/components/examV2/ExportQuestionsDialog.jsx';
 import ExamV2ImportChooserDialog from '@/components/examV2/ExamV2ImportChooserDialog.jsx';
 import ExamV2ExcelImportDialog from '@/components/examV2/ExamV2ExcelImportDialog.jsx';
 import ExamV2TextImportDialog from '@/components/examV2/ExamV2TextImportDialog.jsx';
 import PrintExamV2Dialog from '@/components/examV2/PrintExamV2Dialog.jsx';
-import { collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
+import { buildItemTree, collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
 
 function proofMatchesParty(proof, partyId) {
   if (!partyId) return true;
@@ -37,6 +39,32 @@ function getStoredExamV2Setting(key, fallback) {
   return value ?? fallback;
 }
 
+function flattenTree(nodes = []) {
+  return nodes.flatMap((node) => [node, ...flattenTree(node.children || [])]);
+}
+
+function serializeQuestionTree(nodes = [], questionItems = [], proofsById = {}, level = 0) {
+  return nodes.flatMap((node) => {
+    const indent = '  '.repeat(level);
+    const lines = [`${indent}- ${node.text || ''}`];
+
+    if (node.expected_answer) lines.push(`${indent}  -> ${node.expected_answer}`);
+    if (node.notes) lines.push(`${indent}  @notes: ${node.notes}`);
+
+    const attachedProofNames = parseIdsField(node.attached_proof_ids)
+      .map((proofId) => getProofDisplayName(proofsById[proofId]))
+      .filter(Boolean);
+
+    if (attachedProofNames.length > 0) lines.push(`${indent}  @attach: ${attachedProofNames.join(' | ')}`);
+
+    const children = questionItems
+      .filter((item) => item.parent_item_id === node.id)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    return [...lines, ...serializeQuestionTree(children, questionItems, proofsById, level + 1)];
+  });
+}
+
 export default function ExamBuilderV2() {
   const queryClient = useQueryClient();
   const [selectedPartyId, setSelectedPartyId] = useState(() => getStoredExamV2Setting('exam-v2-selected-party', ''));
@@ -52,6 +80,9 @@ export default function ExamBuilderV2() {
   const [textImportDialogOpen, setTextImportDialogOpen] = useState(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [leftColumnCollapsed, setLeftColumnCollapsed] = useState(false);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const { data: parties = [] } = useQuery({ queryKey: ['v2Parties'], queryFn: () => base44.entities.Party.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['v2Proofs'], queryFn: () => base44.entities.Proof.list() });
@@ -66,6 +97,7 @@ export default function ExamBuilderV2() {
   const selectedRoot = rootItems.find((item) => item.id === selectedRootId) || rootItems[0] || null;
   const selectedRootProof = selectedRoot?.item_type === 'proof' ? proofs.find((proof) => proof.id === selectedRoot.linked_proof_id) || null : null;
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
+  const itemsById = useMemo(() => Object.fromEntries(currentItems.map((item) => [item.id, item])), [currentItems]);
   const availableAttachmentProofs = useMemo(
     () => selectedRootProof
       ? [selectedRootProof, ...proofs.filter((proof) => proof.parent_proof_id === selectedRootProof.id)]
@@ -80,6 +112,15 @@ export default function ExamBuilderV2() {
   const selectableProofs = useMemo(
     () => proofs.filter((proof) => ['Extract', 'Video', 'Image'].includes(proof.proof_child_type || proof.file_type)),
     [proofs]
+  );
+  const questionItems = useMemo(() => currentItems.filter((item) => item.item_type === 'question'), [currentItems]);
+  const visibleQuestionTree = useMemo(
+    () => (selectedRoot ? buildItemTree(questionItems, selectedRoot.id) : []),
+    [questionItems, selectedRoot]
+  );
+  const visibleQuestionOrder = useMemo(
+    () => flattenTree(visibleQuestionTree).map((item) => item.id),
+    [visibleQuestionTree]
   );
 
   useEffect(() => {
@@ -102,6 +143,10 @@ export default function ExamBuilderV2() {
     window.localStorage.setItem('exam-v2-selected-party', selectedPartyId || '');
     window.localStorage.setItem('exam-v2-selected-type', selectedExamType);
   }, [selectedPartyId, selectedExamType]);
+
+  useEffect(() => {
+    setSelectedQuestionIds((prev) => prev.filter((id) => visibleQuestionOrder.includes(id)));
+  }, [visibleQuestionOrder]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['v2ExamItems'] });
   const invalidateExams = () => queryClient.invalidateQueries({ queryKey: ['v2Exams'] });
