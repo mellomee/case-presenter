@@ -224,6 +224,14 @@
   }
 }
 
+@media (min-width: 1280px) {
+  .xl\:min-w-\[72px\] {
+    width: 88px !important;
+    min-width: 88px !important;
+    flex-basis: 88px !important;
+  }
+}
+
 @media print {
   @page {
     margin: 0.5in;
