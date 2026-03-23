@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, X, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,12 +39,48 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     });
   }, [juryState, proof, onUpdateJury]);
 
+  const lastVideoSyncRef = useRef({
+    proofId: null,
+    currentTime: null,
+    playing: null,
+    sentAt: 0,
+  });
+
   const handleVideoStateChange = useCallback((videoSync) => {
     if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
-    onUpdateJury({
-      video_time: videoSync.currentTime || 0,
-      is_playing: !!videoSync.playing,
-    });
+
+    const nextTime = typeof videoSync.currentTime === 'number' ? videoSync.currentTime : 0;
+    const nextPlaying = !!videoSync.playing;
+    const now = Date.now();
+    const previous = lastVideoSyncRef.current;
+
+    const resetState = previous.proofId !== proof?.id;
+    const lastTime = resetState ? null : previous.currentTime;
+    const lastPlaying = resetState ? null : previous.playing;
+    const lastSentAt = resetState ? 0 : previous.sentAt;
+
+    const playingChanged = lastPlaying === null || lastPlaying !== nextPlaying;
+    const jumped = lastTime === null || Math.abs(nextTime - lastTime) >= 1.5;
+    const timedHeartbeat = now - lastSentAt >= 1200;
+
+    if (!playingChanged && !jumped && !timedHeartbeat) return;
+
+    const payload = {
+      video_time: nextTime,
+    };
+
+    if (playingChanged || lastPlaying === null) {
+      payload.is_playing = nextPlaying;
+    }
+
+    lastVideoSyncRef.current = {
+      proofId: proof?.id || null,
+      currentTime: nextTime,
+      playing: nextPlaying,
+      sentAt: now,
+    };
+
+    onUpdateJury(payload);
   }, [juryState, proof, onUpdateJury]);
 
   if (!proof) {
