@@ -33,6 +33,37 @@ function ToolbarSelect({ value, onChange, children }) {
   );
 }
 
+const PARTY_SIDE_ORDER = ['Plaintiff', 'Defense', 'Neutral'];
+
+function comparePartiesByFirstName(a, b) {
+  const firstComparison = String(a?.first_name || '').localeCompare(String(b?.first_name || ''), undefined, { sensitivity: 'base' });
+  if (firstComparison !== 0) return firstComparison;
+  return String(a?.last_name || '').localeCompare(String(b?.last_name || ''), undefined, { sensitivity: 'base' });
+}
+
+function renderGroupedPartyOptions(parties = [], { placeholderLabel = null, allLabel = null } = {}) {
+  const groups = PARTY_SIDE_ORDER
+    .map((side) => ({
+      side,
+      items: [...parties].filter((party) => party.side === side).sort(comparePartiesByFirstName),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <>
+      {placeholderLabel ? <option value="">{placeholderLabel}</option> : null}
+      {allLabel ? <option value="all">{allLabel}</option> : null}
+      {groups.map((group, index) => (
+        <React.Fragment key={group.side}>
+          {index > 0 ? <option disabled>──────────</option> : null}
+          <option disabled>{group.side}</option>
+          {group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
 function getStoredExamV2Setting(key, fallback) {
   if (typeof window === 'undefined') return fallback;
   const value = window.localStorage.getItem(key);
@@ -515,8 +546,7 @@ export default function ExamBuilderV2() {
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
           <div className="border-b border-slate-800 px-4 py-3 flex flex-wrap items-center gap-2">
             <ToolbarSelect value={selectedPartyId} onChange={setSelectedPartyId}>
-              <option value="">Select party</option>
-              {parties.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
+              {renderGroupedPartyOptions(parties, { placeholderLabel: 'Select party' })}
             </ToolbarSelect>
             <ToolbarSelect value={selectedExamType} onChange={setSelectedExamType}>
               <option value="Direct">Direct</option>

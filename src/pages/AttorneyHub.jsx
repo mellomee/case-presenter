@@ -68,6 +68,37 @@ function ToolbarSelect({ value, onChange, children }) {
   );
 }
 
+const PARTY_SIDE_ORDER = ['Plaintiff', 'Defense', 'Neutral'];
+
+function comparePartiesByFirstName(a, b) {
+  const firstComparison = String(a?.first_name || '').localeCompare(String(b?.first_name || ''), undefined, { sensitivity: 'base' });
+  if (firstComparison !== 0) return firstComparison;
+  return String(a?.last_name || '').localeCompare(String(b?.last_name || ''), undefined, { sensitivity: 'base' });
+}
+
+function renderGroupedPartyOptions(parties = [], { placeholderLabel = null, allLabel = null } = {}) {
+  const groups = PARTY_SIDE_ORDER
+    .map((side) => ({
+      side,
+      items: [...parties].filter((party) => party.side === side).sort(comparePartiesByFirstName),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <>
+      {placeholderLabel ? <option value="">{placeholderLabel}</option> : null}
+      {allLabel ? <option value="all">{allLabel}</option> : null}
+      {groups.map((group, index) => (
+        <React.Fragment key={group.side}>
+          {index > 0 ? <option disabled>──────────</option> : null}
+          <option disabled>{group.side}</option>
+          {group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
 const LOS_ANGELES_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric',
   minute: '2-digit',
@@ -397,8 +428,7 @@ export default function AttorneyHub() {
               {!leftColumnCollapsed && (proofTab === 'Exam' ? (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <ToolbarSelect value={selectedExamPartyId} onChange={setSelectedExamPartyId}>
-                    <option value="">Select party</option>
-                    {parties.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
+                    {renderGroupedPartyOptions(parties, { placeholderLabel: 'Select party' })}
                   </ToolbarSelect>
                   <ToolbarSelect value={selectedExamType} onChange={setSelectedExamType}>
                     <option value="Direct">Direct</option>
@@ -434,8 +464,7 @@ export default function AttorneyHub() {
               ) : (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <ToolbarSelect value={depositionPartyFilter} onChange={setDepositionPartyFilter}>
-                    <option value="all">All Parties</option>
-                    {parties.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
+                    {renderGroupedPartyOptions(parties, { allLabel: 'All Parties' })}
                   </ToolbarSelect>
                 </div>
               ))}
