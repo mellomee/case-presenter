@@ -118,7 +118,8 @@ function formatElapsedTime(totalSeconds) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-function canPublishProof(proof) {
+function canPublishProof(proof, localDecision = null) {
+  if (localDecision === 'not_admitted') return false;
   return proof?.proof_category === 'Deposition' || ['Admitted', 'Demonstrative'].includes(proof?.status);
 }
 
@@ -344,9 +345,10 @@ export default function AttorneyHub() {
   const leftPanelWidth = leftColumnCollapsed ? 72 : widths.left;
   const activePreviewProof = selectedPreviewProof ? (proofsById[selectedPreviewProof.id] || selectedPreviewProof) : null;
   const activeToolbarProof = activePreviewProof || selectedProof;
+  const activeToolbarDecision = localDecisionMap[activeToolbarProof?.id];
   const selectedProofIsPublished = juryState?.published_proof_id === activeToolbarProof?.id && !juryState?.is_blank;
-  const selectedProofCanPublish = canPublishProof(activeToolbarProof);
-  const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, localDecisionMap[activeToolbarProof?.id]);
+  const selectedProofCanPublish = canPublishProof(activeToolbarProof, activeToolbarDecision);
+  const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, activeToolbarDecision);
 
   const handleProofAction = (proof, action, patch = null) => {
     if (action === 'not_admitted') {
@@ -631,7 +633,7 @@ export default function AttorneyHub() {
                   const parentProof = proof.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
                   const isDemo = proof.status === 'Demonstrative';
                   const isAdmitted = proof.status === 'Admitted';
-                  const publishable = canPublishProof(proof);
+                  const publishable = canPublishProof(proof, localDecisionMap[proof.id]);
                   const isPublished = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
 
                   return viewMode === 'grid' ? (
@@ -677,7 +679,7 @@ export default function AttorneyHub() {
                               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{getProofTypeLabel(proof)}</span>
                               {parentProof && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">Child of {getProofDisplayName(parentProof)}</span>}
                               {isPublished && <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-300">Published</span>}
-                              {localDecisionMap[proof.id] === 'not_admitted' && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">Admission Rejected</span>}
+                              {localDecisionMap[proof.id] === 'not_admitted' && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">Admit Rejected</span>}
                             </div>
                             <p className="mt-1 text-xs text-slate-400">{proof.status}</p>
                             {proofTab === 'Depositions' && children.length > 0 && (
@@ -768,6 +770,9 @@ export default function AttorneyHub() {
         <AdmitAsExhibitModal
           open={showAdmitExhibitModal}
           onClose={() => {
+            if (selectedProofForModal?.id) {
+              setLocalDecisionMap((prev) => ({ ...prev, [selectedProofForModal.id]: null }));
+            }
             setShowAdmitExhibitModal(false);
             setSelectedProofForModal(null);
           }}
@@ -776,6 +781,9 @@ export default function AttorneyHub() {
         <AdmitAsDemonstrativeModal
           open={showAdmitDemoModal}
           onClose={() => {
+            if (selectedProofForModal?.id) {
+              setLocalDecisionMap((prev) => ({ ...prev, [selectedProofForModal.id]: null }));
+            }
             setShowAdmitDemoModal(false);
             setSelectedProofForModal(null);
           }}
