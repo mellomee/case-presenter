@@ -75,6 +75,17 @@ function sortProofsByExhibitNumber(items = []) {
   });
 }
 
+function proofTreeHasStatus(proof, allProofs, status) {
+  const children = allProofs.filter((item) => item.parent_proof_id === proof.id);
+  return children.some((child) => child.status === status || proofTreeHasStatus(child, allProofs, status));
+}
+
+function proofTreeMatchesSearch(proof, allProofs, searchQuery) {
+  if (proofMatchesSearch(proof, searchQuery)) return true;
+  const children = allProofs.filter((item) => item.parent_proof_id === proof.id);
+  return children.some((child) => proofTreeMatchesSearch(child, allProofs, searchQuery));
+}
+
 export default function ProofVault() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -289,24 +300,20 @@ export default function ProofVault() {
   // Get only top-level proofs for rendering
   const exhibitsTopLevel = allExhibits.filter((p) => !p.parent_proof_id);
   const depositionsTopLevel = allDepositions.filter((p) => !p.parent_proof_id);
-  const promotedChildProofs = allExhibits.filter(
-    (p) => p.parent_proof_id && ['Admitted', 'Demonstrative'].includes(p.status)
-  );
 
   const filteredExhibits = useMemo(() => {
     let exhibitsByStatus = exhibitsTopLevel;
 
-    if (exhibitFilter === 'Admitted' || exhibitFilter === 'Demonstrative') {
-      exhibitsByStatus = [
-        ...exhibitsTopLevel.filter((e) => e.status === exhibitFilter),
-        ...promotedChildProofs.filter((e) => e.status === exhibitFilter),
-      ];
-    } else if (exhibitFilter !== 'all') {
-      exhibitsByStatus = exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
+    if (exhibitFilter !== 'all') {
+      exhibitsByStatus = exhibitsTopLevel.filter(
+        (proof) => proof.status === exhibitFilter || proofTreeHasStatus(proof, allExhibits, exhibitFilter)
+      );
     }
 
-    return sortProofsByExhibitNumber(exhibitsByStatus.filter((proof) => proofMatchesSearch(proof, searchQuery)));
-  }, [exhibitFilter, exhibitsTopLevel, promotedChildProofs, searchQuery]);
+    return sortProofsByExhibitNumber(
+      exhibitsByStatus.filter((proof) => proofTreeMatchesSearch(proof, allExhibits, searchQuery))
+    );
+  }, [allExhibits, exhibitFilter, exhibitsTopLevel, searchQuery]);
 
   const filteredDepositions = useMemo(
     () => sortProofsByExhibitNumber(depositionsTopLevel.filter((proof) => proofMatchesSearch(proof, searchQuery))),
@@ -315,13 +322,9 @@ export default function ProofVault() {
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
-    if (status === 'Admitted' || status === 'Demonstrative') {
-      return (
-        exhibitsTopLevel.filter((e) => e.status === status).length +
-        promotedChildProofs.filter((e) => e.status === status).length
-      );
-    }
-    return exhibitsTopLevel.filter((e) => e.status === status).length;
+    return exhibitsTopLevel.filter(
+      (proof) => proof.status === status || proofTreeHasStatus(proof, allExhibits, status)
+    ).length;
   };
 
   const visibleProofs = activeTab === 'exhibits' ? filteredExhibits : filteredDepositions;
