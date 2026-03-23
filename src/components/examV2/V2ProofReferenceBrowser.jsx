@@ -50,16 +50,6 @@ function formatProofType(proof) {
   return label === 'ExtractClip' ? 'Extract Clip' : label === 'VideoClip' ? 'Video Clip' : label;
 }
 
-function getReferenceCardClasses(depth) {
-  return depth === 0
-    ? 'rounded-2xl border border-slate-200 bg-slate-50 p-3'
-    : 'rounded-2xl border border-blue-200 bg-blue-50/60 p-3';
-}
-
-function getReferenceCardStyle(depth) {
-  return depth > 0 ? { marginLeft: `${depth * 24}px` } : undefined;
-}
-
 function shouldDisplayDepositionProof(proof) {
   if (proof?.proof_category !== 'Deposition') return false;
   if (proof?.proof_child_type === 'Extract' || proof?.proof_child_type === 'ExtractClip' || proof?.proof_child_type === 'VideoClip') return true;
@@ -263,7 +253,7 @@ export default function V2ProofReferenceBrowser({
                     const active = attachedProofIds.includes(proof.id);
                     const party = proof.party_id ? enrichedPartiesById[proof.party_id] : null;
                     return (
-                      <div key={proof.id} className={getReferenceCardClasses(depth)} style={getReferenceCardStyle(depth)}>
+                      <div key={proof.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3" style={{ marginLeft: `${depth * 20}px` }}>
                         <div className="flex items-start gap-3">
                           <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} theme="light" />
                           <div className="min-w-0 flex-1">
@@ -271,7 +261,7 @@ export default function V2ProofReferenceBrowser({
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-slate-900">{getProofDisplayName(proof)}</p>
                                 <p className="mt-1 text-xs text-slate-500">Internal: {proof.name || '—'}</p>
-                                {parentProof && <p className="mt-2 inline-flex items-center rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[11px] font-medium text-blue-700">↳ Child of {getProofDisplayName(parentProof)}</p>}
+                                {parentProof && <p className="mt-1 text-xs text-slate-500">Child of {getProofDisplayName(parentProof)}</p>}
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
@@ -327,7 +317,7 @@ export default function V2ProofReferenceBrowser({
                     const active = attachedProofIds.includes(proof.id);
                     const party = proof.party_id ? enrichedPartiesById[proof.party_id] : null;
                     return (
-                      <div key={proof.id} className={getReferenceCardClasses(depth)} style={getReferenceCardStyle(depth)}>
+                      <div key={proof.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3" style={{ marginLeft: `${depth * 20}px` }}>
                         <div className="flex items-start gap-3">
                           <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} theme="light" />
                           <div className="min-w-0 flex-1">
@@ -335,7 +325,7 @@ export default function V2ProofReferenceBrowser({
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-slate-900">{getProofDisplayName(proof)}</p>
                                 <p className="mt-1 text-xs text-slate-500">Internal: {proof.name || '—'}</p>
-                                {parentProof && <p className="mt-2 inline-flex items-center rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[11px] font-medium text-blue-700">↳ Child of {getProofDisplayName(parentProof)}</p>}
+                                {parentProof && <p className="mt-1 text-xs text-slate-500">Child of {getProofDisplayName(parentProof)}</p>}
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
