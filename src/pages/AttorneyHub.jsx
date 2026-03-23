@@ -342,9 +342,10 @@ export default function AttorneyHub() {
   const questionParentId = selectedProof ? selectedProofRootItem?.id : selectedGroup?.id;
   const questionItems = useMemo(() => currentExamItems.filter((item) => item.item_type === 'question'), [currentExamItems]);
   const leftPanelWidth = leftColumnCollapsed ? 72 : widths.left;
-  const selectedProofIsPublished = juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank;
-  const selectedProofCanPublish = canPublishProof(selectedProof);
-  const selectedProofAdmissionLabel = getAdmissionToolbarLabel(selectedProof, localDecisionMap[selectedProof?.id]);
+  const activeToolbarProof = selectedPreviewProof || selectedProof;
+  const selectedProofIsPublished = juryState?.published_proof_id === activeToolbarProof?.id && !juryState?.is_blank;
+  const selectedProofCanPublish = canPublishProof(activeToolbarProof);
+  const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, localDecisionMap[activeToolbarProof?.id]);
 
   const handleProofAction = (proof, action, patch = null) => {
     if (action === 'not_admitted') {
@@ -446,27 +447,27 @@ export default function AttorneyHub() {
           </div>
 
           <div className="min-w-[18rem] flex-1">
-            {selectedProof ? (
+            {activeToolbarProof ? (
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">{getProofDisplayName(selectedProof)}</p>
+                    <p className="truncate text-sm font-semibold text-slate-900">{getProofDisplayName(activeToolbarProof)}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getAdmissionToolbarClass(selectedProof, localDecisionMap[selectedProof.id])}`}>
+                      <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getAdmissionToolbarClass(activeToolbarProof, localDecisionMap[activeToolbarProof.id])}`}>
                         {selectedProofAdmissionLabel}
                       </span>
                       {selectedProofIsPublished && <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Published</span>}
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{getProofTypeLabel(selectedProof)}</span>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{getProofTypeLabel(activeToolbarProof)}</span>
                     </div>
                   </div>
                   <ProofCardMenu
-                    proof={selectedProof}
-                    localDecision={localDecisionMap[selectedProof.id]}
-                    onAction={(action, patch) => handleProofAction(selectedProof, action, patch)}
+                    proof={activeToolbarProof}
+                    localDecision={localDecisionMap[activeToolbarProof.id]}
+                    onAction={(action, patch) => handleProofAction(activeToolbarProof, action, patch)}
                     canPublish={selectedProofCanPublish}
                     isPublished={selectedProofIsPublished}
-                    onPublish={() => publishProof(selectedProof)}
-                    onUnpublish={() => unpublishProof(selectedProof)}
+                    onPublish={() => publishProof(activeToolbarProof)}
+                    onUnpublish={() => unpublishProof(activeToolbarProof)}
                   />
                 </div>
               </div>
