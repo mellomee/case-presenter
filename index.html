@@ -6,6 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="manifest" href="/manifest.json" />
     <title>Base44 APP</title>
+    <script>
+      (() => {
+        const collapseAttorneyHub = () => {
+          const path = window.location.pathname;
+          if (path === '/AttorneyHub' || path === '/present/hub') {
+            window.localStorage.setItem('attorney-hub-left-collapsed', 'true');
+          }
+        };
+
+        collapseAttorneyHub();
+
+        const wrapHistoryMethod = (methodName) => {
+          const original = window.history[methodName];
+          window.history[methodName] = function (...args) {
+            const result = original.apply(this, args);
+            window.dispatchEvent(new Event('base44-route-change'));
+            return result;
+          };
+        };
+
+        wrapHistoryMethod('pushState');
+        wrapHistoryMethod('replaceState');
+        window.addEventListener('popstate', collapseAttorneyHub);
+        window.addEventListener('base44-route-change', collapseAttorneyHub);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

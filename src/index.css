@@ -226,9 +226,35 @@
 
 @media (min-width: 1280px) {
   .xl\:min-w-\[72px\] {
-    width: 88px !important;
-    min-width: 88px !important;
-    flex-basis: 88px !important;
+    width: 104px !important;
+    min-width: 104px !important;
+    flex-basis: 104px !important;
+  }
+
+  .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button {
+    width: 78px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > div,
+  .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > img {
+    width: 68px !important;
+  }
+
+  .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > div {
+    height: 90px !important;
+    padding: 8px 4px !important;
+  }
+
+  .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > img {
+    height: 90px !important;
+  }
+
+  .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > div span {
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    word-break: break-word;
   }
 }
 
