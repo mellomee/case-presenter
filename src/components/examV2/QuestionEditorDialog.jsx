@@ -143,7 +143,9 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
     matchingProofs.forEach((proof) => {
       let currentProof = proof;
       while (currentProof) {
-        visibleIds.add(currentProof.id);
+        if (!(proofTab === 'Deposition' && isHiddenDepositionSource(currentProof))) {
+          visibleIds.add(currentProof.id);
+        }
         currentProof = currentProof.parent_proof_id ? proofById[currentProof.parent_proof_id] : null;
       }
     });
