@@ -39,10 +39,6 @@ export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [
   const clipStart = isClip ? ranges[0].start : 0;
   const clipEnd = isClip ? ranges[ranges.length - 1].end : null;
 
-  const pushSync = useCallback((overrides = {}) => {
-    onStateChange?.({ currentTime, playing, ...overrides });
-  }, [currentTime, onStateChange, playing]);
-
   const clampTime = useCallback((time) => {
     if (!isClip) {
       const max = duration || time || 0;
@@ -120,25 +116,13 @@ export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [
           setPlaying(false);
           onStateChange?.({ currentTime: nextTime, playing: false });
         } else {
-          const now = Date.now();
-          if (now - lastSyncAtRef.current > 1200) {
-            lastSyncAtRef.current = now;
-            onStateChange?.({ currentTime: nextTime, playing: true });
-          }
+          onStateChange?.({ currentTime: nextTime, playing: true });
         }
         return;
       }
     }
 
     setCurrentTime(playedSeconds);
-
-    if (playing) {
-      const now = Date.now();
-      if (now - lastSyncAtRef.current > 1200) {
-        lastSyncAtRef.current = now;
-        onStateChange?.({ currentTime: playedSeconds, playing: true });
-      }
-    }
   };
 
   const handleSeekChange = (value) => {
@@ -196,6 +180,12 @@ export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [
           onReady={handleReady}
           onDuration={setDuration}
           onProgress={handleProgress}
+          onEnded={() => {
+            const endTime = clipEnd ?? duration;
+            setPlaying(false);
+            setCurrentTime(endTime || 0);
+            onStateChange?.({ currentTime: endTime || 0, playing: false });
+          }}
           progressInterval={350}
           playsinline
           style={{ position: 'absolute', top: 0, left: 0 }}
