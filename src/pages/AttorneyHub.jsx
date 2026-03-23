@@ -342,7 +342,7 @@ export default function AttorneyHub() {
   const questionParentId = selectedProof ? selectedProofRootItem?.id : selectedGroup?.id;
   const questionItems = useMemo(() => currentExamItems.filter((item) => item.item_type === 'question'), [currentExamItems]);
   const leftPanelWidth = leftColumnCollapsed ? 72 : widths.left;
-  const activeToolbarProof = selectedPreviewProof || selectedProof;
+  const activeToolbarProof = (selectedPreviewProof?.id ? proofsById[selectedPreviewProof.id] : null) || selectedProof;
   const selectedProofIsPublished = juryState?.published_proof_id === activeToolbarProof?.id && !juryState?.is_blank;
   const selectedProofCanPublish = canPublishProof(activeToolbarProof);
   const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, localDecisionMap[activeToolbarProof?.id]);
