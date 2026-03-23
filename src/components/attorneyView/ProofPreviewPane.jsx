@@ -113,8 +113,16 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     }
 
     if (proof.proof_child_type === 'VideoClip') {
+      if (isLoading && !externalUrl) {
+        return (
+          <div className="flex h-full items-center justify-center bg-black">
+            <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+          </div>
+        );
+      }
+
       return (
-        <div className="w-full h-full p-3 overflow-hidden">
+        <div className="attorney-hub-video-clip-preview h-full w-full min-h-0 overflow-auto p-3">
           <VideoClipController
             videoUrl={externalUrl}
             segments={proof.video_clips || []}

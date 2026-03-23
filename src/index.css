@@ -133,6 +133,25 @@
     background: #64748b;
   }
 
+  .attorney-hub-video-clip-preview .absolute.top-4.left-4 > button,
+  .attorney-hub-video-clip-preview .absolute.top-4.right-4 {
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+  }
+
+  .attorney-hub-video-clip-preview .absolute.top-4.left-4 > button:hover,
+  .attorney-hub-video-clip-preview .absolute.top-4.right-4:hover {
+    background: #ffffff !important;
+    color: #020617 !important;
+  }
+
+  .attorney-hub-video-clip-preview .absolute.top-4.left-4 > button svg,
+  .attorney-hub-video-clip-preview .absolute.top-4.right-4 svg {
+    color: currentColor !important;
+  }
+
   .bg-slate-950 {
     @apply bg-slate-100 text-slate-900;
   }
