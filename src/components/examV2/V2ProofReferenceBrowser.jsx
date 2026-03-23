@@ -51,10 +51,20 @@ function proofMatchesSearch(proof, searchValue, partiesById, proofsById) {
     proof?.name,
     proof?.formal_name,
     getProofDisplayName(proof),
-    formatProofType(proof),
+    proof?.proof_child_type,
+    proof?.file_type,
     partiesById[proof?.party_id]?.label,
     parentProof ? getProofDisplayName(parentProof) : '',
   ].some((value) => normalize(value).includes(searchValue));
+}
+
+function getRenderableRoots(group, activeTab, childMap) {
+  const rootVisible = group.visibleIds.has(group.root.id)
+    && (activeTab !== 'Deposition' || shouldDisplayDepositionProof(group.root));
+
+  if (rootVisible) return [group.root];
+
+  return (childMap[group.root.id] || []).filter((child) => group.visibleIds.has(child.id));
 }
 
 export default function V2ProofReferenceBrowser({
@@ -216,19 +226,21 @@ export default function V2ProofReferenceBrowser({
               No exhibit proofs match this filter.
             </div>
           ) : (
-            groupedProofs.map((group) => (
-              <InlineProofReferenceTree
-                key={group.root.id}
-                proof={group.root}
-                proofsById={proofsById}
-                childMap={childMap}
-                visibleIds={group.visibleIds}
-                attachedProofIds={attachedProofIds}
-                onToggleProof={onToggleProof}
-                onPreviewProof={onPreviewProof}
-                previewProofId={previewProofId}
-              />
-            ))
+            groupedProofs.flatMap((group) =>
+              getRenderableRoots(group, activeTab, childMap).map((rootProof) => (
+                <InlineProofReferenceTree
+                  key={rootProof.id}
+                  proof={rootProof}
+                  proofsById={proofsById}
+                  childMap={childMap}
+                  visibleIds={group.visibleIds}
+                  attachedProofIds={attachedProofIds}
+                  onToggleProof={onToggleProof}
+                  onPreviewProof={onPreviewProof}
+                  previewProofId={previewProofId}
+                />
+              ))
+            )
           )}
         </TabsContent>
 
@@ -238,19 +250,21 @@ export default function V2ProofReferenceBrowser({
               No deposition extracts, clips, or videos match this filter.
             </div>
           ) : (
-            groupedProofs.map((group) => (
-              <InlineProofReferenceTree
-                key={group.root.id}
-                proof={group.root}
-                proofsById={proofsById}
-                childMap={childMap}
-                visibleIds={group.visibleIds}
-                attachedProofIds={attachedProofIds}
-                onToggleProof={onToggleProof}
-                onPreviewProof={onPreviewProof}
-                previewProofId={previewProofId}
-              />
-            ))
+            groupedProofs.flatMap((group) =>
+              getRenderableRoots(group, activeTab, childMap).map((rootProof) => (
+                <InlineProofReferenceTree
+                  key={rootProof.id}
+                  proof={rootProof}
+                  proofsById={proofsById}
+                  childMap={childMap}
+                  visibleIds={group.visibleIds}
+                  attachedProofIds={attachedProofIds}
+                  onToggleProof={onToggleProof}
+                  onPreviewProof={onPreviewProof}
+                  previewProofId={previewProofId}
+                />
+              ))
+            )
           )}
         </TabsContent>
       </Tabs>
