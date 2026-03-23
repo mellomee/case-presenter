@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { AlertCircle, ArrowUp } from 'lucide-react';
+import { collectDescendantProofs, getNearestJointExhibitNumber } from '@/lib/proofStatusUtils';
 
 export default function UnAdmitModal({ open, onClose, proof }) {
   const queryClient = useQueryClient();
@@ -13,33 +14,24 @@ export default function UnAdmitModal({ open, onClose, proof }) {
     queryFn: () => base44.entities.Proof.list(),
   });
 
+  const proofsById = useMemo(() => Object.fromEntries(proofs.map((item) => [item.id, item])), [proofs]);
+  const descendantProofs = useMemo(() => (proof?.id ? collectDescendantProofs(proofs, proof.id) : []), [proof?.id, proofs]);
+  const jointExhibitNum = getNearestJointExhibitNumber(proof, proofsById);
+
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const isAdmitted = proof.status === 'Admitted';
+      const resetStatus = {
+        status: 'Joint',
+        admitted_exhibit_num: null,
+        admitted_by: null,
+        admit_date: null,
+        demonstrative_exhibit_num: null,
+      };
 
-      // Update parent proof
-      const updateData = { status: 'Joint' };
-      if (isAdmitted) {
-        updateData.admitted_exhibit_num = null;
-        updateData.admitted_by = null;
-        updateData.admit_date = null;
-      } else {
-        updateData.demonstrative_exhibit_num = null;
-      }
-      await base44.entities.Proof.update(proof.id, updateData);
+      await base44.entities.Proof.update(proof.id, resetStatus);
 
-      // Update all children
-      const children = proofs.filter((p) => p.parent_proof_id === proof.id);
-      for (const child of children) {
-        const childUpdateData = { status: 'Joint' };
-        if (isAdmitted) {
-          childUpdateData.admitted_exhibit_num = null;
-          childUpdateData.admitted_by = null;
-          childUpdateData.admit_date = null;
-        } else {
-          childUpdateData.demonstrative_exhibit_num = null;
-        }
-        await base44.entities.Proof.update(child.id, childUpdateData);
+      for (const child of descendantProofs) {
+        await base44.entities.Proof.update(child.id, resetStatus);
       }
     },
     onSuccess: () => {
@@ -71,7 +63,7 @@ export default function UnAdmitModal({ open, onClose, proof }) {
             <div>
               <p className="text-sm font-medium text-orange-900">Proof: {proof?.name}</p>
               <p className="text-xs text-orange-700 mt-1">
-                Current: {statusLabel} (Ex. {exhibitNum})
+                Current: {statusLabel}{exhibitNum ? ` (Ex. ${exhibitNum})` : ''}
               </p>
             </div>
           </div>
@@ -82,8 +74,8 @@ export default function UnAdmitModal({ open, onClose, proof }) {
             </div>
             <div className="flex items-center justify-center gap-2 text-sm">
               <span className={`px-2 py-1 rounded text-xs font-medium ${
-                isAdmitted 
-                  ? 'bg-green-100 text-green-700' 
+                isAdmitted
+                  ? 'bg-green-100 text-green-700'
                   : 'bg-purple-100 text-purple-700'
               }`}>
                 {statusLabel}
@@ -101,17 +93,9 @@ export default function UnAdmitModal({ open, onClose, proof }) {
             </p>
             <ul className="text-xs text-slate-600 mt-2 space-y-1 ml-3">
               <li>• Proof will return to Joint status</li>
-              {isAdmitted && (
-                <>
-                  <li>• Admitted exhibit # will be cleared</li>
-                  <li>• Can no longer be published to jury</li>
-                </>
-              )}
-              {!isAdmitted && (
-                <li>• Demonstrative status will be cleared</li>
-              )}
-              <li>• Joint exhibit # remains intact</li>
-              <li>• All child proofs will also be demoted</li>
+              <li>• Any admitted or demonstrative label on this proof will be cleared</li>
+              {jointExhibitNum && <li>• Joint exhibit # {jointExhibitNum} remains intact</li>}
+              {descendantProofs.length > 0 && <li>• Child proofs under this proof will also be demoted</li>}
             </ul>
           </div>
 

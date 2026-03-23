@@ -565,7 +565,7 @@ export default function AttorneyHub() {
                         </div>
                       </div>
                       <div className="mt-3 flex justify-center">
-                        <ProofThumbPreview proof={proof} size="lg" />
+                        <ProofThumbWithStatus proof={proof} size="lg" />
                       </div>
                       <div className="mt-3 text-center">
                         <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
