@@ -181,7 +181,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
       <div key={proof.id} className="space-y-2" style={{ marginLeft: `${depth * 18}px` }}>
         <div
           onClick={() => isSelectable && toggleProof(proof.id)}
-          className={`rounded-xl border p-3 ${isSelectable ? 'cursor-pointer' : 'cursor-default'} ${isAttached ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 bg-slate-900/60'}`}
+          className={`rounded-xl border p-3 ${isSelectable ? 'cursor-pointer' : 'cursor-default'} ${isAttached ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-white'}`}
         >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
@@ -189,16 +189,16 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="truncate text-sm font-semibold text-white">{getProofDisplayName(proof)}</p>
-                <span className="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[10px] text-slate-300">{getProofTypeLabel(proof)}</span>
-                {proof.proof_category === 'Exhibit' && <span className="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[10px] text-slate-300">{proof.status}</span>}
-                {!isSelectable && <span className="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[10px] text-slate-400">Source only</span>}
+                <p className="truncate text-sm font-semibold text-slate-900">{getProofDisplayName(proof)}</p>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-600">{getProofTypeLabel(proof)}</span>
+                {proof.proof_category === 'Exhibit' && <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-600">{proof.status}</span>}
+                {!isSelectable && <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-500">Source only</span>}
               </div>
-              {partyNames.length > 0 && <p className="mt-1 text-[11px] text-slate-400">{partyNames.join(' · ')}</p>}
+              {partyNames.length > 0 && <p className="mt-1 text-[11px] text-slate-500">{partyNames.join(' · ')}</p>}
               {proof.parent_proof_id && proofById[proof.parent_proof_id] && (
-                <p className="mt-1 text-[11px] text-slate-500">Child of {getProofDisplayName(proofById[proof.parent_proof_id])}</p>
+                <p className="mt-1 text-[11px] text-slate-400">Child of {getProofDisplayName(proofById[proof.parent_proof_id])}</p>
               )}
-              <p className={`mt-2 text-[11px] font-medium ${isAttached ? 'text-blue-300' : 'text-slate-500'}`}>
+              <p className={`mt-2 text-[11px] font-medium ${isAttached ? 'text-blue-700' : 'text-slate-500'}`}>
                 {isAttached ? 'Attached' : isSelectable ? 'Click to attach' : 'Shown for relationship context'}
               </p>
             </div>
@@ -208,7 +208,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
                 event.stopPropagation();
                 setPreviewProof(proof);
               }}
-              className={`h-8 w-8 rounded-full border flex items-center justify-center ${previewProof?.id === proof.id ? 'border-blue-500 bg-blue-600 text-white' : 'border-slate-700 bg-slate-950/90 text-slate-300 hover:text-white'}`}
+              className={`h-8 w-8 rounded-full border flex items-center justify-center ${previewProof?.id === proof.id ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
               title="Preview proof"
             >
               <Eye className="w-3.5 h-3.5" />
@@ -222,10 +222,10 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl bg-slate-950 border-slate-800 text-white max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl border-slate-200 bg-white text-slate-900 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="text-slate-400">Build parent or follow-up questions and attach inline proof references.</DialogDescription>
+          <DialogTitle className="text-slate-900">{title}</DialogTitle>
+          <DialogDescription className="text-slate-600">Build parent or follow-up questions and attach inline proof references.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <textarea
@@ -233,27 +233,27 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
             onChange={(event) => setForm((prev) => ({ ...prev, text: event.target.value }))}
             placeholder="Question text"
             rows={4}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500"
           />
           <input
             value={form.expected_answer}
             onChange={(event) => setForm((prev) => ({ ...prev, expected_answer: event.target.value }))}
             placeholder="Expected answer"
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500"
           />
           <textarea
             value={form.notes}
             onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
             placeholder="Notes"
             rows={3}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500"
           />
 
           {availableProofs.length > 0 && (
             <div>
               <div className="mb-3 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-white">Inline proof references</p>
-                {form.attached_proof_ids.length > 0 && <p className="text-xs text-slate-400">Click an attached proof chip to remove it.</p>}
+                <p className="text-sm font-semibold text-slate-900">Inline proof references</p>
+                {form.attached_proof_ids.length > 0 && <p className="text-xs text-slate-500">Click an attached proof chip to remove it.</p>}
               </div>
 
               {form.attached_proof_ids.length > 0 && (
@@ -267,7 +267,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
                         key={proofId}
                         type="button"
                         onClick={() => removeAttachedProof(proofId)}
-                        className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-500/20"
+                        className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                         title="Remove attached proof"
                       >
                         <span className="max-w-[14rem] truncate">{getProofDisplayName(attachedProof)}</span>
@@ -284,24 +284,24 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
                     key={value}
                     type="button"
                     onClick={() => setProofTab(value)}
-                    className={`rounded-lg px-3 py-2 text-sm font-semibold ${proofTab === value ? 'bg-blue-600 text-white' : 'border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800'}`}
+                    className={`rounded-lg px-3 py-2 text-sm font-semibold ${proofTab === value ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
                   >
                     {value}s
                   </button>
                 ))}
                 <div className="relative min-w-[220px] flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="Search internal name, type, exhibit #, or party"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-9 pr-3 text-sm text-white placeholder:text-slate-500"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-500"
                   />
                 </div>
                 <select
                   value={partyFilter}
                   onChange={(event) => setPartyFilter(event.target.value)}
-                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900"
                 >
                   {renderGroupedPartyOptions(parties, { allLabel: 'All Parties' })}
                 </select>
@@ -309,7 +309,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
 
               <div className="max-h-[24rem] space-y-2 overflow-y-auto pr-1">
                 {visibleProofTree.roots.length > 0 ? visibleProofTree.roots.map((proof) => renderProofRow(proof)) : (
-                  <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-6 text-center text-sm text-slate-400">
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
                     No proofs match this view.
                   </div>
                 )}
@@ -317,8 +317,8 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
             </div>
           )}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={async () => { await onSave(form); onOpenChange(false); }}>Save Question</Button>
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={async () => { await onSave(form); onOpenChange(false); }}>Save Question</Button>
           </div>
         </div>
         <ExamBuilderSafePreviewDialog open={!!previewProof} onOpenChange={(nextOpen) => !nextOpen && setPreviewProof(null)} proof={previewProof} allProofs={availableProofs} />
