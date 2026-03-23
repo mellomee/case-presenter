@@ -43,7 +43,6 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     proofId: null,
     currentTime: null,
     playing: null,
-    sentAt: 0,
   });
 
   const handleVideoStateChange = useCallback((videoSync) => {
@@ -51,36 +50,27 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
 
     const nextTime = typeof videoSync.currentTime === 'number' ? videoSync.currentTime : 0;
     const nextPlaying = !!videoSync.playing;
-    const now = Date.now();
     const previous = lastVideoSyncRef.current;
 
-    const resetState = previous.proofId !== proof?.id;
-    const lastTime = resetState ? null : previous.currentTime;
-    const lastPlaying = resetState ? null : previous.playing;
-    const lastSentAt = resetState ? 0 : previous.sentAt;
-
-    const playingChanged = lastPlaying === null || lastPlaying !== nextPlaying;
-    const jumped = lastTime === null || Math.abs(nextTime - lastTime) >= 1.5;
-    const timedHeartbeat = now - lastSentAt >= 1200;
-
-    if (!playingChanged && !jumped && !timedHeartbeat) return;
-
-    const payload = {
-      video_time: nextTime,
-    };
-
-    if (playingChanged || lastPlaying === null) {
-      payload.is_playing = nextPlaying;
+    if (
+      previous.proofId === proof?.id
+      && previous.playing === nextPlaying
+      && typeof previous.currentTime === 'number'
+      && Math.abs(previous.currentTime - nextTime) < 0.05
+    ) {
+      return;
     }
 
     lastVideoSyncRef.current = {
       proofId: proof?.id || null,
       currentTime: nextTime,
       playing: nextPlaying,
-      sentAt: now,
     };
 
-    onUpdateJury(payload);
+    onUpdateJury({
+      video_time: nextTime,
+      is_playing: nextPlaying,
+    });
   }, [juryState, proof, onUpdateJury]);
 
   if (!proof) {
