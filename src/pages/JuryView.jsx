@@ -12,11 +12,6 @@ import JuryVideoClipPlayer from '@/components/juryView/JuryVideoClipPlayer.jsx';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
   const playerRef = useRef(null);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    setIsReady(false);
-  }, [src]);
 
   useEffect(() => {
     const player = playerRef.current;
@@ -34,19 +29,11 @@ function JuryVideo({ src, videoTime, isPlaying }) {
         <ReactPlayer
           ref={playerRef}
           url={src}
-          playing={isReady && isPlaying}
-          muted
-          volume={0}
+          playing={isPlaying}
           controls={false}
           width="100%"
           height="100%"
           playsinline
-          onReady={() => {
-            setIsReady(true);
-            if ((videoTime ?? 0) > 0) {
-              playerRef.current?.seekTo?.(videoTime, 'seconds');
-            }
-          }}
           config={{
             youtube: {
               playerVars: {

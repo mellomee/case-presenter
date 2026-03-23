@@ -3,6 +3,7 @@ import ReactPlayer from 'react-player';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Loader2 } from 'lucide-react';
+import debounce from 'lodash/debounce';
 
 function formatTime(secs) {
   if (!secs || isNaN(secs)) return '0:00';
@@ -37,19 +38,17 @@ export default function VideoViewer({
   const parentProof = isClip && proof?.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
   const videoUrl = proof?.video_url || proof?.file_url || parentProof?.video_url || parentProof?.file_url;
 
-  const emitState = useCallback((overrides = {}) => {
-    onStateChange && onStateChange({
-      playing,
-      currentTime,
-      ...overrides,
-    });
-  }, [onStateChange, playing, currentTime]);
+  const debouncedPush = useCallback(debounce((s) => onStateChange && onStateChange(s), 150), [onStateChange]);
+  const pushImmediate = useCallback((s) => {
+    debouncedPush.cancel?.();
+    onStateChange && onStateChange(s);
+  }, [debouncedPush, onStateChange]);
 
   useEffect(() => {
     if (mode !== 'viewer' || !syncState || !ready) return;
     const serverTime = syncState.currentTime || 0;
     const localTime = playerRef.current?.getCurrentTime() || 0;
-    if (Math.abs(serverTime - localTime) > 0.35) {
+    if (Math.abs(serverTime - localTime) > 2) {
       playerRef.current?.seekTo(serverTime, 'seconds');
     }
     if (syncState.playing !== undefined && syncState.playing !== playing) {
@@ -61,18 +60,24 @@ export default function VideoViewer({
     }
   }, [syncState, mode, ready]);
 
+  const pushState = useCallback(
+    (overrides = {}) => {
+      debouncedPush({ playing, currentTime, volume, ...overrides });
+    },
+    [playing, currentTime, volume, debouncedPush]
+  );
 
   const handlePlayPause = () => {
     setHasInteracted(true);
     const next = !playing;
     setPlaying(next);
-    emitState({ playing: next, currentTime });
+    pushImmediate({ playing: next, currentTime, volume });
   };
 
   const handlePlayClick = () => {
     setHasInteracted(true);
     setPlaying(true);
-    emitState({ playing: true, currentTime });
+    pushImmediate({ playing: true, currentTime, volume });
   };
 
   const handleReady = () => {
@@ -88,10 +93,13 @@ export default function VideoViewer({
         setPlaying(false);
         playerRef.current?.seekTo(clipStart, 'seconds');
         setCurrentTime(clipStart);
-        emitState({ playing: false, currentTime: clipStart });
+        pushImmediate({ playing: false, currentTime: clipStart, volume });
         return;
       }
       setCurrentTime(playedSeconds);
+      if (mode === 'controller' && playing) {
+        debouncedPush({ playing, currentTime: playedSeconds, volume });
+      }
     }
   };
 
@@ -105,20 +113,21 @@ export default function VideoViewer({
     playerRef.current?.seekTo(t, 'seconds');
     setCurrentTime(t);
     setSeeking(false);
-    emitState({ playing, currentTime: t });
+    pushImmediate({ playing, currentTime: t, volume });
   };
 
   const handleSkip = (secs) => {
     const t = Math.max(0, Math.min(currentTime + secs, duration));
     playerRef.current?.seekTo(t, 'seconds');
     setCurrentTime(t);
-    emitState({ playing, currentTime: t });
+    pushImmediate({ playing, currentTime: t, volume });
   };
 
   const handleVolumeChange = (value) => {
     const v = value[0];
     setVolume(v);
     setMuted(v === 0);
+    pushState({ volume: v });
   };
 
   if (!videoUrl) {
