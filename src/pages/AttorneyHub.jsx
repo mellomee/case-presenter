@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle2, ChevronLeft, ChevronRight, Layers3, LayoutGrid, List, Pause, Play, Square } from 'lucide-react';
-import AttorneyHubProofPreviewPane from '@/components/attorneyHub/AttorneyHubProofPreviewPane.jsx';
+import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofCardMenu from '@/components/attorneyHub/ProofCardMenu.jsx';
@@ -752,7 +752,7 @@ export default function AttorneyHub() {
           <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
             {(selectedPreviewProof || selectedProof) ? (
               <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
-                <AttorneyHubProofPreviewPane
+                <ProofPreviewPane
                   proof={activePreviewProof || selectedProof}
                   juryState={juryState}
                   onUpdateJury={update}
