@@ -182,7 +182,7 @@ export default function AttorneyHub() {
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hubProofs'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
   });
 
   const parentExhibits = useMemo(() => {
@@ -306,6 +306,8 @@ export default function AttorneyHub() {
   const [selectedKind, selectedId] = selectedKey.split(':');
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
   const selectedGroup = selectedKind === 'group' ? rootGroups.find((item) => item.id === selectedId) || null : null;
+  const resolvedPreviewProof = selectedPreviewProof ? proofsById[selectedPreviewProof.id] || selectedPreviewProof : null;
+  const activePreviewProof = resolvedPreviewProof || selectedProof;
   const selectedProofRootItem = selectedProof ? rootProofItems.find((item) => item.linked_proof_id === selectedProof.id) || null : null;
   const fallbackAdmissionBlock = selectedProof ? admissionBlocks.find((item) => item.proof_id === selectedProof.id && item.party_id === activePartyId) || null : null;
   const admissionSource = selectedProof
@@ -625,16 +627,16 @@ export default function AttorneyHub() {
           <ColumnResizeHandle onMouseDown={startDrag.right} />
 
           <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
-            {(selectedPreviewProof || selectedProof) ? (
+            {activePreviewProof ? (
               <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
                 <PreviewRulingToolbar
-                  proof={selectedPreviewProof || selectedProof}
+                  proof={activePreviewProof}
                   onAdmitExhibit={(proof) => handleProofAction(proof, 'admit')}
                   onAdmitDemo={(proof) => handleProofAction(proof, 'demo')}
                   onUnAdmit={(proof) => handleProofAction(proof, 'unadmit')}
                 />
                 <ProofPreviewPane
-                  proof={selectedPreviewProof || selectedProof}
+                  proof={activePreviewProof}
                   juryState={juryState}
                   onUpdateJury={update}
                   onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
