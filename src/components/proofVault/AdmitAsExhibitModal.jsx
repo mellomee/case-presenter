@@ -19,21 +19,23 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      await base44.entities.Proof.update(proof.id, data);
+      const admitDate = new Date().toISOString().split('T')[0];
+      const updateData = { ...data, admit_date: admitDate };
+      await base44.entities.Proof.update(proof.id, updateData);
 
-      // Update all children to Admitted status as well
       const children = proofs.filter((p) => p.parent_proof_id === proof.id);
       for (const child of children) {
-        await base44.entities.Proof.update(child.id, {
-          status: 'Admitted',
-          admitted_exhibit_num: data.admitted_exhibit_num,
-          admitted_by: data.admitted_by,
-          admit_date: new Date().toISOString().split('T')[0],
-        });
+        await base44.entities.Proof.update(child.id, updateData);
       }
+
+      return { updateData, childIds: children.map((child) => child.id) };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proofs'] });
+    onSuccess: ({ updateData, childIds }) => {
+      queryClient.setQueryData(['proofs'], (current = []) => current.map((item) => (
+        item.id === proof.id || childIds.includes(item.id)
+          ? { ...item, ...updateData }
+          : item
+      )));
       setAdmittedExhibitNum('');
       setAdmittedBy('');
       onClose();
@@ -57,7 +59,6 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
       status: 'Admitted',
       admitted_exhibit_num: admittedExhibitNum.trim(),
       admitted_by: admittedBy,
-      admit_date: new Date().toISOString().split('T')[0],
     });
   };
 

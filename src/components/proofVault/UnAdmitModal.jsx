@@ -16,8 +16,6 @@ export default function UnAdmitModal({ open, onClose, proof }) {
   const updateMutation = useMutation({
     mutationFn: async () => {
       const isAdmitted = proof.status === 'Admitted';
-
-      // Update parent proof
       const updateData = { status: 'Joint' };
       if (isAdmitted) {
         updateData.admitted_exhibit_num = null;
@@ -28,22 +26,19 @@ export default function UnAdmitModal({ open, onClose, proof }) {
       }
       await base44.entities.Proof.update(proof.id, updateData);
 
-      // Update all children
       const children = proofs.filter((p) => p.parent_proof_id === proof.id);
       for (const child of children) {
-        const childUpdateData = { status: 'Joint' };
-        if (isAdmitted) {
-          childUpdateData.admitted_exhibit_num = null;
-          childUpdateData.admitted_by = null;
-          childUpdateData.admit_date = null;
-        } else {
-          childUpdateData.demonstrative_exhibit_num = null;
-        }
-        await base44.entities.Proof.update(child.id, childUpdateData);
+        await base44.entities.Proof.update(child.id, updateData);
       }
+
+      return { updateData, childIds: children.map((child) => child.id) };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proofs'] });
+    onSuccess: ({ updateData, childIds }) => {
+      queryClient.setQueryData(['proofs'], (current = []) => current.map((item) => (
+        item.id === proof.id || childIds.includes(item.id)
+          ? { ...item, ...updateData }
+          : item
+      )));
       onClose();
     },
     onError: (error) => {

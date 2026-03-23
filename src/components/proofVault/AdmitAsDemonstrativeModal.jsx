@@ -15,22 +15,25 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      await base44.entities.Proof.update(proof.id, {
+      const updateData = {
         status: 'Demonstrative',
         demonstrative_exhibit_num: proof.joint_exhibit_num,
-      });
+      };
+      await base44.entities.Proof.update(proof.id, updateData);
 
-      // Update all children to Demonstrative status as well
       const children = proofs.filter((p) => p.parent_proof_id === proof.id);
       for (const child of children) {
-        await base44.entities.Proof.update(child.id, {
-          status: 'Demonstrative',
-          demonstrative_exhibit_num: proof.joint_exhibit_num,
-        });
+        await base44.entities.Proof.update(child.id, updateData);
       }
+
+      return { updateData, childIds: children.map((child) => child.id) };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proofs'] });
+    onSuccess: ({ updateData, childIds }) => {
+      queryClient.setQueryData(['proofs'], (current = []) => current.map((item) => (
+        item.id === proof.id || childIds.includes(item.id)
+          ? { ...item, ...updateData }
+          : item
+      )));
       onClose();
     },
     onError: (error) => {
