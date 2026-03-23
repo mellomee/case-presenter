@@ -10,7 +10,7 @@ export default function ProofCardMenu({
   onUnpublish,
 }) {
   const isExhibit = proof?.proof_category === 'Exhibit';
-  const isRejected = isExhibit && localDecision === 'not_admitted';
+  const isRejected = isExhibit && proof?.status === 'Joint' && localDecision === 'not_admitted';
   const canAdmit = isExhibit && proof?.status === 'Joint' && !isRejected;
   const canUnadmit = isExhibit && ['Admitted', 'Demonstrative'].includes(proof?.status);
 

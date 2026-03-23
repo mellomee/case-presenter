@@ -345,7 +345,7 @@ export default function AttorneyHub() {
   const leftPanelWidth = leftColumnCollapsed ? 72 : widths.left;
   const activePreviewProof = selectedPreviewProof ? (proofsById[selectedPreviewProof.id] || selectedPreviewProof) : null;
   const activeToolbarProof = activePreviewProof || selectedProof;
-  const activeToolbarDecision = localDecisionMap[activeToolbarProof?.id];
+  const activeToolbarDecision = activeToolbarProof?.status === 'Joint' ? localDecisionMap[activeToolbarProof?.id] : null;
   const selectedProofIsPublished = juryState?.published_proof_id === activeToolbarProof?.id && !juryState?.is_blank;
   const selectedProofCanPublish = canPublishProof(activeToolbarProof, activeToolbarDecision);
   const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, activeToolbarDecision);
@@ -381,7 +381,8 @@ export default function AttorneyHub() {
   };
 
   const publishProof = (proof) => {
-    if (!canPublishProof(proof, localDecisionMap[proof?.id])) return;
+    const localDecision = proof?.status === 'Joint' ? localDecisionMap[proof?.id] : null;
+    if (!canPublishProof(proof, localDecision)) return;
     update({
       published_proof_id: proof.id,
       pdf_page: 1,
@@ -633,7 +634,7 @@ export default function AttorneyHub() {
                   const parentProof = proof.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
                   const isDemo = proof.status === 'Demonstrative';
                   const isAdmitted = proof.status === 'Admitted';
-                  const publishable = canPublishProof(proof, localDecisionMap[proof.id]);
+                  const publishable = canPublishProof(proof, proof.status === 'Joint' ? localDecisionMap[proof.id] : null);
                   const isPublished = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
 
                   return viewMode === 'grid' ? (
@@ -679,7 +680,7 @@ export default function AttorneyHub() {
                               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{getProofTypeLabel(proof)}</span>
                               {parentProof && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">Child of {getProofDisplayName(parentProof)}</span>}
                               {isPublished && <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-300">Published</span>}
-                              {localDecisionMap[proof.id] === 'not_admitted' && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">Admit Rejected</span>}
+                              {proof.status === 'Joint' && localDecisionMap[proof.id] === 'not_admitted' && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">Admit Rejected</span>}
                             </div>
                             <p className="mt-1 text-xs text-slate-400">{proof.status}</p>
                             {proofTab === 'Depositions' && children.length > 0 && (
