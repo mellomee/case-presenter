@@ -12,6 +12,7 @@ import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrat
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
 import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
+import PreviewRulingToolbar from '@/components/attorneyHub/PreviewRulingToolbar.jsx';
 import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
 import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField } from '@/lib/examV2Utils';
 
@@ -626,6 +627,12 @@ export default function AttorneyHub() {
           <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
             {(selectedPreviewProof || selectedProof) ? (
               <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
+                <PreviewRulingToolbar
+                  proof={selectedPreviewProof || selectedProof}
+                  onAdmitExhibit={(proof) => handleProofAction(proof, 'admit')}
+                  onAdmitDemo={(proof) => handleProofAction(proof, 'demo')}
+                  onUnAdmit={(proof) => handleProofAction(proof, 'unadmit')}
+                />
                 <ProofPreviewPane
                   proof={selectedPreviewProof || selectedProof}
                   juryState={juryState}
