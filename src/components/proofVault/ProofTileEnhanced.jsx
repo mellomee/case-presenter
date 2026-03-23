@@ -269,7 +269,10 @@ export default function ProofTileEnhanced({
             )}
 
             {proof.proof_category === 'Exhibit' ? (
-              <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
+                {childAdmissionLabel && <Badge className={`text-xs ${proof.status === 'Admitted' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>{childAdmissionLabel}</Badge>}
+              </div>
             ) : (
               <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
             )}
