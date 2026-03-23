@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import ReactPlayer from 'react-player';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import PDFViewer from '@/components/proofVault/PDFViewer';
@@ -8,55 +7,7 @@ import { parsePageRange } from '@/components/proofVault/pageRangeUtils';
 import { getInitialHighlightPage } from '@/components/proofVault/highlightGroupUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { Scale, Maximize } from 'lucide-react';
-import JuryVideoClipPlayer from '@/components/juryView/JuryVideoClipPlayer.jsx';
-
-function JuryVideo({ src, videoTime, isPlaying }) {
-  const playerRef = useRef(null);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    setIsReady(false);
-  }, [src]);
-
-  useEffect(() => {
-    const player = playerRef.current;
-    if (!player || !isReady) return;
-    const newTime = videoTime ?? 0;
-    const currentTime = player.getCurrentTime?.() ?? 0;
-    const driftThreshold = isPlaying ? 2.5 : 0.35;
-    if (Math.abs(currentTime - newTime) > driftThreshold) {
-      player.seekTo?.(newTime, 'seconds');
-    }
-  }, [videoTime, src, isPlaying, isReady]);
-
-  return (
-    <div className="flex items-center justify-center w-full h-full bg-black">
-      <div className="w-full h-full max-w-full max-h-full">
-        <ReactPlayer
-          ref={playerRef}
-          url={src}
-          playing={isPlaying}
-          controls={false}
-          width="100%"
-          height="100%"
-          playsinline
-          onReady={() => setIsReady(true)}
-          config={{
-            youtube: {
-              playerVars: {
-                modestbranding: 1,
-                rel: 0,
-                cc_load_policy: 1,
-                cc_lang_pref: 'en',
-                enablejsapi: 1,
-              },
-            },
-          }}
-        />
-      </div>
-    </div>
-  );
-}
+import JurySyncedVideoPlayer from '@/components/juryView/JurySyncedVideoPlayer.jsx';
 
 function TopRightBadges({ proof, demoLabel }) {
   const isDemo = proof.status === 'Demonstrative';
@@ -204,16 +155,12 @@ export default function JuryView() {
             <img src={resolvedAssetUrl || proof.file_url} alt={proof.formal_name || proof.name} className="max-w-full max-h-full object-contain" />
           </div>
         ) : proof.file_type === 'Video' ? (
-          proof.proof_child_type === 'VideoClip' ? (
-            <JuryVideoClipPlayer
-              src={resolvedAssetUrl || proof.video_url || proof.file_url}
-              segments={proof.video_clips || []}
-              videoTime={juryState.video_time}
-              isPlaying={juryState.is_playing}
-            />
-          ) : (
-            <JuryVideo src={resolvedAssetUrl || proof.video_url || proof.file_url} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
-          )
+          <JurySyncedVideoPlayer
+            src={resolvedAssetUrl || proof.video_url || proof.file_url}
+            segments={proof.proof_child_type === 'VideoClip' ? (proof.video_clips || []) : null}
+            videoTime={juryState.video_time}
+            isPlaying={juryState.is_playing}
+          />
         ) : (resolvedAssetUrl || proof.file_url) ? (
           <PDFViewer
             fileUrl={resolvedAssetUrl || proof.file_url}
