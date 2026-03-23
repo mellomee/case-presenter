@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactPlayer from 'react-player';
+import { Volume2 } from 'lucide-react';
 
 function getExpectedTime(baseTime, isPlaying, updatedAt) {
   const startTime = new Date(updatedAt || Date.now()).getTime();
@@ -11,6 +12,7 @@ export default function JurySyncedVideoPlayer({ src, videoTime = 0, isPlaying = 
   const playerRef = useRef(null);
   const anchorRef = useRef({ time: videoTime, playing: isPlaying, updatedAt: syncToken || Date.now() });
   const [playing, setPlaying] = useState(!!isPlaying);
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
 
   useEffect(() => {
     anchorRef.current = {

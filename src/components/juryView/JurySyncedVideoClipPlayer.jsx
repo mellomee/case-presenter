@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactPlayer from 'react-player';
+import { Volume2 } from 'lucide-react';
 import { getPlayableRanges, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
 
 function getExpectedTime(baseTime, isPlaying, updatedAt) {
@@ -35,6 +36,7 @@ export default function JurySyncedVideoClipPlayer({ src, segments = [], videoTim
   const playerRef = useRef(null);
   const anchorRef = useRef({ time: videoTime, playing: isPlaying, updatedAt: syncToken || Date.now() });
   const [playing, setPlaying] = useState(!!isPlaying);
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
   const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
   const ranges = useMemo(() => getPlayableRanges(items), [items]);
 
