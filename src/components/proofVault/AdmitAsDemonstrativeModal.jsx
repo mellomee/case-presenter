@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import ProofAdmissionFields from '@/components/proofVault/ProofAdmissionFields.jsx';
+import { getTodayDateString, isProofAdmissionNumberUsed } from '@/lib/proofAdmissionUtils';
 
 export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
   const queryClient = useQueryClient();
+  const [demonstrativeExhibitNum, setDemonstrativeExhibitNum] = useState('');
+  const [admittedBy, setAdmittedBy] = useState('Plaintiff');
+  const [admitDate, setAdmitDate] = useState(getTodayDateString());
+
+  useEffect(() => {
+    if (!open) return;
+    setDemonstrativeExhibitNum('');
+    setAdmittedBy('Plaintiff');
+    setAdmitDate(getTodayDateString());
+  }, [open, proof?.id]);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -14,11 +26,7 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async () => {
-      const updateData = {
-        status: 'Demonstrative',
-        demonstrative_exhibit_num: proof.joint_exhibit_num,
-      };
+    mutationFn: async (updateData) => {
       await base44.entities.Proof.update(proof.id, updateData);
 
       const children = proofs.filter((p) => p.parent_proof_id === proof.id);
@@ -34,6 +42,9 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
           ? { ...item, ...updateData }
           : item
       )));
+      setDemonstrativeExhibitNum('');
+      setAdmittedBy('Plaintiff');
+      setAdmitDate(getTodayDateString());
       onClose();
     },
     onError: (error) => {
@@ -42,7 +53,31 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
   });
 
   const handleSubmit = () => {
-    updateMutation.mutate();
+    const nextExhibitNum = demonstrativeExhibitNum.trim();
+
+    if (!nextExhibitNum) {
+      alert('Demonstrative Exhibit # is required.');
+      return;
+    }
+    if (!admittedBy) {
+      alert('Please choose who admitted this proof.');
+      return;
+    }
+    if (!admitDate) {
+      alert('Admitted date is required.');
+      return;
+    }
+    if (isProofAdmissionNumberUsed(proofs, proof, nextExhibitNum)) {
+      alert('That exhibit # is already in use. Please enter a different one.');
+      return;
+    }
+
+    updateMutation.mutate({
+      status: 'Demonstrative',
+      demonstrative_exhibit_num: nextExhibitNum,
+      admitted_by: admittedBy,
+      admit_date: admitDate,
+    });
   };
 
   return (
@@ -60,19 +95,19 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
             </div>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-md p-4 space-y-3">
-            <div>
-              <p className="text-sm font-medium text-slate-700">Demonstrative Exhibit #</p>
-              <p className="text-lg font-semibold text-slate-900 mt-1">{proof?.joint_exhibit_num}</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Inherited from Joint Exhibit # (no additional number required)
-              </p>
-            </div>
-          </div>
+          <ProofAdmissionFields
+            exhibitNumberLabel="Demonstrative Exhibit #"
+            exhibitNumber={demonstrativeExhibitNum}
+            onExhibitNumberChange={setDemonstrativeExhibitNum}
+            admittedBy={admittedBy}
+            onAdmittedByChange={setAdmittedBy}
+            admitDate={admitDate}
+            onAdmitDateChange={setAdmitDate}
+          />
 
           <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
             <p className="text-xs text-purple-800">
-              <strong>Note:</strong> This proof will be labeled "For illustrative purposes only" on the Jury View. All child proofs will also be marked Demonstrative.
+              <strong>Note:</strong> This proof will use its own demonstrative exhibit # and all child proofs will also be marked Demonstrative.
             </p>
           </div>
 
