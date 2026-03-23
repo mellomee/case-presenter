@@ -258,11 +258,6 @@
   }
 }
 
-/* Hide the global "Welcome to Case Presenter" top bar without touching Layout logic */
-.flex-1.flex.flex-col.overflow-hidden.min-w-0 > div:first-child {
-  display: none;
-}
-
 @media print {
   @page {
     margin: 0.5in;
