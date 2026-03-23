@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, X, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,11 +28,6 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl } = useResolvedProofAsset(parentProof);
-  const lastVideoSyncRef = useRef({ time: null, playing: null, sentAt: 0 });
-
-  useEffect(() => {
-    lastVideoSyncRef.current = { time: null, playing: null, sentAt: 0 };
-  }, [proof?.id, juryState?.published_proof_id]);
 
   const handlePdfStateChange = useCallback((pdfSync) => {
     if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
@@ -46,28 +41,9 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
 
   const handleVideoStateChange = useCallback((videoSync) => {
     if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
-
-    const nextTime = Number(videoSync.currentTime || 0);
-    const nextPlaying = !!videoSync.playing;
-    const previous = lastVideoSyncRef.current;
-    const now = Date.now();
-    const playingChanged = previous.playing !== nextPlaying;
-    const timeJumped = previous.time === null || Math.abs(nextTime - previous.time) >= 2;
-    const throttleWindowPassed = now - previous.sentAt >= 1200;
-
-    if (!playingChanged && !timeJumped && !throttleWindowPassed) {
-      return;
-    }
-
-    lastVideoSyncRef.current = {
-      time: nextTime,
-      playing: nextPlaying,
-      sentAt: now,
-    };
-
     onUpdateJury({
-      video_time: nextTime,
-      is_playing: nextPlaying,
+      video_time: videoSync.currentTime || 0,
+      is_playing: !!videoSync.playing,
     });
   }, [juryState, proof, onUpdateJury]);
 
