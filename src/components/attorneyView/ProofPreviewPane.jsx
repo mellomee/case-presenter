@@ -18,6 +18,21 @@ function statusPill(proof) {
   return 'bg-slate-100 text-slate-600';
 }
 
+function canPublishToJury(proof) {
+  return proof?.proof_category === 'Deposition' || ['Admitted', 'Demonstrative'].includes(proof?.status);
+}
+
+function getJuryExhibitLabel(proof) {
+  if (!proof) return '';
+  if (proof.proof_category === 'Deposition') return proof.formal_name || proof.name || 'Deposition';
+
+  const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || '';
+  if (proof.status === 'Demonstrative') {
+    return exhibitNum ? `Demonstrative ${exhibitNum}` : 'Demonstrative';
+  }
+  return exhibitNum ? `Exhibit ${exhibitNum}` : 'Exhibit';
+}
+
 export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRuling, onClose }) {
   const { data: allProofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -40,8 +55,23 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
   }, [juryState, proof, onUpdateJury]);
 
   const handleVideoStateChange = useCallback((videoSync) => {
-    if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
+    if (!proof || !onUpdateJury || !canPublishToJury(proof)) return;
+
+    const isCurrentlyPublished = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
+    const shouldAutoPublish = !isCurrentlyPublished && (!!videoSync.playing || (videoSync.currentTime || 0) > 0);
+
+    if (!isCurrentlyPublished && !shouldAutoPublish) return;
+
     onUpdateJury({
+      ...(isCurrentlyPublished ? {} : {
+        published_proof_id: proof.id,
+        pdf_page: 1,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        is_blank: false,
+        exhibit_label: getJuryExhibitLabel(proof),
+      }),
       video_time: videoSync.currentTime || 0,
       is_playing: !!videoSync.playing,
     }, true);
