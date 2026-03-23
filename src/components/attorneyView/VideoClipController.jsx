@@ -43,12 +43,11 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
     setCurrentTime(anchorTime);
     setPlaying(shouldResume);
     playerRef.current?.seekTo(anchorTime, 'seconds');
-    onStateChange?.({ currentTime: anchorTime, playing: shouldResume });
 
     resumeTimeoutRef.current = setTimeout(() => {
       suppressEndCheckRef.current = false;
     }, 140);
-  }, [items, clearResumeTimeout, onStateChange]);
+  }, [items, clearResumeTimeout]);
 
   useEffect(() => () => clearResumeTimeout(), [clearResumeTimeout]);
 
@@ -82,10 +81,13 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
       } else {
         setCurrentTime(endSec);
         setPlaying(false);
-        onStateChange?.({ currentTime: endSec, playing: false });
       }
     }
   }, [currentTime, currentSegmentIdx, items, seekToItem]);
+
+  useEffect(() => {
+    onStateChange?.({ currentTime, playing });
+  }, [currentTime, playing, onStateChange]);
 
   if (!items.length) {
     return <div className="text-slate-500 italic">No segments</div>;
@@ -104,9 +106,7 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
       return;
     }
 
-    const nextPlaying = !playing;
-    setPlaying(nextPlaying);
-    onStateChange?.({ currentTime, playing: nextPlaying });
+    setPlaying((value) => !value);
   };
 
   const handleNext = () => {
@@ -125,15 +125,8 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
           height="100%"
           controls
           playing={playing}
-          onPlay={() => {
-            if (isPauseItem(currentItem)) return;
-            setPlaying(true);
-            onStateChange?.({ currentTime, playing: true });
-          }}
-          onPause={() => {
-            setPlaying(false);
-            onStateChange?.({ currentTime, playing: false });
-          }}
+          onPlay={() => !isPauseItem(currentItem) && setPlaying(true)}
+          onPause={() => setPlaying(false)}
           onDuration={(duration) => setVideoDuration(duration)}
           onSeek={(seconds) => {
             const matchingIndex = items.findIndex((item) => !isPauseItem(item) && seconds >= timeToSeconds(item.start) && seconds <= timeToSeconds(item.end));
@@ -141,7 +134,6 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
               setCurrentSegmentIdx(matchingIndex);
             }
             setCurrentTime(seconds);
-            onStateChange?.({ currentTime: seconds, playing });
           }}
           onProgress={(state) => {
             if (!suppressEndCheckRef.current) {

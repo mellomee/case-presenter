@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, X, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,37 +39,11 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     });
   }, [juryState, proof, onUpdateJury]);
 
-  const lastVideoSyncRef = useRef({
-    proofId: null,
-    currentTime: null,
-    playing: null,
-  });
-
   const handleVideoStateChange = useCallback((videoSync) => {
     if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
-
-    const nextTime = typeof videoSync.currentTime === 'number' ? videoSync.currentTime : 0;
-    const nextPlaying = !!videoSync.playing;
-    const previous = lastVideoSyncRef.current;
-
-    if (
-      previous.proofId === proof?.id
-      && previous.playing === nextPlaying
-      && typeof previous.currentTime === 'number'
-      && Math.abs(previous.currentTime - nextTime) < 0.05
-    ) {
-      return;
-    }
-
-    lastVideoSyncRef.current = {
-      proofId: proof?.id || null,
-      currentTime: nextTime,
-      playing: nextPlaying,
-    };
-
     onUpdateJury({
-      video_time: nextTime,
-      is_playing: nextPlaying,
+      video_time: videoSync.currentTime || 0,
+      is_playing: !!videoSync.playing,
     });
   }, [juryState, proof, onUpdateJury]);
 
