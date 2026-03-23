@@ -13,12 +13,25 @@ export default function UnAdmitModal({ open, onClose, proof }) {
     queryFn: () => base44.entities.Proof.list(),
   });
 
+  const parentProof = proof?.parent_proof_id ? proofs.find((p) => p.id === proof.parent_proof_id) || null : null;
+  const isTopLevelProof = !proof?.parent_proof_id;
+  const descendantProofs = proofs.filter((item) => {
+    let currentParentId = item.parent_proof_id;
+    while (currentParentId) {
+      if (currentParentId === proof?.id) return true;
+      currentParentId = proofs.find((candidate) => candidate.id === currentParentId)?.parent_proof_id || null;
+    }
+    return false;
+  });
+  const hasDescendants = descendantProofs.length > 0;
+
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const isAdmitted = proof.status === 'Admitted';
+      if (!proof?.id) return;
 
-      // Update parent proof
+      const isAdmitted = proof.status === 'Admitted';
       const updateData = { status: 'Joint' };
+
       if (isAdmitted) {
         updateData.admitted_exhibit_num = null;
         updateData.admitted_by = null;
@@ -26,20 +39,9 @@ export default function UnAdmitModal({ open, onClose, proof }) {
       } else {
         updateData.demonstrative_exhibit_num = null;
       }
-      await base44.entities.Proof.update(proof.id, updateData);
 
-      // Update all children
-      const children = proofs.filter((p) => p.parent_proof_id === proof.id);
-      for (const child of children) {
-        const childUpdateData = { status: 'Joint' };
-        if (isAdmitted) {
-          childUpdateData.admitted_exhibit_num = null;
-          childUpdateData.admitted_by = null;
-          childUpdateData.admit_date = null;
-        } else {
-          childUpdateData.demonstrative_exhibit_num = null;
-        }
-        await base44.entities.Proof.update(child.id, childUpdateData);
+      for (const targetProof of [proof, ...descendantProofs]) {
+        await base44.entities.Proof.update(targetProof.id, updateData);
       }
     },
     onSuccess: () => {
@@ -73,6 +75,11 @@ export default function UnAdmitModal({ open, onClose, proof }) {
               <p className="text-xs text-orange-700 mt-1">
                 Current: {statusLabel} (Ex. {exhibitNum})
               </p>
+              {parentProof && (
+                <p className="text-xs text-orange-700 mt-1">
+                  Parent Proof: {parentProof.formal_name || parentProof.name}
+                </p>
+              )}
             </div>
           </div>
 
@@ -101,18 +108,34 @@ export default function UnAdmitModal({ open, onClose, proof }) {
             </p>
             <ul className="text-xs text-slate-600 mt-2 space-y-1 ml-3">
               <li>• Proof will return to Joint status</li>
-              {isAdmitted && (
+              {isAdmitted ? (
                 <>
                   <li>• Admitted exhibit # will be cleared</li>
                   <li>• Can no longer be published to jury</li>
                 </>
-              )}
-              {!isAdmitted && (
+              ) : (
                 <li>• Demonstrative status will be cleared</li>
               )}
               <li>• Joint exhibit # remains intact</li>
-              <li>• All child proofs will also be demoted</li>
+              {isTopLevelProof ? (
+                <li>• All child proofs will also be demoted</li>
+              ) : (
+                <>
+                  <li>• Parent proof remains unchanged</li>
+                  {hasDescendants && <li>• Descendant child proofs will also be demoted</li>}
+                </>
+              )}
             </ul>
+          </div>
+
+          <div className="bg-orange-50 border border-orange-200 rounded-md p-3">
+            <p className="text-xs text-orange-800">
+              <strong>Note:</strong> {isTopLevelProof
+                ? 'This proof and its child proofs will return to Joint.'
+                : hasDescendants
+                  ? 'This child proof and its descendants will return to Joint. The parent proof stays unchanged unless it is demoted separately.'
+                  : 'Only this child proof will return to Joint. The parent proof stays unchanged unless it is demoted separately.'}
+            </p>
           </div>
 
           <div className="flex gap-3 justify-end pt-2">
