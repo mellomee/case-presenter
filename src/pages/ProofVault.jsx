@@ -282,31 +282,25 @@ export default function ProofVault() {
     setSelectedProofIds([]);
   }, [activeTab, exhibitFilter, searchQuery]);
 
-  // Separate exhibits and depositions (include ALL, not just top-level)
+  // Separate exhibits and depositions (include ALL records)
   const allExhibits = proofs.filter((p) => p.proof_category === 'Exhibit');
   const allDepositions = proofs.filter((p) => p.proof_category === 'Deposition');
 
-  // Get only top-level proofs for rendering
+  // Primary lists stay top-level for All / Draft / Joint views
   const exhibitsTopLevel = allExhibits.filter((p) => !p.parent_proof_id);
   const depositionsTopLevel = allDepositions.filter((p) => !p.parent_proof_id);
-  const promotedExtracts = allExhibits.filter(
-    (p) =>
-      p.proof_child_type === 'Extract' &&
-      ['Joint', 'Admitted', 'Demonstrative'].includes(p.status)
-  );
 
   const filteredExhibits = useMemo(() => {
     const exhibitsByStatus = exhibitFilter === 'all'
       ? exhibitsTopLevel
-      : ['Joint', 'Admitted', 'Demonstrative'].includes(exhibitFilter)
-        ? [
-            ...exhibitsTopLevel.filter((e) => e.status === exhibitFilter),
-            ...promotedExtracts.filter((e) => e.status === exhibitFilter),
-          ]
-        : exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
+      : exhibitFilter === 'Admitted'
+        ? allExhibits.filter((proof) => proof.status === 'Admitted')
+        : exhibitFilter === 'Demonstrative'
+          ? allExhibits.filter((proof) => proof.status === 'Demonstrative')
+          : exhibitsTopLevel.filter((proof) => proof.status === exhibitFilter);
 
     return sortProofsByExhibitNumber(exhibitsByStatus.filter((proof) => proofMatchesSearch(proof, searchQuery)));
-  }, [exhibitFilter, exhibitsTopLevel, promotedExtracts, searchQuery]);
+  }, [allExhibits, exhibitFilter, exhibitsTopLevel, searchQuery]);
 
   const filteredDepositions = useMemo(
     () => sortProofsByExhibitNumber(depositionsTopLevel.filter((proof) => proofMatchesSearch(proof, searchQuery))),
@@ -315,13 +309,9 @@ export default function ProofVault() {
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
-    if (['Joint', 'Admitted', 'Demonstrative'].includes(status)) {
-      return (
-        exhibitsTopLevel.filter((e) => e.status === status).length +
-        promotedExtracts.filter((e) => e.status === status).length
-      );
-    }
-    return exhibitsTopLevel.filter((e) => e.status === status).length;
+    if (status === 'Admitted') return allExhibits.filter((proof) => proof.status === 'Admitted').length;
+    if (status === 'Demonstrative') return allExhibits.filter((proof) => proof.status === 'Demonstrative').length;
+    return exhibitsTopLevel.filter((proof) => proof.status === status).length;
   };
 
   const visibleProofs = activeTab === 'exhibits' ? filteredExhibits : filteredDepositions;

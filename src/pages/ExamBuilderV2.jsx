@@ -130,10 +130,8 @@ export default function ExamBuilderV2() {
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const itemsById = useMemo(() => Object.fromEntries(currentItems.map((item) => [item.id, item])), [currentItems]);
   const availableAttachmentProofs = useMemo(
-    () => selectedRootProof
-      ? [selectedRootProof, ...proofs.filter((proof) => proof.parent_proof_id === selectedRootProof.id)]
-      : proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
-    [proofs, selectedRootProof]
+    () => proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+    [proofs]
   );
   const admissionStatusMeta = selectedRootProof?.status === 'Admitted'
     ? { label: `Admitted as Exhibit · #${selectedRootProof.admitted_exhibit_num || '—'}`, color: 'text-red-400' }
@@ -141,7 +139,7 @@ export default function ExamBuilderV2() {
       ? { label: `Admitted as Demonstrative · #${selectedRootProof.demonstrative_exhibit_num || selectedRootProof.joint_exhibit_num || '—'}`, color: 'text-blue-400' }
       : null;
   const selectableProofs = useMemo(
-    () => proofs.filter((proof) => ['Extract', 'Video', 'Image'].includes(proof.proof_child_type || proof.file_type)),
+    () => proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
     [proofs]
   );
   const questionItems = useMemo(() => currentItems.filter((item) => item.item_type === 'question'), [currentItems]);
@@ -718,6 +716,7 @@ export default function ExamBuilderV2() {
           onSave={saveQuestion}
           initialValue={questionDialog.initialValue}
           availableProofs={availableAttachmentProofs}
+          parties={parties}
           title={questionDialog.title}
         />
         <MoveSelectedQuestionsDialog

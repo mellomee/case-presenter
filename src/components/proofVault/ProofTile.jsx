@@ -127,6 +127,20 @@ export default function ProofTile({
     }
   };
 
+  const getChildTypeLabel = () => {
+    if (proof.proof_child_type === 'ExtractClip') return 'Extract Clip';
+    if (proof.proof_child_type === 'VideoClip') return 'Video Clip';
+    if (proof.proof_child_type === 'Extract') return 'Extract';
+    if (proof.file_type === 'PDF') return 'PDF';
+    if (proof.file_type === 'Image') return 'Image';
+    if (proof.file_type === 'Video') return 'Video';
+    return 'Proof';
+  };
+
+  const statusLabel = proof.parent_proof_id && ['Admitted', 'Demonstrative'].includes(proof.status)
+    ? `${proof.status} ${getChildTypeLabel()}`
+    : proof.status;
+
   const getFileTypeIcon = () => {
     if (proof.file_type === 'PDF') return '📄';
     if (proof.file_type === 'Image') return '🖼️';
@@ -183,6 +197,11 @@ export default function ProofTile({
                     Source PDF: {parentProof.formal_name || parentProof.name}{parentProof.draft_exhibit_num ? ` · D: ${parentProof.draft_exhibit_num}` : ''}
                   </div>
                 )}
+                {proof.parent_proof_id && parentProof && proof.proof_child_type !== 'Extract' && (
+                  <div className="text-[11px] text-slate-500 truncate mt-1">
+                    Parent Proof: {parentProof.formal_name || parentProof.name}
+                  </div>
+                )}
                 {proof.file_source === 'dropbox' && proof.dropbox_file_name && (
                   <div className="text-xs text-slate-500 truncate">Source Filename: {proof.dropbox_file_name}</div>
                 )}
@@ -210,7 +229,7 @@ export default function ProofTile({
 
               <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                 {proof.proof_category === 'Exhibit' ? (
-                  <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
+                  <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{statusLabel}</Badge>
                 ) : (
                   <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
                 )}

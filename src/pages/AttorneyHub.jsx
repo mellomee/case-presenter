@@ -118,6 +118,21 @@ function formatElapsedTime(totalSeconds) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
+function canPublishProof(proof) {
+  return proof?.proof_category === 'Deposition' || ['Admitted', 'Demonstrative'].includes(proof?.status);
+}
+
+function getPublishedLabel(proof) {
+  if (!proof) return '';
+  if (proof.proof_category === 'Deposition') return proof.formal_name || proof.name || 'Deposition';
+
+  const exhibitNumber = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || '';
+  if (proof.status === 'Demonstrative') {
+    return exhibitNumber ? `Demonstrative ${exhibitNumber}` : 'Demonstrative';
+  }
+  return exhibitNumber ? `Exhibit ${exhibitNumber}` : 'Exhibit';
+}
+
 export default function AttorneyHub() {
   const queryClient = useQueryClient();
   const { juryState, update } = useJurySync('attorney');
@@ -181,19 +196,13 @@ export default function AttorneyHub() {
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hubProofs'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
   });
 
-  const parentExhibits = useMemo(() => {
-    const allExhibits = proofs.filter((proof) => proof.proof_category === 'Exhibit');
-    const promotedExtracts = allExhibits.filter(
-      (proof) => proof.proof_child_type === 'Extract' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
-    );
-    return [
-      ...allExhibits.filter((proof) => !proof.parent_proof_id && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
-      ...promotedExtracts,
-    ];
-  }, [proofs]);
+  const exhibitProofs = useMemo(
+    () => proofs.filter((proof) => proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+    [proofs]
+  );
 
   const parentDepositions = useMemo(
     () => proofs.filter((proof) => !proof.parent_proof_id && proof.proof_category === 'Deposition'),
@@ -210,7 +219,7 @@ export default function AttorneyHub() {
       return rootProofItems.map((item) => proofsById[item.linked_proof_id]).filter(Boolean);
     }
 
-    let next = [...parentExhibits];
+    let next = [...exhibitProofs];
 
     if (statusFilter !== 'all') {
       next = next.filter((proof) => {
@@ -247,7 +256,7 @@ export default function AttorneyHub() {
       const bValue = sortField === 'admit' ? (b.admitted_exhibit_num || b.demonstrative_exhibit_num) : b.joint_exhibit_num;
       return compareLabeledNumbers(aValue, bValue, sortDirection);
     });
-  }, [currentExam, depositionPartyFilter, exhibitSearch, exhibitSort, parentDepositions, parentExhibits, partiesById, proofTab, proofsById, rootProofItems, sideFilter, statusFilter]);
+  }, [currentExam, depositionPartyFilter, exhibitSearch, exhibitSort, exhibitProofs, parentDepositions, partiesById, proofTab, proofsById, rootProofItems, sideFilter, statusFilter]);
 
   const displayEntries = useMemo(() => {
     const proofEntries = filteredProofs.map((proof) => ({ kind: 'proof', id: proof.id }));
@@ -344,6 +353,36 @@ export default function AttorneyHub() {
     if (patch) {
       updateProofMutation.mutate({ proofId: proof.id, data: patch });
     }
+  };
+
+  const publishProof = (proof) => {
+    if (!canPublishProof(proof)) return;
+    update({
+      published_proof_id: proof.id,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: false,
+      exhibit_label: getPublishedLabel(proof),
+    });
+  };
+
+  const unpublishProof = (proof) => {
+    if (juryState?.published_proof_id !== proof?.id || juryState?.is_blank) return;
+    update({
+      published_proof_id: null,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: true,
+      exhibit_label: '',
+    });
   };
 
   return (
@@ -534,8 +573,11 @@ export default function AttorneyHub() {
                   const proof = proofsById[entry.id];
                   if (!proof) return null;
                   const children = proofs.filter((item) => item.parent_proof_id === proof.id);
+                  const parentProof = proof.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
                   const isDemo = proof.status === 'Demonstrative';
                   const isAdmitted = proof.status === 'Admitted';
+                  const publishable = canPublishProof(proof);
+                  const isPublished = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
 
                   return viewMode === 'grid' ? (
                     <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
@@ -543,7 +585,16 @@ export default function AttorneyHub() {
                         {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] ? <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootProofOrderNumberMap[proof.id]}</span> : <span />}
                         <div className="flex flex-col items-end gap-2">
                           {(isAdmitted || isDemo) && <CheckCircle2 className={`w-5 h-5 ${isDemo ? 'text-blue-400' : 'text-red-400'}`} />}
-                          <ProofCardMenu proof={proof} selectedParty={selectedParty} localDecision={localDecisionMap[proof.id]} onAction={(action, patch) => handleProofAction(proof, action, patch)} />
+                          <ProofCardMenu
+                            proof={proof}
+                            selectedParty={selectedParty}
+                            localDecision={localDecisionMap[proof.id]}
+                            onAction={(action, patch) => handleProofAction(proof, action, patch)}
+                            canPublish={publishable}
+                            isPublished={isPublished}
+                            onPublish={() => publishProof(proof)}
+                            onUnpublish={() => unpublishProof(proof)}
+                          />
                         </div>
                       </div>
                       <div className="mt-3 flex justify-center">
@@ -567,10 +618,13 @@ export default function AttorneyHub() {
                               {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] && <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootProofOrderNumberMap[proof.id]}</span>}
                               <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
                             </div>
-                            <div className="mt-2 flex items-center justify-start gap-2 text-xs">
+                            <div className="mt-2 flex items-center justify-start gap-2 text-xs flex-wrap">
                               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{getProofTypeLabel(proof)}</span>
+                              {parentProof && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">Child of {getProofDisplayName(parentProof)}</span>}
+                              {isPublished && <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-300">Published</span>}
+                              {localDecisionMap[proof.id] === 'not_admitted' && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">Admission Rejected</span>}
                             </div>
-                            <p className="mt-1 text-xs text-slate-400">{proof.status}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
+                            <p className="mt-1 text-xs text-slate-400">{proof.status}</p>
                             {proofTab === 'Depositions' && children.length > 0 && (
                               <div className="mt-3 flex flex-wrap gap-2">
                                 {children.slice(0, 4).map((child) => (
@@ -584,7 +638,16 @@ export default function AttorneyHub() {
                         </div>
                         <div className="flex flex-col items-end gap-2">
                           {(isAdmitted || isDemo) && <CheckCircle2 className={`w-5 h-5 ${isDemo ? 'text-blue-400' : 'text-red-400'}`} />}
-                          <ProofCardMenu proof={proof} selectedParty={selectedParty} localDecision={localDecisionMap[proof.id]} onAction={(action, patch) => handleProofAction(proof, action, patch)} />
+                          <ProofCardMenu
+                            proof={proof}
+                            selectedParty={selectedParty}
+                            localDecision={localDecisionMap[proof.id]}
+                            onAction={(action, patch) => handleProofAction(proof, action, patch)}
+                            canPublish={publishable}
+                            isPublished={isPublished}
+                            onPublish={() => publishProof(proof)}
+                            onUnpublish={() => unpublishProof(proof)}
+                          />
                         </div>
                       </div>
                     </div>

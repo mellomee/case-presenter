@@ -42,6 +42,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
   const admittedNumber = proof?.admitted_exhibit_num || parentProof?.admitted_exhibit_num;
   const demoNumber = proof?.demonstrative_exhibit_num || parentProof?.demonstrative_exhibit_num;
   const badgeTextSize = BADGE_TEXT_SIZE[size] || BADGE_TEXT_SIZE.md;
+  const statusLabel = effectiveStatus === 'Demonstrative' ? 'Demonstrative' : effectiveStatus === 'Admitted' ? 'Admitted' : null;
 
   const statusIcon = effectiveStatus ? (
     <CheckCircle2
@@ -72,6 +73,12 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
     </div>
   ) : null;
 
+  const statusLabelBadge = statusLabel ? (
+    <div className={`absolute left-1 top-1 rounded px-1.5 py-0.5 font-semibold leading-none shadow-sm ${badgeTextSize} ${effectiveStatus === 'Demonstrative' ? 'bg-purple-600/90 text-white' : 'bg-green-600/90 text-white'}`}>
+      {statusLabel}
+    </div>
+  ) : null;
+
   if (groupLabel) {
     return (
       <div className={`${sizing.outer} rounded-lg border border-slate-300 bg-white flex items-center justify-center p-3 text-center`}>
@@ -93,6 +100,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
       <div className="relative">
         <img src={url} alt={proof.name} className={`${sizing.outer} rounded-lg border border-slate-700 object-cover bg-slate-900`} />
         {statusIcon}
+        {statusLabelBadge}
         {numberBadges}
       </div>
     );
@@ -106,6 +114,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
           <span className="text-[10px] text-slate-400 uppercase tracking-wide">Video</span>
         </div>
         {statusIcon}
+        {statusLabelBadge}
         {numberBadges}
       </div>
     );
@@ -118,6 +127,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
           <FileText className="w-5 h-5 text-slate-500" />
         </div>
         {statusIcon}
+        {statusLabelBadge}
         {numberBadges}
       </div>
     );
