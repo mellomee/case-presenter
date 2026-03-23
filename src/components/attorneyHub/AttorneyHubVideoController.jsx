@@ -3,7 +3,13 @@ import ReactPlayer from 'react-player';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Loader2, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
-import { getPlayableRanges, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
+import {
+  getItemAnchorTime,
+  getNextPlayableIndex,
+  isPauseItem,
+  normalizeVideoClipItems,
+  timeToSeconds,
+} from '@/lib/videoClipPlaylist';
 
 function formatTime(secs) {
   if (!secs || Number.isNaN(secs)) return '0:00';
@@ -12,19 +18,16 @@ function formatTime(secs) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-function getRangeIndex(time, ranges) {
-  return ranges.findIndex((range) => time >= range.start - 0.1 && time <= range.end + 0.1);
-}
-
-function hasPauseBetween(items, currentRange, nextRange) {
-  if (!currentRange || !nextRange) return false;
-  return items.slice(currentRange.originalIndex + 1, nextRange.originalIndex).some((item) => item.type === 'pause');
+function getMatchingSegmentIndex(items, seconds) {
+  return items.findIndex((item) => !isPauseItem(item) && seconds >= timeToSeconds(item.start) && seconds <= timeToSeconds(item.end));
 }
 
 export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [], onStateChange }) {
   const playerRef = useRef(null);
-  const lastSyncAtRef = useRef(0);
+  const suppressEndCheckRef = useRef(false);
+  const resumeTimeoutRef = useRef(null);
   const [playing, setPlaying] = useState(false);
+  const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -34,45 +37,101 @@ export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [
   const [hasInteracted, setHasInteracted] = useState(false);
 
   const items = useMemo(() => normalizeVideoClipItems(Array.isArray(clipSegments) ? clipSegments : []), [clipSegments]);
-  const ranges = useMemo(() => getPlayableRanges(items), [items]);
-  const isClip = ranges.length > 0;
-  const clipStart = isClip ? ranges[0].start : 0;
-  const clipEnd = isClip ? ranges[ranges.length - 1].end : null;
+  const isClip = items.length > 0;
+  const firstPlayableIndex = useMemo(() => items.findIndex((item) => !isPauseItem(item)), [items]);
+  const clipStart = isClip ? getItemAnchorTime(items, firstPlayableIndex >= 0 ? firstPlayableIndex : 0) : 0;
+  const clipEnd = useMemo(() => {
+    if (!isClip) return null;
+    const playableItems = items.filter((item) => !isPauseItem(item));
+    if (!playableItems.length) return 0;
+    return timeToSeconds(playableItems[playableItems.length - 1].end);
+  }, [items, isClip]);
+
+  const clearResumeTimeout = useCallback(() => {
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = null;
+    }
+  }, []);
 
   const clampTime = useCallback((time) => {
+    const rawTime = Math.max(0, time || 0);
     if (!isClip) {
-      const max = duration || time || 0;
-      return Math.max(0, Math.min(time, max));
+      const max = duration || rawTime;
+      return Math.min(rawTime, max);
     }
-    return Math.max(clipStart, Math.min(time, clipEnd ?? time));
+    if (clipEnd === null) return rawTime;
+    return Math.max(clipStart, Math.min(rawTime, clipEnd));
   }, [clipEnd, clipStart, duration, isClip]);
+
+  const seekToItem = useCallback((idx, options = {}) => {
+    const item = items[idx];
+    if (!item) return;
+
+    const shouldResume = !!options.resume && !isPauseItem(item);
+    const anchorTime = isPauseItem(item) ? getItemAnchorTime(items, idx) : timeToSeconds(item.start);
+
+    clearResumeTimeout();
+    suppressEndCheckRef.current = true;
+    setCurrentSegmentIdx(idx);
+    setCurrentTime(anchorTime);
+    setPlaying(shouldResume);
+    playerRef.current?.seekTo(anchorTime, 'seconds');
+
+    resumeTimeoutRef.current = setTimeout(() => {
+      suppressEndCheckRef.current = false;
+    }, 140);
+  }, [items, clearResumeTimeout]);
+
+  useEffect(() => () => clearResumeTimeout(), [clearResumeTimeout]);
 
   useEffect(() => {
     setPlaying(false);
+    setCurrentSegmentIdx(firstPlayableIndex >= 0 ? firstPlayableIndex : 0);
     setCurrentTime(clipStart);
+    setDuration(0);
     setReady(false);
     setSeeking(false);
     setHasInteracted(false);
-    lastSyncAtRef.current = 0;
-  }, [sourceUrl, clipStart]);
+    suppressEndCheckRef.current = false;
+    clearResumeTimeout();
+  }, [sourceUrl, clipStart, firstPlayableIndex, clearResumeTimeout]);
+
+  useEffect(() => {
+    if (!isClip || !items.length) return;
+    const safeIndex = Math.min(Math.max(currentSegmentIdx, 0), items.length - 1);
+    seekToItem(safeIndex, { resume: false });
+  }, [items, isClip, seekToItem]);
+
+  useEffect(() => {
+    onStateChange?.({ currentTime, playing });
+  }, [currentTime, playing, onStateChange]);
+
+  const currentItem = items[currentSegmentIdx];
 
   const handlePlay = () => {
-    const nextTime = clampTime(currentTime || clipStart);
+    setHasInteracted(true);
+
+    if (isClip && isPauseItem(currentItem)) {
+      const nextPlayableIndex = getNextPlayableIndex(items, currentSegmentIdx);
+      if (nextPlayableIndex >= 0) {
+        seekToItem(nextPlayableIndex, { resume: true });
+      }
+      return;
+    }
+
+    const nextTime = clampTime(playerRef.current?.getCurrentTime?.() || currentTime || clipStart);
     if (playerRef.current && Math.abs((playerRef.current.getCurrentTime?.() || 0) - nextTime) > 0.25) {
       playerRef.current.seekTo(nextTime, 'seconds');
     }
-    setHasInteracted(true);
     setPlaying(true);
     setCurrentTime(nextTime);
-    lastSyncAtRef.current = 0;
-    onStateChange?.({ currentTime: nextTime, playing: true });
   };
 
   const handlePause = () => {
     const nextTime = clampTime(playerRef.current?.getCurrentTime?.() || currentTime || 0);
     setPlaying(false);
     setCurrentTime(nextTime);
-    onStateChange?.({ currentTime: nextTime, playing: false });
   };
 
   const handlePlayPause = () => {
@@ -85,41 +144,39 @@ export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [
 
   const handleReady = () => {
     setReady(true);
-    if (clipStart > 0) {
-      playerRef.current?.seekTo(clipStart, 'seconds');
-    }
+    const anchorTime = isClip && items.length
+      ? getItemAnchorTime(items, currentSegmentIdx)
+      : clampTime(currentTime || clipStart);
+    playerRef.current?.seekTo(anchorTime, 'seconds');
+    setCurrentTime(anchorTime);
   };
 
   const handleProgress = ({ playedSeconds }) => {
     if (seeking) return;
 
     if (isClip) {
-      const activeRangeIndex = getRangeIndex(playedSeconds, ranges);
-      const activeRange = activeRangeIndex >= 0 ? ranges[activeRangeIndex] : null;
-
-      if (activeRange && playedSeconds >= activeRange.end - 0.05) {
-        const nextRange = ranges[activeRangeIndex + 1] || null;
-
-        if (!nextRange) {
-          setPlaying(false);
-          setCurrentTime(activeRange.end);
-          playerRef.current?.seekTo(activeRange.end, 'seconds');
-          onStateChange?.({ currentTime: activeRange.end, playing: false });
-          return;
-        }
-
-        const nextTime = nextRange.start;
-        playerRef.current?.seekTo(nextTime, 'seconds');
-        setCurrentTime(nextTime);
-
-        if (hasPauseBetween(items, activeRange, nextRange)) {
-          setPlaying(false);
-          onStateChange?.({ currentTime: nextTime, playing: false });
-        } else {
-          onStateChange?.({ currentTime: nextTime, playing: true });
-        }
-        return;
+      const matchingIndex = getMatchingSegmentIndex(items, playedSeconds);
+      if (matchingIndex >= 0 && matchingIndex !== currentSegmentIdx) {
+        setCurrentSegmentIdx(matchingIndex);
       }
+
+      if (!suppressEndCheckRef.current) {
+        setCurrentTime(playedSeconds);
+      }
+
+      if (!currentItem || isPauseItem(currentItem) || suppressEndCheckRef.current) return;
+
+      const endSec = timeToSeconds(currentItem.end);
+      if (playedSeconds >= endSec - 0.05) {
+        if (currentSegmentIdx < items.length - 1) {
+          const nextItem = items[currentSegmentIdx + 1];
+          seekToItem(currentSegmentIdx + 1, { resume: !isPauseItem(nextItem) });
+        } else {
+          setCurrentTime(endSec);
+          setPlaying(false);
+        }
+      }
+      return;
     }
 
     setCurrentTime(playedSeconds);
@@ -135,14 +192,26 @@ export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [
     playerRef.current?.seekTo(nextTime, 'seconds');
     setCurrentTime(nextTime);
     setSeeking(false);
-    onStateChange?.({ currentTime: nextTime, playing });
+
+    if (isClip) {
+      const matchingIndex = getMatchingSegmentIndex(items, nextTime);
+      if (matchingIndex >= 0) {
+        setCurrentSegmentIdx(matchingIndex);
+      }
+    }
   };
 
   const handleSkip = (seconds) => {
     const nextTime = clampTime((playerRef.current?.getCurrentTime?.() || currentTime || 0) + seconds);
     playerRef.current?.seekTo(nextTime, 'seconds');
     setCurrentTime(nextTime);
-    onStateChange?.({ currentTime: nextTime, playing });
+
+    if (isClip) {
+      const matchingIndex = getMatchingSegmentIndex(items, nextTime);
+      if (matchingIndex >= 0) {
+        setCurrentSegmentIdx(matchingIndex);
+      }
+    }
   };
 
   if (!sourceUrl) {
@@ -184,9 +253,8 @@ export default function AttorneyHubVideoController({ sourceUrl, clipSegments = [
             const endTime = clipEnd ?? duration;
             setPlaying(false);
             setCurrentTime(endTime || 0);
-            onStateChange?.({ currentTime: endTime || 0, playing: false });
           }}
-          progressInterval={350}
+          progressInterval={250}
           playsinline
           style={{ position: 'absolute', top: 0, left: 0 }}
           config={{
