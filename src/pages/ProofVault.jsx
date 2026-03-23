@@ -86,6 +86,16 @@ function proofTreeMatchesSearch(proof, allProofs, searchQuery) {
   return children.some((child) => proofTreeMatchesSearch(child, allProofs, searchQuery));
 }
 
+function getJointTabVisibleProofs(exhibits = []) {
+  return exhibits.filter((proof) => {
+    if (proof.status !== 'Joint') return false;
+    if (proof.proof_child_type === 'Extract') return true;
+    if (proof.file_type === 'Image' && !proof.parent_proof_id) return true;
+    if (proof.file_type === 'Video' && !proof.parent_proof_id && proof.proof_child_type !== 'VideoClip') return true;
+    return false;
+  });
+}
+
 export default function ProofVault() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -302,6 +312,12 @@ export default function ProofVault() {
   const depositionsTopLevel = allDepositions.filter((p) => !p.parent_proof_id);
 
   const filteredExhibits = useMemo(() => {
+    if (exhibitFilter === 'Joint') {
+      return sortProofsByExhibitNumber(
+        getJointTabVisibleProofs(allExhibits).filter((proof) => proofTreeMatchesSearch(proof, allExhibits, searchQuery))
+      );
+    }
+
     let exhibitsByStatus = exhibitsTopLevel;
 
     if (exhibitFilter !== 'all') {
@@ -322,6 +338,7 @@ export default function ProofVault() {
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
+    if (status === 'Joint') return getJointTabVisibleProofs(allExhibits).length;
     return exhibitsTopLevel.filter(
       (proof) => proof.status === status || proofTreeHasStatus(proof, allExhibits, status)
     ).length;
