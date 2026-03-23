@@ -105,7 +105,7 @@ export default function VideoViewer({
     playerRef.current?.seekTo(t, 'seconds');
     setCurrentTime(t);
     setSeeking(false);
-    pushImmediate({ playing, currentTime: t, volume });
+    emitState({ playing, currentTime: t });
   };
 
   const handleSkip = (secs) => {
