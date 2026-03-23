@@ -61,12 +61,6 @@ export default function VideoViewer({
     }
   }, [syncState, mode, ready]);
 
-  const pushState = useCallback(
-    (overrides = {}) => {
-      debouncedPush({ playing, currentTime, volume, ...overrides });
-    },
-    [playing, currentTime, volume, debouncedPush]
-  );
 
   const handlePlayPause = () => {
     setHasInteracted(true);
