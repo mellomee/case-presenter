@@ -119,7 +119,6 @@ export default function VideoViewer({
     const v = value[0];
     setVolume(v);
     setMuted(v === 0);
-    pushState({ volume: v });
   };
 
   if (!videoUrl) {
