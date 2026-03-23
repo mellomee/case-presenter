@@ -170,6 +170,9 @@ export default function ProofTileEnhanced({
 
   const isParentProof = !proof.parent_proof_id && (proof.file_type === 'PDF' || proof.file_type === 'Video');
   const isExtract = proof.proof_child_type === 'Extract';
+  const childAdmissionLabel = proof.parent_proof_id && proof.proof_category === 'Exhibit' && ['Admitted', 'Demonstrative'].includes(proof.status)
+    ? `${proof.status === 'Admitted' ? 'Admitted' : 'Demonstrative'} ${proof.proof_child_type || 'Proof'}`
+    : null;
 
   const renderExhibitHistory = () => {
     const pills = [];
