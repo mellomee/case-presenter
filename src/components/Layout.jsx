@@ -177,27 +177,14 @@ export default function Layout() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top Bar */}
-        <div className="h-14 bg-white border-b border-slate-200 flex items-center px-4 gap-3 flex-shrink-0">
-          {/* Mobile menu toggle */}
-          <button
-            className="lg:hidden p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-slate-600 truncate">Welcome to Case Presenter</p>
-          </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-              {user?.full_name?.[0]?.toUpperCase() || 'U'}
-            </div>
-          </div>
-        </div>
+      <div className="relative flex-1 flex flex-col overflow-hidden min-w-0">
+        <button
+          className="fixed left-3 top-3 z-30 rounded-md border border-slate-200 bg-white/95 p-2 text-slate-500 shadow-sm hover:bg-slate-100 hover:text-slate-700 lg:hidden"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
-        {/* Page Content */}
         <div className="flex-1 overflow-auto">
           <Outlet />
         </div>
