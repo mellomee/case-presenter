@@ -50,6 +50,13 @@ function formatProofType(proof) {
   return label === 'ExtractClip' ? 'Extract Clip' : label === 'VideoClip' ? 'Video Clip' : label;
 }
 
+function shouldDisplayDepositionProof(proof) {
+  if (proof?.proof_category !== 'Deposition') return false;
+  if (proof?.proof_child_type === 'Extract' || proof?.proof_child_type === 'ExtractClip' || proof?.proof_child_type === 'VideoClip') return true;
+  if (!proof?.parent_proof_id && proof?.file_type === 'Video') return true;
+  return false;
+}
+
 function proofMatchesParty(proof, partyId) {
   if (partyId === 'all') return true;
   const attachedPartyIds = new Set([
@@ -123,7 +130,11 @@ export default function V2ProofReferenceBrowser({
   }, [availableProofs]);
 
   const groupedProofs = useMemo(() => {
-    const tabProofs = availableProofs.filter((proof) => proof.proof_category === activeTab);
+    const tabProofs = availableProofs.filter((proof) => {
+      if (proof.proof_category !== activeTab) return false;
+      if (activeTab === 'Deposition') return shouldDisplayDepositionProof(proof);
+      return true;
+    });
     const term = normalize(search);
     const groups = new Map();
 
@@ -150,6 +161,7 @@ export default function V2ProofReferenceBrowser({
 
         const visibleItems = group.items
           .filter((proof) => visibleIds.has(proof.id))
+          .filter((proof) => activeTab !== 'Deposition' || shouldDisplayDepositionProof(proof))
           .sort((a, b) => {
             const depthCompare = getProofDepth(a, proofsById) - getProofDepth(b, proofsById);
             if (depthCompare !== 0) return depthCompare;
@@ -289,7 +301,7 @@ export default function V2ProofReferenceBrowser({
         <TabsContent value="Deposition" className="mt-0 space-y-3">
           {groupedProofs.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-              No deposition proofs match this filter.
+              No deposition extracts, clips, or videos match this filter.
             </div>
           ) : (
             groupedProofs.map((group) => (
