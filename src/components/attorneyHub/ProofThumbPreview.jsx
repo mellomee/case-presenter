@@ -152,6 +152,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
         </Document>
       </PdfThumbErrorBoundary>
       {statusIcon}
+      {statusLabelBadge}
       {numberBadges}
     </div>
   );
