@@ -224,11 +224,6 @@
   }
 }
 
-/* Hide the global welcome top bar without touching Layout.jsx */
-.flex.h-screen.bg-slate-50 > .flex-1.flex.flex-col.overflow-hidden.min-w-0 > div:first-child {
-  display: none !important;
-}
-
 @media (min-width: 1280px) {
   .xl\:min-w-\[72px\] {
     width: 128px !important;
