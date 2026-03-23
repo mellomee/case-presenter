@@ -141,8 +141,17 @@ export default function ExamBuilderV2() {
       ? { label: `Admitted as Demonstrative · #${selectedRootProof.demonstrative_exhibit_num || selectedRootProof.joint_exhibit_num || '—'}`, color: 'text-blue-400' }
       : null;
   const selectableProofs = useMemo(
-    () => proofs.filter((proof) => ['Extract', 'Video', 'Image'].includes(proof.proof_child_type || proof.file_type)),
-    [proofs]
+    () => proofs.filter((proof) => {
+      const parentProof = proof.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
+      const legacyEligible = ['Extract', 'Video', 'Image'].includes(proof.proof_child_type || proof.file_type);
+      const exhibitEligible = proof.proof_category === 'Exhibit' && (
+        ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
+        || (parentProof && ['Joint', 'Admitted', 'Demonstrative'].includes(parentProof.status))
+      );
+      const depositionEligible = proof.proof_category === 'Deposition' && !proof.parent_proof_id;
+      return legacyEligible || exhibitEligible || depositionEligible;
+    }),
+    [proofs, proofsById]
   );
   const questionItems = useMemo(() => currentItems.filter((item) => item.item_type === 'question'), [currentItems]);
   const visibleQuestionTree = useMemo(
@@ -705,7 +714,7 @@ export default function ExamBuilderV2() {
           </div>
         </div>
 
-        <ExamBuilderProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} parties={parties} onSelect={addProofToExam} />
+        <ExamBuilderProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} allProofs={proofs} parties={parties} onSelect={addProofToExam} />
         <GroupEditorDialog
           open={groupDialog.open}
           onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}

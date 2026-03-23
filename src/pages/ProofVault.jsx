@@ -289,24 +289,24 @@ export default function ProofVault() {
   // Get only top-level proofs for rendering
   const exhibitsTopLevel = allExhibits.filter((p) => !p.parent_proof_id);
   const depositionsTopLevel = allDepositions.filter((p) => !p.parent_proof_id);
-  const promotedExtracts = allExhibits.filter(
-    (p) =>
-      p.proof_child_type === 'Extract' &&
-      ['Joint', 'Admitted', 'Demonstrative'].includes(p.status)
+  const promotedChildProofs = allExhibits.filter(
+    (p) => p.parent_proof_id && ['Admitted', 'Demonstrative'].includes(p.status)
   );
 
   const filteredExhibits = useMemo(() => {
-    const exhibitsByStatus = exhibitFilter === 'all'
-      ? exhibitsTopLevel
-      : ['Joint', 'Admitted', 'Demonstrative'].includes(exhibitFilter)
-        ? [
-            ...exhibitsTopLevel.filter((e) => e.status === exhibitFilter),
-            ...promotedExtracts.filter((e) => e.status === exhibitFilter),
-          ]
-        : exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
+    let exhibitsByStatus = exhibitsTopLevel;
+
+    if (exhibitFilter === 'Admitted' || exhibitFilter === 'Demonstrative') {
+      exhibitsByStatus = [
+        ...exhibitsTopLevel.filter((e) => e.status === exhibitFilter),
+        ...promotedChildProofs.filter((e) => e.status === exhibitFilter),
+      ];
+    } else if (exhibitFilter !== 'all') {
+      exhibitsByStatus = exhibitsTopLevel.filter((e) => e.status === exhibitFilter);
+    }
 
     return sortProofsByExhibitNumber(exhibitsByStatus.filter((proof) => proofMatchesSearch(proof, searchQuery)));
-  }, [exhibitFilter, exhibitsTopLevel, promotedExtracts, searchQuery]);
+  }, [exhibitFilter, exhibitsTopLevel, promotedChildProofs, searchQuery]);
 
   const filteredDepositions = useMemo(
     () => sortProofsByExhibitNumber(depositionsTopLevel.filter((proof) => proofMatchesSearch(proof, searchQuery))),
@@ -315,10 +315,10 @@ export default function ProofVault() {
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
-    if (['Joint', 'Admitted', 'Demonstrative'].includes(status)) {
+    if (status === 'Admitted' || status === 'Demonstrative') {
       return (
         exhibitsTopLevel.filter((e) => e.status === status).length +
-        promotedExtracts.filter((e) => e.status === status).length
+        promotedChildProofs.filter((e) => e.status === status).length
       );
     }
     return exhibitsTopLevel.filter((e) => e.status === status).length;

@@ -186,12 +186,12 @@ export default function AttorneyHub() {
 
   const parentExhibits = useMemo(() => {
     const allExhibits = proofs.filter((proof) => proof.proof_category === 'Exhibit');
-    const promotedExtracts = allExhibits.filter(
-      (proof) => proof.proof_child_type === 'Extract' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
+    const promotedChildExhibits = allExhibits.filter(
+      (proof) => proof.parent_proof_id && ['Admitted', 'Demonstrative'].includes(proof.status)
     );
     return [
       ...allExhibits.filter((proof) => !proof.parent_proof_id && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
-      ...promotedExtracts,
+      ...promotedChildExhibits,
     ];
   }, [proofs]);
 
