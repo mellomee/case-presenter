@@ -49,7 +49,7 @@ export default function VideoViewer({
     if (mode !== 'viewer' || !syncState || !ready) return;
     const serverTime = syncState.currentTime || 0;
     const localTime = playerRef.current?.getCurrentTime() || 0;
-    if (Math.abs(serverTime - localTime) > 2) {
+    if (Math.abs(serverTime - localTime) > 0.35) {
       playerRef.current?.seekTo(serverTime, 'seconds');
     }
     if (syncState.playing !== undefined && syncState.playing !== playing) {
