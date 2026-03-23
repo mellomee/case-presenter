@@ -226,29 +226,29 @@
 
 @media (min-width: 1280px) {
   .xl\:min-w-\[72px\] {
-    width: 104px !important;
-    min-width: 104px !important;
-    flex-basis: 104px !important;
+    width: 118px !important;
+    min-width: 118px !important;
+    flex-basis: 118px !important;
   }
 
   .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button {
-    width: 78px;
-    padding-left: 4px;
-    padding-right: 4px;
+    width: 92px;
+    padding-left: 5px;
+    padding-right: 5px;
   }
 
   .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > div,
   .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > img {
-    width: 68px !important;
+    width: 82px !important;
   }
 
   .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > div {
-    height: 90px !important;
-    padding: 8px 4px !important;
+    height: 96px !important;
+    padding: 8px 5px !important;
   }
 
   .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > img {
-    height: 90px !important;
+    height: 96px !important;
   }
 
   .xl\:min-w-\[72px\] .attorney-hub-scrollbar > button > div span {
