@@ -12,16 +12,22 @@ import JuryVideoClipPlayer from '@/components/juryView/JuryVideoClipPlayer.jsx';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
   const playerRef = useRef(null);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setIsReady(false);
+  }, [src]);
 
   useEffect(() => {
     const player = playerRef.current;
-    if (!player) return;
+    if (!player || !isReady) return;
     const newTime = videoTime ?? 0;
     const currentTime = player.getCurrentTime?.() ?? 0;
-    if (Math.abs(currentTime - newTime) > 1.5) {
+    const driftThreshold = isPlaying ? 2.5 : 0.35;
+    if (Math.abs(currentTime - newTime) > driftThreshold) {
       player.seekTo?.(newTime, 'seconds');
     }
-  }, [videoTime, src]);
+  }, [videoTime, src, isPlaying, isReady]);
 
   return (
     <div className="flex items-center justify-center w-full h-full bg-black">
@@ -34,6 +40,7 @@ function JuryVideo({ src, videoTime, isPlaying }) {
           width="100%"
           height="100%"
           playsinline
+          onReady={() => setIsReady(true)}
           config={{
             youtube: {
               playerVars: {
