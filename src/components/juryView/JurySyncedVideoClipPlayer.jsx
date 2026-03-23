@@ -79,12 +79,13 @@ export default function JurySyncedVideoClipPlayer({ src, segments = [], videoTim
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="relative flex h-full w-full items-center justify-center bg-black">
       <div className="h-full w-full max-h-full max-w-full">
         <ReactPlayer
           ref={playerRef}
           url={src}
           playing={playing}
+          muted={!isAudioUnlocked}
           controls={false}
           width="100%"
           height="100%"
