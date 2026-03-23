@@ -41,10 +41,10 @@ export default function QuestionEditorDialogEnhanced({ open, onOpenChange, onSav
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl bg-slate-950 border-slate-800 text-white max-h-[88vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl border-slate-200 bg-white text-slate-900 max-h-[88vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="text-slate-400">Build parent or follow-up questions and attach the proof references you need.</DialogDescription>
+          <DialogDescription className="text-slate-500">Build parent or follow-up questions and attach the proof references you need.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <textarea
@@ -52,20 +52,20 @@ export default function QuestionEditorDialogEnhanced({ open, onOpenChange, onSav
             onChange={(event) => setForm((prev) => ({ ...prev, text: event.target.value }))}
             placeholder="Question text"
             rows={4}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
           />
           <input
             value={form.expected_answer}
             onChange={(event) => setForm((prev) => ({ ...prev, expected_answer: event.target.value }))}
             placeholder="Expected answer"
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
           />
           <textarea
             value={form.notes}
             onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
             placeholder="Notes"
             rows={3}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
           />
 
           {availableProofsWithParty.length > 0 && (
@@ -80,8 +80,8 @@ export default function QuestionEditorDialogEnhanced({ open, onOpenChange, onSav
           )}
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" className="border-slate-700 text-slate-200" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={async () => { await onSave(form); onOpenChange(false); }}>Save Question</Button>
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={async () => { await onSave(form); onOpenChange(false); }}>Save Question</Button>
           </div>
         </div>
         <ExamBuilderSafePreviewDialog open={!!previewProof} onOpenChange={(nextOpen) => !nextOpen && setPreviewProof(null)} proof={previewProof} allProofs={availableProofs} />

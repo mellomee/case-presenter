@@ -163,10 +163,10 @@ export default function V2ProofReferenceBrowser({
   }, [activeTab, availableProofs, partyFilter, proofsById, search, enrichedPartiesById]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-white">Inline proof references</p>
-        {attachedProofIds.length > 0 && <p className="text-xs text-slate-400">Attach or remove proofs from this question here.</p>}
+        <p className="text-sm font-semibold text-slate-900">Inline proof references</p>
+        {attachedProofIds.length > 0 && <p className="text-xs text-slate-500">Attach or remove proofs from this question here.</p>}
       </div>
 
       {attachedProofs.length > 0 && (
@@ -176,7 +176,7 @@ export default function V2ProofReferenceBrowser({
               key={proof.id}
               type="button"
               onClick={() => onRemoveProof(proof.id)}
-              className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-500/20"
+              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
               title="Remove attached proof"
             >
               <span className="max-w-[14rem] truncate">{getProofDisplayName(proof)}</span>
@@ -188,9 +188,9 @@ export default function V2ProofReferenceBrowser({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <TabsList className="w-full justify-start bg-slate-900/70 lg:w-auto">
-            <TabsTrigger value="Exhibit">Exhibit Proofs</TabsTrigger>
-            <TabsTrigger value="Deposition">Deposition Proofs</TabsTrigger>
+          <TabsList className="w-full justify-start border border-slate-200 bg-white lg:w-auto">
+            <TabsTrigger value="Exhibit" className="text-slate-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">Exhibit Proofs</TabsTrigger>
+            <TabsTrigger value="Deposition" className="text-slate-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">Deposition Proofs</TabsTrigger>
           </TabsList>
 
           <div className="flex flex-col gap-3 sm:flex-row lg:min-w-[28rem]">
@@ -200,13 +200,13 @@ export default function V2ProofReferenceBrowser({
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search internal name"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 pl-9 text-sm text-white outline-none placeholder:text-slate-500"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pl-9 text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
             </div>
             <select
               value={partyFilter}
               onChange={(event) => setPartyFilter(event.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
             >
               <option value="all">All Parties</option>
               {groupedPartyOptions.map((group, index) => (
@@ -224,15 +224,15 @@ export default function V2ProofReferenceBrowser({
 
         <TabsContent value="Exhibit" className="mt-0 space-y-3">
           {groupedProofs.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center text-sm text-slate-400">
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
               No exhibit proofs match this filter.
             </div>
           ) : (
             groupedProofs.map((group) => (
-              <div key={group.root.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3">
-                <div className="mb-3 border-b border-slate-800 pb-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Proof Family</p>
-                  <p className="mt-1 text-sm font-semibold text-white">{getProofDisplayName(group.root)}</p>
+              <div key={group.root.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="mb-3 border-b border-slate-200 pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Proof Family</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{getProofDisplayName(group.root)}</p>
                 </div>
                 <div className="space-y-3">
                   {group.items.map((proof) => {
@@ -241,28 +241,28 @@ export default function V2ProofReferenceBrowser({
                     const active = attachedProofIds.includes(proof.id);
                     const party = proof.party_id ? enrichedPartiesById[proof.party_id] : null;
                     return (
-                      <div key={proof.id} className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3" style={{ marginLeft: `${depth * 20}px` }}>
+                      <div key={proof.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3" style={{ marginLeft: `${depth * 20}px` }}>
                         <div className="flex items-start gap-3">
-                          <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} />
+                          <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} theme="light" />
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-white">{getProofDisplayName(proof)}</p>
-                                <p className="mt-1 text-xs text-slate-400">Internal: {proof.name || '—'}</p>
+                                <p className="truncate text-sm font-semibold text-slate-900">{getProofDisplayName(proof)}</p>
+                                <p className="mt-1 text-xs text-slate-500">Internal: {proof.name || '—'}</p>
                                 {parentProof && <p className="mt-1 text-xs text-slate-500">Child of {getProofDisplayName(parentProof)}</p>}
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={() => onPreviewProof(proof)}
-                                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${previewProofId === proof.id ? 'border-blue-500 bg-blue-600 text-white' : 'border-slate-700 bg-slate-950 text-slate-300 hover:text-white'}`}
+                                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${previewProofId === proof.id ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:text-slate-900'}`}
                                   title="Preview proof"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </button>
                                 <Button
                                   variant={active ? 'outline' : 'default'}
-                                  className={active ? 'border-slate-600 text-slate-200' : 'bg-blue-600 hover:bg-blue-700'}
+                                  className={active ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-blue-600 text-white hover:bg-blue-700'}
                                   onClick={() => onToggleProof(proof.id)}
                                 >
                                   {active ? 'Attached' : 'Attach'}
@@ -270,10 +270,10 @@ export default function V2ProofReferenceBrowser({
                               </div>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                              <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">{getHierarchyLabel(depth)}</span>
-                              <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">{formatProofType(proof)}</span>
-                              <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-300">{proof.status || 'Draft'}</span>
-                              {party && <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-300">{getPartyLabel(party)}</span>}
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{getHierarchyLabel(depth)}</span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{formatProofType(proof)}</span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{proof.status || 'Draft'}</span>
+                              {party && <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{getPartyLabel(party)}</span>}
                             </div>
                           </div>
                         </div>
@@ -288,15 +288,15 @@ export default function V2ProofReferenceBrowser({
 
         <TabsContent value="Deposition" className="mt-0 space-y-3">
           {groupedProofs.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center text-sm text-slate-400">
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
               No deposition proofs match this filter.
             </div>
           ) : (
             groupedProofs.map((group) => (
-              <div key={group.root.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3">
-                <div className="mb-3 border-b border-slate-800 pb-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Proof Family</p>
-                  <p className="mt-1 text-sm font-semibold text-white">{getProofDisplayName(group.root)}</p>
+              <div key={group.root.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="mb-3 border-b border-slate-200 pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Proof Family</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{getProofDisplayName(group.root)}</p>
                 </div>
                 <div className="space-y-3">
                   {group.items.map((proof) => {
@@ -305,28 +305,28 @@ export default function V2ProofReferenceBrowser({
                     const active = attachedProofIds.includes(proof.id);
                     const party = proof.party_id ? enrichedPartiesById[proof.party_id] : null;
                     return (
-                      <div key={proof.id} className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3" style={{ marginLeft: `${depth * 20}px` }}>
+                      <div key={proof.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3" style={{ marginLeft: `${depth * 20}px` }}>
                         <div className="flex items-start gap-3">
-                          <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} />
+                          <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} theme="light" />
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-white">{getProofDisplayName(proof)}</p>
-                                <p className="mt-1 text-xs text-slate-400">Internal: {proof.name || '—'}</p>
+                                <p className="truncate text-sm font-semibold text-slate-900">{getProofDisplayName(proof)}</p>
+                                <p className="mt-1 text-xs text-slate-500">Internal: {proof.name || '—'}</p>
                                 {parentProof && <p className="mt-1 text-xs text-slate-500">Child of {getProofDisplayName(parentProof)}</p>}
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={() => onPreviewProof(proof)}
-                                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${previewProofId === proof.id ? 'border-blue-500 bg-blue-600 text-white' : 'border-slate-700 bg-slate-950 text-slate-300 hover:text-white'}`}
+                                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${previewProofId === proof.id ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:text-slate-900'}`}
                                   title="Preview proof"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </button>
                                 <Button
                                   variant={active ? 'outline' : 'default'}
-                                  className={active ? 'border-slate-600 text-slate-200' : 'bg-blue-600 hover:bg-blue-700'}
+                                  className={active ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-blue-600 text-white hover:bg-blue-700'}
                                   onClick={() => onToggleProof(proof.id)}
                                 >
                                   {active ? 'Attached' : 'Attach'}
@@ -334,10 +334,10 @@ export default function V2ProofReferenceBrowser({
                               </div>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                              <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">{getHierarchyLabel(depth)}</span>
-                              <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">{formatProofType(proof)}</span>
-                              <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-300">Deposition</span>
-                              {party && <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-300">{getPartyLabel(party)}</span>}
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{getHierarchyLabel(depth)}</span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{formatProofType(proof)}</span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Deposition</span>
+                              {party && <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{getPartyLabel(party)}</span>}
                             </div>
                           </div>
                         </div>
