@@ -10,7 +10,6 @@ import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
-import JuryPublishBar from './JuryPublishBar.jsx';
 
 function statusPill(proof) {
   if (proof.status === 'Admitted') return 'bg-green-100 text-green-700';
@@ -204,8 +203,6 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
           </Button>
         </div>
       </div>
-
-      <JuryPublishBar proof={proof} parentProof={parentProof} juryState={juryState} onUpdate={onUpdateJury} />
 
       <div className="flex-1 overflow-hidden bg-slate-900/50 min-h-0">
         {renderPreview()}
