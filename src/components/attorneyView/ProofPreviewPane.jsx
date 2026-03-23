@@ -44,7 +44,7 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     onUpdateJury({
       video_time: videoSync.currentTime || 0,
       is_playing: !!videoSync.playing,
-    });
+    }, true);
   }, [juryState, proof, onUpdateJury]);
 
   if (!proof) {
