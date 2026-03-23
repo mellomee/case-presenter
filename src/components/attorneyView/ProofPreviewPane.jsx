@@ -79,6 +79,8 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
         : {
             status: 'Joint',
             demonstrative_exhibit_num: null,
+            admitted_by: null,
+            admit_date: null,
           },
     });
   };

@@ -23,6 +23,8 @@ export default function UnAdmitModal({ open, onClose, proof }) {
         updateData.admit_date = null;
       } else {
         updateData.demonstrative_exhibit_num = null;
+        updateData.admitted_by = null;
+        updateData.admit_date = null;
       }
       await base44.entities.Proof.update(proof.id, updateData);
 
