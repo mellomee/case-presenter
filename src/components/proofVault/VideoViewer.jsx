@@ -72,7 +72,7 @@ export default function VideoViewer({
   const handlePlayClick = () => {
     setHasInteracted(true);
     setPlaying(true);
-    pushImmediate({ playing: true, currentTime, volume });
+    emitState({ playing: true, currentTime });
   };
 
   const handleReady = () => {
