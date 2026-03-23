@@ -181,12 +181,17 @@ export default function AttorneyHub() {
     right: 620,
   });
 
-  const { data: parties = [] } = useQuery({ queryKey: ['hubParties'], queryFn: () => base44.entities.Party.list() });
-  const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list() });
-  const { data: exams = [] } = useQuery({ queryKey: ['hubExamsV2'], queryFn: () => base44.entities.ExamV2.list() });
-  const { data: examItems = [] } = useQuery({ queryKey: ['hubExamItemsV2'], queryFn: () => base44.entities.ExamItemV2.list() });
-  const { data: admissionTemplates = [] } = useQuery({ queryKey: ['hubAdmissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list() });
-  const { data: admissionBlocks = [] } = useQuery({ queryKey: ['hubAdmissionBlocks'], queryFn: () => base44.entities.AdmissionBlock.list() });
+  const hubQueryOptions = {
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  };
+
+  const { data: parties = [] } = useQuery({ queryKey: ['hubParties'], queryFn: () => base44.entities.Party.list(), ...hubQueryOptions });
+  const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list(), ...hubQueryOptions });
+  const { data: exams = [] } = useQuery({ queryKey: ['hubExamsV2'], queryFn: () => base44.entities.ExamV2.list(), ...hubQueryOptions });
+  const { data: examItems = [] } = useQuery({ queryKey: ['hubExamItemsV2'], queryFn: () => base44.entities.ExamItemV2.list(), ...hubQueryOptions });
+  const { data: admissionTemplates = [] } = useQuery({ queryKey: ['hubAdmissionTemplates'], queryFn: () => base44.entities.AdmissionTemplate.list(), ...hubQueryOptions });
+  const { data: admissionBlocks = [] } = useQuery({ queryKey: ['hubAdmissionBlocks'], queryFn: () => base44.entities.AdmissionBlock.list(), ...hubQueryOptions });
 
   const activePartyId = proofTab === 'Exam'
     ? selectedExamPartyId
@@ -215,7 +220,7 @@ export default function AttorneyHub() {
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'], refetchType: 'active' }),
   });
 
   const exhibitProofs = useMemo(
