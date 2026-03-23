@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import ProofAdmissionFields from '@/components/proofVault/ProofAdmissionFields.jsx';
+import { getTodayDateString, isProofAdmissionNumberUsed } from '@/lib/proofAdmissionUtils';
 
 export default function AdmitAsExhibitModal({ open, onClose, proof }) {
   const queryClient = useQueryClient();
   const [admittedExhibitNum, setAdmittedExhibitNum] = useState('');
-  const [admittedBy, setAdmittedBy] = useState('');
+  const [admittedBy, setAdmittedBy] = useState('Plaintiff');
+  const [admitDate, setAdmitDate] = useState(getTodayDateString());
+
+  useEffect(() => {
+    if (!open) return;
+    setAdmittedExhibitNum('');
+    setAdmittedBy('Plaintiff');
+    setAdmitDate(getTodayDateString());
+  }, [open, proof?.id]);
 
   const { data: proofs = [] } = useQuery({
     queryKey: ['proofs'],
@@ -19,8 +27,7 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      const admitDate = new Date().toISOString().split('T')[0];
-      const updateData = { ...data, admit_date: admitDate };
+      const updateData = { ...data };
       await base44.entities.Proof.update(proof.id, updateData);
 
       const children = proofs.filter((p) => p.parent_proof_id === proof.id);
@@ -37,7 +44,8 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
           : item
       )));
       setAdmittedExhibitNum('');
-      setAdmittedBy('');
+      setAdmittedBy('Plaintiff');
+      setAdmitDate(getTodayDateString());
       onClose();
     },
     onError: (error) => {
@@ -46,19 +54,30 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
   });
 
   const handleSubmit = () => {
-    if (!admittedExhibitNum.trim()) {
+    const nextExhibitNum = admittedExhibitNum.trim();
+
+    if (!nextExhibitNum) {
       alert('Admitted Exhibit # is required.');
       return;
     }
     if (!admittedBy) {
-      alert('Please select who admitted this exhibit.');
+      alert('Please choose who admitted this proof.');
+      return;
+    }
+    if (!admitDate) {
+      alert('Admitted date is required.');
+      return;
+    }
+    if (isProofAdmissionNumberUsed(proofs, proof, nextExhibitNum)) {
+      alert('That exhibit # is already in use. Please enter a different one.');
       return;
     }
 
     updateMutation.mutate({
       status: 'Admitted',
-      admitted_exhibit_num: admittedExhibitNum.trim(),
+      admitted_exhibit_num: nextExhibitNum,
       admitted_by: admittedBy,
+      admit_date: admitDate,
     });
   };
 
@@ -77,37 +96,15 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Admitted Exhibit # *
-            </label>
-            <Input
-              placeholder="e.g. C-3"
-              value={admittedExhibitNum}
-              onChange={(e) => setAdmittedExhibitNum(e.target.value)}
-              className="text-sm"
-            />
-            <p className="text-xs text-slate-500 mt-1">Format: Letter-Number (e.g., A-1, C-5)</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Admitted By *
-            </label>
-            <Select value={admittedBy} onValueChange={setAdmittedBy}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select party..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Plaintiff">Plaintiff</SelectItem>
-                <SelectItem value="Defense">Defense</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="text-sm text-slate-600">
-            <p><strong>Admit Date:</strong> {new Date().toLocaleDateString()}</p>
-          </div>
+          <ProofAdmissionFields
+            exhibitNumberLabel="Admitted Exhibit #"
+            exhibitNumber={admittedExhibitNum}
+            onExhibitNumberChange={setAdmittedExhibitNum}
+            admittedBy={admittedBy}
+            onAdmittedByChange={setAdmittedBy}
+            admitDate={admitDate}
+            onAdmitDateChange={setAdmitDate}
+          />
 
           <div className="bg-green-50 border border-green-200 rounded-md p-3">
             <p className="text-xs text-green-800">
