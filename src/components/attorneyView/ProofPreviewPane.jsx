@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileText, X, ExternalLink } from 'lucide-react';
+import { FileText, X, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
@@ -25,7 +25,7 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     enabled: !!proof,
   });
 
-  const { url } = useResolvedProofAsset(proof);
+  const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl } = useResolvedProofAsset(parentProof);
 
@@ -62,6 +62,11 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
 
   const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num;
   const externalUrl = url || parentUrl || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
+  const resolvedVideoProof = {
+    ...proof,
+    file_url: proof.file_type === 'Video' ? '' : (url || proof.file_url),
+    video_url: proof.file_type === 'Video' ? (url || proof.video_url || proof.file_url) : proof.video_url,
+  };
   const canUnAdmit = ['Admitted', 'Demonstrative'].includes(proof.status);
 
   const handleUnAdmit = () => {
@@ -120,9 +125,17 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     }
 
     if (proof.file_type === 'Video') {
+      if (isLoading && !resolvedVideoProof.video_url) {
+        return (
+          <div className="flex h-full items-center justify-center bg-black">
+            <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+          </div>
+        );
+      }
+
       return (
         <VideoViewer
-          proof={proof}
+          proof={resolvedVideoProof}
           allProofs={allProofs}
           mode="controller"
           onStateChange={handleVideoStateChange}
