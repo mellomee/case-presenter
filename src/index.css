@@ -156,8 +156,7 @@
 
   .border-slate-800,
   .border-slate-700 {
-    --tw-border-opacity: 1;
-    border-color: rgb(226 232 240 / var(--tw-border-opacity));
+    @apply border-slate-200;
   }
 
   .bg-slate-950 .text-white,
@@ -230,12 +229,6 @@
     width: 88px !important;
     min-width: 88px !important;
     flex-basis: 88px !important;
-  }
-}
-
-@layer utilities {
-  .h-screen.bg-slate-50 > .flex-1.flex.flex-col.overflow-hidden.min-w-0 > .h-14.bg-white.border-b.border-slate-200.flex.items-center.px-4.gap-3.flex-shrink-0 {
-    display: none !important;
   }
 }
 
