@@ -253,7 +253,11 @@ export default function V2ProofReferenceBrowser({
                     const active = attachedProofIds.includes(proof.id);
                     const party = proof.party_id ? enrichedPartiesById[proof.party_id] : null;
                     return (
-                      <div key={proof.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3" style={{ marginLeft: `${depth * 20}px` }}>
+                      <div
+                        key={proof.id}
+                        className={`rounded-2xl border p-3 ${depth === 0 ? 'border-slate-200 bg-slate-50' : 'border-blue-200 bg-blue-50/60'}`}
+                        style={{ marginLeft: `${depth * 28}px` }}
+                      >
                         <div className="flex items-start gap-3">
                           <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} theme="light" />
                           <div className="min-w-0 flex-1">
@@ -317,7 +321,11 @@ export default function V2ProofReferenceBrowser({
                     const active = attachedProofIds.includes(proof.id);
                     const party = proof.party_id ? enrichedPartiesById[proof.party_id] : null;
                     return (
-                      <div key={proof.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3" style={{ marginLeft: `${depth * 20}px` }}>
+                      <div
+                        key={proof.id}
+                        className={`rounded-2xl border p-3 ${depth === 0 ? 'border-slate-200 bg-slate-50' : 'border-amber-200 bg-amber-50/70'}`}
+                        style={{ marginLeft: `${depth * 28}px` }}
+                      >
                         <div className="flex items-start gap-3">
                           <ExamBuilderProofThumb proof={proof} size={depth === 0 ? 'md' : 'sm'} theme="light" />
                           <div className="min-w-0 flex-1">
