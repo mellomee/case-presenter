@@ -88,13 +88,10 @@ export default function VideoViewer({
         setPlaying(false);
         playerRef.current?.seekTo(clipStart, 'seconds');
         setCurrentTime(clipStart);
-        pushImmediate({ playing: false, currentTime: clipStart, volume });
+        emitState({ playing: false, currentTime: clipStart });
         return;
       }
       setCurrentTime(playedSeconds);
-      if (mode === 'controller' && playing) {
-        debouncedPush({ playing, currentTime: playedSeconds, volume });
-      }
     }
   };
 
