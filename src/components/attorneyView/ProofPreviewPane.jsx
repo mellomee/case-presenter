@@ -63,6 +63,11 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
   const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num;
   const externalUrl = url || parentUrl || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
   const canUnAdmit = ['Admitted', 'Demonstrative'].includes(proof.status);
+  const resolvedVideoProof = {
+    ...proof,
+    file_url: proof.file_type === 'Video' ? '' : url || proof.file_url,
+    video_url: proof.file_type === 'Video' ? (url || proof.video_url || proof.file_url) : proof.video_url,
+  };
 
   const handleUnAdmit = () => {
     if (!canUnAdmit || !onRuling) return;
@@ -122,7 +127,7 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
     if (proof.file_type === 'Video') {
       return (
         <VideoViewer
-          proof={proof}
+          proof={resolvedVideoProof}
           allProofs={allProofs}
           mode="controller"
           onStateChange={handleVideoStateChange}
