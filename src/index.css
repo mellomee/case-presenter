@@ -156,7 +156,8 @@
 
   .border-slate-800,
   .border-slate-700 {
-    @apply border-slate-200;
+    --tw-border-opacity: 1;
+    border-color: rgb(226 232 240 / var(--tw-border-opacity));
   }
 
   .bg-slate-950 .text-white,
