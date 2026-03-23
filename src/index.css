@@ -258,15 +258,6 @@
   }
 }
 
-/* Hide global welcome bar without editing the frozen layout file */
-.flex.h-screen.bg-slate-50 > .flex-1.flex.flex-col.overflow-hidden.min-w-0 > .h-14.bg-white.border-b.border-slate-200.flex.items-center.px-4.gap-3.flex-shrink-0 {
-  height: 0 !important;
-  min-height: 0 !important;
-  padding: 0 !important;
-  border-bottom-width: 0 !important;
-  overflow: hidden !important;
-}
-
 @media print {
   @page {
     margin: 0.5in;
