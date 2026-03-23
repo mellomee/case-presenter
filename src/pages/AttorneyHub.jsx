@@ -381,7 +381,7 @@ export default function AttorneyHub() {
   };
 
   const publishProof = (proof) => {
-    if (!canPublishProof(proof)) return;
+    if (!canPublishProof(proof, localDecisionMap[proof?.id])) return;
     update({
       published_proof_id: proof.id,
       pdf_page: 1,
