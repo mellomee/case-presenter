@@ -37,11 +37,13 @@ export default function VideoViewer({
   const parentProof = isClip && proof?.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
   const videoUrl = proof?.video_url || proof?.file_url || parentProof?.video_url || parentProof?.file_url;
 
-  const debouncedPush = useCallback(debounce((s) => onStateChange && onStateChange(s), 150), [onStateChange]);
-  const pushImmediate = useCallback((s) => {
-    debouncedPush.cancel?.();
-    onStateChange && onStateChange(s);
-  }, [debouncedPush, onStateChange]);
+  const emitState = useCallback((overrides = {}) => {
+    onStateChange && onStateChange({
+      playing,
+      currentTime,
+      ...overrides,
+    });
+  }, [onStateChange, playing, currentTime]);
 
   useEffect(() => {
     if (mode !== 'viewer' || !syncState || !ready) return;
