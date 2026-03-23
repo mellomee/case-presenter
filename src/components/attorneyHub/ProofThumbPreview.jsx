@@ -42,23 +42,22 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
   const admittedNumber = proof?.admitted_exhibit_num || parentProof?.admitted_exhibit_num;
   const demoNumber = proof?.demonstrative_exhibit_num || parentProof?.demonstrative_exhibit_num;
   const badgeTextSize = BADGE_TEXT_SIZE[size] || BADGE_TEXT_SIZE.md;
-  const statusLabel = effectiveStatus === 'Admitted' ? 'Admitted' : effectiveStatus === 'Demonstrative' ? 'Demonstrative' : null;
-  const overlayBadges = [
-    statusLabel ? { label: statusLabel, className: effectiveStatus === 'Demonstrative' ? 'bg-purple-600/90 text-white' : 'bg-green-600/90 text-white' } : null,
-    jointNumber ? { label: `Joint # ${jointNumber}`, className: 'bg-blue-600/90 text-white' } : null,
-    admittedNumber ? { label: `Admitted # ${admittedNumber}`, className: 'bg-green-600/90 text-white' } : null,
-    demoNumber ? { label: `Demo # ${demoNumber}`, className: 'bg-purple-600/90 text-white' } : null,
-  ].filter(Boolean);
 
   const statusIcon = effectiveStatus ? (
     <CheckCircle2
-      className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-purple-400' : 'text-green-400'}`}
+      className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`}
     />
   ) : (
     <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/70">
       <X className="h-3 w-3 text-slate-300" />
     </div>
   );
+
+  const overlayBadges = [
+    jointNumber ? { label: `Joint # ${jointNumber}`, className: 'bg-blue-600/90 text-white' } : null,
+    admittedNumber ? { label: `Admitted # ${admittedNumber}`, className: 'bg-green-600/90 text-white' } : null,
+    demoNumber ? { label: `Demo # ${demoNumber}`, className: 'bg-purple-600/90 text-white' } : null,
+  ].filter(Boolean);
 
   const numberBadges = overlayBadges.length > 0 ? (
     <div className="absolute bottom-1 left-1 flex max-w-[calc(100%-0.5rem)] flex-col items-start gap-1">

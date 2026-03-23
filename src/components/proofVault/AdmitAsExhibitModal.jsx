@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function AdmitAsExhibitModal({ open, onClose, proof }) {
   const queryClient = useQueryClient();
@@ -17,41 +17,18 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
     queryFn: () => base44.entities.Proof.list(),
   });
 
-  const parentProof = useMemo(
-    () => (proof?.parent_proof_id ? proofs.find((item) => item.id === proof.parent_proof_id) || null : null),
-    [proof?.parent_proof_id, proofs]
-  );
-  const isTopLevelProof = !proof?.parent_proof_id;
-
-  useEffect(() => {
-    if (!open) return;
-    setAdmittedExhibitNum(proof?.admitted_exhibit_num || '');
-    setAdmittedBy(proof?.admitted_by || '');
-  }, [open, proof?.id, proof?.admitted_exhibit_num, proof?.admitted_by]);
-
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      if (!proof?.id) return;
-
       await base44.entities.Proof.update(proof.id, data);
 
-      if (!isTopLevelProof) return;
-
-      const descendantProofs = proofs.filter((item) => {
-        let currentParentId = item.parent_proof_id;
-        while (currentParentId) {
-          if (currentParentId === proof.id) return true;
-          currentParentId = proofs.find((candidate) => candidate.id === currentParentId)?.parent_proof_id || null;
-        }
-        return false;
-      });
-
-      for (const child of descendantProofs) {
+      // Update all children to Admitted status as well
+      const children = proofs.filter((p) => p.parent_proof_id === proof.id);
+      for (const child of children) {
         await base44.entities.Proof.update(child.id, {
           status: 'Admitted',
           admitted_exhibit_num: data.admitted_exhibit_num,
           admitted_by: data.admitted_by,
-          admit_date: data.admit_date,
+          admit_date: new Date().toISOString().split('T')[0],
         });
       }
     },
@@ -95,8 +72,7 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-green-900">Proof: {proof?.name}</p>
-              <p className="text-xs text-green-700 mt-1">Current: Joint (Ex. {proof?.joint_exhibit_num || parentProof?.joint_exhibit_num || '—'})</p>
-              {parentProof && <p className="text-xs text-green-700 mt-1">Parent Proof: {parentProof.formal_name || parentProof.name}</p>}
+              <p className="text-xs text-green-700 mt-1">Current: Joint (Ex. {proof?.joint_exhibit_num})</p>
             </div>
           </div>
 
@@ -134,9 +110,7 @@ export default function AdmitAsExhibitModal({ open, onClose, proof }) {
 
           <div className="bg-green-50 border border-green-200 rounded-md p-3">
             <p className="text-xs text-green-800">
-              <strong>Note:</strong> {isTopLevelProof
-                ? 'This proof and its child proofs will be publishable to the Jury.'
-                : 'Only this child proof will be marked Admitted. The parent proof stays Joint unless it is admitted separately.'}
+              <strong>Note:</strong> This proof will be publishable to the Jury. All child proofs (Extracts, Clips) will also be marked Admitted.
             </p>
           </div>
 

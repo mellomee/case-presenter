@@ -170,9 +170,6 @@ export default function ProofTileEnhanced({
 
   const isParentProof = !proof.parent_proof_id && (proof.file_type === 'PDF' || proof.file_type === 'Video');
   const isExtract = proof.proof_child_type === 'Extract';
-  const childAdmissionLabel = proof.parent_proof_id && proof.proof_category === 'Exhibit' && ['Admitted', 'Demonstrative'].includes(proof.status)
-    ? `${proof.status === 'Admitted' ? 'Admitted' : 'Demonstrative'} ${proof.proof_child_type || 'Proof'}`
-    : null;
 
   const renderExhibitHistory = () => {
     const pills = [];
@@ -198,11 +195,6 @@ export default function ProofTileEnhanced({
                 <InlineProofNameEditor proofId={proof.id} name={proof.name} />
                 {proof.formal_name && (
                   <div className="text-xs text-slate-500 truncate">Formal Name: {proof.formal_name}</div>
-                )}
-                {proof.parent_proof_id && parentProof && proof.proof_child_type !== 'Extract' && (
-                  <div className="text-[11px] text-slate-500 truncate mt-1">
-                    Parent Proof: {parentProof.formal_name || parentProof.name}
-                  </div>
                 )}
                 {proof.proof_child_type === 'Extract' && parentProof && (
                   <div className="text-[11px] text-slate-500 truncate mt-1">
@@ -274,10 +266,7 @@ export default function ProofTileEnhanced({
             )}
 
             {proof.proof_category === 'Exhibit' ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
-                {childAdmissionLabel && <Badge className={`text-xs ${proof.status === 'Admitted' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>{childAdmissionLabel}</Badge>}
-              </div>
+              <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
             ) : (
               <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
             )}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,14 +57,10 @@ export default function ProofActionMenu({
   const [processingSummary, setProcessingSummary] = useState(null);
   const queryClient = useQueryClient();
 
-  const parentProof = useMemo(
-    () => (proof.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) || null : null),
-    [allProofs, proof.parent_proof_id]
-  );
-  const childProofs = useMemo(
-    () => allProofs.filter((item) => item.parent_proof_id === proof.id),
-    [allProofs, proof.id]
-  );
+  const { data: childProofs = [] } = useQuery({
+    queryKey: ['childProofs', proof.id],
+    queryFn: () => allProofs.filter((p) => p.parent_proof_id === proof.id),
+  });
 
   const { data: attachedQuestions = [] } = useQuery({
     queryKey: ['questionsWithProof', proof.id],
@@ -134,20 +130,10 @@ export default function ProofActionMenu({
   const getAvailableActions = () => {
     const isTopLevel = !proof.parent_proof_id;
     const isExtract = proof.proof_child_type === 'Extract';
+    const behavesAsTopLevel = isTopLevel || isExtract;
     const isPDF = proof.file_type === 'PDF';
     const isVideo = proof.file_type === 'Video';
     const hasAttachment = proofHasLinkedFile(proof);
-    const isOriginalPdfProof = isPDF && isTopLevel && !proof.proof_child_type;
-    const canOptimizePdf = isOptimizableDropboxPdf(proof);
-    const canAddToJoint =
-      proof.proof_category === 'Exhibit' &&
-      hasAttachment &&
-      (isExtract || (isTopLevel && !isOriginalPdfProof));
-    const canUseJointActions =
-      proof.proof_category === 'Exhibit' &&
-      hasAttachment &&
-      (proof.status === 'Joint' || (proof.parent_proof_id && parentProof?.status === 'Joint'));
-    const canRemoveFromJoint = (isTopLevel || isExtract) && proof.status === 'Joint';
     const actions = [];
 
     actions.push({ id: 'edit', label: 'Edit', icon: Pencil, action: onEdit, color: 'text-blue-600' });
@@ -161,14 +147,15 @@ export default function ProofActionMenu({
     }
 
     if ((isVideo && isTopLevel && hasAttachment) || (isExtract && hasAttachment)) {
-      actions.push({
-        id: 'clip',
-        label: isExtract ? 'Highlight' : 'Clip',
-        icon: isExtract ? Highlighter : Scissors,
-        action: onClip,
-        color: isExtract ? 'text-yellow-500' : 'text-orange-600',
-      });
+      actions.push({ id: 'clip', label: isExtract ? 'Highlight' : 'Clip', icon: isExtract ? Highlighter : Scissors, action: onClip, color: isExtract ? 'text-yellow-500' : 'text-orange-600' });
     }
+
+    const isOriginalPdfProof = isPDF && isTopLevel && !proof.proof_child_type;
+    const canOptimizePdf = isOptimizableDropboxPdf(proof);
+    const canAddToJoint =
+      proof.proof_category === 'Exhibit' &&
+      hasAttachment &&
+      (isExtract || (isTopLevel && !isOriginalPdfProof));
 
     if (canOptimizePdf) {
       actions.push({ id: 'optimizePdf', label: 'Optimize PDF', icon: FileText, action: () => setOptimizeDialogOpen(true), color: 'text-blue-600' });
@@ -178,17 +165,18 @@ export default function ProofActionMenu({
       actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
     }
 
-    if (canUseJointActions) {
+    if ((currentTab === 'joint' || proof.status === 'Joint') && behavesAsTopLevel) {
       actions.push({ id: 'admitAsExhibit', label: 'Admit as Exhibit', icon: CheckCircle, action: onAdmitAsExhibit, color: 'text-green-600' });
-      actions.push({ id: 'admitAsDemonstrative', label: 'Admit as Demo', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
-    }
-
-    if (canRemoveFromJoint) {
+      actions.push({ id: 'admitAsDemonstrative', label: 'Mark as Demo', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
       actions.push({ id: 'removeFromJoint', label: 'Remove from Joint', icon: Circle, action: onRemoveFromJoint, color: 'text-slate-600' });
     }
 
-    if (proof.status === 'Admitted' || proof.status === 'Demonstrative') {
+    if (currentTab === 'admitted' || proof.status === 'Admitted') {
       actions.push({ id: 'unAdmit', label: 'Un-Admit', icon: Circle, action: onUnAdmit, color: 'text-slate-600' });
+    }
+
+    if (currentTab === 'demonstrative' || proof.status === 'Demonstrative') {
+      actions.push({ id: 'unAdmitDemo', label: 'Un-Admit', icon: Circle, action: onUnAdmit, color: 'text-slate-600' });
     }
 
     actions.push({ id: 'delete', label: 'Delete', icon: Trash2, action: handleDelete, color: 'text-red-600', separator: true });

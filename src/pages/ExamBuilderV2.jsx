@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Eye, GripVertical, Pencil, Plus, Printer, Sc
 import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import ExamBuilderProofPickerDialog from '@/components/examV2/ExamBuilderProofPickerDialog.jsx';
 import GroupEditorDialog from '@/components/examV2/GroupEditorDialog.jsx';
-import QuestionEditorDialogEnhanced from '@/components/examV2/QuestionEditorDialogEnhanced.jsx';
+import QuestionEditorDialog from '@/components/examV2/QuestionEditorDialog.jsx';
 import QuestionTreeEditor from '@/components/examV2/QuestionTreeEditor.jsx';
 import AdmissionOverridesEditor from '@/components/examV2/AdmissionOverridesEditor.jsx';
 import ExamBuilderSafePreviewDialog from '@/components/examV2/ExamBuilderSafePreviewDialog.jsx';
@@ -74,29 +74,6 @@ function flattenTree(nodes = []) {
   return nodes.flatMap((node) => [node, ...flattenTree(node.children || [])]);
 }
 
-function collectProofBranch(proofs = [], rootProofId) {
-  const proofsByParentId = proofs.reduce((accumulator, proof) => {
-    if (!proof.parent_proof_id) return accumulator;
-    if (!accumulator[proof.parent_proof_id]) accumulator[proof.parent_proof_id] = [];
-    accumulator[proof.parent_proof_id].push(proof);
-    return accumulator;
-  }, {});
-
-  const collected = [];
-  const visited = new Set();
-  const stack = proofs.filter((proof) => proof.id === rootProofId);
-
-  while (stack.length > 0) {
-    const current = stack.shift();
-    if (!current || visited.has(current.id)) continue;
-    visited.add(current.id);
-    collected.push(current);
-    (proofsByParentId[current.id] || []).forEach((child) => stack.push(child));
-  }
-
-  return collected;
-}
-
 function serializeQuestionTree(nodes = [], questionItems = [], proofsById = {}, level = 0) {
   return nodes.flatMap((node) => {
     const indent = '  '.repeat(level);
@@ -154,46 +131,19 @@ export default function ExamBuilderV2() {
   const itemsById = useMemo(() => Object.fromEntries(currentItems.map((item) => [item.id, item])), [currentItems]);
   const availableAttachmentProofs = useMemo(
     () => selectedRootProof
-      ? collectProofBranch(proofs, selectedRootProof.id).map((proof) => ({
-          ...proof,
-          party: parties.find((party) => party.id === proof.party_id) || null,
-        }))
-      : proofs
-          .filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status))
-          .map((proof) => ({
-            ...proof,
-            party: parties.find((party) => party.id === proof.party_id) || null,
-          })),
-    [parties, proofs, selectedRootProof]
+      ? [selectedRootProof, ...proofs.filter((proof) => proof.parent_proof_id === selectedRootProof.id)]
+      : proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+    [proofs, selectedRootProof]
   );
   const admissionStatusMeta = selectedRootProof?.status === 'Admitted'
     ? { label: `Admitted as Exhibit · #${selectedRootProof.admitted_exhibit_num || '—'}`, color: 'text-red-400' }
     : selectedRootProof?.status === 'Demonstrative'
       ? { label: `Admitted as Demonstrative · #${selectedRootProof.demonstrative_exhibit_num || selectedRootProof.joint_exhibit_num || '—'}`, color: 'text-blue-400' }
       : null;
-  const selectableProofs = useMemo(() => {
-    const eligibleIds = new Set();
-
-    proofs.forEach((proof) => {
-      const parentProof = proof.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
-      const legacyEligible = ['Extract', 'Video', 'Image'].includes(proof.proof_child_type || proof.file_type);
-      const exhibitEligible = proof.proof_category === 'Exhibit' && (
-        ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
-        || (parentProof && ['Joint', 'Admitted', 'Demonstrative'].includes(parentProof.status))
-      );
-      const depositionEligible = proof.proof_category === 'Deposition' && !proof.parent_proof_id;
-
-      if (!(legacyEligible || exhibitEligible || depositionEligible)) return;
-
-      let current = proof;
-      while (current) {
-        eligibleIds.add(current.id);
-        current = current.parent_proof_id ? proofsById[current.parent_proof_id] : null;
-      }
-    });
-
-    return proofs.filter((proof) => eligibleIds.has(proof.id));
-  }, [proofs, proofsById]);
+  const selectableProofs = useMemo(
+    () => proofs.filter((proof) => ['Extract', 'Video', 'Image'].includes(proof.proof_child_type || proof.file_type)),
+    [proofs]
+  );
   const questionItems = useMemo(() => currentItems.filter((item) => item.item_type === 'question'), [currentItems]);
   const visibleQuestionTree = useMemo(
     () => (selectedRoot ? buildItemTree(questionItems, selectedRoot.id) : []),
@@ -755,14 +705,14 @@ export default function ExamBuilderV2() {
           </div>
         </div>
 
-        <ExamBuilderProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} allProofs={proofs} parties={parties} onSelect={addProofToExam} />
+        <ExamBuilderProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} parties={parties} onSelect={addProofToExam} />
         <GroupEditorDialog
           open={groupDialog.open}
           onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}
           onSave={addGroupToExam}
           initialLabel={groupDialog.initialItem?.label || ''}
         />
-        <QuestionEditorDialogEnhanced
+        <QuestionEditorDialog
           open={questionDialog.open}
           onOpenChange={(open) => setQuestionDialog((prev) => ({ ...prev, open }))}
           onSave={saveQuestion}

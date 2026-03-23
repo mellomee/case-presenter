@@ -12,7 +12,6 @@ import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrat
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
 import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
-import PreviewRulingToolbar from '@/components/attorneyHub/PreviewRulingToolbar.jsx';
 import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
 import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField } from '@/lib/examV2Utils';
 
@@ -182,17 +181,17 @@ export default function AttorneyHub() {
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hubProofs'] }),
   });
 
   const parentExhibits = useMemo(() => {
     const allExhibits = proofs.filter((proof) => proof.proof_category === 'Exhibit');
-    const promotedChildExhibits = allExhibits.filter(
-      (proof) => proof.parent_proof_id && ['Admitted', 'Demonstrative'].includes(proof.status)
+    const promotedExtracts = allExhibits.filter(
+      (proof) => proof.proof_child_type === 'Extract' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)
     );
     return [
       ...allExhibits.filter((proof) => !proof.parent_proof_id && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
-      ...promotedChildExhibits,
+      ...promotedExtracts,
     ];
   }, [proofs]);
 
@@ -305,9 +304,6 @@ export default function AttorneyHub() {
 
   const [selectedKind, selectedId] = selectedKey.split(':');
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
-  const activePreviewProof = selectedPreviewProof?.id
-    ? proofsById[selectedPreviewProof.id] || selectedPreviewProof
-    : selectedProof;
   const selectedGroup = selectedKind === 'group' ? rootGroups.find((item) => item.id === selectedId) || null : null;
   const selectedProofRootItem = selectedProof ? rootProofItems.find((item) => item.linked_proof_id === selectedProof.id) || null : null;
   const fallbackAdmissionBlock = selectedProof ? admissionBlocks.find((item) => item.proof_id === selectedProof.id && item.party_id === activePartyId) || null : null;
@@ -628,17 +624,10 @@ export default function AttorneyHub() {
           <ColumnResizeHandle onMouseDown={startDrag.right} />
 
           <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
-            {activePreviewProof ? (
+            {(selectedPreviewProof || selectedProof) ? (
               <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
-                <PreviewRulingToolbar
-                  proof={activePreviewProof}
-                  onAdmitExhibit={(proof) => handleProofAction(proof, 'admit')}
-                  onAdmitDemo={(proof) => handleProofAction(proof, 'demo')}
-                  onUnAdmit={(proof) => handleProofAction(proof, 'unadmit')}
-                />
                 <ProofPreviewPane
-                  key={`${activePreviewProof.id}:${activePreviewProof.status || ''}:${activePreviewProof.admitted_exhibit_num || ''}:${activePreviewProof.demonstrative_exhibit_num || ''}`}
-                  proof={activePreviewProof}
+                  proof={selectedPreviewProof || selectedProof}
                   juryState={juryState}
                   onUpdateJury={update}
                   onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
@@ -663,6 +652,7 @@ export default function AttorneyHub() {
           onClose={() => {
             setShowAdmitExhibitModal(false);
             setSelectedProofForModal(null);
+            queryClient.invalidateQueries({ queryKey: ['proofs'] });
           }}
           proof={selectedProofForModal}
         />
@@ -671,6 +661,7 @@ export default function AttorneyHub() {
           onClose={() => {
             setShowAdmitDemoModal(false);
             setSelectedProofForModal(null);
+            queryClient.invalidateQueries({ queryKey: ['proofs'] });
           }}
           proof={selectedProofForModal}
         />
@@ -679,6 +670,7 @@ export default function AttorneyHub() {
           onClose={() => {
             setShowUnAdmitModal(false);
             setSelectedProofForModal(null);
+            queryClient.invalidateQueries({ queryKey: ['proofs'] });
           }}
           proof={selectedProofForModal}
         />
