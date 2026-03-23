@@ -112,7 +112,7 @@ export default function VideoViewer({
     const t = Math.max(0, Math.min(currentTime + secs, duration));
     playerRef.current?.seekTo(t, 'seconds');
     setCurrentTime(t);
-    pushImmediate({ playing, currentTime: t, volume });
+    emitState({ playing, currentTime: t });
   };
 
   const handleVolumeChange = (value) => {
