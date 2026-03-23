@@ -3,7 +3,6 @@ import ReactPlayer from 'react-player';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Loader2 } from 'lucide-react';
-import debounce from 'lodash/debounce';
 
 function formatTime(secs) {
   if (!secs || isNaN(secs)) return '0:00';
