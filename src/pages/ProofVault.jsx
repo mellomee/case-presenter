@@ -16,7 +16,7 @@ import {
 import ProofForm from '@/components/proofVault/ProofForm';
 import AddToJointModal from '@/components/proofVault/AddToJointModal';
 import BulkSelectionBar from '@/components/proofVault/BulkSelectionBar.jsx';
-import SelectableProofTile from '@/components/proofVault/SelectableProofTile.jsx';
+import ProofTileEnhanced from '@/components/proofVault/ProofTileEnhanced.jsx';
 import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
 import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
@@ -742,28 +742,35 @@ export default function ProofVault() {
                  ) : (
                    <div className="space-y-3">
                      {filteredExhibits.map((proof) => (
-                       <SelectableProofTile
-                         key={proof.id}
-                         proof={proof}
-                         checked={selectedProofIds.includes(proof.id)}
-                         disabled={isBulkDeleting}
-                         onCheckedChange={toggleProofSelection}
-                         allProofs={allExhibits}
-                         parties={parties}
-                         categories={categories}
-                         currentTab={exhibitFilter}
-                         onEdit={handleEdit}
-                         onDelete={deleteMutation.mutate}
-                         onExtract={handleExtract}
-                         onClip={handleClip}
-                         onAddToJoint={handleAddToJoint}
-                         onAdmitAsExhibit={handleAdmitAsExhibit}
-                         onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
-                         onRemoveFromJoint={handleRemoveFromJoint}
-                         onUnAdmit={handleUnAdmit}
-                         expandedProofId={expandedProofId}
-                         highlightedChildId={highlightedChildId}
-                       />
+                       <div key={proof.id} className="flex items-start gap-3 rounded-lg border border-transparent p-1">
+                         <input
+                           type="checkbox"
+                           checked={selectedProofIds.includes(proof.id)}
+                           disabled={isBulkDeleting}
+                           onChange={() => toggleProofSelection(proof.id)}
+                           className="mt-5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                         />
+                         <div className="min-w-0 flex-1">
+                           <ProofTileEnhanced
+                             proof={proof}
+                             allProofs={allExhibits}
+                             parties={parties}
+                             categories={categories}
+                             currentTab={exhibitFilter}
+                             onEdit={handleEdit}
+                             onDelete={deleteMutation.mutate}
+                             onExtract={handleExtract}
+                             onClip={handleClip}
+                             onAddToJoint={handleAddToJoint}
+                             onAdmitAsExhibit={handleAdmitAsExhibit}
+                             onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                             onRemoveFromJoint={handleRemoveFromJoint}
+                             onUnAdmit={handleUnAdmit}
+                             expandedProofId={expandedProofId}
+                             highlightedChildId={highlightedChildId}
+                           />
+                         </div>
+                       </div>
                      ))}
                    </div>
                 )}
@@ -789,28 +796,35 @@ export default function ProofVault() {
                 ) : (
                   <div className="space-y-3">
                     {filteredDepositions.map((proof) => (
-                      <SelectableProofTile
-                        key={proof.id}
-                        proof={proof}
-                        checked={selectedProofIds.includes(proof.id)}
-                        disabled={isBulkDeleting}
-                        onCheckedChange={toggleProofSelection}
-                        allProofs={allDepositions}
-                        parties={parties}
-                        categories={categories}
-                        currentTab="depositions"
-                        onEdit={handleEdit}
-                        onDelete={deleteMutation.mutate}
-                        onExtract={handleExtract}
-                        onClip={handleClip}
-                        onAddToJoint={handleAddToJoint}
-                        onAdmitAsExhibit={handleAdmitAsExhibit}
-                        onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
-                        onRemoveFromJoint={handleRemoveFromJoint}
-                        onUnAdmit={handleUnAdmit}
-                        expandedProofId={expandedProofId}
-                        highlightedChildId={highlightedChildId}
-                      />
+                      <div key={proof.id} className="flex items-start gap-3 rounded-lg border border-transparent p-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedProofIds.includes(proof.id)}
+                          disabled={isBulkDeleting}
+                          onChange={() => toggleProofSelection(proof.id)}
+                          className="mt-5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <ProofTileEnhanced
+                            proof={proof}
+                            allProofs={allDepositions}
+                            parties={parties}
+                            categories={categories}
+                            currentTab="depositions"
+                            onEdit={handleEdit}
+                            onDelete={deleteMutation.mutate}
+                            onExtract={handleExtract}
+                            onClip={handleClip}
+                            onAddToJoint={handleAddToJoint}
+                            onAdmitAsExhibit={handleAdmitAsExhibit}
+                            onAdmitAsDemonstrative={handleAdmitAsDemonstrative}
+                            onRemoveFromJoint={handleRemoveFromJoint}
+                            onUnAdmit={handleUnAdmit}
+                            expandedProofId={expandedProofId}
+                            highlightedChildId={highlightedChildId}
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
