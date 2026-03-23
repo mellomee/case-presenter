@@ -72,6 +72,16 @@ export default function JurySyncedVideoPlayer({ src, videoTime = 0, isPlaying = 
           }}
         />
       </div>
+      {!isAudioUnlocked && playing && (
+        <button
+          type="button"
+          onClick={() => setIsAudioUnlocked(true)}
+          className="absolute bottom-4 left-4 z-20 inline-flex items-center gap-2 rounded-lg border border-white/20 bg-black/55 px-3 py-2 text-sm font-medium text-white backdrop-blur"
+        >
+          <Volume2 className="h-4 w-4" />
+          Tap for audio
+        </button>
+      )}
     </div>
   );
 }
