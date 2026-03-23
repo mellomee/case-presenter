@@ -5,8 +5,6 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Layers3, LayoutGrid, List, Pau
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
-import ProofThumbWithStatus from '@/components/attorneyHub/ProofThumbWithStatus.jsx';
-import ProofAdmissionToolbar from '@/components/attorneyHub/ProofAdmissionToolbar.jsx';
 import ProofCardMenu from '@/components/attorneyHub/ProofCardMenu.jsx';
 import AttorneyHubQuestionList from '@/components/attorneyHub/AttorneyHubQuestionList.jsx';
 import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
@@ -16,7 +14,6 @@ import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
 import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
 import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
 import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField } from '@/lib/examV2Utils';
-import { getProofStatusLabel } from '@/lib/proofStatusUtils';
 
 function proofMatchesParty(proof, partyId) {
   if (!partyId || partyId === 'all') return true;
@@ -349,21 +346,6 @@ export default function AttorneyHub() {
     }
   };
 
-  const handlePreviewAdmitAsExhibit = (proof) => {
-    setSelectedProofForModal(proof);
-    setShowAdmitExhibitModal(true);
-  };
-
-  const handlePreviewAdmitAsDemonstrative = (proof) => {
-    setSelectedProofForModal(proof);
-    setShowAdmitDemoModal(true);
-  };
-
-  const handlePreviewUnAdmit = (proof) => {
-    setSelectedProofForModal(proof);
-    setShowUnAdmitModal(true);
-  };
-
   return (
     <div className="h-screen overflow-hidden bg-slate-950 text-white p-4 lg:p-6">
       <div className="h-full rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden flex flex-col">
@@ -503,7 +485,7 @@ export default function AttorneyHub() {
                         onClick={() => setSelectedKey(`${entry.kind}:${entry.id}`)}
                         className={`rounded-xl border p-1.5 ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70 hover:border-slate-700'}`}
                       >
-                        {proof ? <ProofThumbWithStatus proof={proof} size="sm" /> : <ProofThumbPreview groupLabel={group?.label || 'Group'} size="sm" />}
+                        {proof ? <ProofThumbPreview proof={proof} size="sm" /> : <ProofThumbPreview groupLabel={group?.label || 'Group'} size="sm" />}
                       </button>
                     );
                   })}
@@ -565,11 +547,11 @@ export default function AttorneyHub() {
                         </div>
                       </div>
                       <div className="mt-3 flex justify-center">
-                        <ProofThumbWithStatus proof={proof} size="lg" />
+                        <ProofThumbPreview proof={proof} size="lg" />
                       </div>
                       <div className="mt-3 text-center">
                         <p className="text-sm font-semibold text-white leading-snug">{proof.name || getProofDisplayName(proof)}</p>
-                        <p className="mt-1 text-[11px] text-slate-400">{getProofStatusLabel(proof)}</p>
+                        <p className="mt-1 text-[11px] text-slate-400">{proof.status}</p>
                       </div>
                       <div className="mt-3 text-center text-xs text-slate-400">
                         {getProofTypeLabel(proof)}
@@ -579,7 +561,7 @@ export default function AttorneyHub() {
                     <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer flex items-start gap-4 ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
                       <div className="flex items-start justify-between gap-2 w-full">
                         <div className="flex items-start gap-4 min-w-0">
-                          <ProofThumbWithStatus proof={proof} size="sm" />
+                          <ProofThumbPreview proof={proof} size="sm" />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] && <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootProofOrderNumberMap[proof.id]}</span>}
@@ -588,7 +570,7 @@ export default function AttorneyHub() {
                             <div className="mt-2 flex items-center justify-start gap-2 text-xs">
                               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{getProofTypeLabel(proof)}</span>
                             </div>
-                            <p className="mt-1 text-xs text-slate-400">{getProofStatusLabel(proof)}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
+                            <p className="mt-1 text-xs text-slate-400">{proof.status}{localDecisionMap[proof.id] === 'not_admitted' ? ' · Not Admitted' : ''}</p>
                             {proofTab === 'Depositions' && children.length > 0 && (
                               <div className="mt-3 flex flex-wrap gap-2">
                                 {children.slice(0, 4).map((child) => (
@@ -643,23 +625,14 @@ export default function AttorneyHub() {
 
           <div style={{ width: `${widths.right}px` }} className="min-h-0 p-4 xl:flex-shrink-0 xl:min-w-[420px] xl:flex-1">
             {(selectedPreviewProof || selectedProof) ? (
-              <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden flex flex-col">
-                <ProofAdmissionToolbar
+              <div className="h-full min-h-[42rem] rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
+                <ProofPreviewPane
                   proof={selectedPreviewProof || selectedProof}
-                  proofsById={proofsById}
-                  onAdmitAsExhibit={handlePreviewAdmitAsExhibit}
-                  onAdmitAsDemonstrative={handlePreviewAdmitAsDemonstrative}
-                  onUnAdmit={handlePreviewUnAdmit}
+                  juryState={juryState}
+                  onUpdateJury={update}
+                  onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
+                  onClose={() => setSelectedPreviewProof(null)}
                 />
-                <div className="min-h-0 flex-1">
-                  <ProofPreviewPane
-                    proof={selectedPreviewProof || selectedProof}
-                    juryState={juryState}
-                    onUpdateJury={update}
-                    onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
-                    onClose={() => setSelectedPreviewProof(null)}
-                  />
-                </div>
               </div>
             ) : selectedGroup ? (
               <GroupPreviewPane label={selectedGroup.label} />

@@ -1,10 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2 } from 'lucide-react';
-import { collectDescendantProofs, getNearestJointExhibitNumber } from '@/lib/proofStatusUtils';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
   const queryClient = useQueryClient();
@@ -14,27 +13,19 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
     queryFn: () => base44.entities.Proof.list(),
   });
 
-  const proofsById = useMemo(() => Object.fromEntries(proofs.map((item) => [item.id, item])), [proofs]);
-  const descendantProofs = useMemo(() => (proof?.id ? collectDescendantProofs(proofs, proof.id) : []), [proof?.id, proofs]);
-  const jointExhibitNum = getNearestJointExhibitNumber(proof, proofsById);
-
   const updateMutation = useMutation({
     mutationFn: async () => {
       await base44.entities.Proof.update(proof.id, {
         status: 'Demonstrative',
-        demonstrative_exhibit_num: jointExhibitNum,
-        admitted_exhibit_num: null,
-        admitted_by: null,
-        admit_date: null,
+        demonstrative_exhibit_num: proof.joint_exhibit_num,
       });
 
-      for (const child of descendantProofs) {
+      // Update all children to Demonstrative status as well
+      const children = proofs.filter((p) => p.parent_proof_id === proof.id);
+      for (const child of children) {
         await base44.entities.Proof.update(child.id, {
           status: 'Demonstrative',
-          demonstrative_exhibit_num: jointExhibitNum,
-          admitted_exhibit_num: null,
-          admitted_by: null,
-          admit_date: null,
+          demonstrative_exhibit_num: proof.joint_exhibit_num,
         });
       }
     },
@@ -48,11 +39,6 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
   });
 
   const handleSubmit = () => {
-    if (!jointExhibitNum) {
-      alert('This proof needs a Joint Exhibit # before it can be marked Demonstrative.');
-      return;
-    }
-
     updateMutation.mutate();
   };
 
@@ -67,25 +53,23 @@ export default function AdmitAsDemonstrativeModal({ open, onClose, proof }) {
             <CheckCircle2 className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-purple-900">Proof: {proof?.name}</p>
-              <p className="text-xs text-purple-700 mt-1">Current: Joint{jointExhibitNum ? ` (Ex. ${jointExhibitNum})` : ''}</p>
+              <p className="text-xs text-purple-700 mt-1">Current: Joint (Ex. {proof?.joint_exhibit_num})</p>
             </div>
           </div>
 
           <div className="bg-slate-50 border border-slate-200 rounded-md p-4 space-y-3">
             <div>
               <p className="text-sm font-medium text-slate-700">Demonstrative Exhibit #</p>
-              <p className="text-lg font-semibold text-slate-900 mt-1">{jointExhibitNum || 'Missing Joint #'}</p>
+              <p className="text-lg font-semibold text-slate-900 mt-1">{proof?.joint_exhibit_num}</p>
               <p className="text-xs text-slate-500 mt-1">
-                Inherited from the Joint Exhibit #
+                Inherited from Joint Exhibit # (no additional number required)
               </p>
             </div>
           </div>
 
           <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
             <p className="text-xs text-purple-800">
-              <strong>Note:</strong> {descendantProofs.length > 0
-                ? 'This proof and its child proofs will be labeled demonstrative on the Jury View.'
-                : 'This proof will be labeled demonstrative on the Jury View.'}
+              <strong>Note:</strong> This proof will be labeled "For illustrative purposes only" on the Jury View. All child proofs will also be marked Demonstrative.
             </p>
           </div>
 

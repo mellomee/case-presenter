@@ -18,7 +18,6 @@ import ExamV2ExcelImportDialog from '@/components/examV2/ExamV2ExcelImportDialog
 import ExamV2TextImportDialog from '@/components/examV2/ExamV2TextImportDialog.jsx';
 import PrintExamV2Dialog from '@/components/examV2/PrintExamV2Dialog.jsx';
 import { buildItemTree, collectDescendantIds, getJointLabel, getProofDisplayName, getProofTypeLabel, parseIdsField, truncateGroupLabel } from '@/lib/examV2Utils';
-import { getProofStatusLabel } from '@/lib/proofStatusUtils';
 
 function proofMatchesParty(proof, partyId) {
   if (!partyId) return true;
@@ -620,7 +619,7 @@ export default function ExamBuilderV2() {
                                     </div>
                                     {proof && (
                                       <div className="mt-2 flex items-center gap-2 text-xs text-slate-400 flex-wrap">
-                                        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{getProofStatusLabel(proof)}</span>
+                                        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{proof.status}</span>
                                         {proof.joint_exhibit_num && <span>Joint # {proof.joint_exhibit_num}</span>}
                                         {proof.admitted_exhibit_num && <span>Admitted # {proof.admitted_exhibit_num}</span>}
                                         {proof.demonstrative_exhibit_num && <span>Demo # {proof.demonstrative_exhibit_num}</span>}
@@ -706,7 +705,7 @@ export default function ExamBuilderV2() {
           </div>
         </div>
 
-        <ExamBuilderProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={proofs} parties={parties} onSelect={addProofToExam} />
+        <ExamBuilderProofPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} proofs={selectableProofs} parties={parties} onSelect={addProofToExam} />
         <GroupEditorDialog
           open={groupDialog.open}
           onOpenChange={(open) => setGroupDialog((prev) => ({ ...prev, open }))}

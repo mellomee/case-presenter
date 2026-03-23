@@ -12,7 +12,6 @@ import { countGroupedHighlights, countHighlightGroups, normalizeHighlightGroups 
 import { proofHasLinkedFile } from './proofAssetUtils';
 import { parsePageRange } from './pageRangeUtils';
 import { isPauseItem, normalizeVideoClipItems } from '@/lib/videoClipPlaylist';
-import { getProofStatusLabel, getProofStatusTone } from '@/lib/proofStatusUtils';
 
 export default function ProofTileEnhanced({
   proof,
@@ -267,7 +266,7 @@ export default function ProofTileEnhanced({
             )}
 
             {proof.proof_category === 'Exhibit' ? (
-              <Badge className={`text-xs ${getProofStatusTone(proof)}`}>{getProofStatusLabel(proof)}</Badge>
+              <Badge className={`text-xs ${getStatusColor(proof.status)}`}>{proof.status}</Badge>
             ) : (
               <Badge className="bg-amber-100 text-amber-700 text-xs">Deposition</Badge>
             )}
