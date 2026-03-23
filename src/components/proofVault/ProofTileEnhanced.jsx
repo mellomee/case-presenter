@@ -199,6 +199,11 @@ export default function ProofTileEnhanced({
                 {proof.formal_name && (
                   <div className="text-xs text-slate-500 truncate">Formal Name: {proof.formal_name}</div>
                 )}
+                {proof.parent_proof_id && parentProof && proof.proof_child_type !== 'Extract' && (
+                  <div className="text-[11px] text-slate-500 truncate mt-1">
+                    Parent Proof: {parentProof.formal_name || parentProof.name}
+                  </div>
+                )}
                 {proof.proof_child_type === 'Extract' && parentProof && (
                   <div className="text-[11px] text-slate-500 truncate mt-1">
                     Source PDF: {parentProof.formal_name || parentProof.name}{parentProof.draft_exhibit_num ? ` · D: ${parentProof.draft_exhibit_num}` : ''}
