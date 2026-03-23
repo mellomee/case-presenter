@@ -8,11 +8,42 @@
     <title>Base44 APP</title>
     <script>
       (() => {
-        const collapseAttorneyHub = () => {
+        const isAttorneyHubRoute = () => {
           const path = window.location.pathname;
-          if (path === '/AttorneyHub' || path === '/present/hub') {
-            window.localStorage.setItem('attorney-hub-left-collapsed', 'true');
-          }
+          return path === '/AttorneyHub' || path === '/present/hub';
+        };
+
+        const collapseAttorneyHub = () => {
+          if (!isAttorneyHubRoute()) return;
+
+          window.localStorage.setItem('attorney-hub-left-collapsed', 'true');
+
+          let attempts = 0;
+          const tryCollapseAppSidebar = () => {
+            if (!isAttorneyHubRoute()) return;
+
+            const appTitle = Array.from(document.querySelectorAll('h1')).find(
+              (element) => element.textContent?.trim() === 'Case Presenter'
+            );
+
+            if (!appTitle) {
+              if (attempts < 20) {
+                attempts += 1;
+                window.setTimeout(tryCollapseAppSidebar, 150);
+              }
+              return;
+            }
+
+            const collapseButton = Array.from(document.querySelectorAll('button')).find(
+              (button) => String(button.className).includes('hidden lg:flex')
+            );
+
+            if (collapseButton) {
+              collapseButton.click();
+            }
+          };
+
+          tryCollapseAppSidebar();
         };
 
         collapseAttorneyHub();
