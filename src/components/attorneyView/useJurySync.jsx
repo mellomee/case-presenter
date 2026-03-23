@@ -55,8 +55,18 @@ export function useJurySync(role = 'attorney') {
     return unsub;
   }, [recordId]);
 
-  const update = useCallback((patch) => {
+  const update = useCallback((patch, immediate = false) => {
     if (!recordId) return;
+    setJuryState((prev) => (prev ? { ...prev, ...patch } : prev));
+
+    if (immediate) {
+      clearTimeout(timerRef.current);
+      const toSend = { ...pendingRef.current, ...patch };
+      pendingRef.current = {};
+      base44.entities.JuryState.update(recordId, toSend);
+      return;
+    }
+
     pendingRef.current = { ...pendingRef.current, ...patch };
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
