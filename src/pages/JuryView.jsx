@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import ReactPlayer from 'react-player';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
-import PDFViewer from '@/components/proofVault/PDFViewer';
 import { parsePageRange } from '@/components/proofVault/pageRangeUtils';
 import { getInitialHighlightPage } from '@/components/proofVault/highlightGroupUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { Scale, Maximize } from 'lucide-react';
 import JuryVideoClipPlayer from '@/components/juryView/JuryVideoClipPlayer.jsx';
+import JuryPdfMirror from '@/components/juryView/JuryPdfMirror.jsx';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
   const playerRef = useRef(null);
@@ -208,16 +208,14 @@ export default function JuryView() {
             <JuryVideo src={resolvedAssetUrl || proof.video_url || proof.file_url} videoTime={juryState.video_time} isPlaying={juryState.is_playing} />
           )
         ) : (resolvedAssetUrl || proof.file_url) ? (
-          <PDFViewer
+          <JuryPdfMirror
             fileUrl={resolvedAssetUrl || proof.file_url}
-            mode="viewer"
             syncState={{
               currentPage: juryState.pdf_page || 1,
               zoom: juryState.zoom ?? 1,
               panX: juryState.panX ?? 0,
               panY: juryState.panY ?? 0,
             }}
-            allowPan={false}
             visiblePages={visiblePages?.length ? visiblePages : null}
             highlights={proof.highlights || []}
             clippedPage={initialClipPage}
