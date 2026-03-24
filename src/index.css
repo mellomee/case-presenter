@@ -231,7 +231,8 @@
   }
 
   .max-w-2xl.bg-slate-950.border-slate-800.text-white .grid.grid-cols-2.md\:grid-cols-3.gap-3 > div > button {
-    @apply border-slate-200 bg-white text-slate-700 hover:text-slate-900;
+    @apply border-slate-200 text-slate-700 hover:text-slate-900;
+    background-color: #ffffff;
   }
 
   .max-w-2xl.bg-slate-950.border-slate-800.text-white .grid.grid-cols-2.md\:grid-cols-3.gap-3 > div p {
