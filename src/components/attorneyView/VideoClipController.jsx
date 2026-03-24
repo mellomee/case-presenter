@@ -15,6 +15,8 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
   const segmentItemRefs = useRef({});
   const suppressEndCheckRef = useRef(false);
   const resumeTimeoutRef = useRef(null);
+  const onStateChangeRef = useRef(onStateChange);
+  const currentSegmentIdxRef = useRef(0);
   const lastSyncedRef = useRef({ currentTime: null, playing: null, segmentIdx: null });
   const [playing, setPlaying] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -24,6 +26,14 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
 
   const items = useMemo(() => normalizeVideoClipItems(segments), [segments]);
 
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange;
+  }, [onStateChange]);
+
+  useEffect(() => {
+    currentSegmentIdxRef.current = currentSegmentIdx;
+  }, [currentSegmentIdx]);
+
   const clearResumeTimeout = useCallback(() => {
     if (resumeTimeoutRef.current) {
       clearTimeout(resumeTimeoutRef.current);
@@ -32,12 +42,12 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
   }, []);
 
   const emitSyncState = useCallback((nextState, force = false) => {
-    if (!onStateChange) return;
+    if (!onStateChangeRef.current) return;
 
     const snapshot = {
       currentTime: nextState.currentTime ?? 0,
       playing: !!nextState.playing,
-      segmentIdx: nextState.segmentIdx ?? currentSegmentIdx,
+      segmentIdx: nextState.segmentIdx ?? currentSegmentIdxRef.current,
     };
 
     const last = lastSyncedRef.current;
@@ -46,8 +56,8 @@ export default function VideoClipController({ videoUrl, segments = [], onStateCh
     }
 
     lastSyncedRef.current = snapshot;
-    onStateChange({ currentTime: snapshot.currentTime, playing: snapshot.playing });
-  }, [onStateChange, currentSegmentIdx]);
+    onStateChangeRef.current({ currentTime: snapshot.currentTime, playing: snapshot.playing });
+  }, []);
 
   const seekToItem = useCallback((idx, options = {}) => {
     const item = items[idx];
