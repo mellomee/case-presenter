@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from '@/components/Layout';
+import AutoUnpublishOnAttorneyNavigation from '@/components/present/AutoUnpublishOnAttorneyNavigation';
 
 // Page imports
 import Dashboard from '@/pages/Dashboard';
@@ -77,6 +78,7 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
+          <AutoUnpublishOnAttorneyNavigation />
           <AuthenticatedApp />
         </Router>
         <Toaster />
