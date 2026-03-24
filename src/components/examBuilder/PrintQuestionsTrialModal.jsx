@@ -179,9 +179,9 @@ export default function PrintQuestionsTrialModal({ open, onClose, party, examTyp
         mainHtml = `<p style="font-size:22px;font-weight:600;color:#0f172a;line-height:1.5;margin:0 0 12px 0;">${item.data.text}</p>`;
 
         if (item.data.expected_answer) {
-          mainHtml += `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 12px;margin-bottom:10px;">
-            <span style="font-size:10px;font-family:sans-serif;font-weight:700;color:#16a34a;text-transform:uppercase;display:block;margin-bottom:2px;">Expected Answer</span>
-            <p style="font-size:13px;color:#15803d;margin:0;">${item.data.expected_answer}</p>
+          mainHtml += `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;margin-bottom:10px;">
+            <span style="font-size:10px;font-family:sans-serif;font-weight:700;color:#b91c1c;text-transform:uppercase;display:block;margin-bottom:2px;">Expected Answer</span>
+            <p style="font-size:13px;color:#991b1b;margin:0;">${item.data.expected_answer}</p>
           </div>`;
         }
 
