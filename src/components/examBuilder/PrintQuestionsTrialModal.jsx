@@ -121,9 +121,9 @@ function CardPreview({ item, index, total, allQuestions, allProofs, isNext = fal
           </p>
 
           {!isNext && item.data.expected_answer && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px' }}>
-              <span style={{ fontSize: '10px', fontFamily: 'sans-serif', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Expected Answer</span>
-              <p style={{ fontSize: '13px', color: '#15803d', margin: 0 }}>{item.data.expected_answer}</p>
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '10px', fontFamily: 'sans-serif', fontWeight: 700, color: '#b91c1c', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Expected Answer</span>
+              <p style={{ fontSize: '13px', color: '#991b1b', margin: 0 }}>{item.data.expected_answer}</p>
             </div>
           )}
 

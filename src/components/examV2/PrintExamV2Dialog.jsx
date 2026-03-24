@@ -126,7 +126,7 @@ export default function PrintExamV2Dialog({
           .exam-v2-print-checkbox { font-size: 16px; line-height: 1.5; color: #0f172a; }
           .exam-v2-print-question-body { flex: 1; }
           .exam-v2-print-question-text { margin: 0; font-size: 15px; line-height: 1.65; color: #0f172a; }
-          .exam-v2-print-expected { margin: 5px 0 0; font-size: 12px; color: #15803d; font-weight: 600; }
+          .exam-v2-print-expected { margin: 5px 0 0; font-size: 12px; color: #b91c1c; font-weight: 600; }
           .exam-v2-print-notes { margin: 5px 0 0; font-size: 12px; color: #92400e; }
           .exam-v2-print-attachments { margin-top: 8px; border-left: 2px solid #e2e8f0; padding-left: 10px; }
           .exam-v2-print-attachment-row { margin-top: 4px; }

@@ -90,7 +90,7 @@ export default function PrintQuestionsListModal({ open, onClose, party, examType
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', lineHeight: 1.5 }}>{question.text}</p>
                       {question.expected_answer && (
-                        <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#16a34a' }}>✓ {question.expected_answer}</p>
+                        <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#b91c1c' }}>✓ {question.expected_answer}</p>
                       )}
                       {question.notes && (
                         <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#d97706', fontStyle: 'italic' }}>📝 {question.notes}</p>

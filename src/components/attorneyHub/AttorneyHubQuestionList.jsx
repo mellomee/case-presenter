@@ -21,7 +21,7 @@ function QuestionNode({ node, level = 0, numberLabel, proofsById, checkedMap, on
               <span className="mt-0.5 text-xs font-semibold text-slate-500">{numberLabel}.</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-medium text-slate-900 leading-7">{node.text}</p>
-                {node.expected_answer && <p className="mt-2 text-xs font-medium text-emerald-700">Expected: {node.expected_answer}</p>}
+                {node.expected_answer && <p className="mt-2 text-xs font-medium text-red-700">Expected: {node.expected_answer}</p>}
                 {node.notes && <p className="mt-1 text-xs font-medium text-amber-700">Notes: {node.notes}</p>}
               </div>
             </div>
