@@ -510,16 +510,21 @@ export default function AttorneyHub() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="inline-flex max-w-full rounded-lg border border-slate-200 bg-white p-1 gap-1 overflow-x-auto shadow-sm">
                       {['Exam', 'Exhibits', 'Depositions'].map((tab) => (
-                        <button key={tab} type="button" onClick={() => setProofTab(tab)} className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ${proofTab === tab ? 'bg-blue-600 text-white [&_svg]:text-white' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setProofTab(tab)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-colors ${proofTab === tab ? 'bg-blue-600 text-white hover:bg-blue-700' : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                        >
                           {tab}
                         </button>
                       ))}
                     </div>
                     <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 gap-1 flex-shrink-0 shadow-sm">
-                      <button type="button" onClick={() => setViewMode('grid')} className={`h-11 w-11 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-blue-600 text-white [&_svg]:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="Thumbnail view">
+                      <button type="button" onClick={() => setViewMode('grid')} className={`h-11 w-11 rounded-md flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`} title="Thumbnail view">
                         <LayoutGrid className="w-5 h-5" />
                       </button>
-                      <button type="button" onClick={() => setViewMode('list')} className={`h-11 w-11 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-blue-600 text-white [&_svg]:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`} title="List view">
+                      <button type="button" onClick={() => setViewMode('list')} className={`h-11 w-11 rounded-md flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`} title="List view">
                         <List className="w-5 h-5" />
                       </button>
                     </div>

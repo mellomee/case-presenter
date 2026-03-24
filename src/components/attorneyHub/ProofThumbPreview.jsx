@@ -48,11 +48,7 @@ export default function ProofThumbPreview({ proof = null, groupLabel = '', size 
     <CheckCircle2
       className={`absolute right-1 top-1 w-4 h-4 ${effectiveStatus === 'Demonstrative' ? 'text-blue-400' : 'text-red-400'}`}
     />
-  ) : (
-    <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/70">
-      <X className="h-3 w-3 text-slate-300" />
-    </div>
-  );
+  ) : null;
 
   const overlayBadges = [
     jointNumber ? { label: `Joint # ${jointNumber}`, className: 'bg-blue-600/90 text-white' } : null,
