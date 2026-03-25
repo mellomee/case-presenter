@@ -13,6 +13,7 @@ import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
 import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
 import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
 import GroupPreviewPane from '@/components/attorneyHub/GroupPreviewPane.jsx';
+import WitnessSavedProofDialog from '@/components/attorneyHub/WitnessSavedProofDialog.jsx';
 import ColumnResizeHandle from '@/components/attorneyHub/ColumnResizeHandle.jsx';
 import useStoredSplitWidths from '@/hooks/useStoredSplitWidths';
 import { getJointLabel, getProofDisplayName, getProofSide, getProofTypeLabel, parseIdsField } from '@/lib/examV2Utils';
@@ -179,6 +180,8 @@ export default function AttorneyHub() {
   const [showAdmitExhibitModal, setShowAdmitExhibitModal] = useState(false);
   const [showAdmitDemoModal, setShowAdmitDemoModal] = useState(false);
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
+  const [pendingWitnessProof, setPendingWitnessProof] = useState(null);
+  const [highlightedProofId, setHighlightedProofId] = useState('');
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [currentTimeLabel, setCurrentTimeLabel] = useState(() => LOS_ANGELES_TIME_FORMATTER.format(new Date()));
@@ -313,6 +316,14 @@ export default function AttorneyHub() {
   }, [displayEntries, selectedKey]);
 
   useEffect(() => {
+    if (!highlightedProofId || proofTab !== 'Exhibits') return;
+    const tile = document.getElementById(`attorney-hub-proof-${highlightedProofId}`);
+    if (tile) {
+      tile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [displayEntries, highlightedProofId, proofTab]);
+
+  useEffect(() => {
     setSelectedPreviewProof(null);
   }, [selectedKey]);
 
@@ -341,6 +352,23 @@ export default function AttorneyHub() {
 
     return () => window.clearInterval(interval);
   }, [isTimerRunning]);
+
+  useEffect(() => {
+    const unsubscribe = base44.entities.Proof.subscribe((event) => {
+      if (event.type !== 'create') return;
+      if (!event.data?.witness_name || !event.data?.witness_markup || event.data?.status !== 'Draft') return;
+      setPendingWitnessProof(event.data);
+      queryClient.invalidateQueries({ queryKey: ['proofs'], refetchType: 'active' });
+    });
+
+    return unsubscribe;
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!highlightedProofId) return;
+    const timeoutId = window.setTimeout(() => setHighlightedProofId(''), 4000);
+    return () => window.clearTimeout(timeoutId);
+  }, [highlightedProofId]);
 
   const [selectedKind, selectedId] = selectedKey.split(':');
   const selectedProof = selectedKind === 'proof' ? proofsById[selectedId] : null;
@@ -392,6 +420,28 @@ export default function AttorneyHub() {
     if (patch) {
       updateProofMutation.mutate({ proofId: proof.id, data: patch });
     }
+  };
+
+  const handleAddWitnessProof = (proof) => {
+    const parentProof = proofsById[proof.parent_proof_id];
+    updateProofMutation.mutate({
+      proofId: proof.id,
+      data: {
+        status: 'Joint',
+        joint_exhibit_num: parentProof?.joint_exhibit_num || parentProof?.admitted_exhibit_num || parentProof?.demonstrative_exhibit_num || null,
+        joint_by: parentProof?.joint_by || parentProof?.admitted_by || null,
+        joint_date: parentProof?.joint_date || parentProof?.admit_date || null,
+      },
+    });
+
+    setPendingWitnessProof(null);
+    setProofTab('Exhibits');
+    setStatusFilter('joint');
+    setSideFilter('all');
+    setExhibitSearch('');
+    setSelectedPreviewProof(proof);
+    setSelectedKey(`proof:${proof.id}`);
+    setHighlightedProofId(proof.id);
   };
 
   const publishProof = (proof) => {
@@ -648,13 +698,15 @@ export default function AttorneyHub() {
                     const isSelected = selectedKey === `${entry.kind}:${entry.id}`;
                     const proof = entry.kind === 'proof' ? proofsById[entry.id] : null;
                     const group = entry.kind === 'group' ? rootGroups.find((item) => item.id === entry.id) : null;
+                    const isHighlighted = proof ? highlightedProofId === proof.id : false;
 
                     return (
                       <button
                         key={`${entry.kind}:${entry.id}`}
+                        id={proof ? `attorney-hub-proof-${proof.id}` : undefined}
                         type="button"
                         onClick={() => setSelectedKey(`${entry.kind}:${entry.id}`)}
-                        className={`rounded-xl border p-1.5 ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70 hover:border-slate-700'}`}
+                        className={`rounded-xl border p-1.5 transition-all ${isHighlighted ? 'border-amber-400 ring-2 ring-amber-300 bg-amber-500/10' : ''} ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/70 hover:border-slate-700'}`}
                       >
                         {proof ? <ProofThumbPreview proof={proof} size="sm" /> : <ProofThumbPreview groupLabel={group?.label || 'Group'} size="sm" />}
                       </button>
@@ -710,9 +762,10 @@ export default function AttorneyHub() {
                   const isAdmitted = proof.status === 'Admitted';
                   const publishable = canPublishProof(proof, proof.status === 'Joint' ? localDecisionMap[proof.id] : null);
                   const isPublished = juryState?.published_proof_id === proof.id && !juryState?.is_blank;
+                  const isHighlighted = highlightedProofId === proof.id;
 
                   return viewMode === 'grid' ? (
-                    <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                    <div id={`attorney-hub-proof-${proof.id}`} key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 cursor-pointer transition-all ${isHighlighted ? 'border-amber-400 ring-2 ring-amber-300 bg-amber-500/10' : ''} ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
                       <div className="flex items-start justify-between gap-2">
                         {proofTab === 'Exam' && rootProofOrderNumberMap[proof.id] ? <span className="inline-flex h-5 items-center justify-center rounded-full bg-blue-600/20 px-2 text-[10px] font-semibold text-blue-300">Question {rootProofOrderNumberMap[proof.id]}</span> : <span />}
                         <div className="flex flex-col items-end gap-2">
@@ -741,7 +794,7 @@ export default function AttorneyHub() {
                       </div>
                     </div>
                   ) : (
-                    <div key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer flex items-start gap-4 ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                    <div id={`attorney-hub-proof-${proof.id}`} key={proof.id} onClick={() => setSelectedKey(`proof:${proof.id}`)} className={`rounded-2xl border p-3 text-left cursor-pointer flex items-start gap-4 transition-all ${isHighlighted ? 'border-amber-400 ring-2 ring-amber-300 bg-amber-500/10' : ''} ${isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
                       <div className="flex items-start justify-between gap-2 w-full">
                         <div className="flex items-start gap-4 min-w-0">
                           <ProofThumbPreview proof={proof} size="sm" />
@@ -844,6 +897,11 @@ export default function AttorneyHub() {
             )}
           </div>
         </div>
+        <WitnessSavedProofDialog
+          proof={pendingWitnessProof}
+          onAdd={() => handleAddWitnessProof(pendingWitnessProof)}
+          onClose={() => setPendingWitnessProof(null)}
+        />
         <AdmitAsExhibitModal
           open={showAdmitExhibitModal}
           onClose={() => {

@@ -56,11 +56,12 @@ Deno.serve(async (req) => {
     const exhibitLabel = sanitizePart(getPrimaryExhibitNumber(parentProof) || parentProof.name || 'Untitled');
     const safeWitnessName = sanitizePart(witnessName || 'Witness');
     const safePageNumber = Number(pageNumber) > 0 ? Number(pageNumber) : 1;
-    const inheritedJointExhibitNumber = getInheritedJointExhibitNumber(parentProof);
     const baseName = `${exhibitLabel} - ${safeWitnessName} - Witness Markup - Page ${safePageNumber}`;
     const fileName = `${baseName} - ${buildTimestamp()}.pdf`;
     const uploadPath = `${targetFolder}/${fileName}`;
     const fileBytes = decodeBase64(pdfBase64);
+    const parties = await base44.entities.Party.list();
+    const matchedParty = parties.find((party) => `${party.first_name || ''} ${party.last_name || ''}`.trim().toLowerCase() === safeWitnessName.toLowerCase());
 
     const uploadResponse = await fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
@@ -84,20 +85,20 @@ Deno.serve(async (req) => {
 
     const uploadedFile = await uploadResponse.json();
     const createdProof = await base44.entities.Proof.create({
-      proof_category: parentProof.proof_category,
+      proof_category: 'Exhibit',
       file_type: 'PDF',
       proof_child_type: 'ExtractClip',
-      name: baseName,
-      formal_name: baseName,
+      name: uploadedFile.name,
+      formal_name: uploadedFile.name,
       description: `Witness markup saved from ${parentProof.name || 'proof'} page ${safePageNumber}`,
       parent_proof_id: parentProof.id,
-      party_id: parentProof.party_id,
+      party_id: matchedParty?.id || parentProof.party_id,
       category_id: parentProof.category_id || null,
       proof_type_category_id: parentProof.proof_type_category_id,
-      status: 'Joint',
-      joint_exhibit_num: inheritedJointExhibitNumber || null,
-      joint_by: parentProof.joint_by || null,
-      joint_date: parentProof.joint_date || null,
+      status: 'Draft',
+      joint_exhibit_num: null,
+      joint_by: null,
+      joint_date: null,
       admitted_exhibit_num: null,
       admitted_by: null,
       admit_date: null,
@@ -115,6 +116,21 @@ Deno.serve(async (req) => {
       witness_name: safeWitnessName,
       witness_markup: markup || {},
     });
+
+    const witnessStateRecords = await base44.asServiceRole.entities.WitnessState.filter({ room_id: 'case-presenter-witness' });
+    if (witnessStateRecords[0]?.id) {
+      await base44.asServiceRole.entities.WitnessState.update(witnessStateRecords[0].id, {
+        published_proof_id: null,
+        pdf_page: 1,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        video_time: 0,
+        is_playing: false,
+        is_blank: true,
+        exhibit_label: '',
+      });
+    }
 
     return Response.json({ proof: createdProof });
   } catch (error) {
