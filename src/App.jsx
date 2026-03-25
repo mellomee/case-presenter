@@ -20,6 +20,7 @@ import Settings from '@/pages/Settings';
 import AttorneyHub from '@/pages/AttorneyHub';
 import ExamBuilderV2 from '@/pages/ExamBuilderV2';
 import ExamTextImport from '@/pages/ExamTextImport';
+import WitnessMarkup from '@/pages/WitnessMarkup';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
         <Route path="/ExamBuilderV2" element={<ExamBuilderV2 />} />
         <Route path="/ExamTextImport" element={<ExamTextImport />} />
         <Route path="/AttorneyHub" element={<AttorneyHub />} />
+        <Route path="/WitnessMarkup" element={<WitnessMarkup />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       
