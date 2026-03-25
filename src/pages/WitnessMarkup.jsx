@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ReactPlayer from 'react-player';
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Loader2, Maximize, Save, Scale } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import MarkupCanvas from '@/components/witnessMarkup/MarkupCanvas.jsx';
@@ -15,13 +14,40 @@ import { useWitnessSync } from '@/components/witnessView/useWitnessSync.jsx';
 const PEN_COLOR = '#ef4444';
 const HIGHLIGHT_COLOR = '#facc15';
 
-function WaitingForWitnessPublish() {
+function FullscreenButton({ onClick, visible }) {
   return (
-    <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
-      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold">Witness View</h1>
-        <p className="mt-3 text-sm text-slate-600">Waiting for the attorney to publish a proof to the witness.</p>
+    <button
+      onClick={onClick}
+      className={`absolute bottom-4 right-4 z-30 rounded-lg border border-white/15 bg-white/10 p-2.5 text-white/80 transition-all hover:bg-white/20 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      title="Enter fullscreen"
+    >
+      <Maximize className="h-4 w-4" />
+    </button>
+  );
+}
+
+function WitnessBlankScreen({ caseName, onEnterFullscreen, isFullscreen, actionLabel, onAction }) {
+  return (
+    <div className="relative flex h-screen w-full items-center justify-center bg-black group">
+      <div className="text-center select-none">
+        <Scale className="mx-auto mb-6 h-[200px] w-[200px] text-white/25" strokeWidth={1} />
+        <p className="text-lg font-light uppercase tracking-[0.3em] text-white/12">
+          {caseName || 'Case Presenter'}
+        </p>
+        {actionLabel && onAction ? (
+          <div className="mt-8">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onAction}
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              {actionLabel}
+            </Button>
+          </div>
+        ) : null}
       </div>
+      <FullscreenButton onClick={onEnterFullscreen} visible={!isFullscreen} />
     </div>
   );
 }
@@ -42,7 +68,7 @@ function WitnessMediaPreview({ proof, fileUrl, witnessState }) {
 
   if (proof?.file_type === 'Image' && fileUrl) {
     return (
-      <div className="flex h-[70vh] items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex min-h-[70vh] items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <img src={fileUrl} alt={proof?.formal_name || proof?.name} className="max-h-full max-w-full rounded-xl object-contain" />
       </div>
     );
@@ -50,14 +76,14 @@ function WitnessMediaPreview({ proof, fileUrl, witnessState }) {
 
   if (proof?.file_type === 'Video' && fileUrl) {
     return (
-      <div className="h-[70vh] overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm">
-        <ReactPlayer ref={playerRef} url={fileUrl} playing={!!witnessState?.is_playing} controls width="100%" height="100%" playsinline />
+      <div className="min-h-[70vh] overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm">
+        <ReactPlayer ref={playerRef} url={fileUrl} playing={!!witnessState?.is_playing} controls width="100%" height="70vh" playsinline />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[70vh] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-500 shadow-sm">
+    <div className="flex min-h-[70vh] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-500 shadow-sm">
       No file available.
     </div>
   );
@@ -81,6 +107,8 @@ export default function WitnessMarkup() {
   const [highlights, setHighlights] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement);
+  const [showBlankScreen, setShowBlankScreen] = useState(false);
 
   const { data: proof, isLoading } = useQuery({
     queryKey: ['witness-markup-proof', activeProofId],
@@ -91,7 +119,44 @@ export default function WitnessMarkup() {
     enabled: !!activeProofId,
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ['appSettings'],
+    queryFn: () => base44.entities.AppSettings.list().then((records) => records[0] || {}),
+  });
+
   const { url: fileUrl, isLoading: isLoadingAsset } = useResolvedProofAsset(proof);
+
+  const enterFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    handleFullscreenChange();
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    enterFullscreen();
+
+    const tryFullscreenOnGesture = () => {
+      enterFullscreen();
+    };
+
+    document.addEventListener('pointerdown', tryFullscreenOnGesture, { once: true });
+    document.addEventListener('keydown', tryFullscreenOnGesture, { once: true });
+
+    return () => {
+      document.removeEventListener('pointerdown', tryFullscreenOnGesture);
+      document.removeEventListener('keydown', tryFullscreenOnGesture);
+    };
+  }, [enterFullscreen]);
 
   useEffect(() => {
     if (proofIdFromUrl) {
@@ -112,8 +177,10 @@ export default function WitnessMarkup() {
 
   const canUndo = strokes.length > 0 || highlights.length > 0;
   const exhibitNumber = useMemo(() => getPrimaryExhibitNumber(proof), [proof]);
-  const isBlank = isPublishedWitnessView && (!witnessState || witnessState.is_blank || !witnessState.published_proof_id);
+  const isWitnessBlank = isPublishedWitnessView && (!witnessState || witnessState.is_blank || !witnessState.published_proof_id);
   const isPdf = proof?.file_type === 'PDF';
+  const caseName = settings?.case_name || 'Case Presenter';
+  const shouldShowBlankScreen = showBlankScreen || isWitnessBlank || !activeProofId;
 
   const handleUndo = () => {
     if (strokes.length > 0) {
@@ -168,8 +235,16 @@ export default function WitnessMarkup() {
     setHighlights([]);
   };
 
-  if (isBlank || !activeProofId) {
-    return <WaitingForWitnessPublish />;
+  if (shouldShowBlankScreen) {
+    return (
+      <WitnessBlankScreen
+        caseName={caseName}
+        onEnterFullscreen={enterFullscreen}
+        isFullscreen={isFullscreen}
+        actionLabel={showBlankScreen && activeProofId ? 'Return to Witness View' : null}
+        onAction={showBlankScreen && activeProofId ? () => setShowBlankScreen(false) : null}
+      />
+    );
   }
 
   return (
@@ -178,9 +253,14 @@ export default function WitnessMarkup() {
         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Link to="/Dashboard" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-900">
-                <ArrowLeft className="h-4 w-4" /> Back
-              </Link>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowBlankScreen(true)}
+                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+              >
+                Black Screen
+              </Button>
               {exhibitNumber ? <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">{exhibitNumber}</span> : null}
               {isPublishedWitnessView && witnessState?.exhibit_label ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{witnessState.exhibit_label}</span> : null}
             </div>
@@ -233,7 +313,7 @@ export default function WitnessMarkup() {
         )}
 
         {(isLoading || isLoadingAsset) ? (
-          <div className="flex h-[70vh] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex min-h-[70vh] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         ) : isPdf ? (
@@ -257,6 +337,7 @@ export default function WitnessMarkup() {
           <WitnessMediaPreview proof={proof} fileUrl={fileUrl} witnessState={witnessState} />
         )}
       </div>
+      <FullscreenButton onClick={enterFullscreen} visible={!isFullscreen} />
     </div>
   );
 }

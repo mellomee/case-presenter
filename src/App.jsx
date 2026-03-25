@@ -57,7 +57,6 @@ const AuthenticatedApp = () => {
         <Route path="/ExamBuilderV2" element={<ExamBuilderV2 />} />
         <Route path="/ExamTextImport" element={<ExamTextImport />} />
         <Route path="/AttorneyHub" element={<AttorneyHub />} />
-        <Route path="/WitnessMarkup" element={<WitnessMarkup />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       
@@ -67,6 +66,7 @@ const AuthenticatedApp = () => {
       <Route path="/present/exam-builder-v2" element={<Navigate to="/ExamBuilderV2" replace />} />
       <Route path="/present/attorney" element={<AttorneyViewShell />} />
       <Route path="/present/jury" element={<JuryView />} />
+      <Route path="/WitnessMarkup" element={<WitnessMarkup />} />
       
       <Route path="*" element={<PageNotFound />} />
     </Routes>
