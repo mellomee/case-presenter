@@ -44,13 +44,13 @@ export default function ProofCardMenu({
 
       {canPublish && !isPublished && (
         <button type="button" onClick={onPublish} className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 hover:bg-blue-100">
-          Publish
+          Publish to Jury
         </button>
       )}
 
       {canPublish && isPublished && (
-        <button type="button" onClick={onUnpublish} className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">
-          Unpublish
+        <button type="button" onClick={onUnpublish} className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100">
+          Unpublish Jury
         </button>
       )}
     </div>

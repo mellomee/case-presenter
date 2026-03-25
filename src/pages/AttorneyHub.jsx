@@ -561,24 +561,24 @@ export default function AttorneyHub() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      type="button"
-                      className="gap-2 bg-blue-600 hover:bg-blue-700"
-                      disabled={!selectedProofCanPublishToWitness}
-                      onClick={() => publishProofToWitness(activeToolbarProof)}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {selectedProofIsPublishedToWitness ? 'Published to Witness' : 'Publish to Witness'}
-                    </Button>
-
-                    {selectedProofIsPublishedToWitness && (
+                    {selectedProofIsPublishedToWitness ? (
                       <Button
                         type="button"
                         variant="outline"
-                        className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
                         onClick={() => unpublishProofFromWitness(activeToolbarProof)}
                       >
                         Unpublish Witness
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        className="gap-2 bg-blue-600 hover:bg-blue-700"
+                        disabled={!selectedProofCanPublishToWitness}
+                        onClick={() => publishProofToWitness(activeToolbarProof)}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Publish to Witness
                       </Button>
                     )}
 
