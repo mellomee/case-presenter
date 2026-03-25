@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, ChevronLeft, ChevronRight, Layers3, LayoutGrid, List, Pause, Play, Square } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, Layers3, LayoutGrid, List, Pause, Play, Square } from 'lucide-react';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
@@ -416,6 +416,12 @@ export default function AttorneyHub() {
     });
   };
 
+  const openWitnessView = (proof) => {
+    if (!proof?.id) return;
+    const witnessUrl = `/WitnessMarkup?proofId=${encodeURIComponent(proof.id)}`;
+    window.open(witnessUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-slate-950 text-white p-4 lg:p-6">
       <div className="h-full rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden flex flex-col">
@@ -469,15 +475,24 @@ export default function AttorneyHub() {
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{getProofTypeLabel(activeToolbarProof)}</span>
                     </div>
                   </div>
-                  <ProofCardMenu
-                    proof={activeToolbarProof}
-                    localDecision={localDecisionMap[activeToolbarProof.id]}
-                    onAction={(action, patch) => handleProofAction(activeToolbarProof, action, patch)}
-                    canPublish={selectedProofCanPublish}
-                    isPublished={selectedProofIsPublished}
-                    onPublish={() => publishProof(activeToolbarProof)}
-                    onUnpublish={() => unpublishProof(activeToolbarProof)}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openWitnessView(activeToolbarProof)}
+                      className="inline-flex h-11 items-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                    >
+                      <ExternalLink className="h-4 w-4" /> Witness View
+                    </button>
+                    <ProofCardMenu
+                      proof={activeToolbarProof}
+                      localDecision={localDecisionMap[activeToolbarProof.id]}
+                      onAction={(action, patch) => handleProofAction(activeToolbarProof, action, patch)}
+                      canPublish={selectedProofCanPublish}
+                      isPublished={selectedProofIsPublished}
+                      onPublish={() => publishProof(activeToolbarProof)}
+                      onUnpublish={() => unpublishProof(activeToolbarProof)}
+                    />
+                  </div>
                 </div>
               </div>
             ) : (
