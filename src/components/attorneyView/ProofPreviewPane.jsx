@@ -18,7 +18,7 @@ function statusPill(proof) {
   return 'bg-slate-100 text-slate-600';
 }
 
-export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRuling, onClose }) {
+export default function ProofPreviewPane({ proof, juryState, witnessState, onUpdateJury, onUpdateWitness, onRuling, onClose }) {
   const { data: allProofs = [] } = useQuery({
     queryKey: ['proofs'],
     queryFn: () => base44.entities.Proof.list(),
@@ -30,22 +30,40 @@ export default function ProofPreviewPane({ proof, juryState, onUpdateJury, onRul
   const { url: parentUrl } = useResolvedProofAsset(parentProof);
 
   const handlePdfStateChange = useCallback((pdfSync) => {
-    if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
-    onUpdateJury({
-      pdf_page: pdfSync.currentPage,
-      ...(pdfSync.zoom !== undefined ? { zoom: pdfSync.zoom } : {}),
-      ...(pdfSync.panX !== undefined ? { panX: pdfSync.panX } : {}),
-      ...(pdfSync.panY !== undefined ? { panY: pdfSync.panY } : {}),
-    });
-  }, [juryState, proof, onUpdateJury]);
+    if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
+      onUpdateJury({
+        pdf_page: pdfSync.currentPage,
+        ...(pdfSync.zoom !== undefined ? { zoom: pdfSync.zoom } : {}),
+        ...(pdfSync.panX !== undefined ? { panX: pdfSync.panX } : {}),
+        ...(pdfSync.panY !== undefined ? { panY: pdfSync.panY } : {}),
+      });
+    }
+
+    if (witnessState && witnessState.published_proof_id === proof?.id && !witnessState.is_blank && onUpdateWitness) {
+      onUpdateWitness({
+        pdf_page: pdfSync.currentPage,
+        ...(pdfSync.zoom !== undefined ? { zoom: pdfSync.zoom } : {}),
+        ...(pdfSync.panX !== undefined ? { panX: pdfSync.panX } : {}),
+        ...(pdfSync.panY !== undefined ? { panY: pdfSync.panY } : {}),
+      });
+    }
+  }, [juryState, proof, onUpdateJury, witnessState, onUpdateWitness]);
 
   const handleVideoStateChange = useCallback((videoSync) => {
-    if (!juryState || juryState.published_proof_id !== proof?.id || juryState.is_blank) return;
-    onUpdateJury({
-      video_time: videoSync.currentTime || 0,
-      is_playing: !!videoSync.playing,
-    });
-  }, [juryState, proof, onUpdateJury]);
+    if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
+      onUpdateJury({
+        video_time: videoSync.currentTime || 0,
+        is_playing: !!videoSync.playing,
+      });
+    }
+
+    if (witnessState && witnessState.published_proof_id === proof?.id && !witnessState.is_blank && onUpdateWitness) {
+      onUpdateWitness({
+        video_time: videoSync.currentTime || 0,
+        is_playing: !!videoSync.playing,
+      });
+    }
+  }, [juryState, proof, onUpdateJury, witnessState, onUpdateWitness]);
 
   if (!proof) {
     return (

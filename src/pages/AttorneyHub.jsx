@@ -5,6 +5,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, Layers3, LayoutG
 import { Button } from '@/components/ui/button';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
+import { useWitnessSync } from '@/components/witnessView/useWitnessSync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
 import ProofCardMenu from '@/components/attorneyHub/ProofCardMenu.jsx';
 import AttorneyHubQuestionList from '@/components/attorneyHub/AttorneyHubQuestionList.jsx';
@@ -124,6 +125,10 @@ function canPublishProof(proof, localDecision = null) {
   return proof?.proof_category === 'Deposition' || ['Admitted', 'Demonstrative'].includes(proof?.status);
 }
 
+function canPublishProofToWitness(proof) {
+  return proof?.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof?.status);
+}
+
 function getPublishedLabel(proof) {
   if (!proof) return '';
   if (proof.proof_category === 'Deposition') return proof.formal_name || proof.name || 'Deposition';
@@ -153,14 +158,14 @@ function getAdmissionToolbarClass(proof, localDecision) {
   return 'border-slate-200 bg-slate-50 text-slate-700';
 }
 
-function getWitnessMarkupUrl(proof) {
-  const urlParams = new URLSearchParams({ proofId: proof?.id || '' });
-  return `/WitnessMarkup?${urlParams.toString()}`;
+function getWitnessMarkupUrl() {
+  return '/WitnessMarkup';
 }
 
 export default function AttorneyHub() {
   const queryClient = useQueryClient();
   const { juryState, update } = useJurySync('attorney');
+  const { witnessState, update: updateWitness } = useWitnessSync('attorney');
   const [selectedExamType, setSelectedExamType] = useState(() => getStoredHubSetting('attorney-hub-exam-type', 'Direct'));
   const [proofTab, setProofTab] = useState(() => getStoredHubSetting('attorney-hub-tab', 'Exam'));
   const [selectedExamPartyId, setSelectedExamPartyId] = useState(() => getStoredHubSetting('attorney-hub-exam-party', ''));
@@ -360,8 +365,9 @@ export default function AttorneyHub() {
   const selectedProofIsPublished = juryState?.published_proof_id === activeToolbarProof?.id && !juryState?.is_blank;
   const selectedProofCanPublish = canPublishProof(activeToolbarProof, activeToolbarDecision);
   const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, activeToolbarDecision);
-  const witnessMarkupUrl = activeToolbarProof ? getWitnessMarkupUrl(activeToolbarProof) : '/WitnessMarkup';
-  const canOpenWitnessMarkup = activeToolbarProof?.file_type === 'PDF';
+  const witnessMarkupUrl = getWitnessMarkupUrl();
+  const selectedProofIsPublishedToWitness = witnessState?.published_proof_id === activeToolbarProof?.id && !witnessState?.is_blank;
+  const selectedProofCanPublishToWitness = canPublishProofToWitness(activeToolbarProof);
 
   const handleProofAction = (proof, action, patch = null) => {
     if (action === 'not_admitted') {
@@ -424,6 +430,36 @@ export default function AttorneyHub() {
     });
   };
 
+  const publishProofToWitness = (proof) => {
+    if (!canPublishProofToWitness(proof)) return;
+    updateWitness({
+      published_proof_id: proof.id,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: false,
+      exhibit_label: getPublishedLabel(proof),
+    });
+  };
+
+  const unpublishProofFromWitness = (proof) => {
+    if (witnessState?.published_proof_id !== proof?.id || witnessState?.is_blank) return;
+    updateWitness({
+      published_proof_id: null,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: true,
+      exhibit_label: '',
+    });
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-slate-950 text-white p-4 lg:p-6">
       <div className="h-full rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden flex flex-col">
@@ -473,24 +509,37 @@ export default function AttorneyHub() {
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getAdmissionToolbarClass(activeToolbarProof, localDecisionMap[activeToolbarProof.id])}`}>
                         {selectedProofAdmissionLabel}
                       </span>
-                      {selectedProofIsPublished && <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Published</span>}
+                      {selectedProofIsPublished && <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Published to Jury</span>}
+                      {selectedProofIsPublishedToWitness && <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Published to Witness</span>}
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{getProofTypeLabel(activeToolbarProof)}</span>
                     </div>
                   </div>
+
                   <div className="flex flex-wrap items-center gap-2">
-                    {canOpenWitnessMarkup ? (
-                      <Button asChild className="gap-2 bg-blue-600 hover:bg-blue-700">
-                        <a href={witnessMarkupUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-4 h-4" />
-                          Open/Publish to Witness
-                        </a>
-                      </Button>
-                    ) : (
-                      <Button variant="outline" disabled className="gap-2 border-slate-300 bg-white text-slate-400">
-                        <ExternalLink className="w-4 h-4" />
-                        Open/Publish to Witness
+                    <Button
+                      type="button"
+                      className="gap-2 bg-blue-600 hover:bg-blue-700"
+                      disabled={!selectedProofCanPublishToWitness}
+                      onClick={() => {
+                        publishProofToWitness(activeToolbarProof);
+                        window.open(witnessMarkupUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      {selectedProofIsPublishedToWitness ? 'Open Witness View' : 'Open/Publish to Witness'}
+                    </Button>
+
+                    {selectedProofIsPublishedToWitness && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        onClick={() => unpublishProofFromWitness(activeToolbarProof)}
+                      >
+                        Unpublish Witness
                       </Button>
                     )}
+
                     <ProofCardMenu
                       proof={activeToolbarProof}
                       localDecision={localDecisionMap[activeToolbarProof.id]}
@@ -783,7 +832,9 @@ export default function AttorneyHub() {
                 <ProofPreviewPane
                   proof={activePreviewProof || selectedProof}
                   juryState={juryState}
+                  witnessState={witnessState}
                   onUpdateJury={update}
+                  onUpdateWitness={updateWitness}
                   onRuling={({ proofId, data }) => updateProofMutation.mutate({ proofId, data })}
                   onClose={() => setSelectedPreviewProof(null)}
                 />
