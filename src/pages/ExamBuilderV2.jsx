@@ -193,6 +193,7 @@ export default function ExamBuilderV2() {
   const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [partyExportDialogOpen, setPartyExportDialogOpen] = useState(false);
 
   const { data: parties = [] } = useQuery({ queryKey: ['v2Parties'], queryFn: () => base44.entities.Party.list() });
   const { data: proofs = [] } = useQuery({ queryKey: ['v2Proofs'], queryFn: () => base44.entities.Proof.list() });
@@ -271,6 +272,26 @@ export default function ExamBuilderV2() {
     const lines = serializeQuestionTree(exportRootNodes, questionItems, proofsById);
     return [heading, '', ...lines].join('\n');
   }, [exportRootNodes, proofsById, questionItems, selectedRoot, selectedRootProof]);
+  const partyExportText = useMemo(() => {
+    if (!selectedParty || !currentExam || rootItems.length === 0) return '';
+
+    const partyName = `${selectedParty.first_name || ''} ${selectedParty.last_name || ''}`.trim() || 'Selected Party';
+    const sections = rootItems.flatMap((item) => {
+      const heading = item.item_type === 'proof'
+        ? `PROOF: ${getProofDisplayName(proofsById[item.linked_proof_id])}`
+        : `GROUP: ${item.label || 'Untitled Group'}`;
+      const tree = buildItemTree(questionItems, item.id);
+      const lines = serializeQuestionTree(tree, questionItems, proofsById);
+      return [heading, '', ...lines, '', '---', ''];
+    });
+
+    return [
+      `PARTY: ${partyName}`,
+      `EXAM TYPE: ${selectedExamType}`,
+      '',
+      ...sections.slice(0, -2),
+    ].join('\n');
+  }, [currentExam, proofsById, questionItems, rootItems, selectedExamType, selectedParty]);
 
   useEffect(() => {
     if (parties.length > 0 && !parties.some((party) => party.id === selectedPartyId)) {
@@ -596,6 +617,9 @@ export default function ExamBuilderV2() {
             <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setImportChooserOpen(true)} disabled={!selectedPartyId}>
               <Upload className="w-4 h-4" /> Import
             </Button>
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setPartyExportDialogOpen(true)} disabled={rootItems.length === 0}>
+              Export Party Questions
+            </Button>
             <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setPrintDialogOpen(true)} disabled={rootItems.length === 0}>
               <Printer className="w-4 h-4" /> Print Exam
             </Button>
@@ -774,6 +798,14 @@ export default function ExamBuilderV2() {
           description={selectedQuestionIds.length > 0 ? 'This export includes the selected question branches only.' : 'This export includes the full question section in V2 import format.'}
           content={exportText}
           fileName={`${String(selectedRootProof ? getProofDisplayName(selectedRootProof) : selectedRoot?.label || 'exam-builder-v2').trim().replace(/\s+/g, '-').toLowerCase()}.txt`}
+        />
+        <ExportQuestionsDialog
+          open={partyExportDialogOpen}
+          onOpenChange={setPartyExportDialogOpen}
+          title="Export Party Questions"
+          description="This export includes every proof and question group for the selected party and exam type."
+          content={partyExportText}
+          fileName={`${String(`${selectedParty?.first_name || ''} ${selectedParty?.last_name || ''} ${selectedExamType}` || 'party-exam-builder-v2').trim().replace(/\s+/g, '-').toLowerCase()}.txt`}
         />
         <ExamBuilderSafePreviewDialog
           open={!!previewDialogProof}
