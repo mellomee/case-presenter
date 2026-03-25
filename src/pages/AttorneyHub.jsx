@@ -899,6 +899,7 @@ export default function AttorneyHub() {
         </div>
         <WitnessSavedProofDialog
           proof={pendingWitnessProof}
+          allProofs={proofs}
           onAdd={() => handleAddWitnessProof(pendingWitnessProof)}
           onClose={() => setPendingWitnessProof(null)}
         />

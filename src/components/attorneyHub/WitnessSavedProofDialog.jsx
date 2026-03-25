@@ -1,11 +1,11 @@
-import React from 'react';
-import { ExternalLink, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
-import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
+import ProofViewerModal from '@/components/proofVault/ProofViewerModal.jsx';
 
-export default function WitnessSavedProofDialog({ proof, onAdd, onClose }) {
-  const { url, isLoading } = useResolvedProofAsset(proof);
+export default function WitnessSavedProofDialog({ proof, allProofs = [], onAdd, onClose }) {
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   if (!proof) return null;
 
@@ -35,8 +35,8 @@ export default function WitnessSavedProofDialog({ proof, onAdd, onClose }) {
         </div>
 
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')} disabled={!url || isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+          <Button type="button" variant="outline" onClick={() => setViewerOpen(true)}>
+            <Eye className="h-4 w-4" />
             View
           </Button>
           <Button type="button" onClick={onAdd} className="bg-blue-600 hover:bg-blue-700">
@@ -44,6 +44,12 @@ export default function WitnessSavedProofDialog({ proof, onAdd, onClose }) {
           </Button>
         </div>
       </div>
+      <ProofViewerModal
+        proof={proof}
+        allProofs={allProofs}
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+      />
     </div>
   );
 }
