@@ -11,6 +11,10 @@ function getPrimaryExhibitNumber(proof = {}) {
   return proof?.admitted_exhibit_num || proof?.demonstrative_exhibit_num || proof?.joint_exhibit_num || proof?.draft_exhibit_num || '';
 }
 
+function getInheritedJointExhibitNumber(proof = {}) {
+  return proof?.joint_exhibit_num || proof?.admitted_exhibit_num || proof?.demonstrative_exhibit_num || proof?.draft_exhibit_num || '';
+}
+
 function buildTimestamp() {
   const now = new Date();
   const pad = (value) => String(value).padStart(2, '0');
@@ -52,6 +56,7 @@ Deno.serve(async (req) => {
     const exhibitLabel = sanitizePart(getPrimaryExhibitNumber(parentProof) || parentProof.name || 'Untitled');
     const safeWitnessName = sanitizePart(witnessName || 'Witness');
     const safePageNumber = Number(pageNumber) > 0 ? Number(pageNumber) : 1;
+    const inheritedJointExhibitNumber = getInheritedJointExhibitNumber(parentProof);
     const baseName = `${exhibitLabel} - ${safeWitnessName} - Witness Markup - Page ${safePageNumber}`;
     const fileName = `${baseName} - ${buildTimestamp()}.pdf`;
     const uploadPath = `${targetFolder}/${fileName}`;
@@ -89,7 +94,14 @@ Deno.serve(async (req) => {
       party_id: parentProof.party_id,
       category_id: parentProof.category_id || null,
       proof_type_category_id: parentProof.proof_type_category_id,
-      status: 'Draft',
+      status: 'Joint',
+      joint_exhibit_num: inheritedJointExhibitNumber || null,
+      joint_by: parentProof.joint_by || null,
+      joint_date: parentProof.joint_date || null,
+      admitted_exhibit_num: null,
+      admitted_by: null,
+      admit_date: null,
+      demonstrative_exhibit_num: null,
       file_source: 'dropbox',
       dropbox_file_id: uploadedFile.id,
       dropbox_path: uploadedFile.path_display,
