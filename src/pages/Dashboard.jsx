@@ -25,10 +25,7 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Proof.list().catch(() => []),
   });
 
-  const { data: trials = [] } = useQuery({
-    queryKey: ['trials'],
-    queryFn: () => base44.entities.Trial.list().catch(() => []),
-  });
+  const trials = [];
 
   const plaintiffCount = parties.filter((p) => p.party_type === 'plaintiff').length;
   const defenseCount = parties.filter((p) => p.party_type === 'defense').length;

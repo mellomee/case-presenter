@@ -1,17 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
+import { base44 } from '@/api/base44Client';
 
 const ATTORNEY_PATHS = ['/present/attorney', '/AttorneyHub'];
 const ATTORNEY_VIEW_NAV_LABELS = ['Previous', 'Next', 'Start Admitted Questions'];
 const IGNORE_LABEL_MATCHER = /publish|unpublish|jury view|exit to dashboard/i;
+const JURY_ROOM_ID = 'case-presenter-trial';
 
 function isAttorneyPath(pathname) {
   return ATTORNEY_PATHS.includes(pathname);
 }
 
-function resetJury(update) {
-  update({
+function resetJuryState(recordId) {
+  return base44.entities.JuryState.update(recordId, {
     published_proof_id: null,
     pdf_page: 1,
     zoom: 1,
@@ -51,7 +52,8 @@ function shouldAutoUnpublishFromClick(pathname, event) {
 export default function AutoUnpublishOnAttorneyNavigation() {
   const location = useLocation();
   const previousPathRef = useRef(location.pathname);
-  const { juryState, update } = useJurySync('attorney');
+  const juryStateRef = useRef(null);
+  const recordIdRef = useRef(null);
 
   useEffect(() => {
     const wasAttorneyPath = isAttorneyPath(previousPathRef.current);
@@ -60,28 +62,49 @@ export default function AutoUnpublishOnAttorneyNavigation() {
     if (
       wasAttorneyPath &&
       !isNowAttorneyPath &&
-      juryState?.published_proof_id &&
-      !juryState?.is_blank
+      recordIdRef.current &&
+      juryStateRef.current?.published_proof_id &&
+      !juryStateRef.current?.is_blank
     ) {
-      resetJury(update);
+      resetJuryState(recordIdRef.current);
     }
 
     previousPathRef.current = location.pathname;
-  }, [location.pathname, juryState?.published_proof_id, juryState?.is_blank, update]);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!isAttorneyPath(location.pathname)) return;
 
+    let isActive = true;
+
+    base44.entities.JuryState.filter({ room_id: JURY_ROOM_ID }).then((records) => {
+      if (!isActive) return;
+      const current = records[0] || null;
+      recordIdRef.current = current?.id || null;
+      juryStateRef.current = current;
+    });
+
+    const unsubscribe = base44.entities.JuryState.subscribe((event) => {
+      if (event.data?.room_id !== JURY_ROOM_ID) return;
+      recordIdRef.current = event.id;
+      juryStateRef.current = event.data;
+    });
+
     const handlePointerDown = (event) => {
-      if (!juryState?.published_proof_id || juryState?.is_blank) return;
+      if (!recordIdRef.current || !juryStateRef.current?.published_proof_id || juryStateRef.current?.is_blank) return;
       if (shouldAutoUnpublishFromClick(location.pathname, event)) {
-        resetJury(update);
+        resetJuryState(recordIdRef.current);
       }
     };
 
     document.addEventListener('pointerdown', handlePointerDown, true);
-    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
-  }, [location.pathname, juryState?.published_proof_id, juryState?.is_blank, update]);
+
+    return () => {
+      isActive = false;
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      unsubscribe();
+    };
+  }, [location.pathname]);
 
   return null;
 }
