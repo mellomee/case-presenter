@@ -96,6 +96,85 @@ function serializeQuestionTree(nodes = [], questionItems = [], proofsById = {}, 
   });
 }
 
+function chunkItems(items = [], chunkSize = 25) {
+  const chunks = [];
+
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+
+  return chunks;
+}
+
+async function bulkCreateExamItems(items = []) {
+  const createdItems = [];
+
+  for (const chunk of chunkItems(items)) {
+    const createdChunk = await base44.entities.ExamItemV2.bulkCreate(chunk);
+    createdItems.push(...createdChunk);
+  }
+
+  return createdItems;
+}
+
+async function createImportedQuestionTree({ examId, rootItemId, rootItemType, questionRows, examOrder }) {
+  const normalizeQuestionKey = (value) => String(value || '').trim().toLowerCase();
+  const createdQuestionIdsByKey = {};
+  const childOrderByParentId = {};
+  const baseQuestionSortOrder = rootItemType === 'proof' ? 1 : 0;
+
+  const topLevelRows = questionRows.filter((row) => !row.parent_question_text);
+  const createdTopLevelQuestions = await bulkCreateExamItems(topLevelRows.map((row, index) => ({
+    exam_id: examId,
+    item_type: 'question',
+    parent_item_id: rootItemId,
+    sort_order: baseQuestionSortOrder + index,
+    text: row.question_text,
+    expected_answer: row.expected_answer || '',
+    notes: row.notes || '',
+    attached_proof_ids: row.attached_proof_ids?.length ? { ids: row.attached_proof_ids } : null,
+  })));
+
+  createdTopLevelQuestions.forEach((createdQuestion, index) => {
+    const key = normalizeQuestionKey(topLevelRows[index]?.question_text);
+    if (key) createdQuestionIdsByKey[key] = createdQuestion.id;
+  });
+
+  let pendingRows = questionRows.filter((row) => row.parent_question_text);
+
+  while (pendingRows.length > 0) {
+    const readyRows = pendingRows.filter((row) => createdQuestionIdsByKey[normalizeQuestionKey(row.parent_question_text)]);
+
+    if (readyRows.length === 0) {
+      throw new Error(`Parent question could not be found inside exam order ${examOrder}.`);
+    }
+
+    const createdChildQuestions = await bulkCreateExamItems(readyRows.map((row) => {
+      const parentQuestionId = createdQuestionIdsByKey[normalizeQuestionKey(row.parent_question_text)];
+      const childSortOrder = childOrderByParentId[parentQuestionId] || 0;
+      childOrderByParentId[parentQuestionId] = childSortOrder + 1;
+
+      return {
+        exam_id: examId,
+        item_type: 'question',
+        parent_item_id: parentQuestionId,
+        sort_order: childSortOrder,
+        text: row.question_text,
+        expected_answer: row.expected_answer || '',
+        notes: row.notes || '',
+        attached_proof_ids: row.attached_proof_ids?.length ? { ids: row.attached_proof_ids } : null,
+      };
+    }));
+
+    createdChildQuestions.forEach((createdQuestion, index) => {
+      const key = normalizeQuestionKey(readyRows[index]?.question_text);
+      if (key) createdQuestionIdsByKey[key] = createdQuestion.id;
+    });
+
+    pendingRows = pendingRows.filter((row) => !readyRows.includes(row));
+  }
+}
+
 export default function ExamBuilderV2() {
   const queryClient = useQueryClient();
   const [selectedPartyId, setSelectedPartyId] = useState(() => getStoredExamV2Setting('exam-v2-selected-party', ''));
@@ -388,7 +467,6 @@ export default function ExamBuilderV2() {
     const exam = await ensureExam();
     const createdRootIds = [];
     const baseSortOrder = rootItems.length;
-    const normalizeQuestionKey = (value) => String(value || '').trim().toLowerCase();
 
     for (const [rootIndex, importedRoot] of importedRootItems.entries()) {
       let createdRootItem;
@@ -417,50 +495,13 @@ export default function ExamBuilderV2() {
       const questionRows = importedRoot.question_rows.filter((row) => row.question_text);
       if (questionRows.length === 0) continue;
 
-      const topLevelRows = questionRows.filter((row) => !row.parent_question_text);
-      const childRows = questionRows.filter((row) => row.parent_question_text);
-      const createdQuestionIdsByKey = {};
-      const childOrderByParentId = {};
-      const baseQuestionSortOrder = importedRoot.item_type === 'proof' ? 1 : 0;
-
-      for (const [questionIndex, row] of topLevelRows.entries()) {
-        const createdQuestion = await base44.entities.ExamItemV2.create({
-          exam_id: exam.id,
-          item_type: 'question',
-          parent_item_id: createdRootItem.id,
-          sort_order: baseQuestionSortOrder + questionIndex,
-          text: row.question_text,
-          expected_answer: row.expected_answer || '',
-          notes: row.notes || '',
-          attached_proof_ids: row.attached_proof_ids?.length ? { ids: row.attached_proof_ids } : null,
-        });
-
-        const key = normalizeQuestionKey(row.question_text);
-        if (key) createdQuestionIdsByKey[key] = createdQuestion.id;
-      }
-
-      for (const row of childRows) {
-        const parentQuestionId = createdQuestionIdsByKey[normalizeQuestionKey(row.parent_question_text)];
-        if (!parentQuestionId) {
-          throw new Error(`Parent question "${row.parent_question_text}" was not found inside exam order ${importedRoot.exam_order}.`);
-        }
-
-        const childSortOrder = childOrderByParentId[parentQuestionId] || 0;
-        const createdQuestion = await base44.entities.ExamItemV2.create({
-          exam_id: exam.id,
-          item_type: 'question',
-          parent_item_id: parentQuestionId,
-          sort_order: childSortOrder,
-          text: row.question_text,
-          expected_answer: row.expected_answer || '',
-          notes: row.notes || '',
-          attached_proof_ids: row.attached_proof_ids?.length ? { ids: row.attached_proof_ids } : null,
-        });
-
-        childOrderByParentId[parentQuestionId] = childSortOrder + 1;
-        const key = normalizeQuestionKey(row.question_text);
-        if (key) createdQuestionIdsByKey[key] = createdQuestion.id;
-      }
+      await createImportedQuestionTree({
+        examId: exam.id,
+        rootItemId: createdRootItem.id,
+        rootItemType: importedRoot.item_type,
+        questionRows,
+        examOrder: importedRoot.exam_order,
+      });
     }
 
     invalidate();
