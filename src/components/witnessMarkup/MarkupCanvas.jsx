@@ -51,10 +51,19 @@ export default function MarkupCanvas({
 }) {
   const wrapperRef = useRef(null);
   const stageRef = useRef(null);
-  const [pageWidth, setPageWidth] = useState(900);
+  const [containerSize, setContainerSize] = useState({ width: 900, height: 900 });
+  const [pageAspectRatio, setPageAspectRatio] = useState(11 / 8.5);
   const [draftStroke, setDraftStroke] = useState(null);
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [highlightStart, setHighlightStart] = useState(null);
+
+  const pageWidth = Math.max(
+    240,
+    Math.min(
+      Math.max(240, containerSize.width - 24),
+      Math.max(240, (containerSize.height - 24) / pageAspectRatio)
+    )
+  );
 
   useEffect(() => {
     if (captureRef) {
@@ -63,22 +72,24 @@ export default function MarkupCanvas({
   });
 
   useEffect(() => {
-    const updateWidth = () => {
-      const nextWidth = wrapperRef.current?.clientWidth || 900;
-      setPageWidth(Math.max(320, nextWidth));
+    const updateSize = () => {
+      setContainerSize({
+        width: wrapperRef.current?.clientWidth || 900,
+        height: wrapperRef.current?.clientHeight || 900,
+      });
     };
 
-    updateWidth();
+    updateSize();
 
-    const observer = new ResizeObserver(updateWidth);
+    const observer = new ResizeObserver(updateSize);
     if (wrapperRef.current) {
       observer.observe(wrapperRef.current);
     }
 
-    window.addEventListener('resize', updateWidth);
+    window.addEventListener('resize', updateSize);
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', updateWidth);
+      window.removeEventListener('resize', updateSize);
     };
   }, []);
 
@@ -173,22 +184,27 @@ export default function MarkupCanvas({
   }
 
   return (
-    <div ref={wrapperRef} className="w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3">
-      <div ref={stageRef} className="relative inline-block max-w-full touch-none select-none overflow-hidden rounded-xl bg-white shadow-sm">
-        <Document
-          file={fileUrl}
-          loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
-          error={<div className="flex h-[70vh] w-full items-center justify-center bg-white text-sm text-red-600">Unable to load PDF.</div>}
-          onLoadSuccess={({ numPages }) => onLoadDocument?.(numPages)}
-        >
-          <Page
-            pageNumber={pageNumber}
-            width={pageWidth}
-            renderAnnotationLayer={false}
-            renderTextLayer={false}
+    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]">
+      <div className="flex h-full items-center justify-center overflow-hidden">
+        <div ref={stageRef} className="relative inline-block max-w-full max-h-full touch-none select-none overflow-hidden rounded-xl bg-white shadow-sm">
+          <Document
+            file={fileUrl}
             loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
-          />
-        </Document>
+            error={<div className="flex h-[70vh] w-full items-center justify-center bg-white text-sm text-red-600">Unable to load PDF.</div>}
+            onLoadSuccess={({ numPages }) => onLoadDocument?.(numPages)}
+          >
+            <Page
+              pageNumber={pageNumber}
+              width={pageWidth}
+              renderAnnotationLayer={false}
+              renderTextLayer={false}
+              onLoadSuccess={(page) => {
+                const viewport = page.getViewport({ scale: 1 });
+                setPageAspectRatio(viewport.height / viewport.width);
+              }}
+              loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
+            />
+          </Document>
 
         <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="none">
           {highlights.map(renderHighlight)}
@@ -197,13 +213,14 @@ export default function MarkupCanvas({
           {draftStroke ? renderStroke(draftStroke) : null}
         </svg>
 
-        <div
-          className="absolute inset-0 cursor-crosshair"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={tool === 'pen' ? finishStroke : finishHighlight}
-          onPointerLeave={tool === 'pen' ? finishStroke : finishHighlight}
-        />
+          <div
+            className="absolute inset-0 cursor-crosshair"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={tool === 'pen' ? finishStroke : finishHighlight}
+            onPointerLeave={tool === 'pen' ? finishStroke : finishHighlight}
+          />
+        </div>
       </div>
     </div>
   );
