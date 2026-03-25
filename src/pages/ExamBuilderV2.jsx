@@ -481,14 +481,15 @@ export default function ExamBuilderV2() {
   };
 
   const deleteAllQuestionsForParty = async () => {
-    if (!currentExam || questionItems.length === 0 || !selectedParty) return;
+    if (!currentExam || currentItems.length === 0 || !selectedParty) return;
 
     const partyName = `${selectedParty.first_name || ''} ${selectedParty.last_name || ''}`.trim() || 'this party';
-    const confirmed = window.confirm(`Delete all questions for ${partyName} (${selectedExamType})? This will keep the proof and group structure.`);
+    const confirmed = window.confirm(`Delete all exam content for ${partyName} (${selectedExamType})? This will remove all questions, groups, and proof attachments from Exam Builder V2.`);
     if (!confirmed) return;
 
-    await Promise.all(questionItems.map((item) => base44.entities.ExamItemV2.delete(item.id)));
+    await Promise.all(currentItems.map((item) => base44.entities.ExamItemV2.delete(item.id)));
     setSelectedQuestionIds([]);
+    setSelectedRootId('');
     invalidate();
   };
 
@@ -632,8 +633,8 @@ export default function ExamBuilderV2() {
             <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setPartyExportDialogOpen(true)} disabled={rootItems.length === 0}>
               Export Party Questions
             </Button>
-            <Button variant="outline" className="border-red-200 bg-white text-red-700 hover:bg-red-50 hover:text-red-800" onClick={deleteAllQuestionsForParty} disabled={questionItems.length === 0 || !selectedPartyId}>
-              Delete All Questions
+            <Button variant="outline" className="border-red-200 bg-white text-red-700 hover:bg-red-50 hover:text-red-800" onClick={deleteAllQuestionsForParty} disabled={currentItems.length === 0 || !selectedPartyId}>
+              Delete All Exam Content
             </Button>
             <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-2" onClick={() => setPrintDialogOpen(true)} disabled={rootItems.length === 0}>
               <Printer className="w-4 h-4" /> Print Exam
