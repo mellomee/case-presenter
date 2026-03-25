@@ -47,16 +47,14 @@ export function useWitnessSync(role = 'attorney') {
   }, [role]);
 
   useEffect(() => {
-    if (!recordId) return;
-
     const unsub = base44.entities.WitnessState.subscribe((event) => {
-      if (event.id === recordId) {
-        setWitnessState(event.data);
-      }
+      if (event.data?.room_id !== ROOM_ID) return;
+      setRecordId(event.id);
+      setWitnessState(event.data);
     });
 
     return unsub;
-  }, [recordId]);
+  }, []);
 
   const update = useCallback((patch) => {
     if (!recordId) return;
