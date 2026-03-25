@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import MarkupCanvas from '@/components/witnessMarkup/MarkupCanvas.jsx';
 import MarkupToolbar from '@/components/witnessMarkup/MarkupToolbar.jsx';
+import WitnessProofPicker from '@/components/witnessMarkup/WitnessProofPicker.jsx';
 import { exportElementToPdfBase64 } from '@/lib/witnessMarkupExport';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { getPrimaryExhibitNumber } from '@/lib/dropboxPdfProcessing';
@@ -28,6 +29,7 @@ export default function WitnessMarkup() {
   const [highlights, setHighlights] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [proofSearch, setProofSearch] = useState('');
 
   const { data: proof, isLoading } = useQuery({
     queryKey: ['witness-markup-proof', proofId],
@@ -38,10 +40,34 @@ export default function WitnessMarkup() {
     enabled: !!proofId,
   });
 
+  const { data: proofOptions = [], isLoading: isLoadingProofOptions } = useQuery({
+    queryKey: ['witness-markup-proof-options'],
+    queryFn: () => base44.entities.Proof.list(),
+    enabled: !proofId,
+  });
+
   const { url: fileUrl, isLoading: isLoadingAsset } = useResolvedProofAsset(proof);
 
   const canUndo = strokes.length > 0 || highlights.length > 0;
   const exhibitNumber = useMemo(() => getPrimaryExhibitNumber(proof), [proof]);
+  const filteredProofOptions = useMemo(() => {
+    const searchValue = proofSearch.trim().toLowerCase();
+    return proofOptions
+      .filter((item) => item.file_type === 'PDF')
+      .filter((item) => {
+        if (!searchValue) return true;
+        const values = [
+          item.name,
+          item.formal_name,
+          item.admitted_exhibit_num,
+          item.demonstrative_exhibit_num,
+          item.joint_exhibit_num,
+          item.draft_exhibit_num,
+        ];
+        return values.some((value) => String(value || '').toLowerCase().includes(searchValue));
+      })
+      .sort((a, b) => String(a.formal_name || a.name || '').localeCompare(String(b.formal_name || b.name || ''), undefined, { sensitivity: 'base' }));
+  }, [proofOptions, proofSearch]);
 
   const handleUndo = () => {
     if (strokes.length > 0) {
@@ -99,10 +125,12 @@ export default function WitnessMarkup() {
   if (!proofId) {
     return (
       <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold">Witness Markup</h1>
-          <p className="mt-3 text-sm text-slate-600">Open this page with a proofId in the URL, for example: /WitnessMarkup?proofId=YOUR_PROOF_ID</p>
-        </div>
+        <WitnessProofPicker
+          proofs={filteredProofOptions}
+          isLoading={isLoadingProofOptions}
+          searchValue={proofSearch}
+          onSearchChange={setProofSearch}
+        />
       </div>
     );
   }
