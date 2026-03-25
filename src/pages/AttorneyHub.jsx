@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, ChevronLeft, ChevronRight, Layers3, LayoutGrid, List, Pause, Play, Square } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, Layers3, LayoutGrid, List, Pause, Play, Square } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import ProofPreviewPane from '@/components/attorneyView/ProofPreviewPane.jsx';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import ProofThumbPreview from '@/components/attorneyHub/ProofThumbPreview.jsx';
@@ -150,6 +151,11 @@ function getAdmissionToolbarClass(proof, localDecision) {
   if (proof.status === 'Admitted') return 'border-green-200 bg-green-50 text-green-700';
   if (proof.status === 'Demonstrative') return 'border-purple-200 bg-purple-50 text-purple-700';
   return 'border-slate-200 bg-slate-50 text-slate-700';
+}
+
+function getWitnessMarkupUrl(proof) {
+  const urlParams = new URLSearchParams({ proofId: proof?.id || '' });
+  return `/WitnessMarkup?${urlParams.toString()}`;
 }
 
 export default function AttorneyHub() {
@@ -354,6 +360,8 @@ export default function AttorneyHub() {
   const selectedProofIsPublished = juryState?.published_proof_id === activeToolbarProof?.id && !juryState?.is_blank;
   const selectedProofCanPublish = canPublishProof(activeToolbarProof, activeToolbarDecision);
   const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, activeToolbarDecision);
+  const witnessMarkupUrl = activeToolbarProof ? getWitnessMarkupUrl(activeToolbarProof) : '/WitnessMarkup';
+  const canOpenWitnessMarkup = activeToolbarProof?.file_type === 'PDF';
 
   const handleProofAction = (proof, action, patch = null) => {
     if (action === 'not_admitted') {
@@ -469,15 +477,30 @@ export default function AttorneyHub() {
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{getProofTypeLabel(activeToolbarProof)}</span>
                     </div>
                   </div>
-                  <ProofCardMenu
-                    proof={activeToolbarProof}
-                    localDecision={localDecisionMap[activeToolbarProof.id]}
-                    onAction={(action, patch) => handleProofAction(activeToolbarProof, action, patch)}
-                    canPublish={selectedProofCanPublish}
-                    isPublished={selectedProofIsPublished}
-                    onPublish={() => publishProof(activeToolbarProof)}
-                    onUnpublish={() => unpublishProof(activeToolbarProof)}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    {canOpenWitnessMarkup ? (
+                      <Button asChild className="gap-2 bg-blue-600 hover:bg-blue-700">
+                        <a href={witnessMarkupUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4" />
+                          Open/Publish to Witness
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button variant="outline" disabled className="gap-2 border-slate-300 bg-white text-slate-400">
+                        <ExternalLink className="w-4 h-4" />
+                        Open/Publish to Witness
+                      </Button>
+                    )}
+                    <ProofCardMenu
+                      proof={activeToolbarProof}
+                      localDecision={localDecisionMap[activeToolbarProof.id]}
+                      onAction={(action, patch) => handleProofAction(activeToolbarProof, action, patch)}
+                      canPublish={selectedProofCanPublish}
+                      isPublished={selectedProofIsPublished}
+                      onPublish={() => publishProof(activeToolbarProof)}
+                      onUnpublish={() => unpublishProof(activeToolbarProof)}
+                    />
+                  </div>
                 </div>
               </div>
             ) : (
