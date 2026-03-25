@@ -158,10 +158,6 @@ function getAdmissionToolbarClass(proof, localDecision) {
   return 'border-slate-200 bg-slate-50 text-slate-700';
 }
 
-function getWitnessMarkupUrl() {
-  return '/WitnessMarkup';
-}
-
 export default function AttorneyHub() {
   const queryClient = useQueryClient();
   const { juryState, update } = useJurySync('attorney');
@@ -365,7 +361,6 @@ export default function AttorneyHub() {
   const selectedProofIsPublished = juryState?.published_proof_id === activeToolbarProof?.id && !juryState?.is_blank;
   const selectedProofCanPublish = canPublishProof(activeToolbarProof, activeToolbarDecision);
   const selectedProofAdmissionLabel = getAdmissionToolbarLabel(activeToolbarProof, activeToolbarDecision);
-  const witnessMarkupUrl = getWitnessMarkupUrl();
   const selectedProofIsPublishedToWitness = witnessState?.published_proof_id === activeToolbarProof?.id && !witnessState?.is_blank;
   const selectedProofCanPublishToWitness = canPublishProofToWitness(activeToolbarProof);
 
@@ -520,13 +515,10 @@ export default function AttorneyHub() {
                       type="button"
                       className="gap-2 bg-blue-600 hover:bg-blue-700"
                       disabled={!selectedProofCanPublishToWitness}
-                      onClick={() => {
-                        publishProofToWitness(activeToolbarProof);
-                        window.open(witnessMarkupUrl, '_blank', 'noopener,noreferrer');
-                      }}
+                      onClick={() => publishProofToWitness(activeToolbarProof)}
                     >
                       <ExternalLink className="w-4 h-4" />
-                      {selectedProofIsPublishedToWitness ? 'Open Witness View' : 'Open/Publish to Witness'}
+                      {selectedProofIsPublishedToWitness ? 'Published to Witness' : 'Publish to Witness'}
                     </Button>
 
                     {selectedProofIsPublishedToWitness && (
