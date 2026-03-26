@@ -487,7 +487,16 @@ export default function ExamBuilderV2() {
     const confirmed = window.confirm(`Delete all exam content for ${partyName} (${selectedExamType})? This will remove all questions, groups, and proof attachments from Exam Builder V2.`);
     if (!confirmed) return;
 
-    await Promise.all(currentItems.map((item) => base44.entities.ExamItemV2.delete(item.id)));
+    const sortedItems = [...currentItems].sort((a, b) => {
+      const aDepth = collectDescendantIds(currentItems, a.id).length;
+      const bDepth = collectDescendantIds(currentItems, b.id).length;
+      return aDepth - bDepth;
+    });
+
+    for (const item of sortedItems) {
+      await base44.entities.ExamItemV2.delete(item.id);
+    }
+
     setSelectedQuestionIds([]);
     setSelectedRootId('');
     invalidate();
