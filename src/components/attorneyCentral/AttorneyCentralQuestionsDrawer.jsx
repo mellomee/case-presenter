@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, FolderKanban } from 'lucide-react';
+import { FolderKanban } from 'lucide-react';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
 import { buildQuestionTree, getProofKindLabel, getProofNumber, getProofStatusConfig } from '@/lib/attorneyCentralUtils';
 
@@ -16,17 +16,19 @@ function renderGroupedPartyOptions(parties = []) {
     .map((side) => ({ side, items: [...parties].filter((party) => party.side === side).sort(comparePartiesByFirstName) }))
     .filter((group) => group.items.length > 0);
 
-  return (
-    <>
-      {groups.map((group, index) => (
-        <React.Fragment key={group.side}>
-          {index > 0 ? <option disabled>──────────</option> : null}
-          <option disabled>{group.side}</option>
-          {group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
-        </React.Fragment>
-      ))}
-    </>
-  );
+  return groups.flatMap((group, index) => {
+    const options = [];
+    if (index > 0) options.push(<option key={`${group.side}-separator`} disabled>──────────</option>);
+    options.push(<option key={`${group.side}-label`} disabled>{group.side}</option>);
+    group.items.forEach((party) => {
+      options.push(<option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>);
+    });
+    return options;
+  });
+}
+
+function getPrimaryName(proof) {
+  return proof?.name || proof?.formal_name || getProofDisplayName(proof);
 }
 
 function LinkedProofChip({ proof, isSelected, localDecision, onClick }) {
@@ -36,7 +38,7 @@ function LinkedProofChip({ proof, isSelected, localDecision, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border p-3 text-left transition ${isSelected ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-stone-50 text-stone-900 hover:border-stone-300'}`}
+      className={`min-w-[12rem] rounded-2xl border p-3 text-left transition ${isSelected ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-stone-50 text-stone-900 hover:border-stone-300'}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black tracking-[0.18em] ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.accent}`}>
@@ -46,7 +48,7 @@ function LinkedProofChip({ proof, isSelected, localDecision, onClick }) {
           {status.label}
         </span>
       </div>
-      <p className={`mt-2 text-sm font-semibold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getProofDisplayName(proof)}</p>
+      <p className={`mt-2 text-sm font-semibold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getPrimaryName(proof)}</p>
       <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofKindLabel(proof)}</p>
     </button>
   );
@@ -71,16 +73,18 @@ function QuestionNode({ item, depth, proofsById, selectedProofId, localDecisionM
             <p className={`text-sm font-semibold leading-6 ${isChecked ? 'text-stone-500 line-through' : 'text-stone-900'}`}>{item.text || 'Untitled question'}</p>
             {item.expected_answer ? <p className="mt-2 text-xs text-stone-500">Expected: {item.expected_answer}</p> : null}
             {linkedProofs.length > 0 ? (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {linkedProofs.map((proof) => (
-                  <LinkedProofChip
-                    key={proof.id}
-                    proof={proof}
-                    isSelected={selectedProofId === proof.id}
-                    localDecision={localDecisionMap[proof.id]}
-                    onClick={() => onSelectProof(proof.id)}
-                  />
-                ))}
+              <div className="mt-3 overflow-x-auto pb-1">
+                <div className="flex gap-2">
+                  {linkedProofs.map((proof) => (
+                    <LinkedProofChip
+                      key={proof.id}
+                      proof={proof}
+                      isSelected={selectedProofId === proof.id}
+                      localDecision={localDecisionMap[proof.id]}
+                      onClick={() => onSelectProof(proof.id)}
+                    />
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
@@ -110,7 +114,6 @@ function QuestionNode({ item, depth, proofsById, selectedProofId, localDecisionM
 
 export default function AttorneyCentralQuestionsDrawer({
   open,
-  onClose,
   parties = [],
   selectedExamPartyId,
   onSelectExamPartyId,
@@ -130,17 +133,12 @@ export default function AttorneyCentralQuestionsDrawer({
   const questionTree = buildQuestionTree(questionItems, selectedRootId);
 
   return (
-    <aside className={`absolute bottom-28 right-0 top-0 z-20 w-[min(30rem,calc(100vw-3rem))] border-l border-stone-200 bg-white shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+    <aside className={`absolute bottom-0 right-0 top-0 z-20 w-[min(30rem,calc(100vw-3rem))] border-l border-stone-200 bg-white shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="flex h-full flex-col">
         <div className="border-b border-stone-200 px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-500">Questions</p>
-              <h2 className="mt-1 text-xl font-bold text-stone-900">Exam order</h2>
-            </div>
-            <button type="button" onClick={onClose} className="rounded-full border border-stone-200 bg-stone-50 p-2 text-stone-500 hover:text-stone-900">
-              <ChevronRight className="h-5 w-5" />
-            </button>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-500">Questions</p>
+            <h2 className="mt-1 text-xl font-bold text-stone-900">Exam order</h2>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -156,6 +154,7 @@ export default function AttorneyCentralQuestionsDrawer({
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
             {rootItems.map((item, index) => {
               const isActive = selectedRootId === item.id;
+              const linkedProof = proofsById[item.linked_proof_id];
               return (
                 <button
                   key={item.id}
@@ -167,7 +166,7 @@ export default function AttorneyCentralQuestionsDrawer({
                     <FolderKanban className="h-3.5 w-3.5" />
                     {index + 1}
                   </div>
-                  <p className="mt-2 text-sm font-semibold">{item.item_type === 'group' ? item.label : getProofDisplayName(proofsById[item.linked_proof_id])}</p>
+                  <p className="mt-2 text-sm font-semibold">{item.item_type === 'group' ? item.label : getPrimaryName(linkedProof)}</p>
                 </button>
               );
             })}

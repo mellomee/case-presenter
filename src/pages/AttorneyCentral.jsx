@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, FileText, FolderKanban, Play } from 'lucide-react';
+import { FileText, FolderKanban, Play } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import { useWitnessSync } from '@/components/witnessView/useWitnessSync.jsx';
@@ -35,9 +35,11 @@ export default function AttorneyCentral() {
   const { juryState, update } = useJurySync('attorney');
   const { witnessState, update: updateWitness } = useWitnessSync('attorney');
   const [leftDrawer, setLeftDrawer] = useState(null);
-  const [rightDrawerOpen, setRightDrawerOpen] = useState(true);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
   const [markedSearch, setMarkedSearch] = useState('');
   const [depositionSearch, setDepositionSearch] = useState('');
+  const [selectedDepositionPartyId, setSelectedDepositionPartyId] = useState('all');
+  const [selectedDepositionParentId, setSelectedDepositionParentId] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedProofId, setSelectedProofId] = useState('');
   const [selectedExamType, setSelectedExamType] = useState('Direct');
@@ -68,8 +70,12 @@ export default function AttorneyCentral() {
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const childrenMap = useMemo(() => buildChildrenMap(proofs), [proofs]);
   const markedExhibits = useMemo(
-    () => proofs.filter((proof) => proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) && !proof.parent_proof_id),
-    [proofs]
+    () => proofs.filter((proof) => {
+      if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) return false;
+      const parentProof = proof.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
+      return !parentProof || parentProof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(parentProof.status);
+    }),
+    [proofs, proofsById]
   );
   const depositions = useMemo(
     () => proofs.filter((proof) => proof.proof_category === 'Deposition' && !proof.parent_proof_id),
@@ -89,6 +95,11 @@ export default function AttorneyCentral() {
   const isPublishedToWitness = witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank;
   const canPublishToJury = canPublishProof(selectedProof, localDecision);
   const canPublishToWitness = canPublishProofToWitness(selectedProof);
+
+  useEffect(() => {
+    if (selectedProof?.proof_category !== 'Deposition') return;
+    setSelectedDepositionParentId(selectedProof.parent_proof_id || selectedProof.id);
+  }, [selectedProof]);
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
@@ -132,10 +143,16 @@ export default function AttorneyCentral() {
     return () => window.clearTimeout(timeoutId);
   }, [highlightedProofId]);
 
-  const selectProof = (proofId, source = null) => {
+  const selectProof = (proofId, source = null, options = {}) => {
     setSelectedProofId(proofId);
+
+    if (source === 'depositions') {
+      const nextProof = proofsById[proofId];
+      setSelectedDepositionParentId(nextProof?.parent_proof_id || proofId);
+    }
+
     if (source === 'questions') setRightDrawerOpen(false);
-    if (source === 'marked' || source === 'depositions') setLeftDrawer(null);
+    if ((source === 'marked' || source === 'depositions') && !options.keepDrawerOpen) setLeftDrawer(null);
   };
 
   const handleProofAction = (proof, action) => {
@@ -253,7 +270,19 @@ export default function AttorneyCentral() {
           />
         </div>
 
-        <div className="pointer-events-none absolute bottom-32 left-3 top-3 z-10 flex flex-col justify-center gap-3">
+        {(leftDrawer || rightDrawerOpen) ? (
+          <button
+            type="button"
+            aria-label="Close open panels"
+            onClick={() => {
+              setLeftDrawer(null);
+              setRightDrawerOpen(false);
+            }}
+            className="absolute inset-0 z-10 cursor-default"
+          />
+        ) : null}
+
+        <div className="pointer-events-none absolute bottom-4 top-3 z-30 flex flex-col justify-center gap-3 transition-all duration-300" style={{ left: leftDrawer ? 'min(28rem, calc(100vw - 3rem))' : '0.75rem', transform: leftDrawer ? 'translateX(0.75rem)' : 'none' }}>
           <button type="button" onClick={() => setLeftDrawer((value) => value === 'marked' ? null : 'marked')} className={`pointer-events-auto rounded-3xl border p-3 shadow-lg transition ${leftDrawer === 'marked' ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Marked Exhibits">
             <FileText className="h-5 w-5" />
           </button>
@@ -270,7 +299,7 @@ export default function AttorneyCentral() {
           proofs={leftDrawer === 'depositions' ? depositions : markedExhibits}
           childrenMap={childrenMap}
           selectedProofId={selectedProofId}
-          onSelectProof={(proofId) => selectProof(proofId, leftDrawer === 'depositions' ? 'depositions' : 'marked')}
+          onSelectProof={(proofId, options) => selectProof(proofId, leftDrawer === 'depositions' ? 'depositions' : 'marked', options)}
           highlightedProofId={highlightedProofId}
           examItems={currentExamItems}
           localDecisionMap={localDecisionMap}
@@ -278,9 +307,14 @@ export default function AttorneyCentral() {
           onSearchChange={leftDrawer === 'depositions' ? setDepositionSearch : setMarkedSearch}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
+          parties={parties}
+          selectedDepositionPartyId={selectedDepositionPartyId}
+          onSelectDepositionPartyId={setSelectedDepositionPartyId}
+          selectedDepositionParentId={selectedDepositionParentId}
+          onSelectDepositionParentId={setSelectedDepositionParentId}
         />
 
-        <div className="pointer-events-none absolute bottom-32 right-3 top-3 z-10 flex flex-col justify-center gap-3">
+        <div className="pointer-events-none absolute bottom-4 right-3 top-3 z-30 flex flex-col justify-center gap-3">
           <button type="button" onClick={() => setRightDrawerOpen((value) => !value)} className={`pointer-events-auto rounded-3xl border p-3 shadow-lg transition ${rightDrawerOpen ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Questions">
             <FolderKanban className="h-5 w-5" />
           </button>
@@ -305,17 +339,6 @@ export default function AttorneyCentral() {
           onToggleChecked={(questionId) => setCheckedQuestionIds((prev) => prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId])}
           onSelectProof={(proofId) => selectProof(proofId, 'questions')}
         />
-
-        {!leftDrawer && (
-          <button type="button" onClick={() => setLeftDrawer('marked')} className="absolute left-16 top-1/2 z-10 -translate-y-1/2 rounded-full border border-stone-200 bg-white p-2 text-stone-500 shadow-md hover:text-stone-900">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        )}
-        {!rightDrawerOpen && (
-          <button type="button" onClick={() => setRightDrawerOpen(true)} className="absolute right-16 top-1/2 z-10 -translate-y-1/2 rounded-full border border-stone-200 bg-white p-2 text-stone-500 shadow-md hover:text-stone-900">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-        )}
 
         <AttorneyCentralWitnessNotice proof={pendingWitnessProof} onAdd={handleAddWitnessProof} onDismiss={() => setPendingWitnessProof(null)} />
         </div>

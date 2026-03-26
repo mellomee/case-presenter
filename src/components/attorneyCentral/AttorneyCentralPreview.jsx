@@ -10,6 +10,7 @@ import VideoClipController from '@/components/attorneyView/VideoClipController.j
 export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
+  const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
 
   const handlePdfStateChange = useCallback((pdfSync) => {
     if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
@@ -61,8 +62,9 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
     );
   }
 
-  const externalUrl = url || proof.video_url || proof.file_url;
-  const parentName = parentProof?.formal_name || parentProof?.name || '';
+  const externalUrl = url || parentUrl || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
+  const parentName = parentProof?.name || parentProof?.formal_name || '';
+  const isVideoClipLoading = (isLoading || isParentLoading) && !externalUrl;
 
   return (
     <div className="relative h-full overflow-hidden bg-[#f5ecdf]">
@@ -74,7 +76,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
         ) : proof.proof_child_type === 'Extract' ? (
           <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
         ) : proof.proof_child_type === 'VideoClip' ? (
-          isLoading && !externalUrl ? (
+          isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
           ) : (
             <div className="h-full overflow-auto bg-stone-950 p-4">
