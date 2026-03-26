@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileText, MessageSquare } from 'lucide-react';
+import { PanelLeft, PanelRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync';
 import { useWitnessSync } from '@/components/witnessView/useWitnessSync';
@@ -162,7 +162,7 @@ export default function AttorneyCentral() {
               onClick={() => setExhibitsOpen(true)}
               className="inline-flex min-h-[48px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 xl:hidden"
             >
-              <FileText className="h-4 w-4" />
+              <PanelLeft className="h-4 w-4" />
               Exhibits
             </button>
             <button
@@ -170,7 +170,7 @@ export default function AttorneyCentral() {
               onClick={() => setQuestionsOpen(true)}
               className="inline-flex min-h-[48px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 2xl:hidden"
             >
-              <MessageSquare className="h-4 w-4" />
+              <PanelRight className="h-4 w-4" />
               Questions
             </button>
           </div>
