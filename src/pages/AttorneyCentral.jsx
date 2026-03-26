@@ -69,14 +69,9 @@ export default function AttorneyCentral() {
 
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const childrenMap = useMemo(() => buildChildrenMap(proofs), [proofs]);
-  const markedExhibitProofs = useMemo(
-    () => proofs.filter((proof) => proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
-    [proofs]
-  );
-  const markedExhibitIds = useMemo(() => new Set(markedExhibitProofs.map((proof) => proof.id)), [markedExhibitProofs]);
   const markedExhibits = useMemo(
-    () => markedExhibitProofs.filter((proof) => !proof.parent_proof_id || !markedExhibitIds.has(proof.parent_proof_id)),
-    [markedExhibitProofs, markedExhibitIds]
+    () => proofs.filter((proof) => proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) && !proof.parent_proof_id),
+    [proofs]
   );
   const depositions = useMemo(
     () => proofs.filter((proof) => proof.proof_category === 'Deposition' && !proof.parent_proof_id),
