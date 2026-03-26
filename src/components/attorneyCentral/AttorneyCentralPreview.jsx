@@ -87,7 +87,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
           isLoading && !externalUrl ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
           ) : (
-            <VideoViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handleVideoStateChange} />
+            <VideoViewer proof={{ ...proof, video_url: externalUrl || proof.video_url, file_url: externalUrl || proof.file_url }} allProofs={allProofs} mode="controller" onStateChange={handleVideoStateChange} />
           )
         ) : proof.file_type === 'Image' && externalUrl ? (
           <div className="flex h-full items-center justify-center bg-stone-100 p-6">
