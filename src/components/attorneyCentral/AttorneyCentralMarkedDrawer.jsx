@@ -47,7 +47,6 @@ function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectPro
 
         <div className="mt-3">
           <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getPrimaryName(proof)}</p>
-          {proof.formal_name && proof.name ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>Display: {proof.formal_name}</p> : null}
           {getProofMetaLine(proof) ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofMetaLine(proof)}</p> : null}
         </div>
 

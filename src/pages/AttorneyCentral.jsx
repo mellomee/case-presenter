@@ -103,6 +103,16 @@ export default function AttorneyCentral() {
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
+    onMutate: async ({ proofId, data }) => {
+      const previousProofs = queryClient.getQueryData(['proofs']);
+      queryClient.setQueryData(['proofs'], (current = []) => current.map((proof) => (
+        proof.id === proofId ? { ...proof, ...data } : proof
+      )));
+      return { previousProofs };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousProofs) queryClient.setQueryData(['proofs'], context.previousProofs);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'], refetchType: 'active' }),
   });
 

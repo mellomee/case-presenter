@@ -53,15 +53,15 @@ export function getProofStatusConfig(proof, localDecision = null) {
   if (proof?.status === 'Demonstrative') {
     return {
       label: 'Demo',
-      pill: 'border-violet-200 bg-violet-50 text-violet-700',
-      accent: 'border-violet-300 bg-violet-100 text-violet-900',
+      pill: 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700',
+      accent: 'border-fuchsia-300 bg-fuchsia-100 text-fuchsia-900',
     };
   }
 
   return {
     label: 'Marked',
-    pill: 'border-sky-200 bg-sky-50 text-sky-700',
-    accent: 'border-sky-300 bg-sky-100 text-sky-900',
+    pill: 'border-cyan-200 bg-cyan-50 text-cyan-700',
+    accent: 'border-cyan-300 bg-cyan-100 text-cyan-900',
   };
 }
 
@@ -86,9 +86,9 @@ export function getProofMetaLine(proof) {
 
 export function getProofHistoryChips(proof) {
   return [
-    { key: 'joint', label: 'J', value: proof?.joint_exhibit_num || '—', className: 'bg-sky-50 text-sky-700 border-sky-200' },
+    { key: 'joint', label: 'J', value: proof?.joint_exhibit_num || '—', className: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
     { key: 'admitted', label: 'Adm', value: proof?.admitted_exhibit_num || '—', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    { key: 'demo', label: 'Demo', value: proof?.demonstrative_exhibit_num || '—', className: 'bg-violet-50 text-violet-700 border-violet-200' },
+    { key: 'demo', label: 'Demo', value: proof?.demonstrative_exhibit_num || '—', className: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
   ];
 }
 
