@@ -18,6 +18,7 @@ import JuryView from '@/pages/JuryView';
 import AttorneyViewShell from '@/components/present/AttorneyViewShell';
 import Settings from '@/pages/Settings';
 import AttorneyHub from '@/pages/AttorneyHub';
+import AttorneyCentral from '@/pages/AttorneyCentral';
 import ExamBuilderV2 from '@/pages/ExamBuilderV2';
 import ExamTextImport from '@/pages/ExamTextImport';
 import WitnessMarkup from '@/pages/WitnessMarkup';
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
         <Route path="/ExamBuilderV2" element={<ExamBuilderV2 />} />
         <Route path="/ExamTextImport" element={<ExamTextImport />} />
         <Route path="/AttorneyHub" element={<AttorneyHub />} />
+        <Route path="/AttorneyCentral" element={<AttorneyCentral />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       
