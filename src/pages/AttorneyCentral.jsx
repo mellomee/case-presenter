@@ -252,11 +252,11 @@ export default function AttorneyCentral() {
           />
         </div>
 
-        <div className="absolute bottom-32 left-3 top-3 z-10 flex flex-col justify-center gap-3">
-          <button type="button" onClick={() => setLeftDrawer((value) => value === 'marked' ? null : 'marked')} className={`rounded-3xl border p-3 shadow-lg transition ${leftDrawer === 'marked' ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Marked Exhibits">
+        <div className="pointer-events-none absolute bottom-32 left-3 top-3 z-10 flex flex-col justify-center gap-3">
+          <button type="button" onClick={() => setLeftDrawer((value) => value === 'marked' ? null : 'marked')} className={`pointer-events-auto rounded-3xl border p-3 shadow-lg transition ${leftDrawer === 'marked' ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Marked Exhibits">
             <FileText className="h-5 w-5" />
           </button>
-          <button type="button" onClick={() => setLeftDrawer((value) => value === 'depositions' ? null : 'depositions')} className={`rounded-3xl border p-3 shadow-lg transition ${leftDrawer === 'depositions' ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Depositions">
+          <button type="button" onClick={() => setLeftDrawer((value) => value === 'depositions' ? null : 'depositions')} className={`pointer-events-auto rounded-3xl border p-3 shadow-lg transition ${leftDrawer === 'depositions' ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Depositions">
             <Play className="h-5 w-5" />
           </button>
         </div>
@@ -279,8 +279,8 @@ export default function AttorneyCentral() {
           onStatusFilterChange={setStatusFilter}
         />
 
-        <div className="absolute bottom-32 right-3 top-3 z-10 flex flex-col justify-center gap-3">
-          <button type="button" onClick={() => setRightDrawerOpen((value) => !value)} className={`rounded-3xl border p-3 shadow-lg transition ${rightDrawerOpen ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Questions">
+        <div className="pointer-events-none absolute bottom-32 right-3 top-3 z-10 flex flex-col justify-center gap-3">
+          <button type="button" onClick={() => setRightDrawerOpen((value) => !value)} className={`pointer-events-auto rounded-3xl border p-3 shadow-lg transition ${rightDrawerOpen ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Questions">
             <FolderKanban className="h-5 w-5" />
           </button>
         </div>
