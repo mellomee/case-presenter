@@ -20,6 +20,7 @@ export default function ActionStrip({
   onUnpublishJury,
   onPublishWitness,
   onUnpublishWitness,
+  isDemoMode = false,
 }) {
   if (!selectedProof) return null;
 
@@ -49,27 +50,27 @@ export default function ActionStrip({
         <div className="flex flex-wrap gap-3">
           {canAdmit && (
             <>
-              <Button onClick={onAdmitExhibit} className="min-h-[52px] rounded-2xl bg-emerald-600 px-5 text-sm font-semibold hover:bg-emerald-700">
+              <Button disabled={isDemoMode} onClick={onAdmitExhibit} className="min-h-[52px] rounded-2xl bg-emerald-600 px-5 text-sm font-semibold hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-500">
                 Admit Exhibit
               </Button>
-              <Button onClick={onAdmitDemo} className="min-h-[52px] rounded-2xl bg-purple-600 px-5 text-sm font-semibold hover:bg-purple-700">
+              <Button disabled={isDemoMode} onClick={onAdmitDemo} className="min-h-[52px] rounded-2xl bg-purple-600 px-5 text-sm font-semibold hover:bg-purple-700 disabled:bg-slate-200 disabled:text-slate-500">
                 Admit Demo
               </Button>
             </>
           )}
 
           {canUnAdmit && (
-            <Button onClick={onUnAdmit} className="min-h-[52px] rounded-2xl bg-orange-600 px-5 text-sm font-semibold hover:bg-orange-700">
+            <Button disabled={isDemoMode} onClick={onUnAdmit} className="min-h-[52px] rounded-2xl bg-orange-600 px-5 text-sm font-semibold hover:bg-orange-700 disabled:bg-slate-200 disabled:text-slate-500">
               Un-Admit
             </Button>
           )}
 
           {isPublishedToWitness ? (
-            <Button onClick={onUnpublishWitness} variant="outline" className="min-h-[52px] rounded-2xl border-red-200 bg-red-50 px-5 text-sm font-semibold text-red-700 hover:bg-red-100">
+            <Button disabled={isDemoMode} onClick={onUnpublishWitness} variant="outline" className="min-h-[52px] rounded-2xl border-red-200 bg-red-50 px-5 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500">
               Unpublish Witness
             </Button>
           ) : (
-            <Button onClick={onPublishWitness} variant="outline" className="min-h-[52px] rounded-2xl border-amber-200 bg-amber-50 px-5 text-sm font-semibold text-amber-700 hover:bg-amber-100">
+            <Button disabled={isDemoMode} onClick={onPublishWitness} variant="outline" className="min-h-[52px] rounded-2xl border-amber-200 bg-amber-50 px-5 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500">
               Publish Witness
             </Button>
           )}
@@ -81,7 +82,7 @@ export default function ActionStrip({
           ) : (
             <Button
               onClick={onPublishJury}
-              disabled={!canPublishToJury}
+              disabled={!canPublishToJury || isDemoMode}
               className="min-h-[52px] rounded-2xl bg-blue-600 px-5 text-sm font-semibold hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-500"
             >
               Publish Jury
@@ -90,7 +91,11 @@ export default function ActionStrip({
         </div>
       </div>
 
-      {!canPublishToJury && (
+      {isDemoMode ? (
+        <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+          Demo mode is on, so these action buttons are shown for layout preview only.
+        </div>
+      ) : !canPublishToJury && (
         <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
           Jury publish is locked until the proof is admitted. Depositions remain publishable.
         </div>

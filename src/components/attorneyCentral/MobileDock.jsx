@@ -9,12 +9,13 @@ export default function MobileDock({
   witnessPublished,
   juryPublished,
   juryDisabled,
+  isDemoMode = false,
 }) {
   const items = [
     { label: 'Exhibits', icon: FileText, onClick: onOpenExhibits },
     { label: 'Questions', icon: MessageSquare, onClick: onOpenQuestions },
-    { label: witnessPublished ? 'Hide W' : 'Witness', icon: Users, onClick: onToggleWitness },
-    { label: juryPublished ? 'Hide J' : 'Jury', icon: Tv, onClick: onToggleJury, disabled: juryDisabled },
+    { label: witnessPublished ? 'Hide W' : 'Witness', icon: Users, onClick: onToggleWitness, disabled: isDemoMode },
+    { label: juryPublished ? 'Hide J' : 'Jury', icon: Tv, onClick: onToggleJury, disabled: juryDisabled || isDemoMode },
   ];
 
   return (

@@ -17,6 +17,7 @@ import {
   isQuestionLinkedToProof,
   resolveSelectableProofId,
 } from '@/components/attorneyCentral/attorneyCentralUtils';
+import { sampleProofs, sampleQuestions } from '@/components/attorneyCentral/sampleAttorneyCentralData';
 
 const RESET_PRESENT_STATE = {
   is_blank: true,
@@ -64,6 +65,9 @@ export default function AttorneyCentral() {
   const { juryState, update: updateJury } = useJurySync('attorney');
   const { witnessState, update: updateWitness } = useWitnessSync('attorney');
 
+  const effectiveProofs = proofs.length > 0 ? proofs : sampleProofs;
+  const effectiveQuestions = questions.length > 0 ? questions : sampleQuestions;
+
   useEffect(() => {
     const unsubProofs = base44.entities.Proof.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ['proofs'] });
@@ -79,8 +83,8 @@ export default function AttorneyCentral() {
   }, [queryClient]);
 
   const { proofById, childrenByParent, hiddenRootIds, exhibitRoots, depositionRoots } = useMemo(
-    () => buildProofCollections(proofs),
-    [proofs]
+    () => buildProofCollections(effectiveProofs),
+    [effectiveProofs]
   );
 
   const allVisibleRootIds = [...exhibitRoots, ...depositionRoots].map((proof) => proof.id);
@@ -100,17 +104,17 @@ export default function AttorneyCentral() {
 
   const linkedQuestions = useMemo(() => {
     if (!selectedProof) return [];
-    return questions.filter((question) => isQuestionLinkedToProof(question, selectedProof, proofById));
-  }, [questions, selectedProof, proofById]);
+    return effectiveQuestions.filter((question) => isQuestionLinkedToProof(question, selectedProof, proofById));
+  }, [effectiveQuestions, selectedProof, proofById]);
 
   const questionCountByProofId = useMemo(() => {
     return Object.fromEntries(
-      proofs.map((proof) => [
+      effectiveProofs.map((proof) => [
         proof.id,
-        questions.filter((question) => isQuestionLinkedToProof(question, proof, proofById)).length,
+        effectiveQuestions.filter((question) => isQuestionLinkedToProof(question, proof, proofById)).length,
       ])
     );
-  }, [proofs, questions, proofById]);
+  }, [effectiveProofs, effectiveQuestions, proofById]);
 
   const resolveProofSelection = (proofId) => {
     const nextId = resolveSelectableProofId(proofId, proofById, childrenByParent, hiddenRootIds);
@@ -149,6 +153,11 @@ export default function AttorneyCentral() {
   return (
     <div className="flex h-full min-h-screen flex-col bg-[radial-gradient(circle_at_top,#eff6ff,transparent_45%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] pb-24 lg:pb-0">
       <div className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
+        {proofs.length === 0 && (
+          <div className="border-b border-blue-100 bg-blue-50/80 px-4 py-3 text-sm font-medium text-blue-700 sm:px-6 lg:px-8">
+            Showing a built-in demo exhibit and deposition until your real proof records are loaded.
+          </div>
+        )}
         <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Present</p>
@@ -202,15 +211,16 @@ export default function AttorneyCentral() {
             onUnpublishJury={() => updateJury(RESET_PRESENT_STATE)}
             onPublishWitness={publishToWitness}
             onUnpublishWitness={() => updateWitness(RESET_PRESENT_STATE)}
+            isDemoMode={proofs.length === 0}
           />
           <div className="min-h-0 flex-1">
-            <PreviewCanvas proof={selectedProof} allProofs={proofs} />
+            <PreviewCanvas proof={selectedProof} allProofs={effectiveProofs} />
           </div>
         </div>
 
         <div className="hidden 2xl:block 2xl:w-[390px] 2xl:shrink-0">
           <QuestionPanel
-            questions={questions}
+            questions={effectiveQuestions}
             linkedQuestions={linkedQuestions}
             proofsById={proofById}
             resolveProofSelection={resolveProofSelection}
@@ -258,6 +268,7 @@ export default function AttorneyCentral() {
         witnessPublished={isPublishedToWitness}
         juryPublished={isPublishedToJury}
         juryDisabled={juryLocked}
+        isDemoMode={proofs.length === 0}
       />
 
       <AdmitAsExhibitModal open={Boolean(admitTarget)} onClose={() => setAdmitTarget(null)} proof={admitTarget} />
