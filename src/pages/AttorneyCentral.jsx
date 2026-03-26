@@ -70,8 +70,12 @@ export default function AttorneyCentral() {
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const childrenMap = useMemo(() => buildChildrenMap(proofs), [proofs]);
   const markedExhibits = useMemo(
-    () => proofs.filter((proof) => proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) && !proof.parent_proof_id),
-    [proofs]
+    () => proofs.filter((proof) => {
+      if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) return false;
+      const parentProof = proof.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
+      return !parentProof || !['Joint', 'Admitted', 'Demonstrative'].includes(parentProof.status);
+    }),
+    [proofs, proofsById]
   );
   const depositions = useMemo(
     () => proofs.filter((proof) => proof.proof_category === 'Deposition' && !proof.parent_proof_id),
@@ -148,7 +152,6 @@ export default function AttorneyCentral() {
   const selectProof = (proofId, source = null) => {
     setSelectedProofId(proofId);
     if (source === 'questions') setRightDrawerOpen(false);
-    if (source === 'marked' || source === 'depositions') setLeftDrawer(null);
   };
 
   const handleProofAction = (proof, action) => {
