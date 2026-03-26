@@ -1,0 +1,378 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, FileText, FolderKanban, Play } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
+import { useWitnessSync } from '@/components/witnessView/useWitnessSync.jsx';
+import AdmitAsExhibitModal from '@/components/proofVault/AdmitAsExhibitModal';
+import AdmitAsDemonstrativeModal from '@/components/proofVault/AdmitAsDemonstrativeModal';
+import UnAdmitModal from '@/components/proofVault/UnAdmitModal';
+import AttorneyCentralPreview from '@/components/attorneyCentral/AttorneyCentralPreview.jsx';
+import AttorneyCentralMarkedDrawer from '@/components/attorneyCentral/AttorneyCentralMarkedDrawer.jsx';
+import AttorneyCentralQuestionsDrawer from '@/components/attorneyCentral/AttorneyCentralQuestionsDrawer.jsx';
+import AttorneyCentralBottomBar from '@/components/attorneyCentral/AttorneyCentralBottomBar.jsx';
+import AttorneyCentralWitnessNotice from '@/components/attorneyCentral/AttorneyCentralWitnessNotice.jsx';
+import { getProofDisplayName } from '@/lib/examV2Utils';
+import { buildChildrenMap, canPublishProof, canPublishProofToWitness, getPublishedLabel } from '@/lib/attorneyCentralUtils';
+
+const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+  timeZone: 'America/Los_Angeles',
+});
+
+function formatElapsedTime(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+export default function AttorneyCentral() {
+  const queryClient = useQueryClient();
+  const { juryState, update } = useJurySync('attorney');
+  const { witnessState, update: updateWitness } = useWitnessSync('attorney');
+  const [leftDrawer, setLeftDrawer] = useState(null);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(true);
+  const [markedSearch, setMarkedSearch] = useState('');
+  const [depositionSearch, setDepositionSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedProofId, setSelectedProofId] = useState('');
+  const [selectedExamType, setSelectedExamType] = useState('Direct');
+  const [selectedExamPartyId, setSelectedExamPartyId] = useState('');
+  const [selectedRootId, setSelectedRootId] = useState('');
+  const [checkedQuestionIds, setCheckedQuestionIds] = useState([]);
+  const [localDecisionMap, setLocalDecisionMap] = useState({});
+  const [selectedProofForModal, setSelectedProofForModal] = useState(null);
+  const [showAdmitExhibitModal, setShowAdmitExhibitModal] = useState(false);
+  const [showAdmitDemoModal, setShowAdmitDemoModal] = useState(false);
+  const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
+  const [pendingWitnessProof, setPendingWitnessProof] = useState(null);
+  const [highlightedProofId, setHighlightedProofId] = useState('');
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [currentTimeLabel, setCurrentTimeLabel] = useState(() => TIME_FORMATTER.format(new Date()));
+
+  const hubQueryOptions = {
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  };
+
+  const { data: parties = [] } = useQuery({ queryKey: ['attorneyCentralParties'], queryFn: () => base44.entities.Party.list(), ...hubQueryOptions });
+  const { data: proofs = [] } = useQuery({ queryKey: ['proofs'], queryFn: () => base44.entities.Proof.list(), ...hubQueryOptions });
+  const { data: exams = [] } = useQuery({ queryKey: ['attorneyCentralExams'], queryFn: () => base44.entities.ExamV2.list(), ...hubQueryOptions });
+  const { data: examItems = [] } = useQuery({ queryKey: ['attorneyCentralExamItems'], queryFn: () => base44.entities.ExamItemV2.list(), ...hubQueryOptions });
+
+  const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
+  const childrenMap = useMemo(() => buildChildrenMap(proofs), [proofs]);
+  const markedExhibits = useMemo(
+    () => proofs.filter((proof) => proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) && !proof.parent_proof_id),
+    [proofs]
+  );
+  const depositions = useMemo(
+    () => proofs.filter((proof) => proof.proof_category === 'Deposition' && !proof.parent_proof_id),
+    [proofs]
+  );
+
+  const currentExam = exams.find((exam) => exam.party_id === selectedExamPartyId && exam.exam_type === selectedExamType) || null;
+  const currentExamItems = useMemo(() => examItems.filter((item) => item.exam_id === currentExam?.id), [examItems, currentExam]);
+  const rootItems = useMemo(
+    () => currentExamItems.filter((item) => !item.parent_item_id && item.item_type !== 'question').sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
+    [currentExamItems]
+  );
+  const questionItems = useMemo(() => currentExamItems.filter((item) => item.item_type === 'question'), [currentExamItems]);
+  const selectedProof = selectedProofId ? proofsById[selectedProofId] || null : null;
+  const localDecision = selectedProof?.status === 'Joint' ? localDecisionMap[selectedProof.id] : null;
+  const isPublishedToJury = juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank;
+  const isPublishedToWitness = witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank;
+  const canPublishToJury = canPublishProof(selectedProof, localDecision);
+  const canPublishToWitness = canPublishProofToWitness(selectedProof);
+
+  const updateProofMutation = useMutation({
+    mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proofs'], refetchType: 'active' }),
+  });
+
+  useEffect(() => {
+    if (!selectedExamPartyId && parties[0]) setSelectedExamPartyId(parties[0].id);
+  }, [parties, selectedExamPartyId]);
+
+  useEffect(() => {
+    if (!selectedProofId && markedExhibits[0]) setSelectedProofId(markedExhibits[0].id);
+  }, [markedExhibits, selectedProofId]);
+
+  useEffect(() => {
+    if (!selectedRootId && rootItems[0]) setSelectedRootId(rootItems[0].id);
+    if (selectedRootId && !rootItems.some((item) => item.id === selectedRootId)) setSelectedRootId(rootItems[0]?.id || '');
+  }, [rootItems, selectedRootId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentTimeLabel(TIME_FORMATTER.format(new Date()));
+      setElapsedSeconds((prev) => (isTimerRunning ? prev + 1 : prev));
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [isTimerRunning]);
+
+  useEffect(() => {
+    const unsubscribe = base44.entities.Proof.subscribe((event) => {
+      if (event.type !== 'create') return;
+      if (!event.data?.witness_name || !event.data?.witness_markup || event.data?.status !== 'Draft') return;
+      setPendingWitnessProof(event.data);
+      queryClient.invalidateQueries({ queryKey: ['proofs'], refetchType: 'active' });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!highlightedProofId) return;
+    const timeoutId = window.setTimeout(() => setHighlightedProofId(''), 4000);
+    return () => window.clearTimeout(timeoutId);
+  }, [highlightedProofId]);
+
+  const selectProof = (proofId, source = null) => {
+    setSelectedProofId(proofId);
+    if (source === 'questions') setRightDrawerOpen(false);
+    if (source === 'marked' || source === 'depositions') setLeftDrawer(null);
+  };
+
+  const handleProofAction = (proof, action) => {
+    if (action === 'not_admitted') {
+      setLocalDecisionMap((prev) => ({ ...prev, [proof.id]: prev[proof.id] === 'not_admitted' ? null : 'not_admitted' }));
+      return;
+    }
+    if (action === 'admit') {
+      setSelectedProofForModal(proof);
+      setShowAdmitExhibitModal(true);
+      return;
+    }
+    if (action === 'demo') {
+      setSelectedProofForModal(proof);
+      setShowAdmitDemoModal(true);
+      return;
+    }
+    if (action === 'unadmit') {
+      setSelectedProofForModal(proof);
+      setShowUnAdmitModal(true);
+    }
+  };
+
+  const publishProof = (proof) => {
+    if (!canPublishProof(proof, proof?.status === 'Joint' ? localDecisionMap[proof?.id] : null)) return;
+    update({
+      published_proof_id: proof.id,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: false,
+      exhibit_label: getPublishedLabel(proof),
+    });
+  };
+
+  const unpublishProof = (proof) => {
+    if (juryState?.published_proof_id !== proof?.id || juryState?.is_blank) return;
+    update({
+      published_proof_id: null,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: true,
+      exhibit_label: '',
+    });
+  };
+
+  const publishProofToWitness = (proof) => {
+    if (!canPublishProofToWitness(proof)) return;
+    updateWitness({
+      published_proof_id: proof.id,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: false,
+      exhibit_label: getPublishedLabel(proof),
+    });
+  };
+
+  const unpublishProofFromWitness = (proof) => {
+    if (witnessState?.published_proof_id !== proof?.id || witnessState?.is_blank) return;
+    updateWitness({
+      published_proof_id: null,
+      pdf_page: 1,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      video_time: 0,
+      is_playing: false,
+      is_blank: true,
+      exhibit_label: '',
+    });
+  };
+
+  const handleAddWitnessProof = () => {
+    if (!pendingWitnessProof) return;
+    const parentProof = proofsById[pendingWitnessProof.parent_proof_id];
+    updateProofMutation.mutate({
+      proofId: pendingWitnessProof.id,
+      data: {
+        status: 'Joint',
+        joint_exhibit_num: parentProof?.joint_exhibit_num || parentProof?.admitted_exhibit_num || parentProof?.demonstrative_exhibit_num || null,
+        joint_by: parentProof?.joint_by || parentProof?.admitted_by || null,
+        joint_date: parentProof?.joint_date || parentProof?.admit_date || null,
+      },
+    });
+    setPendingWitnessProof(null);
+    setLeftDrawer('marked');
+    setStatusFilter('joint');
+    setSelectedProofId(pendingWitnessProof.id);
+    setHighlightedProofId(pendingWitnessProof.id);
+  };
+
+  return (
+    <div className="h-full bg-[#f3ebdf]">
+      <div className="relative h-full overflow-hidden">
+        <div className="absolute inset-0 bottom-28">
+          <AttorneyCentralPreview
+            proof={selectedProof}
+            allProofs={proofs}
+            juryState={juryState}
+            witnessState={witnessState}
+            onUpdateJury={update}
+            onUpdateWitness={updateWitness}
+          />
+        </div>
+
+        <div className="absolute bottom-32 left-3 top-3 z-10 flex flex-col justify-center gap-3">
+          <button type="button" onClick={() => setLeftDrawer((value) => value === 'marked' ? null : 'marked')} className={`rounded-3xl border p-3 shadow-lg transition ${leftDrawer === 'marked' ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Marked Exhibits">
+            <FileText className="h-5 w-5" />
+          </button>
+          <button type="button" onClick={() => setLeftDrawer((value) => value === 'depositions' ? null : 'depositions')} className={`rounded-3xl border p-3 shadow-lg transition ${leftDrawer === 'depositions' ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Depositions">
+            <Play className="h-5 w-5" />
+          </button>
+        </div>
+
+        <AttorneyCentralMarkedDrawer
+          title={leftDrawer === 'depositions' ? 'Depositions' : 'Marked Exhibits'}
+          open={Boolean(leftDrawer)}
+          onClose={() => setLeftDrawer(null)}
+          mode={leftDrawer === 'depositions' ? 'depositions' : 'marked'}
+          proofs={leftDrawer === 'depositions' ? depositions : markedExhibits}
+          childrenMap={childrenMap}
+          selectedProofId={selectedProofId}
+          onSelectProof={(proofId) => selectProof(proofId, leftDrawer === 'depositions' ? 'depositions' : 'marked')}
+          highlightedProofId={highlightedProofId}
+          examItems={currentExamItems}
+          localDecisionMap={localDecisionMap}
+          search={leftDrawer === 'depositions' ? depositionSearch : markedSearch}
+          onSearchChange={leftDrawer === 'depositions' ? setDepositionSearch : setMarkedSearch}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+        />
+
+        <div className="absolute bottom-32 right-3 top-3 z-10 flex flex-col justify-center gap-3">
+          <button type="button" onClick={() => setRightDrawerOpen((value) => !value)} className={`rounded-3xl border p-3 shadow-lg transition ${rightDrawerOpen ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-700'}`} title="Questions">
+            <FolderKanban className="h-5 w-5" />
+          </button>
+        </div>
+
+        <AttorneyCentralQuestionsDrawer
+          open={rightDrawerOpen}
+          onClose={() => setRightDrawerOpen(false)}
+          parties={parties}
+          selectedExamPartyId={selectedExamPartyId}
+          onSelectExamPartyId={setSelectedExamPartyId}
+          selectedExamType={selectedExamType}
+          onSelectExamType={setSelectedExamType}
+          rootItems={rootItems}
+          selectedRootId={selectedRootId}
+          onSelectRootId={setSelectedRootId}
+          questionItems={questionItems}
+          proofsById={proofsById}
+          selectedProofId={selectedProofId}
+          localDecisionMap={localDecisionMap}
+          checkedQuestionIds={checkedQuestionIds}
+          onToggleChecked={(questionId) => setCheckedQuestionIds((prev) => prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId])}
+          onSelectProof={(proofId) => selectProof(proofId, 'questions')}
+        />
+
+        {!leftDrawer && (
+          <button type="button" onClick={() => setLeftDrawer('marked')} className="absolute left-16 top-1/2 z-10 -translate-y-1/2 rounded-full border border-stone-200 bg-white p-2 text-stone-500 shadow-md hover:text-stone-900">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
+        {!rightDrawerOpen && (
+          <button type="button" onClick={() => setRightDrawerOpen(true)} className="absolute right-16 top-1/2 z-10 -translate-y-1/2 rounded-full border border-stone-200 bg-white p-2 text-stone-500 shadow-md hover:text-stone-900">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
+
+        <AttorneyCentralWitnessNotice proof={pendingWitnessProof} onAdd={handleAddWitnessProof} onDismiss={() => setPendingWitnessProof(null)} />
+
+        <div className="absolute inset-x-0 bottom-0 z-30">
+          <AttorneyCentralBottomBar
+            selectedProof={selectedProof}
+            localDecision={localDecision}
+            isTimerRunning={isTimerRunning}
+            elapsedLabel={formatElapsedTime(elapsedSeconds)}
+            currentTimeLabel={currentTimeLabel}
+            onStartTimer={() => setIsTimerRunning(true)}
+            onPauseTimer={() => setIsTimerRunning(false)}
+            onResetTimer={() => {
+              setIsTimerRunning(false);
+              setElapsedSeconds(0);
+            }}
+            canPublishToJury={canPublishToJury}
+            isPublishedToJury={isPublishedToJury}
+            onPublishToJury={() => publishProof(selectedProof)}
+            onUnpublishFromJury={() => unpublishProof(selectedProof)}
+            canPublishToWitness={canPublishToWitness}
+            isPublishedToWitness={isPublishedToWitness}
+            onPublishToWitness={() => publishProofToWitness(selectedProof)}
+            onUnpublishFromWitness={() => unpublishProofFromWitness(selectedProof)}
+            onRejectToggle={() => handleProofAction(selectedProof, 'not_admitted')}
+            onAdmitExhibit={() => handleProofAction(selectedProof, 'admit')}
+            onAdmitDemo={() => handleProofAction(selectedProof, 'demo')}
+            onUnAdmit={() => handleProofAction(selectedProof, 'unadmit')}
+          />
+        </div>
+
+        <AdmitAsExhibitModal
+          open={showAdmitExhibitModal}
+          onClose={() => {
+            if (selectedProofForModal?.id) setLocalDecisionMap((prev) => ({ ...prev, [selectedProofForModal.id]: null }));
+            setShowAdmitExhibitModal(false);
+            setSelectedProofForModal(null);
+          }}
+          proof={selectedProofForModal}
+        />
+        <AdmitAsDemonstrativeModal
+          open={showAdmitDemoModal}
+          onClose={() => {
+            if (selectedProofForModal?.id) setLocalDecisionMap((prev) => ({ ...prev, [selectedProofForModal.id]: null }));
+            setShowAdmitDemoModal(false);
+            setSelectedProofForModal(null);
+          }}
+          proof={selectedProofForModal}
+        />
+        <UnAdmitModal
+          open={showUnAdmitModal}
+          onClose={() => {
+            setShowUnAdmitModal(false);
+            setSelectedProofForModal(null);
+          }}
+          proof={selectedProofForModal}
+        />
+      </div>
+    </div>
+  );
+}
