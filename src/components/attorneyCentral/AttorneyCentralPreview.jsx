@@ -4,8 +4,7 @@ import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
 import ExtractViewer from '@/components/proofVault/ExtractViewer.jsx';
 import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
-import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
-import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
+import AttorneyCentralVideoPreview from '@/components/attorneyCentral/AttorneyCentralVideoPreview.jsx';
 
 export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
@@ -77,16 +76,18 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
         ) : proof.proof_child_type === 'VideoClip' ? (
           isLoading && !externalUrl ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
+          ) : externalUrl ? (
+            <AttorneyCentralVideoPreview src={externalUrl} segments={proof.video_clips || []} onStateChange={handleVideoStateChange} />
           ) : (
-            <div className="h-full overflow-auto bg-stone-950 p-4">
-              <VideoClipController videoUrl={externalUrl} segments={proof.video_clips || []} onStateChange={handleVideoStateChange} />
-            </div>
+            <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No video source available</div>
           )
         ) : proof.file_type === 'Video' ? (
           isLoading && !externalUrl ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
+          ) : externalUrl ? (
+            <AttorneyCentralVideoPreview src={externalUrl} onStateChange={handleVideoStateChange} />
           ) : (
-            <VideoViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handleVideoStateChange} />
+            <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No video source available</div>
           )
         ) : proof.file_type === 'Image' && externalUrl ? (
           <div className="flex h-full items-center justify-center bg-stone-100 p-6">

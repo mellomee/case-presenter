@@ -3,7 +3,7 @@ import { Search } from 'lucide-react';
 import { getProofDisplayName } from '@/lib/examV2Utils';
 import { countQuestionLinks, getProofHistoryChips, getProofKindLabel, getProofMetaLine, getProofNumber, getProofStatusConfig, normalizeSearchValue } from '@/lib/attorneyCentralUtils';
 
-function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectProof, highlightedProofId, examItems, localDecisionMap }) {
+function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectProof, highlightedProofId, examItems, localDecisionMap, showChildren = true }) {
   const children = childrenMap[proof.id] || [];
   const isSelected = selectedProofId === proof.id;
   const isHighlighted = highlightedProofId === proof.id;
@@ -49,7 +49,7 @@ function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectPro
         </div>
       </button>
 
-      {children.length > 0 ? (
+      {showChildren && children.length > 0 ? (
         <div className="mt-3 space-y-3">
           {children.map((child) => (
             <ProofNode
@@ -91,6 +91,7 @@ export default function AttorneyCentralMarkedDrawer({
   depositionParties = [],
   selectedDepositionParentId = '',
   onSelectDepositionParent,
+  onPreviewDepositionParent,
 }) {
   const visibleProofs = proofs.filter((proof) => {
     const searchMatch = !normalizeSearchValue(search) || [proof.name, proof.formal_name, proof.joint_exhibit_num, proof.admitted_exhibit_num, proof.demonstrative_exhibit_num]
@@ -174,6 +175,7 @@ export default function AttorneyCentralMarkedDrawer({
                       type="button"
                       onClick={() => {
                         onSelectDepositionParent?.(proof.id);
+                        onPreviewDepositionParent?.(proof.id);
                       }}
                       className={`w-48 shrink-0 rounded-3xl border p-3 text-left transition ${isActive ? 'border-stone-900 bg-stone-900 text-white shadow-lg' : 'border-stone-200 bg-white text-stone-900 shadow-sm hover:border-stone-300'}`}
                     >
@@ -187,6 +189,8 @@ export default function AttorneyCentralMarkedDrawer({
             </div>
           ) : null}
         </div>
+
+        <div className="border-t border-stone-200/80" />
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
           {mode === 'depositions' ? (
@@ -209,6 +213,7 @@ export default function AttorneyCentralMarkedDrawer({
                   highlightedProofId={highlightedProofId}
                   examItems={examItems}
                   localDecisionMap={localDecisionMap}
+                  showChildren={false}
                 />
               ))
             )
@@ -227,6 +232,7 @@ export default function AttorneyCentralMarkedDrawer({
                 highlightedProofId={highlightedProofId}
                 examItems={examItems}
                 localDecisionMap={localDecisionMap}
+                showChildren={false}
               />
             ))
           )}
