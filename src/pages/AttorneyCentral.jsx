@@ -240,8 +240,9 @@ export default function AttorneyCentral() {
 
   return (
     <div className="h-full bg-[#f3ebdf]">
-      <div className="relative h-full overflow-hidden">
-        <div className="absolute inset-0 bottom-28">
+      <div className="flex h-full flex-col overflow-hidden">
+        <div className="relative min-h-0 flex-1">
+          <div className="absolute inset-0">
           <AttorneyCentralPreview
             proof={selectedProof}
             allProofs={proofs}
@@ -317,8 +318,9 @@ export default function AttorneyCentral() {
         )}
 
         <AttorneyCentralWitnessNotice proof={pendingWitnessProof} onAdd={handleAddWitnessProof} onDismiss={() => setPendingWitnessProof(null)} />
+        </div>
 
-        <div className="absolute inset-x-0 bottom-0 z-30">
+        <div className="shrink-0 z-30">
           <AttorneyCentralBottomBar
             selectedProof={selectedProof}
             localDecision={localDecision}
