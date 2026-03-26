@@ -53,13 +53,11 @@ function renderGroupedPartyOptions(parties = [], { placeholderLabel = null, allL
     <>
       {placeholderLabel ? <option value="">{placeholderLabel}</option> : null}
       {allLabel ? <option value="all">{allLabel}</option> : null}
-      {groups.map((group, index) => (
-        <React.Fragment key={group.side}>
-          {index > 0 ? <option disabled>──────────</option> : null}
-          <option disabled>{group.side}</option>
-          {group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
-        </React.Fragment>
-      ))}
+      {groups.flatMap((group, index) => [
+        ...(index > 0 ? [<option key={`${group.side}-separator`} disabled>──────────</option>] : []),
+        <option key={`${group.side}-label`} disabled>{group.side}</option>,
+        ...group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>),
+      ])}
     </>
   );
 }
