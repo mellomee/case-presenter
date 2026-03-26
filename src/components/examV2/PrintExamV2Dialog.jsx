@@ -179,6 +179,7 @@ export default function PrintExamV2Dialog({
               break-after: page;
             }
             .exam-v2-print-page:last-child { page-break-after: auto; break-after: auto; }
+            .exam-v2-print-expected { color: #b91c1c !important; }
           }
         `}</style>
 
