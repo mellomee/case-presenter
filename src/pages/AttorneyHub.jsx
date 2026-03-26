@@ -555,30 +555,29 @@ export default function AttorneyHub() {
                         {selectedProofAdmissionLabel}
                       </span>
                       {selectedProofIsPublished && <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Published to Jury</span>}
-                      {selectedProofIsPublishedToWitness && <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Published to Witness</span>}
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">{getProofTypeLabel(activeToolbarProof)}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      type="button"
-                      className="gap-2 bg-blue-600 hover:bg-blue-700"
-                      disabled={!selectedProofCanPublishToWitness}
-                      onClick={() => publishProofToWitness(activeToolbarProof)}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {selectedProofIsPublishedToWitness ? 'Published to Witness' : 'Publish to Witness'}
-                    </Button>
-
-                    {selectedProofIsPublishedToWitness && (
+                    {selectedProofIsPublishedToWitness ? (
                       <Button
                         type="button"
-                        variant="outline"
-                        className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        className="gap-2 bg-red-600 hover:bg-red-700"
                         onClick={() => unpublishProofFromWitness(activeToolbarProof)}
                       >
+                        <ExternalLink className="w-4 h-4" />
                         Unpublish Witness
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        className="gap-2 bg-blue-600 hover:bg-blue-700"
+                        disabled={!selectedProofCanPublishToWitness}
+                        onClick={() => publishProofToWitness(activeToolbarProof)}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Publish to Witness
                       </Button>
                     )}
 

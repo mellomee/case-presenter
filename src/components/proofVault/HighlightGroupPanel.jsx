@@ -59,10 +59,15 @@ export default function HighlightGroupPanel({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-white truncate">{group.name}</div>
-                  <div className="mt-1 text-xs text-zinc-400">Clip Pg {group.page}{group.sourcePage ? ` · Source Pg ${group.sourcePage}` : ''}</div>
+                  <div className="mt-1 text-xs text-zinc-400">{group.sourcePage ? `Source Pg ${group.sourcePage}` : 'Clip group'}</div>
                 </div>
-                <div className="text-[10px] px-2 py-1 rounded bg-zinc-800 text-zinc-300 whitespace-nowrap">
-                  {group.highlights.length} highlight{group.highlights.length === 1 ? '' : 's'}
+                <div className="flex flex-col items-end gap-1">
+                  <div className="whitespace-nowrap rounded bg-blue-500/15 px-2 py-1 text-[10px] text-blue-300">
+                    Pg {group.page}
+                  </div>
+                  <div className="whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-[10px] text-zinc-300">
+                    {group.highlights.length} highlight{group.highlights.length === 1 ? '' : 's'}
+                  </div>
                 </div>
               </div>
             </button>

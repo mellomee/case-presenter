@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import PDFViewer from './PDFViewer';
-import { FileText, Layers, Scissors, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileText, Layers, Scissors, Loader2 } from 'lucide-react';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage, normalizeHighlightGroups } from './highlightGroupUtils';
 import { parsePageRange } from './pageRangeUtils';
@@ -52,6 +52,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   const [selectedGroupId, setSelectedGroupId] = useState('all');
   const [showHighlights, setShowHighlights] = useState(true);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [topMetaCollapsed, setTopMetaCollapsed] = useState(true);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [focusTarget, setFocusTarget] = useState(null);
   const filteredHighlights = useMemo(() => {
@@ -69,36 +70,61 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
-      <div className="shrink-0 bg-zinc-800 border-b border-zinc-700 px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        {originalPDF && (
-          <>
+      <div className="shrink-0 border-b border-zinc-700 bg-zinc-800">
+        <div className="flex items-center justify-between gap-3 px-4 py-2">
+          <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-xs">
-              <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-              <span className="text-zinc-500">PDF:</span>
-              <span className="text-zinc-200 font-medium">{originalPDF.name}</span>
+              <Scissors className="w-3.5 h-3.5 shrink-0 text-teal-400" />
+              <span className="truncate font-semibold text-zinc-200">{proof.name}</span>
+              <span className="ml-1 rounded border border-teal-500/30 bg-teal-500/20 px-1.5 py-0.5 font-mono text-[10px] text-teal-300">Page {currentPage}</span>
             </div>
-            <span className="text-zinc-600 text-xs">›</span>
-          </>
-        )}
-
-        {parentExtract && (
-          <>
-            <div className="flex items-center gap-1.5 text-xs">
-              <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span className="text-zinc-500">Extract:</span>
-              <span className="text-zinc-200 font-medium">{parentExtract.name}</span>
-            </div>
-            <span className="text-zinc-600 text-xs">›</span>
-          </>
-        )}
-
-        <div className="flex items-center gap-1.5 text-xs">
-          <Scissors className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-          <span className="text-zinc-500">Clip:</span>
-          <span className="text-zinc-200 font-semibold">{proof.name}</span>
-          <span className="ml-1 bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] px-1.5 py-0.5 rounded font-mono">Page {initialPage}</span>
-          <span className="ml-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>
+            {topMetaCollapsed && (
+              <div className="mt-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setTopMetaCollapsed((value) => !value)}
+            className="rounded-md p-1 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+            aria-label={topMetaCollapsed ? 'Expand clip details' : 'Collapse clip details'}
+          >
+            {topMetaCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
         </div>
+
+        {!topMetaCollapsed && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-700 px-4 py-2">
+            {originalPDF && (
+              <>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span className="text-zinc-500">PDF:</span>
+                  <span className="text-zinc-200 font-medium">{originalPDF.name}</span>
+                </div>
+                <span className="text-zinc-600 text-xs">›</span>
+              </>
+            )}
+
+            {parentExtract && (
+              <>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="text-zinc-500">Extract:</span>
+                  <span className="text-zinc-200 font-medium">{parentExtract.name}</span>
+                </div>
+                <span className="text-zinc-600 text-xs">›</span>
+              </>
+            )}
+
+            <div className="flex items-center gap-1.5 text-xs">
+              <Scissors className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+              <span className="text-zinc-500">Clip:</span>
+              <span className="text-zinc-200 font-semibold">{proof.name}</span>
+              <span className="ml-1 rounded border border-teal-500/30 bg-teal-500/20 px-1.5 py-0.5 font-mono text-[10px] text-teal-300">Page {currentPage}</span>
+              <span className="ml-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden flex min-h-0">
