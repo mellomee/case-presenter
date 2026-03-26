@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import { getProofDisplayName } from '@/lib/examV2Utils';
-import { countQuestionLinks, getProofHistoryChips, getProofKindLabel, getProofMetaLine, getProofNumber, getProofPrimaryName, getProofStatusConfig, normalizeSearchValue } from '@/lib/attorneyCentralUtils';
+import { countQuestionLinks, getProofHistoryChips, getProofKindLabel, getProofMetaLine, getProofNumber, getProofStatusConfig, normalizeSearchValue } from '@/lib/attorneyCentralUtils';
 
 function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectProof, highlightedProofId, examItems, localDecisionMap }) {
   const children = childrenMap[proof.id] || [];
@@ -35,8 +35,8 @@ function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectPro
         </div>
 
         <div className="mt-3">
-          <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getProofPrimaryName(proof)}</p>
-          {proof.formal_name && proof.formal_name !== proof.name ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>Display: {proof.formal_name}</p> : null}
+          <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{proof.formal_name || getProofDisplayName(proof)}</p>
+          {proof.formal_name && proof.name ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>Internal: {proof.name}</p> : null}
           {getProofMetaLine(proof) ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofMetaLine(proof)}</p> : null}
         </div>
 
@@ -164,40 +164,31 @@ export default function AttorneyCentralMarkedDrawer({
           ) : null}
 
           {mode === 'depositions' ? (
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="px-1 text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">Parent Depositions</p>
-                <div className="mt-2 -mx-1 overflow-x-auto pb-1">
-                  <div className="flex min-w-max gap-2 px-1">
-                    {visibleProofs.map((proof) => {
-                      const isActive = selectedDepositionParent?.id === proof.id;
-                      return (
-                        <button
-                          key={proof.id}
-                          type="button"
-                          onClick={() => {
-                            onSelectDepositionParent?.(proof.id);
-                            onSelectProof?.(proof.id, 'depositions-parent');
-                          }}
-                          className={`w-48 shrink-0 rounded-3xl border p-3 text-left transition ${isActive ? 'border-stone-900 bg-stone-900 text-white shadow-lg' : 'border-stone-200 bg-white text-stone-900 shadow-sm hover:border-stone-300'}`}
-                        >
-                          <p className={`text-xs font-bold uppercase tracking-[0.18em] ${isActive ? 'text-white/70' : 'text-stone-500'}`}>Parent Deposition</p>
-                          <p className="mt-2 text-sm font-bold">{getProofPrimaryName(proof)}</p>
-                          {proof.formal_name && proof.formal_name !== proof.name ? <p className={`mt-1 text-xs ${isActive ? 'text-white/70' : 'text-stone-500'}`}>Display: {proof.formal_name}</p> : null}
-                          <p className={`mt-1 text-xs ${isActive ? 'text-white/70' : 'text-stone-500'}`}>{getProofMetaLine(proof)}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+            <div className="mt-4 -mx-1 overflow-x-auto pb-1">
+              <div className="flex min-w-max gap-2 px-1">
+                {visibleProofs.map((proof) => {
+                  const isActive = selectedDepositionParent?.id === proof.id;
+                  return (
+                    <button
+                      key={proof.id}
+                      type="button"
+                      onClick={() => {
+                        onSelectDepositionParent?.(proof.id);
+                      }}
+                      className={`w-48 shrink-0 rounded-3xl border p-3 text-left transition ${isActive ? 'border-stone-900 bg-stone-900 text-white shadow-lg' : 'border-stone-200 bg-white text-stone-900 shadow-sm hover:border-stone-300'}`}
+                    >
+                      <p className={`text-xs font-bold uppercase tracking-[0.18em] ${isActive ? 'text-white/70' : 'text-stone-500'}`}>Parent Deposition</p>
+                      <p className="mt-2 text-sm font-bold">{proof.formal_name || getProofDisplayName(proof)}</p>
+                      <p className={`mt-1 text-xs ${isActive ? 'text-white/70' : 'text-stone-500'}`}>{getProofMetaLine(proof)}</p>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="h-px bg-stone-200" />
             </div>
           ) : null}
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          {mode === 'depositions' ? <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">Child Extracts & Clips</p> : null}
           {mode === 'depositions' ? (
             !selectedDepositionParent ? (
               <div className="rounded-3xl border border-dashed border-stone-300 bg-white px-5 py-8 text-center text-sm text-stone-500">

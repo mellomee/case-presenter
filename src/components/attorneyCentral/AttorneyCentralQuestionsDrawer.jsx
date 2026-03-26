@@ -1,7 +1,7 @@
 import React from 'react';
 import { FolderKanban } from 'lucide-react';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
-import { buildQuestionTree, getProofKindLabel, getProofNumber, getProofPrimaryName, getProofStatusConfig } from '@/lib/attorneyCentralUtils';
+import { buildQuestionTree, getProofKindLabel, getProofNumber, getProofStatusConfig } from '@/lib/attorneyCentralUtils';
 
 const PARTY_SIDE_ORDER = ['Plaintiff', 'Defense', 'Neutral'];
 
@@ -46,7 +46,7 @@ function LinkedProofChip({ proof, isSelected, localDecision, onClick }) {
           {status.label}
         </span>
       </div>
-      <p className={`mt-2 text-sm font-semibold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getProofPrimaryName(proof)}</p>
+      <p className={`mt-2 text-sm font-semibold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getProofDisplayName(proof)}</p>
       <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofKindLabel(proof)}</p>
     </button>
   );
@@ -165,7 +165,7 @@ export default function AttorneyCentralQuestionsDrawer({
                     <FolderKanban className="h-3.5 w-3.5" />
                     {index + 1}
                   </div>
-                  <p className="mt-2 text-sm font-semibold">{item.item_type === 'group' ? item.label : getProofPrimaryName(proofsById[item.linked_proof_id])}</p>
+                  <p className="mt-2 text-sm font-semibold">{item.item_type === 'group' ? item.label : getProofDisplayName(proofsById[item.linked_proof_id])}</p>
                 </button>
               );
             })}

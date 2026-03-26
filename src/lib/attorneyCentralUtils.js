@@ -84,10 +84,6 @@ export function getProofMetaLine(proof) {
   return proof.file_type || proof.proof_category || '';
 }
 
-export function getProofPrimaryName(proof) {
-  return proof?.name || proof?.formal_name || getProofDisplayName(proof);
-}
-
 export function getProofHistoryChips(proof) {
   return [
     { key: 'joint', label: 'J', value: proof?.joint_exhibit_num || '—', className: 'bg-sky-50 text-sky-700 border-sky-200' },

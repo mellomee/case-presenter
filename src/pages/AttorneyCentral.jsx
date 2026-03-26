@@ -302,7 +302,7 @@ export default function AttorneyCentral() {
           proofs={leftDrawer === 'depositions' ? filteredDepositions : markedExhibits}
           childrenMap={childrenMap}
           selectedProofId={selectedProofId}
-          onSelectProof={(proofId, source) => selectProof(proofId, source || (leftDrawer === 'depositions' ? 'depositions' : 'marked'))}
+          onSelectProof={(proofId) => selectProof(proofId, leftDrawer === 'depositions' ? 'depositions' : 'marked')}
           highlightedProofId={highlightedProofId}
           examItems={currentExamItems}
           localDecisionMap={localDecisionMap}
@@ -314,10 +314,7 @@ export default function AttorneyCentral() {
           onDepositionPartyChange={setSelectedDepositionPartyId}
           depositionParties={parties}
           selectedDepositionParentId={selectedDepositionParentId}
-          onSelectDepositionParent={(proofId) => {
-            setSelectedDepositionParentId(proofId);
-            setSelectedProofId(proofId);
-          }}
+          onSelectDepositionParent={setSelectedDepositionParentId}
         />
 
         <div
