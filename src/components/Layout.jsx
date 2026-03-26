@@ -52,6 +52,7 @@ export default function Layout() {
       path: '/present',
       icon: Tv,
       children: [
+        { label: 'Attorney Central', path: '/AttorneyCentral' },
         { label: 'Attorney Hub', path: '/AttorneyHub' },
         { label: 'Witness View', path: '/WitnessMarkup' },
         { label: 'Jury View', path: '/present/jury' },
