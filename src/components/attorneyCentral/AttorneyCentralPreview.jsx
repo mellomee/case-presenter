@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { FileText, Loader2 } from 'lucide-react';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
@@ -8,18 +8,9 @@ import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
 
 export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness }) {
-  const proofMap = useMemo(() => Object.fromEntries(allProofs.map((item) => [item.id, item])), [allProofs]);
-  const assetProof = useMemo(() => {
-    let current = proof;
-    while (current) {
-      if (current.video_url || current.file_url || current.dropbox_file_id || current.dropbox_path) return current;
-      current = current.parent_proof_id ? proofMap[current.parent_proof_id] : null;
-    }
-    return proof;
-  }, [proof, proofMap]);
   const { url, isLoading } = useResolvedProofAsset(proof);
-  const { url: assetUrl, isLoading: isAssetLoading } = useResolvedProofAsset(assetProof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
+  const { url: parentUrl } = useResolvedProofAsset(parentProof);
 
   const handlePdfStateChange = useCallback((pdfSync) => {
     if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
@@ -71,7 +62,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
     );
   }
 
-  const externalUrl = assetUrl || url || assetProof?.video_url || assetProof?.file_url || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
+  const externalUrl = url || parentUrl || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
   const parentName = parentProof?.formal_name || parentProof?.name || '';
 
   return (
@@ -84,14 +75,12 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
         ) : proof.proof_child_type === 'Extract' ? (
           <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
         ) : proof.proof_child_type === 'VideoClip' ? (
-          (isLoading || isAssetLoading) && !externalUrl ? (
+          isLoading && !externalUrl ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
-          ) : externalUrl ? (
+          ) : (
             <div className="h-full overflow-auto bg-stone-950 p-4">
               <VideoClipController videoUrl={externalUrl} segments={proof.video_clips || []} onStateChange={handleVideoStateChange} />
             </div>
-          ) : (
-            <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No video source available</div>
           )
         ) : proof.file_type === 'Video' ? (
           isLoading && !externalUrl ? (
