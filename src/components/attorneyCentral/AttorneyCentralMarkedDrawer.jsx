@@ -1,7 +1,6 @@
 import React from 'react';
 import { Search, ChevronLeft } from 'lucide-react';
 import { getProofDisplayName } from '@/lib/examV2Utils';
-import AttorneyCentralProofThumb from '@/components/attorneyCentral/AttorneyCentralProofThumb.jsx';
 import { countQuestionLinks, getProofHistoryChips, getProofKindLabel, getProofMetaLine, getProofNumber, getProofStatusConfig, normalizeSearchValue } from '@/lib/attorneyCentralUtils';
 
 function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectProof, highlightedProofId, examItems, localDecisionMap }) {
@@ -18,40 +17,35 @@ function ProofNode({ proof, depth = 0, childrenMap, selectedProofId, onSelectPro
         onClick={() => onSelectProof(proof.id)}
         className={`w-full rounded-3xl border p-4 text-left transition ${isSelected ? 'border-stone-900 bg-stone-900 text-white shadow-lg' : 'border-stone-200 bg-white text-stone-900 shadow-sm hover:border-stone-300 hover:shadow-md'} ${isHighlighted ? 'ring-2 ring-amber-300' : ''}`}
       >
-        <div className="flex gap-4">
-          <AttorneyCentralProofThumb proof={proof} className="h-24 w-20 flex-shrink-0 border border-stone-200" />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={`rounded-full border px-3 py-1 text-xs font-black tracking-[0.18em] ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.accent}`}>
-                {getProofNumber(proof)}
-              </span>
-              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.pill}`}>
-                {status.label}
-              </span>
-              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white/90' : 'border-stone-200 bg-stone-50 text-stone-600'}`}>
-                {getProofKindLabel(proof)}
-              </span>
-              {linkCount > 0 ? (
-                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white/90' : 'border-orange-200 bg-orange-50 text-orange-700'}`}>
-                  {linkCount} linked question{linkCount === 1 ? '' : 's'}
-                </span>
-              ) : null}
-            </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full border px-3 py-1 text-xs font-black tracking-[0.18em] ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.accent}`}>
+            {getProofNumber(proof)}
+          </span>
+          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.pill}`}>
+            {status.label}
+          </span>
+          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white/90' : 'border-stone-200 bg-stone-50 text-stone-600'}`}>
+            {getProofKindLabel(proof)}
+          </span>
+          {linkCount > 0 ? (
+            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white/90' : 'border-orange-200 bg-orange-50 text-orange-700'}`}>
+              {linkCount} linked question{linkCount === 1 ? '' : 's'}
+            </span>
+          ) : null}
+        </div>
 
-            <div className="mt-3">
-              <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{proof.formal_name || getProofDisplayName(proof)}</p>
-              {proof.formal_name && proof.name ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>Internal: {proof.name}</p> : null}
-              {getProofMetaLine(proof) ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofMetaLine(proof)}</p> : null}
-            </div>
+        <div className="mt-3">
+          <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{proof.formal_name || getProofDisplayName(proof)}</p>
+          {proof.formal_name && proof.name ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>Internal: {proof.name}</p> : null}
+          {getProofMetaLine(proof) ? <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofMetaLine(proof)}</p> : null}
+        </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {getProofHistoryChips(proof).map((chip) => (
-                <span key={chip.key} className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white/90' : chip.className}`}>
-                  {chip.label}: {chip.value}
-                </span>
-              ))}
-            </div>
-          </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {getProofHistoryChips(proof).map((chip) => (
+            <span key={chip.key} className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white/90' : chip.className}`}>
+              {chip.label}: {chip.value}
+            </span>
+          ))}
         </div>
       </button>
 

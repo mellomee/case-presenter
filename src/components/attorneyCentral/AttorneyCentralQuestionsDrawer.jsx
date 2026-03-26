@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChevronRight, FolderKanban } from 'lucide-react';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
-import AttorneyCentralProofThumb from '@/components/attorneyCentral/AttorneyCentralProofThumb.jsx';
 import { buildQuestionTree, getProofKindLabel, getProofNumber, getProofStatusConfig } from '@/lib/attorneyCentralUtils';
 
 const PARTY_SIDE_ORDER = ['Plaintiff', 'Defense', 'Neutral'];
@@ -17,11 +16,17 @@ function renderGroupedPartyOptions(parties = []) {
     .map((side) => ({ side, items: [...parties].filter((party) => party.side === side).sort(comparePartiesByFirstName) }))
     .filter((group) => group.items.length > 0);
 
-  return groups.map((group) => (
-    <optgroup key={group.side} label={group.side}>
-      {group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
-    </optgroup>
-  ));
+  return (
+    <>
+      {groups.map((group, index) => (
+        <React.Fragment key={group.side}>
+          {index > 0 ? <option disabled>──────────</option> : null}
+          <option disabled>{group.side}</option>
+          {group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
+        </React.Fragment>
+      ))}
+    </>
+  );
 }
 
 function LinkedProofChip({ proof, isSelected, localDecision, onClick }) {
@@ -33,21 +38,16 @@ function LinkedProofChip({ proof, isSelected, localDecision, onClick }) {
       onClick={onClick}
       className={`rounded-2xl border p-3 text-left transition ${isSelected ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-stone-50 text-stone-900 hover:border-stone-300'}`}
     >
-      <div className="flex gap-3">
-        <AttorneyCentralProofThumb proof={proof} className="h-20 w-16 flex-shrink-0 border border-stone-200" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black tracking-[0.18em] ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.accent}`}>
-              {getProofNumber(proof)}
-            </span>
-            <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.pill}`}>
-              {status.label}
-            </span>
-          </div>
-          <p className={`mt-2 text-sm font-semibold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getProofDisplayName(proof)}</p>
-          <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofKindLabel(proof)}</p>
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black tracking-[0.18em] ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.accent}`}>
+          {getProofNumber(proof)}
+        </span>
+        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${isSelected ? 'border-white/20 bg-white/10 text-white' : status.pill}`}>
+          {status.label}
+        </span>
       </div>
+      <p className={`mt-2 text-sm font-semibold ${isSelected ? 'text-white' : 'text-stone-900'}`}>{getProofDisplayName(proof)}</p>
+      <p className={`mt-1 text-xs ${isSelected ? 'text-white/70' : 'text-stone-500'}`}>{getProofKindLabel(proof)}</p>
     </button>
   );
 }
