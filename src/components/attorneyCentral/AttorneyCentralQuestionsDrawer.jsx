@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, FolderKanban } from 'lucide-react';
+import { FolderKanban } from 'lucide-react';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
 import { buildQuestionTree, getProofKindLabel, getProofNumber, getProofStatusConfig } from '@/lib/attorneyCentralUtils';
 
@@ -71,16 +71,19 @@ function QuestionNode({ item, depth, proofsById, selectedProofId, localDecisionM
             <p className={`text-sm font-semibold leading-6 ${isChecked ? 'text-stone-500 line-through' : 'text-stone-900'}`}>{item.text || 'Untitled question'}</p>
             {item.expected_answer ? <p className="mt-2 text-xs text-stone-500">Expected: {item.expected_answer}</p> : null}
             {linkedProofs.length > 0 ? (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {linkedProofs.map((proof) => (
-                  <LinkedProofChip
-                    key={proof.id}
-                    proof={proof}
-                    isSelected={selectedProofId === proof.id}
-                    localDecision={localDecisionMap[proof.id]}
-                    onClick={() => onSelectProof(proof.id)}
-                  />
-                ))}
+              <div className="mt-3 -mx-1 overflow-x-auto pb-1">
+                <div className="flex min-w-max gap-2 px-1">
+                  {linkedProofs.map((proof) => (
+                    <div key={proof.id} className="w-56 shrink-0">
+                      <LinkedProofChip
+                        proof={proof}
+                        isSelected={selectedProofId === proof.id}
+                        localDecision={localDecisionMap[proof.id]}
+                        onClick={() => onSelectProof(proof.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
@@ -133,14 +136,9 @@ export default function AttorneyCentralQuestionsDrawer({
     <aside className={`absolute bottom-28 right-0 top-0 z-20 w-[min(30rem,calc(100vw-3rem))] border-l border-stone-200 bg-white shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="flex h-full flex-col">
         <div className="border-b border-stone-200 px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-500">Questions</p>
-              <h2 className="mt-1 text-xl font-bold text-stone-900">Exam order</h2>
-            </div>
-            <button type="button" onClick={onClose} className="rounded-full border border-stone-200 bg-stone-50 p-2 text-stone-500 hover:text-stone-900">
-              <ChevronRight className="h-5 w-5" />
-            </button>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-500">Questions</p>
+            <h2 className="mt-1 text-xl font-bold text-stone-900">Exam order</h2>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">

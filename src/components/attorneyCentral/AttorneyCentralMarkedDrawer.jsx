@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, ChevronLeft } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { getProofDisplayName } from '@/lib/examV2Utils';
 import { countQuestionLinks, getProofHistoryChips, getProofKindLabel, getProofMetaLine, getProofNumber, getProofStatusConfig, normalizeSearchValue } from '@/lib/attorneyCentralUtils';
 
@@ -86,6 +86,11 @@ export default function AttorneyCentralMarkedDrawer({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
+  depositionPartyId = 'all',
+  onDepositionPartyChange,
+  depositionParties = [],
+  selectedDepositionParentId = '',
+  onSelectDepositionParent,
 }) {
   const visibleProofs = proofs.filter((proof) => {
     const searchMatch = !normalizeSearchValue(search) || [proof.name, proof.formal_name, proof.joint_exhibit_num, proof.admitted_exhibit_num, proof.demonstrative_exhibit_num]
@@ -99,19 +104,32 @@ export default function AttorneyCentralMarkedDrawer({
     return true;
   });
 
+  const selectedDepositionParent = mode === 'depositions'
+    ? visibleProofs.find((proof) => proof.id === selectedDepositionParentId) || visibleProofs[0] || null
+    : null;
+  const visibleDepositionChildren = selectedDepositionParent ? (childrenMap[selectedDepositionParent.id] || []) : [];
+
   return (
     <aside className={`absolute bottom-28 left-0 top-0 z-20 w-[min(28rem,calc(100vw-3rem))] border-r border-stone-200 bg-[#fbf7f1] shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex h-full flex-col">
         <div className="border-b border-stone-200 px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-500">Attorney Central</p>
-              <h2 className="mt-1 text-xl font-bold text-stone-900">{title}</h2>
-            </div>
-            <button type="button" onClick={onClose} className="rounded-full border border-stone-200 bg-white p-2 text-stone-500 hover:text-stone-900">
-              <ChevronLeft className="h-5 w-5" />
-            </button>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-500">Attorney Central</p>
+            <h2 className="mt-1 text-xl font-bold text-stone-900">{title}</h2>
           </div>
+
+          {mode === 'depositions' ? (
+            <select
+              value={depositionPartyId}
+              onChange={(event) => onDepositionPartyChange?.(event.target.value)}
+              className="mt-4 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-900 outline-none"
+            >
+              <option value="all">All Parties</option>
+              {depositionParties.map((party) => (
+                <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>
+              ))}
+            </select>
+          ) : null}
 
           <div className="mt-4 rounded-2xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
             <div className="flex items-center gap-2">
@@ -144,10 +162,57 @@ export default function AttorneyCentralMarkedDrawer({
               ))}
             </div>
           ) : null}
+
+          {mode === 'depositions' ? (
+            <div className="mt-4 -mx-1 overflow-x-auto pb-1">
+              <div className="flex min-w-max gap-2 px-1">
+                {visibleProofs.map((proof) => {
+                  const isActive = selectedDepositionParent?.id === proof.id;
+                  return (
+                    <button
+                      key={proof.id}
+                      type="button"
+                      onClick={() => {
+                        onSelectDepositionParent?.(proof.id);
+                      }}
+                      className={`w-48 shrink-0 rounded-3xl border p-3 text-left transition ${isActive ? 'border-stone-900 bg-stone-900 text-white shadow-lg' : 'border-stone-200 bg-white text-stone-900 shadow-sm hover:border-stone-300'}`}
+                    >
+                      <p className={`text-xs font-bold uppercase tracking-[0.18em] ${isActive ? 'text-white/70' : 'text-stone-500'}`}>Parent Deposition</p>
+                      <p className="mt-2 text-sm font-bold">{proof.formal_name || getProofDisplayName(proof)}</p>
+                      <p className={`mt-1 text-xs ${isActive ? 'text-white/70' : 'text-stone-500'}`}>{getProofMetaLine(proof)}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          {visibleProofs.length === 0 ? (
+          {mode === 'depositions' ? (
+            !selectedDepositionParent ? (
+              <div className="rounded-3xl border border-dashed border-stone-300 bg-white px-5 py-8 text-center text-sm text-stone-500">
+                No depositions match the current party filter.
+              </div>
+            ) : visibleDepositionChildren.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-stone-300 bg-white px-5 py-8 text-center text-sm text-stone-500">
+                This deposition has no child extracts or clips yet.
+              </div>
+            ) : (
+              visibleDepositionChildren.map((proof) => (
+                <ProofNode
+                  key={proof.id}
+                  proof={proof}
+                  childrenMap={childrenMap}
+                  selectedProofId={selectedProofId}
+                  onSelectProof={onSelectProof}
+                  highlightedProofId={highlightedProofId}
+                  examItems={examItems}
+                  localDecisionMap={localDecisionMap}
+                />
+              ))
+            )
+          ) : visibleProofs.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-stone-300 bg-white px-5 py-8 text-center text-sm text-stone-500">
               Nothing matches your current filter.
             </div>
