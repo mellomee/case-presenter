@@ -9,7 +9,6 @@ import ExtractViewer from '@/components/proofVault/ExtractViewer.jsx';
 import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
-import JuryPublishBar from '@/components/attorneyView/JuryPublishBar.jsx';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
 function statusPill(proof) {
@@ -81,11 +80,6 @@ export default function ProofPreviewPane({ proof, juryState, witnessState, onUpd
 
   const exhibitNum = proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num;
   const externalUrl = url || parentUrl || proof.video_url || proof.file_url || parentProof?.video_url || parentProof?.file_url;
-  const publishSourceProof = parentProof || proof;
-  const showJuryPublishBar =
-    (juryState?.published_proof_id === proof.id && !juryState?.is_blank) ||
-    ['Admitted', 'Demonstrative'].includes(publishSourceProof.status) ||
-    publishSourceProof.proof_category === 'Deposition';
   const resolvedVideoProof = {
     ...proof,
     file_url: proof.file_type === 'Video' ? '' : (url || proof.file_url),
@@ -250,15 +244,6 @@ export default function ProofPreviewPane({ proof, juryState, witnessState, onUpd
           </Button>
         </div>
       </div>
-
-      {showJuryPublishBar && onUpdateJury && (
-        <JuryPublishBar
-          proof={proof}
-          parentProof={parentProof}
-          juryState={juryState}
-          onUpdate={onUpdateJury}
-        />
-      )}
 
       <div className="flex-1 overflow-hidden bg-slate-900/50 min-h-0">
         {renderPreview()}
