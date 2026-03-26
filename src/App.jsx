@@ -21,7 +21,6 @@ import AttorneyHub from '@/pages/AttorneyHub';
 import ExamBuilderV2 from '@/pages/ExamBuilderV2';
 import ExamTextImport from '@/pages/ExamTextImport';
 import WitnessMarkup from '@/pages/WitnessMarkup';
-import AttorneyCentral from '@/pages/AttorneyCentral';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,14 +57,12 @@ const AuthenticatedApp = () => {
         <Route path="/ExamBuilderV2" element={<ExamBuilderV2 />} />
         <Route path="/ExamTextImport" element={<ExamTextImport />} />
         <Route path="/AttorneyHub" element={<AttorneyHub />} />
-        <Route path="/AttorneyCentral" element={<AttorneyCentral />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       
       <Route path="/AttorneyView" element={<Navigate to="/present/attorney" replace />} />
       <Route path="/JuryView" element={<Navigate to="/present/jury" replace />} />
       <Route path="/present/hub" element={<Navigate to="/AttorneyHub" replace />} />
-      <Route path="/present/central" element={<Navigate to="/AttorneyCentral" replace />} />
       <Route path="/present/exam-builder-v2" element={<Navigate to="/ExamBuilderV2" replace />} />
       <Route path="/present/attorney" element={<AttorneyViewShell />} />
       <Route path="/present/jury" element={<JuryView />} />
