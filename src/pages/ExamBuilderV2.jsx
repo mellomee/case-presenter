@@ -447,9 +447,34 @@ export default function ExamBuilderV2() {
     invalidate();
   };
 
+  const getItemDepth = (itemId) => {
+    let depth = 0;
+    let currentParentId = itemsById[itemId]?.parent_item_id || null;
+
+    while (currentParentId) {
+      depth += 1;
+      currentParentId = itemsById[currentParentId]?.parent_item_id || null;
+    }
+
+    return depth;
+  };
+
+  const deleteItemsSequentially = async (itemsToDelete = []) => {
+    const orderedItems = [...itemsToDelete].sort((a, b) => getItemDepth(b.id) - getItemDepth(a.id));
+
+    for (const entry of orderedItems) {
+      await base44.entities.ExamItemV2.delete(entry.id);
+    }
+  };
+
   const deleteItem = async (item) => {
     const descendantIds = collectDescendantIds(currentItems, item.id);
-    await Promise.all([...descendantIds, item.id].map((id) => base44.entities.ExamItemV2.delete(id)));
+    const itemsToDelete = [
+      ...descendantIds.map((id) => itemsById[id]).filter(Boolean),
+      item,
+    ];
+
+    await deleteItemsSequentially(itemsToDelete);
     invalidate();
   };
 
@@ -482,22 +507,15 @@ export default function ExamBuilderV2() {
     if (!currentExam || currentItems.length === 0 || !selectedParty) return;
 
     const partyName = `${selectedParty.first_name || ''} ${selectedParty.last_name || ''}`.trim() || 'this party';
-    const confirmed = window.confirm(`Delete all exam content for ${partyName} (${selectedExamType})? This will remove all questions, groups, and proof attachments from Exam Builder V2.`);
+    const confirmed = window.confirm(`Delete all exam content for ${partyName} (${selectedExamType})? This will remove all questions and groups for this party/exam only.`);
     if (!confirmed) return;
 
-    const sortedItems = [...currentItems].sort((a, b) => {
-      const aDepth = collectDescendantIds(currentItems, a.id).length;
-      const bDepth = collectDescendantIds(currentItems, b.id).length;
-      return aDepth - bDepth;
-    });
-
-    for (const item of sortedItems) {
-      await base44.entities.ExamItemV2.delete(item.id);
-    }
+    await deleteItemsSequentially(currentItems);
 
     setSelectedQuestionIds([]);
     setSelectedRootId('');
     invalidate();
+    invalidateExams();
   };
 
   const handleImportExamData = async (importedRootItems) => {
