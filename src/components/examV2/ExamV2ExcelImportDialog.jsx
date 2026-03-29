@@ -308,6 +308,7 @@ export default function ExamV2ExcelImportDialog({
                   <ImportSelect value={selectedExamType} onChange={onSelectedExamTypeChange}>
                     <option value="Direct">Direct</option>
                     <option value="Cross">Cross</option>
+                    <option value="Redirect">Redirect</option>
                   </ImportSelect>
                 </div>
               </div>

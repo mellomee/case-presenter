@@ -649,6 +649,7 @@ export default function ExamBuilderV2() {
             <ToolbarSelect value={selectedExamType} onChange={setSelectedExamType}>
               <option value="Direct">Direct</option>
               <option value="Cross">Cross</option>
+              <option value="Redirect">Redirect</option>
             </ToolbarSelect>
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setPickerOpen(true)}>Add Joint Proof</Button>
             <Button variant="outline" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900" onClick={() => setGroupDialog({ open: true, initialItem: null })}>Add Question Group</Button>
