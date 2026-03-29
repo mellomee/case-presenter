@@ -653,6 +653,7 @@ export default function AttorneyHub() {
                   <ToolbarSelect value={selectedExamType} onChange={setSelectedExamType}>
                     <option value="Direct">Direct</option>
                     <option value="Cross">Cross</option>
+                    <option value="Redirect">Redirect</option>
                   </ToolbarSelect>
                 </div>
               ) : proofTab === 'Exhibits' ? (

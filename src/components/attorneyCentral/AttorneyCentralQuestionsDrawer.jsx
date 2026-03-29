@@ -148,6 +148,7 @@ export default function AttorneyCentralQuestionsDrawer({
             <select value={selectedExamType} onChange={(event) => onSelectExamType(event.target.value)} className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900 outline-none">
               <option value="Direct">Direct</option>
               <option value="Cross">Cross</option>
+              <option value="Redirect">Redirect</option>
             </select>
           </div>
 
