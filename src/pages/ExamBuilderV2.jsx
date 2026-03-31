@@ -208,16 +208,8 @@ export default function ExamBuilderV2() {
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const itemsById = useMemo(() => Object.fromEntries(currentItems.map((item) => [item.id, item])), [currentItems]);
   const availableAttachmentProofs = useMemo(
-    () => proofs.filter((proof) => {
-      if (proof.proof_category === 'Deposition') return true;
-      if (['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) return true;
-      if (proof.parent_proof_id) {
-        const parentProof = proofsById[proof.parent_proof_id];
-        return ['Joint', 'Admitted', 'Demonstrative'].includes(parentProof?.status);
-      }
-      return false;
-    }),
-    [proofs, proofsById]
+    () => proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
+    [proofs]
   );
   const admissionStatusMeta = selectedRootProof?.status === 'Admitted'
     ? { label: `Admitted as Exhibit · #${selectedRootProof.admitted_exhibit_num || '—'}`, color: 'text-red-400' }
