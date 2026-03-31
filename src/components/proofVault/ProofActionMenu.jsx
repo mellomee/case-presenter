@@ -155,8 +155,7 @@ export default function ProofActionMenu({
     const canAddToJoint =
       proof.proof_category === 'Exhibit' &&
       hasAttachment &&
-      isTopLevel &&
-      !isOriginalPdfProof;
+      (isExtract || (isTopLevel && !isOriginalPdfProof));
 
     if (canOptimizePdf) {
       actions.push({ id: 'optimizePdf', label: 'Optimize PDF', icon: FileText, action: () => setOptimizeDialogOpen(true), color: 'text-blue-600' });
@@ -166,7 +165,7 @@ export default function ProofActionMenu({
       actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
     }
 
-    if ((normalizedTab === 'joint' || proof.status === 'Joint') && proof.proof_category === 'Exhibit' && isTopLevel) {
+    if ((normalizedTab === 'joint' || proof.status === 'Joint') && proof.proof_category === 'Exhibit') {
       actions.push({ id: 'admitAsExhibit', label: 'Admit as Exhibit', icon: CheckCircle, action: onAdmitAsExhibit, color: 'text-green-600' });
       actions.push({ id: 'admitAsDemonstrative', label: 'Mark as Demo', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
       actions.push({ id: 'removeFromJoint', label: 'Remove from Joint', icon: Circle, action: onRemoveFromJoint, color: 'text-slate-600' });
