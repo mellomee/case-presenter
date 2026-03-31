@@ -47,12 +47,12 @@ function StepCard({ index, tone, completed, current, children }) {
 
   return (
     <div className={`min-w-[10.5rem] flex-1 rounded-[1.25rem] border p-3 shadow-sm transition ${shellClass} ${current ? 'ring-2 ring-black/5' : ''}`}>
-      <div className="flex items-start justify-end gap-2">
-        <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black ${completed ? palette.badge : 'bg-white/80 text-stone-500'}`}>
+      <div className="flex items-center justify-between gap-2">
+        {children ? <div className="flex flex-wrap items-center gap-1.5">{children}</div> : <div />}
+        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${completed ? palette.badge : 'bg-white/80 text-stone-500'}`}>
           {completed ? <Check className="h-3.5 w-3.5" /> : index}
         </div>
       </div>
-      {children ? <div className="mt-3 flex flex-wrap gap-1.5">{children}</div> : null}
     </div>
   );
 }
