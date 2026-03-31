@@ -43,11 +43,6 @@ function getPrimaryExhibitNumber(proof) {
   return proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || proof.draft_exhibit_num || '';
 }
 
-function shouldShowInJointTab(proof) {
-  if (proof.status !== 'Joint') return false;
-  return !proof.parent_proof_id;
-}
-
 function proofMatchesSearch(proof, searchQuery) {
   const searchValue = normalizeSearchValue(searchQuery);
   if (!searchValue) return true;
@@ -299,7 +294,7 @@ export default function ProofVault() {
     const exhibitsByStatus = exhibitFilter === 'all'
       ? exhibitsTopLevel
       : exhibitFilter === 'Joint'
-        ? allExhibits.filter((proof) => shouldShowInJointTab(proof))
+        ? exhibitsTopLevel.filter((proof) => proof.status === 'Joint')
         : exhibitFilter === 'Admitted'
           ? allExhibits.filter((proof) => proof.status === 'Admitted')
           : exhibitFilter === 'Demonstrative'
