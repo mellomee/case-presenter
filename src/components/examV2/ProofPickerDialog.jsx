@@ -36,7 +36,7 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
   const filtered = useMemo(() => {
     const next = proofs.filter((proof) => {
       if (proof.proof_category !== tab) return false;
-      if (tab === 'Exhibit') return ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) && proof.proof_category === 'Exhibit';
+      if (tab === 'Exhibit') return ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
       return true;
     });
 
