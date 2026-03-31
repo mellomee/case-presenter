@@ -42,7 +42,9 @@ function StepActionButton({ label, onClick, disabled = false, tone = 'marked' })
 }
 
 function StepCard({ index, title, subtitle, tone, completed, current, children }) {
-...
+  const palette = STEP_STYLES[tone];
+  const shellClass = completed || current ? palette.active : palette.muted;
+
   return (
     <div className={`min-w-[10.5rem] flex-1 rounded-[1.25rem] border p-3 shadow-sm transition ${shellClass} ${current ? 'ring-2 ring-black/5' : ''}`}>
       <div className="flex items-start justify-between gap-2">
