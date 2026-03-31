@@ -34,7 +34,7 @@ function StepActionButton({ label, onClick, disabled = false, tone = 'marked' })
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-xl border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${STEP_STYLES[tone].button}`}
+      className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${STEP_STYLES[tone].button}`}
     >
       {label}
     </button>
@@ -42,22 +42,20 @@ function StepActionButton({ label, onClick, disabled = false, tone = 'marked' })
 }
 
 function StepCard({ index, title, subtitle, tone, completed, current, children }) {
-  const palette = STEP_STYLES[tone];
-  const shellClass = completed || current ? palette.active : palette.muted;
-
+...
   return (
-    <div className={`min-w-[12.5rem] flex-1 rounded-[1.5rem] border p-4 shadow-sm transition ${shellClass} ${current ? 'ring-2 ring-black/5' : ''}`}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={`min-w-[10.5rem] flex-1 rounded-[1.25rem] border p-3 shadow-sm transition ${shellClass} ${current ? 'ring-2 ring-black/5' : ''}`}>
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] opacity-70">Step {index}</p>
-          <p className="mt-1 text-sm font-bold">{title}</p>
-          <p className="mt-1 text-xs opacity-70">{subtitle}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70">Step {index}</p>
+          <p className="mt-1 text-xs font-bold">{title}</p>
+          <p className="mt-1 text-[11px] leading-4 opacity-70">{subtitle}</p>
         </div>
-        <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${completed ? palette.badge : 'bg-white/80 text-stone-500'}`}>
-          {completed ? <Check className="h-4 w-4" /> : index}
+        <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black ${completed ? palette.badge : 'bg-white/80 text-stone-500'}`}>
+          {completed ? <Check className="h-3.5 w-3.5" /> : index}
         </div>
       </div>
-      {children ? <div className="mt-4 flex flex-wrap gap-2">{children}</div> : null}
+      {children ? <div className="mt-3 flex flex-wrap gap-1.5">{children}</div> : null}
     </div>
   );
 }
@@ -181,7 +179,7 @@ export default function ProofLifecycleSteps({
       ];
 
   return (
-    <div className="flex flex-col gap-3 xl:flex-row xl:items-stretch xl:gap-2">
+    <div className="flex flex-col gap-2 xl:flex-row xl:items-stretch xl:gap-1.5">
       {steps.map((step, index) => (
         <React.Fragment key={step.title}>
           <StepCard
@@ -196,8 +194,8 @@ export default function ProofLifecycleSteps({
           </StepCard>
           {index < steps.length - 1 ? (
             <>
-              <div className="flex items-center justify-center text-stone-300 xl:hidden"><ArrowRight className="h-5 w-5 rotate-90" /></div>
-              <div className="hidden xl:flex items-center justify-center px-1 text-stone-300"><ArrowRight className="h-5 w-5" /></div>
+              <div className="flex items-center justify-center text-stone-300 xl:hidden"><ArrowRight className="h-4 w-4 rotate-90" /></div>
+              <div className="hidden xl:flex items-center justify-center px-0.5 text-stone-300"><ArrowRight className="h-4 w-4" /></div>
             </>
           ) : null}
         </React.Fragment>
