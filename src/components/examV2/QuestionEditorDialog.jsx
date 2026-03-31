@@ -150,17 +150,6 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
       }
     });
 
-    availableProofs.forEach((proof) => {
-      let currentParentId = proof.parent_proof_id;
-      while (currentParentId) {
-        if (visibleIds.has(currentParentId)) {
-          visibleIds.add(proof.id);
-          break;
-        }
-        currentParentId = proofById[currentParentId]?.parent_proof_id;
-      }
-    });
-
     const roots = availableProofs.filter((proof) => visibleIds.has(proof.id) && (!proof.parent_proof_id || !visibleIds.has(proof.parent_proof_id)));
     const childrenByParent = new Map();
 
