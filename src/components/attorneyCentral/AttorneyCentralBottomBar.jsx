@@ -29,28 +29,28 @@ export default function AttorneyCentralBottomBar({
   const status = getProofStatusConfig(selectedProof, localDecision);
 
   return (
-    <div className="border-t border-stone-200 bg-[#f7f0e6] px-3 py-2 shadow-[0_-8px_24px_rgba(120,94,63,0.08)]">
-      <div className="flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex flex-wrap items-center gap-2 xl:w-auto xl:flex-col xl:items-stretch xl:justify-start">
-          <div className="flex items-center gap-1.5 rounded-3xl border border-stone-200 bg-white px-2 py-1.5 shadow-sm">
-            <button type="button" onClick={onStartTimer} className={`rounded-2xl p-1.5 ${isTimerRunning ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}><Play className="h-4 w-4" /></button>
-            <button type="button" onClick={onPauseTimer} className="rounded-2xl p-1.5 text-stone-600 hover:bg-stone-100"><Pause className="h-4 w-4" /></button>
-            <button type="button" onClick={onResetTimer} className="rounded-2xl p-1.5 text-stone-600 hover:bg-stone-100"><Square className="h-4 w-4" /></button>
-            <div className="ml-1 rounded-2xl bg-stone-100 px-2.5 py-1.5 text-xs font-black text-stone-900">{elapsedLabel}</div>
+    <div className="border-t border-stone-200 bg-[#f7f0e6] px-2 py-1.5 shadow-[0_-8px_24px_rgba(120,94,63,0.08)]">
+      <div className="flex flex-col gap-1.5 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5 xl:w-auto xl:flex-col xl:items-stretch xl:justify-start">
+          <div className="flex items-center gap-1 rounded-3xl border border-stone-200 bg-white px-1.5 py-1 shadow-sm">
+            <button type="button" onClick={onStartTimer} className={`rounded-2xl p-1 ${isTimerRunning ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}><Play className="h-3.5 w-3.5" /></button>
+            <button type="button" onClick={onPauseTimer} className="rounded-2xl p-1 text-stone-600 hover:bg-stone-100"><Pause className="h-3.5 w-3.5" /></button>
+            <button type="button" onClick={onResetTimer} className="rounded-2xl p-1 text-stone-600 hover:bg-stone-100"><Square className="h-3.5 w-3.5" /></button>
+            <div className="ml-1 rounded-2xl bg-stone-100 px-2 py-1 text-[11px] font-black text-stone-900">{elapsedLabel}</div>
           </div>
-          <div className="rounded-3xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-sm">{currentTimeLabel}</div>
+          <div className="rounded-3xl border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-stone-700 shadow-sm">{currentTimeLabel}</div>
         </div>
 
-        <div className="min-w-0 flex-1 rounded-[1.75rem] border border-stone-200 bg-white px-3 py-3 shadow-sm">
+        <div className="min-w-0 flex-1 rounded-[1.5rem] border border-stone-200 bg-white px-2.5 py-2 shadow-sm">
           {selectedProof ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black tracking-[0.18em] ${status.accent}`}>{getProofNumber(selectedProof)}</span>
-                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.pill}`}>{status.label}</span>
-                  <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-semibold text-stone-600">{getProofKindLabel(selectedProof)}</span>
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black tracking-[0.16em] ${status.accent}`}>{getProofNumber(selectedProof)}</span>
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${status.pill}`}>{status.label}</span>
+                  <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[10px] font-semibold text-stone-600">{getProofKindLabel(selectedProof)}</span>
                 </div>
-                <p className="mt-2 truncate text-sm font-bold text-stone-900">{selectedProof.formal_name || getProofDisplayName(selectedProof)}</p>
+                <p className="mt-1.5 truncate text-xs font-bold text-stone-900">{selectedProof.formal_name || getProofDisplayName(selectedProof)}</p>
               </div>
 
               <ProofLifecycleSteps
