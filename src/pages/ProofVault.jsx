@@ -43,6 +43,11 @@ function getPrimaryExhibitNumber(proof) {
   return proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || proof.draft_exhibit_num || '';
 }
 
+function shouldShowInJointTab(proof) {
+  if (proof.status !== 'Joint') return false;
+  return !(proof.file_type === 'PDF' && !proof.parent_proof_id && !proof.proof_child_type);
+}
+
 function proofMatchesSearch(proof, searchQuery) {
   const searchValue = normalizeSearchValue(searchQuery);
   if (!searchValue) return true;
@@ -294,15 +299,15 @@ export default function ProofVault() {
     const exhibitsByStatus = exhibitFilter === 'all'
       ? exhibitsTopLevel
       : exhibitFilter === 'Joint'
-        ? exhibitsTopLevel.filter((proof) => proof.status === 'Joint')
+        ? allExhibits.filter((proof) => shouldShowInJointTab(proof))
         : exhibitFilter === 'Admitted'
-          ? exhibitsTopLevel.filter((proof) => proof.status === 'Admitted')
+          ? allExhibits.filter((proof) => proof.status === 'Admitted')
           : exhibitFilter === 'Demonstrative'
-            ? exhibitsTopLevel.filter((proof) => proof.status === 'Demonstrative')
+            ? allExhibits.filter((proof) => proof.status === 'Demonstrative')
             : exhibitsTopLevel.filter((proof) => proof.status === exhibitFilter);
 
     return sortProofsByExhibitNumber(exhibitsByStatus.filter((proof) => proofMatchesSearch(proof, searchQuery)));
-  }, [exhibitFilter, exhibitsTopLevel, searchQuery]);
+  }, [allExhibits, exhibitFilter, exhibitsTopLevel, searchQuery]);
 
   const filteredDepositions = useMemo(
     () => sortProofsByExhibitNumber(depositionsTopLevel.filter((proof) => proofMatchesSearch(proof, searchQuery))),
@@ -311,9 +316,9 @@ export default function ProofVault() {
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
-    if (status === 'Joint') return exhibitsTopLevel.filter((proof) => proof.status === 'Joint').length;
-    if (status === 'Admitted') return exhibitsTopLevel.filter((proof) => proof.status === 'Admitted').length;
-    if (status === 'Demonstrative') return exhibitsTopLevel.filter((proof) => proof.status === 'Demonstrative').length;
+    if (status === 'Joint') return allExhibits.filter((proof) => shouldShowInJointTab(proof)).length;
+    if (status === 'Admitted') return allExhibits.filter((proof) => proof.status === 'Admitted').length;
+    if (status === 'Demonstrative') return allExhibits.filter((proof) => proof.status === 'Demonstrative').length;
     return exhibitsTopLevel.filter((proof) => proof.status === status).length;
   };
 
