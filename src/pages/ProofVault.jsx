@@ -45,8 +45,7 @@ function getPrimaryExhibitNumber(proof) {
 
 function shouldShowInJointTab(proof) {
   if (proof.status !== 'Joint') return false;
-  if (proof.parent_proof_id) return false;
-  return true;
+  return !(proof.file_type === 'PDF' && !proof.parent_proof_id && !proof.proof_child_type);
 }
 
 function proofMatchesSearch(proof, searchQuery) {
