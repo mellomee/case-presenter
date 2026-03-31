@@ -150,11 +150,12 @@ export default function ProofActionMenu({
       actions.push({ id: 'clip', label: isExtract ? 'Highlight' : 'Clip', icon: isExtract ? Highlighter : Scissors, action: onClip, color: isExtract ? 'text-yellow-500' : 'text-orange-600' });
     }
 
+    const isOriginalPdfProof = isPDF && isTopLevel && !proof.proof_child_type;
     const canOptimizePdf = isOptimizableDropboxPdf(proof);
     const canAddToJoint =
       proof.proof_category === 'Exhibit' &&
       hasAttachment &&
-      (isExtract || isTopLevel);
+      (isExtract || (isTopLevel && !isOriginalPdfProof));
 
     if (canOptimizePdf) {
       actions.push({ id: 'optimizePdf', label: 'Optimize PDF', icon: FileText, action: () => setOptimizeDialogOpen(true), color: 'text-blue-600' });

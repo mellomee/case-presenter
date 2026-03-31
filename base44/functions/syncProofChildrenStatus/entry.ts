@@ -26,43 +26,25 @@ Deno.serve(async (req) => {
     const targetProofId = payload?.event?.entity_id || payload?.data?.id || null;
     const targetProof = targetProofId ? proofById.get(targetProofId) : null;
 
-    if (!targetProof) {
-      return Response.json({ success: true, updatedCount: 0 });
-    }
+    const rootsToSync = targetProof
+      ? [targetProof]
+      : proofs.filter((proof) => proof.status === 'Admitted');
 
     let updatedCount = 0;
-
-    const buildPatchFromParent = (parentProof, child) => {
-      const patch = {};
-
-      if (child.status !== parentProof.status) patch.status = parentProof.status;
-
-      const fieldsToMirror = [
-        'joint_exhibit_num',
-        'joint_by',
-        'joint_date',
-        'admitted_exhibit_num',
-        'admitted_by',
-        'admit_date',
-        'demonstrative_exhibit_num',
-      ];
-
-      for (const field of fieldsToMirror) {
-        const parentValue = parentProof[field] || null;
-        const childValue = child[field] || null;
-        if (childValue !== parentValue) {
-          patch[field] = parentValue;
-        }
-      }
-
-      return patch;
-    };
 
     const syncChildren = async (parentProof) => {
       const children = childrenByParent.get(parentProof.id) || [];
 
       for (const child of children) {
-        const patch = buildPatchFromParent(parentProof, child);
+        const patch = {};
+
+        if (parentProof.status === 'Admitted') {
+          if (child.status !== 'Admitted') patch.status = 'Admitted';
+          if (child.admitted_exhibit_num !== parentProof.admitted_exhibit_num) patch.admitted_exhibit_num = parentProof.admitted_exhibit_num || null;
+          if (child.admitted_by !== parentProof.admitted_by) patch.admitted_by = parentProof.admitted_by || null;
+          if (child.admit_date !== parentProof.admit_date) patch.admit_date = parentProof.admit_date || null;
+        }
+
         const nextChild = Object.keys(patch).length > 0
           ? { ...child, ...patch }
           : child;
@@ -76,7 +58,11 @@ Deno.serve(async (req) => {
       }
     };
 
-    await syncChildren(targetProof);
+    for (const rootProof of rootsToSync) {
+      if (rootProof?.status === 'Admitted') {
+        await syncChildren(rootProof);
+      }
+    }
 
     return Response.json({ success: true, updatedCount });
   } catch (error) {

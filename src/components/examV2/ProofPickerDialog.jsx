@@ -36,7 +36,7 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
   const filtered = useMemo(() => {
     const next = proofs.filter((proof) => {
       if (proof.proof_category !== tab) return false;
-      if (tab === 'Exhibit') return ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
+      if (tab === 'Exhibit') return proof.status === 'Joint';
       return true;
     });
 
@@ -73,7 +73,7 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white border-slate-200 text-slate-900">
         <DialogHeader>
-          <DialogTitle>Proof Picker</DialogTitle>
+          <DialogTitle>Joint Proof Picker</DialogTitle>
           <DialogDescription className="text-slate-500">Choose a parent proof to add into the V2 exam order.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -97,7 +97,7 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
         <div className="grid grid-cols-1 gap-4 min-h-0 lg:min-h-[28rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,0.9fr)]">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 overflow-y-auto max-h-[60vh] lg:max-h-[68vh]">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-900">Parent proofs</p>
+              <p className="text-sm font-semibold text-slate-900">Parent joint proofs</p>
               <span className="text-xs text-slate-500">{parentProofs.length}</span>
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
