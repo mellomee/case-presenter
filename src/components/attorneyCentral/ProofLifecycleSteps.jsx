@@ -34,7 +34,7 @@ function StepActionButton({ label, onClick, disabled = false, tone = 'marked' })
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${STEP_STYLES[tone].button}`}
+      className={`whitespace-nowrap rounded-xl border px-2.5 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${STEP_STYLES[tone].button}`}
     >
       {label}
     </button>
@@ -47,8 +47,8 @@ function StepCard({ index, tone, completed, current, children }) {
 
   return (
     <div className={`min-w-[10.5rem] flex-1 rounded-[1.25rem] border p-3 shadow-sm transition ${shellClass} ${current ? 'ring-2 ring-black/5' : ''}`}>
-      <div className="flex items-center justify-between gap-2">
-        {children ? <div className="flex flex-wrap items-center gap-1.5">{children}</div> : <div />}
+      <div className="flex items-center justify-between gap-2 overflow-x-auto">
+        {children ? <div className="flex min-w-0 items-center gap-1.5">{children}</div> : <div />}
         <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${completed ? palette.badge : 'bg-white/80 text-stone-500'}`}>
           {completed ? <Check className="h-3.5 w-3.5" /> : index}
         </div>
