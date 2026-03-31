@@ -41,18 +41,13 @@ function StepActionButton({ label, onClick, disabled = false, tone = 'marked' })
   );
 }
 
-function StepCard({ index, title, subtitle, tone, completed, current, children }) {
+function StepCard({ index, tone, completed, current, children }) {
   const palette = STEP_STYLES[tone];
   const shellClass = completed || current ? palette.active : palette.muted;
 
   return (
     <div className={`min-w-[10.5rem] flex-1 rounded-[1.25rem] border p-3 shadow-sm transition ${shellClass} ${current ? 'ring-2 ring-black/5' : ''}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70">Step {index}</p>
-          <p className="mt-1 text-xs font-bold">{title}</p>
-          <p className="mt-1 text-[11px] leading-4 opacity-70">{subtitle}</p>
-        </div>
+      <div className="flex items-start justify-end gap-2">
         <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black ${completed ? palette.badge : 'bg-white/80 text-stone-500'}`}>
           {completed ? <Check className="h-3.5 w-3.5" /> : index}
         </div>
@@ -130,14 +125,10 @@ export default function ProofLifecycleSteps({
       ]
     : [
         {
-          title: 'Marked',
-          subtitle: 'Selected and in the proof flow',
           tone: 'marked',
           completed: true,
         },
         {
-          title: 'Authenticate',
-          subtitle: isAuthenticated ? 'Witness extract added to marked list' : 'Move it into the marked list first',
           tone: 'authenticate',
           completed: isAuthenticated,
           action: (
@@ -150,14 +141,11 @@ export default function ProofLifecycleSteps({
           ),
         },
         {
-          title: 'Admit',
-          subtitle: isAdmitted ? (selectedProof.status === 'Demonstrative' ? 'Admitted as demonstrative' : 'Admitted and trial-ready') : 'Choose exhibit or demo',
           tone: 'admit',
           completed: isAdmitted,
           action: isJointExhibit ? (
             <>
               <StepActionButton label="Admit Exhibit" onClick={onAdmitExhibit} tone="admit" />
-              <StepActionButton label="Admit Demo" onClick={onAdmitDemo} tone="admit" />
               <StepActionButton label={localDecision === 'not_admitted' ? 'Undo Reject' : 'Reject'} onClick={onRejectToggle} tone="admit" />
             </>
           ) : isAdmittedProof ? (
@@ -165,17 +153,18 @@ export default function ProofLifecycleSteps({
           ) : null,
         },
         {
-          title: 'Publish',
-          subtitle: isPublishedToJury ? 'Live on jury screen' : 'Ready after admission',
           tone: 'publish',
           completed: isPublishedToJury,
           action: (
-            <StepActionButton
-              label={isPublishedToJury ? 'Unpublish Jury' : 'Publish Jury'}
-              onClick={isPublishedToJury ? onUnpublishFromJury : onPublishToJury}
-              disabled={!isPublishedToJury && !canPublishToJury}
-              tone="publish"
-            />
+            <>
+              {selectedProof.status === 'Joint' ? <StepActionButton label="Publish Demo" onClick={onAdmitDemo} tone="publish" /> : null}
+              <StepActionButton
+                label={isPublishedToJury ? 'Unpublish Jury' : 'Publish Jury'}
+                onClick={isPublishedToJury ? onUnpublishFromJury : onPublishToJury}
+                disabled={!isPublishedToJury && !canPublishToJury}
+                tone="publish"
+              />
+            </>
           ),
         },
       ];
@@ -186,8 +175,6 @@ export default function ProofLifecycleSteps({
         <React.Fragment key={step.title}>
           <StepCard
             index={index + 1}
-            title={step.title}
-            subtitle={step.subtitle}
             tone={step.tone}
             completed={step.completed}
             current={index === activeIndex}
