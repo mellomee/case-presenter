@@ -155,7 +155,8 @@ export default function ProofActionMenu({
     const canAddToJoint =
       proof.proof_category === 'Exhibit' &&
       hasAttachment &&
-      (isExtract || (isTopLevel && !isOriginalPdfProof));
+      isTopLevel &&
+      !isOriginalPdfProof;
 
     if (canOptimizePdf) {
       actions.push({ id: 'optimizePdf', label: 'Optimize PDF', icon: FileText, action: () => setOptimizeDialogOpen(true), color: 'text-blue-600' });
@@ -165,17 +166,17 @@ export default function ProofActionMenu({
       actions.push({ id: 'addToJoint', label: 'Add to Joint', icon: Link2, action: onAddToJoint, color: 'text-blue-600' });
     }
 
-    if ((normalizedTab === 'joint' || proof.status === 'Joint') && proof.proof_category === 'Exhibit') {
+    if (isTopLevel && (normalizedTab === 'joint' || proof.status === 'Joint') && proof.proof_category === 'Exhibit') {
       actions.push({ id: 'admitAsExhibit', label: 'Admit as Exhibit', icon: CheckCircle, action: onAdmitAsExhibit, color: 'text-green-600' });
       actions.push({ id: 'admitAsDemonstrative', label: 'Mark as Demo', icon: Copy, action: onAdmitAsDemonstrative, color: 'text-purple-600' });
       actions.push({ id: 'removeFromJoint', label: 'Remove from Joint', icon: Circle, action: onRemoveFromJoint, color: 'text-slate-600' });
     }
 
-    if (normalizedTab === 'admitted' || proof.status === 'Admitted') {
+    if (isTopLevel && (normalizedTab === 'admitted' || proof.status === 'Admitted')) {
       actions.push({ id: 'unAdmit', label: 'Un-Admit', icon: Circle, action: onUnAdmit, color: 'text-slate-600' });
     }
 
-    if (normalizedTab === 'demonstrative' || proof.status === 'Demonstrative') {
+    if (isTopLevel && (normalizedTab === 'demonstrative' || proof.status === 'Demonstrative')) {
       actions.push({ id: 'unAdmitDemo', label: 'Un-Admit', icon: Circle, action: onUnAdmit, color: 'text-slate-600' });
     }
 
