@@ -57,6 +57,19 @@ function getProofTypeLabel(proof) {
   return 'PDF';
 }
 
+function isSelectableExhibitProof(proof) {
+  return proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
+}
+
+function hasSelectableExhibitAncestor(proof, proofById) {
+  let currentProof = proof?.parent_proof_id ? proofById[proof.parent_proof_id] : null;
+  while (currentProof) {
+    if (isSelectableExhibitProof(currentProof)) return true;
+    currentProof = currentProof.parent_proof_id ? proofById[currentProof.parent_proof_id] : null;
+  }
+  return false;
+}
+
 export default function ExamBuilderProofPickerDialog({ open, onOpenChange, proofs = [], parties = [], onSelect }) {
   const [proofTab, setProofTab] = useState('Exhibit');
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,7 +92,7 @@ export default function ExamBuilderProofPickerDialog({ open, onOpenChange, proof
   const visibleProofTree = useMemo(() => {
     const matchingProofs = proofs.filter((proof) => {
       if (proofTab === 'Exhibit') {
-        if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) {
+        if (!isSelectableExhibitProof(proof) || hasSelectableExhibitAncestor(proof, proofById)) {
           return false;
         }
       } else if (proof.proof_category !== 'Deposition') {

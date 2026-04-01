@@ -63,6 +63,19 @@ function isHiddenDepositionSource(proof) {
   return proof?.proof_category === 'Deposition' && proof?.file_type === 'PDF' && !proof?.parent_proof_id && !proof?.proof_child_type;
 }
 
+function isSelectableExhibitProof(proof) {
+  return proof?.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
+}
+
+function hasSelectableExhibitAncestor(proof, proofById) {
+  let currentProof = proof?.parent_proof_id ? proofById[proof.parent_proof_id] : null;
+  while (currentProof) {
+    if (isSelectableExhibitProof(currentProof)) return true;
+    currentProof = currentProof.parent_proof_id ? proofById[currentProof.parent_proof_id] : null;
+  }
+  return false;
+}
+
 export default function QuestionEditorDialog({ open, onOpenChange, onSave, initialValue = null, availableProofs = [], parties = [], title = 'Question' }) {
   const [form, setForm] = useState({ text: '', expected_answer: '', notes: '', attached_proof_ids: [] });
   const [previewProof, setPreviewProof] = useState(null);
@@ -107,7 +120,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
   const visibleProofTree = useMemo(() => {
     const matchingProofs = availableProofs.filter((proof) => {
       if (proofTab === 'Exhibit') {
-        if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) {
+        if (!isSelectableExhibitProof(proof) || hasSelectableExhibitAncestor(proof, proofById)) {
           return false;
         }
       } else {
