@@ -6,8 +6,9 @@ import ExtractViewer from '@/components/proofVault/ExtractViewer.jsx';
 import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
+import AttorneyCentralPdfMarkupLayer from '@/components/attorneyCentral/AttorneyCentralPdfMarkupLayer.jsx';
 
-export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness }) {
+export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, interactionMode = 'navigate', attorneyMarkup = { strokes: [], highlights: [] }, onAttorneyMarkupChange }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
@@ -76,7 +77,10 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
-          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
+          <div className="relative h-full pt-14">
+            <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
+            <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
+          </div>
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
@@ -96,7 +100,12 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <img src={externalUrl} alt={proof.name} className="max-h-full max-w-full rounded-3xl object-contain shadow-lg" />
           </div>
         ) : externalUrl ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} />
+          <div className="relative h-full pt-14">
+            <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} allowPan={interactionMode === 'navigate' || interactionMode === 'touch'} />
+            {proof.file_type === 'PDF' && proof.proof_child_type !== 'ExtractClip' ? (
+              <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
+            ) : null}
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No file attached</div>
         )}

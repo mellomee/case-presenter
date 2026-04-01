@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import AttorneyCentralMarkupToolbar from '@/components/attorneyCentral/AttorneyCentralMarkupToolbar.jsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, FolderKanban, Play } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -62,6 +63,8 @@ export default function AttorneyCentral() {
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
   const [pendingWitnessProof, setPendingWitnessProof] = useState(null);
   const [highlightedProofId, setHighlightedProofId] = useState('');
+  const [previewInteractionMode, setPreviewInteractionMode] = useState('navigate');
+  const [attorneyMarkup, setAttorneyMarkup] = useState({ strokes: [], highlights: [] });
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [currentTimeLabel, setCurrentTimeLabel] = useState(() => TIME_FORMATTER.format(new Date()));
@@ -104,11 +107,18 @@ export default function AttorneyCentral() {
   const isPublishedToWitness = witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank;
   const canPublishToJury = canPublishProof(selectedProof, localDecision);
   const canPublishToWitness = canPublishProofToWitness(selectedProof);
+  const supportsLiveMarkup = Boolean(selectedProof && selectedProof.file_type === 'PDF' && selectedProof.proof_child_type !== 'ExtractClip');
+  const canUndoMarkup = attorneyMarkup.strokes.length > 0 || attorneyMarkup.highlights.length > 0;
 
   useEffect(() => {
     if (selectedProof?.proof_category !== 'Deposition') return;
     setSelectedDepositionParentId(selectedProof.parent_proof_id || selectedProof.id);
   }, [selectedProof]);
+
+  useEffect(() => {
+    setAttorneyMarkup({ strokes: [], highlights: [] });
+    setPreviewInteractionMode('navigate');
+  }, [selectedProofId]);
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),
@@ -213,6 +223,7 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
+      attorney_markup: supportsLiveMarkup ? attorneyMarkup : null,
     });
   };
 
@@ -243,6 +254,7 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
+      attorney_markup: supportsLiveMarkup ? attorneyMarkup : null,
     });
   };
 
@@ -307,8 +319,46 @@ export default function AttorneyCentral() {
             witnessState={witnessState}
             onUpdateJury={update}
             onUpdateWitness={updateWitness}
+            interactionMode={previewInteractionMode}
+            attorneyMarkup={attorneyMarkup}
+            onAttorneyMarkupChange={(nextMarkup) => {
+              setAttorneyMarkup(nextMarkup);
+              if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) {
+                update({ attorney_markup: nextMarkup });
+              }
+              if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) {
+                updateWitness({ attorney_markup: nextMarkup });
+              }
+            }}
           />
         </div>
+
+        <AttorneyCentralMarkupToolbar
+          visible={supportsLiveMarkup}
+          mode={previewInteractionMode}
+          onModeChange={setPreviewInteractionMode}
+          canUndo={canUndoMarkup}
+          hasMarkup={canUndoMarkup}
+          onUndo={() => {
+            if (attorneyMarkup.strokes.length > 0) {
+              const nextMarkup = { ...attorneyMarkup, strokes: attorneyMarkup.strokes.slice(0, -1) };
+              setAttorneyMarkup(nextMarkup);
+              if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
+              if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
+              return;
+            }
+            const nextMarkup = { ...attorneyMarkup, highlights: attorneyMarkup.highlights.slice(0, -1) };
+            setAttorneyMarkup(nextMarkup);
+            if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
+            if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
+          }}
+          onClear={() => {
+            const nextMarkup = { strokes: [], highlights: [] };
+            setAttorneyMarkup(nextMarkup);
+            if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
+            if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
+          }}
+        />
 
         {(leftDrawer || rightDrawerOpen) ? (
           <button
