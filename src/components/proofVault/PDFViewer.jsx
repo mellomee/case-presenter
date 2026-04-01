@@ -294,6 +294,7 @@ export default function PDFViewer({
       }
     };
     const onTouchMove = (e) => {
+      if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
       e.preventDefault();
       if (touchRef.current.mode === 'pinch' && e.touches.length === 2) {
         const dist = Math.hypot(
@@ -323,7 +324,7 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages, liveMarkupEnabled, liveMarkupMode]);
 
   const handleMouseDown = (e) => {
     if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
@@ -332,6 +333,7 @@ export default function PDFViewer({
   };
 
   const handleMouseMove = (e) => {
+    if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
     if (!dragRef.current.dragging) return;
     const dx = e.clientX - dragRef.current.x;
     const dy = e.clientY - dragRef.current.y;
@@ -342,6 +344,7 @@ export default function PDFViewer({
   };
 
   const handleMouseUp = () => {
+    if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
     if (dragRef.current.dragging) {
       dragRef.current.dragging = false;
       if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY });
@@ -641,6 +644,8 @@ export default function PDFViewer({
                     style={{ touchAction: liveMarkupMode === 'navigate' ? 'none' : 'none' }}
                     onPointerDown={(event) => {
                       if (liveMarkupMode === 'navigate') return;
+                      event.preventDefault();
+                      event.stopPropagation();
                       const rect = event.currentTarget.getBoundingClientRect();
                       const point = {
                         x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
@@ -660,6 +665,9 @@ export default function PDFViewer({
                       }
                     }}
                     onPointerMove={(event) => {
+                      if (liveMarkupMode === 'navigate') return;
+                      event.preventDefault();
+                      event.stopPropagation();
                       if (liveMarkupMode === 'pen' && draftLiveStroke) {
                         const rect = event.currentTarget.getBoundingClientRect();
                         const point = {
@@ -679,7 +687,9 @@ export default function PDFViewer({
                         setDraftLiveHighlight(highlight);
                       }
                     }}
-                    onPointerUp={() => {
+                    onPointerUp={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
                       if (draftLiveStroke?.points?.length > 1) {
                         onLiveMarkupsChange?.([...(liveMarkups || []), draftLiveStroke]);
                       }
@@ -690,7 +700,9 @@ export default function PDFViewer({
                       setDraftLiveStroke(null);
                       setDraftLiveHighlight(null);
                     }}
-                    onPointerLeave={() => {
+                    onPointerLeave={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
                       liveDraftRef.current = null;
                       setDraftLiveStroke(null);
                       setDraftLiveHighlight(null);
