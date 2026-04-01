@@ -320,7 +320,7 @@ export default function MarkupCanvas({
   return (
     <div ref={wrapperRef} onWheel={handleWheel} className="h-[calc(100vh-17rem)] w-full overflow-hidden overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: 'none' }}>
       <div className="flex min-h-full items-center justify-center overflow-hidden">
-        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
+        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${zoom > 1 ? 'overflow-visible' : 'overflow-hidden'}`} style={zoom > 1 || panOffset.x !== 0 || panOffset.y !== 0 ? { transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
           <Document
             file={fileUrl}
             loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
