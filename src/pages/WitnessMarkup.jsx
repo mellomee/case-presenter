@@ -100,7 +100,7 @@ export default function WitnessMarkup() {
   const isPublishedWitnessView = !proofIdFromUrl;
 
   const captureRef = useRef(null);
-  const [tool, setTool] = useState('pen');
+  const [tool, setTool] = useState('navigate');
   const [witnessName, setWitnessName] = useState(requestedWitnessName);
   const [currentPage, setCurrentPage] = useState(requestedPage);
   const [numPages, setNumPages] = useState(1);
@@ -306,9 +306,6 @@ export default function WitnessMarkup() {
         {isPdf ? (
           <>
             <MarkupToolbar
-              witnessName={witnessName}
-              onWitnessNameChange={setWitnessName}
-              witnessNameDisabled
               tool={tool}
               onToolChange={setTool}
               onUndo={handleUndo}

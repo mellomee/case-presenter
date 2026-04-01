@@ -49,6 +49,7 @@ export default function MarkupCanvas({
   onLoadDocument,
   captureRef,
 }) {
+  const isTouchNavigationMode = tool === 'navigate';
   const wrapperRef = useRef(null);
   const stageRef = useRef(null);
   const [containerSize, setContainerSize] = useState({ width: 900, height: 900 });
@@ -109,7 +110,7 @@ export default function MarkupCanvas({
   };
 
   const handlePointerDown = (event) => {
-    if (!stageRef.current) return;
+    if (!stageRef.current || isTouchNavigationMode) return;
     const point = normalizePoint(event, stageRef.current);
     event.currentTarget.setPointerCapture?.(event.pointerId);
 
@@ -130,7 +131,7 @@ export default function MarkupCanvas({
   };
 
   const handlePointerMove = (event) => {
-    if (!stageRef.current) return;
+    if (!stageRef.current || isTouchNavigationMode) return;
     const point = normalizePoint(event, stageRef.current);
 
     if (tool === 'pen' && draftStroke) {
@@ -184,9 +185,9 @@ export default function MarkupCanvas({
   }
 
   return (
-    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]">
-      <div className="flex h-full items-center justify-center overflow-hidden">
-        <div ref={stageRef} className="relative inline-block max-w-full max-h-full touch-none select-none overflow-hidden rounded-xl bg-white shadow-sm">
+    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={isTouchNavigationMode ? { touchAction: 'auto' } : { touchAction: 'none' }}>
+      <div className="flex h-full items-center justify-center overflow-visible">
+        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`}>
           <Document
             file={fileUrl}
             loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
@@ -214,7 +215,7 @@ export default function MarkupCanvas({
         </svg>
 
           <div
-            className="absolute inset-0 cursor-crosshair"
+            className={`absolute inset-0 ${isTouchNavigationMode ? 'pointer-events-none cursor-grab' : 'cursor-crosshair'}`}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={tool === 'pen' ? finishStroke : finishHighlight}
