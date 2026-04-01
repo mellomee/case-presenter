@@ -13,7 +13,6 @@ export default function JuryPdfMirror({
   highlights = [],
   clippedPage = null,
   visiblePages = null,
-  attorneyMarkup = null,
 }) {
   const containerRef = useRef(null);
   const [numPages, setNumPages] = useState(null);
@@ -147,36 +146,6 @@ export default function JuryPdfMirror({
                     }}
                   />
                 ))}
-                {(attorneyMarkup?.highlights || []).map((highlight) => (
-                  <div
-                    key={highlight.id}
-                    style={{
-                      position: 'absolute',
-                      left: `${highlight.x * 100}%`,
-                      top: `${highlight.y * 100}%`,
-                      width: `${highlight.width * 100}%`,
-                      height: `${highlight.height * 100}%`,
-                      background: highlight.color || '#facc15',
-                      opacity: highlight.opacity ?? 0.32,
-                      pointerEvents: 'none',
-                      borderRadius: '2px',
-                      mixBlendMode: 'multiply',
-                    }}
-                  />
-                ))}
-                <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                  {(attorneyMarkup?.strokes || []).map((stroke) => (
-                    <polyline
-                      key={stroke.id}
-                      fill="none"
-                      stroke={stroke.color}
-                      strokeWidth={stroke.width}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      points={(stroke.points || []).map((point) => `${Math.round(point.x * 1000)},${Math.round(point.y * 1000)}`).join(' ')}
-                    />
-                  ))}
-                </svg>
               </div>
             </div>
           </div>

@@ -65,9 +65,6 @@ export default function AttorneyCentral() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [currentTimeLabel, setCurrentTimeLabel] = useState(() => TIME_FORMATTER.format(new Date()));
-  const [attorneyTouchMode, setAttorneyTouchMode] = useState('navigate');
-  const [attorneyMarkupTool, setAttorneyMarkupTool] = useState('pen');
-  const [attorneyMarkupByProof, setAttorneyMarkupByProof] = useState({});
 
   const hubQueryOptions = {
     staleTime: 2 * 60 * 1000,
@@ -310,15 +307,6 @@ export default function AttorneyCentral() {
             witnessState={witnessState}
             onUpdateJury={update}
             onUpdateWitness={updateWitness}
-            touchMode={attorneyTouchMode}
-            markupTool={attorneyMarkupTool}
-            onTouchModeChange={setAttorneyTouchMode}
-            onMarkupToolChange={setAttorneyMarkupTool}
-            markupState={selectedProof ? (attorneyMarkupByProof[selectedProof.id] || { strokes: [], highlights: [] }) : { strokes: [], highlights: [] }}
-            onMarkupStateChange={(nextState) => {
-              if (!selectedProof?.id) return;
-              setAttorneyMarkupByProof((current) => ({ ...current, [selectedProof.id]: nextState }));
-            }}
           />
         </div>
 

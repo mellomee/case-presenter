@@ -27,10 +27,7 @@ export default function PDFViewer({
   selectedPages = [],
   onSelectedPagesChange,
   thumbnailWidth = 62,
-  topOverlay = null,
-  forceAllowPan = null,
 }) {
-  const resolvedAllowPan = forceAllowPan ?? allowPan;
   const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(initialPage);
@@ -258,7 +255,7 @@ export default function PDFViewer({
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         applyZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1));
-      } else if (resolvedAllowPan) {
+      } else if (allowPan) {
         const nextPanY = panY - e.deltaY * 0.5;
         setPanY(nextPanY);
         if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY: nextPanY });
@@ -266,7 +263,7 @@ export default function PDFViewer({
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, resolvedAllowPan, numPages]);
+  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -281,7 +278,7 @@ export default function PDFViewer({
           ),
           initZoom: zoom,
         };
-      } else if (resolvedAllowPan) {
+      } else if (allowPan) {
         touchRef.current = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
@@ -315,10 +312,10 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, resolvedAllowPan, numPages]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   const handleMouseDown = (e) => {
-    if (!resolvedAllowPan) return;
+    if (!allowPan) return;
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
   };
 
@@ -401,7 +398,6 @@ export default function PDFViewer({
 
   return (
     <div className="flex flex-col h-full bg-zinc-900 select-none overflow-hidden" style={{ position: 'relative' }}>
-      {topOverlay}
       {mode === 'controller' && (
         <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
           <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => setShowThumbs((v) => !v)}>
@@ -524,7 +520,7 @@ export default function PDFViewer({
         >
           <div
             ref={containerRef}
-            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${resolvedAllowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ touchAction: 'none' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
