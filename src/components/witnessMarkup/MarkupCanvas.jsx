@@ -60,6 +60,7 @@ export default function MarkupCanvas({
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [highlightStart, setHighlightStart] = useState(null);
   const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const pointersRef = useRef(new Map());
   const pinchRef = useRef(null);
   const panRef = useRef(null);
@@ -82,6 +83,7 @@ export default function MarkupCanvas({
   useEffect(() => {
     if (!isTouchNavigationMode) {
       setZoom(1);
+      setPanOffset({ x: 0, y: 0 });
       pointersRef.current.clear();
       pinchRef.current = null;
       panRef.current = null;
@@ -184,12 +186,12 @@ export default function MarkupCanvas({
     event.currentTarget.setPointerCapture?.(event.pointerId);
     pointersRef.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
 
-    if (pointersRef.current.size === 1 && wrapperRef.current) {
+    if (pointersRef.current.size === 1) {
       panRef.current = {
         startX: event.clientX,
         startY: event.clientY,
-        scrollLeft: wrapperRef.current.scrollLeft,
-        scrollTop: wrapperRef.current.scrollTop,
+        offsetX: panOffset.x,
+        offsetY: panOffset.y,
       };
     }
 
@@ -216,10 +218,12 @@ export default function MarkupCanvas({
       return;
     }
 
-    if (pointersRef.current.size === 1 && panRef.current && wrapperRef.current) {
+    if (pointersRef.current.size === 1 && panRef.current) {
       event.preventDefault();
-      wrapperRef.current.scrollLeft = panRef.current.scrollLeft - (event.clientX - panRef.current.startX);
-      wrapperRef.current.scrollTop = panRef.current.scrollTop - (event.clientY - panRef.current.startY);
+      setPanOffset({
+        x: panRef.current.offsetX + (event.clientX - panRef.current.startX),
+        y: panRef.current.offsetY + (event.clientY - panRef.current.startY),
+      });
     }
   };
 
@@ -235,19 +239,19 @@ export default function MarkupCanvas({
       return;
     }
 
-    if (pointersRef.current.size === 1 && wrapperRef.current) {
+    if (pointersRef.current.size === 1) {
       const [remainingPointer] = Array.from(pointersRef.current.values());
       panRef.current = {
         startX: remainingPointer.clientX,
         startY: remainingPointer.clientY,
-        scrollLeft: wrapperRef.current.scrollLeft,
-        scrollTop: wrapperRef.current.scrollTop,
+        offsetX: panOffset.x,
+        offsetY: panOffset.y,
       };
     }
   };
 
   const handleWheel = (event) => {
-    if (!isTouchNavigationMode || !wrapperRef.current) return;
+    if (!isTouchNavigationMode) return;
 
     const isPinchLikeGesture = event.ctrlKey || Math.abs(event.deltaY) < Math.abs(event.deltaX);
     if (isPinchLikeGesture) {
@@ -257,8 +261,11 @@ export default function MarkupCanvas({
       return;
     }
 
-    wrapperRef.current.scrollLeft += event.deltaX;
-    wrapperRef.current.scrollTop += event.deltaY;
+    event.preventDefault();
+    setPanOffset((current) => ({
+      x: current.x - event.deltaX,
+      y: current.y - event.deltaY,
+    }));
 
     if (wheelTimeoutRef.current) {
       window.clearTimeout(wheelTimeoutRef.current);
@@ -306,9 +313,9 @@ export default function MarkupCanvas({
   }
 
   return (
-    <div ref={wrapperRef} onWheel={handleWheel} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: isTouchNavigationMode ? 'none' : 'none' }}>
-      <div className={`flex min-h-full ${zoom > 1 ? 'items-start justify-start' : 'h-full items-center justify-center'} overflow-visible`}>
-        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
+    <div ref={wrapperRef} onWheel={handleWheel} className="h-[calc(100vh-17rem)] w-full overflow-hidden overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: 'none' }}>
+      <div className="flex min-h-full items-center justify-center overflow-hidden">
+        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
           <Document
             file={fileUrl}
             loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
