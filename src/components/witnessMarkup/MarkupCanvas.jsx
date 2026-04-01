@@ -62,6 +62,7 @@ export default function MarkupCanvas({
   const [zoom, setZoom] = useState(1);
   const pointersRef = useRef(new Map());
   const pinchRef = useRef(null);
+  const panRef = useRef(null);
 
   const pageWidth = Math.max(
     240,
@@ -172,7 +173,17 @@ export default function MarkupCanvas({
 
   const handleNavigationPointerDown = (event) => {
     if (!isTouchNavigationMode) return;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     pointersRef.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+
+    if (pointersRef.current.size === 1 && wrapperRef.current) {
+      panRef.current = {
+        startX: event.clientX,
+        startY: event.clientY,
+        scrollLeft: wrapperRef.current.scrollLeft,
+        scrollTop: wrapperRef.current.scrollTop,
+      };
+    }
 
     if (pointersRef.current.size === 2) {
       const points = Array.from(pointersRef.current.values());
@@ -180,6 +191,7 @@ export default function MarkupCanvas({
         distance: getPointerDistance(points),
         zoom,
       };
+      panRef.current = null;
     }
   };
 
@@ -193,13 +205,36 @@ export default function MarkupCanvas({
       const distance = getPointerDistance(points);
       const nextZoom = clampZoom((distance / pinchRef.current.distance) * pinchRef.current.zoom);
       setZoom(nextZoom);
+      return;
+    }
+
+    if (pointersRef.current.size === 1 && panRef.current && wrapperRef.current && zoom > 1) {
+      event.preventDefault();
+      wrapperRef.current.scrollLeft = panRef.current.scrollLeft - (event.clientX - panRef.current.startX);
+      wrapperRef.current.scrollTop = panRef.current.scrollTop - (event.clientY - panRef.current.startY);
     }
   };
 
   const handleNavigationPointerEnd = (event) => {
     pointersRef.current.delete(event.pointerId);
+
     if (pointersRef.current.size < 2) {
       pinchRef.current = null;
+    }
+
+    if (pointersRef.current.size === 0) {
+      panRef.current = null;
+      return;
+    }
+
+    if (pointersRef.current.size === 1 && wrapperRef.current) {
+      const [remainingPointer] = Array.from(pointersRef.current.values());
+      panRef.current = {
+        startX: remainingPointer.clientX,
+        startY: remainingPointer.clientY,
+        scrollLeft: wrapperRef.current.scrollLeft,
+        scrollTop: wrapperRef.current.scrollTop,
+      };
     }
   };
 
@@ -242,7 +277,7 @@ export default function MarkupCanvas({
 
   return (
     <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: isTouchNavigationMode ? 'none' : 'none' }}>
-      <div className="flex h-full items-center justify-center overflow-visible">
+      <div className={`flex min-h-full ${zoom > 1 ? 'items-start justify-start' : 'h-full items-center justify-center'} overflow-visible`}>
         <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
           <Document
             file={fileUrl}
