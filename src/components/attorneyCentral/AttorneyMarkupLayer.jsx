@@ -119,14 +119,14 @@ export default function AttorneyMarkupLayer({ mode, tool, strokes, highlights, d
 
   return (
     <>
-      <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="none">
+      <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="none">
         {highlights.map(renderHighlight)}
         {draftHighlight ? renderHighlight(draftHighlight) : null}
         {strokes.map(renderStroke)}
         {draftStroke ? renderStroke(draftStroke) : null}
       </svg>
       <div
-        className={`absolute inset-0 ${disabled ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair touch-none'}`}
+        className={`absolute inset-0 z-30 ${disabled ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair touch-none'}`}
         style={{ touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
