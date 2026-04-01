@@ -269,11 +269,12 @@ export default function PDFViewer({
   }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, resolvedAllowPan, numPages]);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el || !resolvedAllowPan) {
+    if (!resolvedAllowPan) {
       touchRef.current = {};
       return;
     }
+    const el = containerRef.current;
+    if (!el) return;
     const onTouchStart = (e) => {
       if (e.touches.length === 2) {
         touchRef.current = {
@@ -528,7 +529,7 @@ export default function PDFViewer({
           <div
             ref={containerRef}
             className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${resolvedAllowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
-            style={{ touchAction: 'none' }}
+            style={{ touchAction: resolvedAllowPan ? 'none' : 'auto' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

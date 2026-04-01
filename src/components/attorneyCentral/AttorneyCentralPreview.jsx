@@ -48,10 +48,10 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
 
   const pushLiveMarkup = useCallback((nextMarkup) => {
     onMarkupStateChange?.(nextMarkup);
-    if (juryState?.published_proof_id === proof?.id && onUpdateJury) {
+    if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
       onUpdateJury({ attorney_markup: nextMarkup });
     }
-    if (witnessState?.published_proof_id === proof?.id && onUpdateWitness) {
+    if (witnessState && witnessState.published_proof_id === proof?.id && !witnessState.is_blank && onUpdateWitness) {
       onUpdateWitness({ attorney_markup: nextMarkup });
     }
   }, [juryState, proof, onUpdateJury, witnessState, onUpdateWitness, onMarkupStateChange]);
