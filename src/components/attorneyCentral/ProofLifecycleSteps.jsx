@@ -101,7 +101,7 @@ export default function ProofLifecycleSteps({
           completed: isPublishedToWitness,
           action: (
             <StepActionButton
-              label={isPublishedToWitness ? 'Hide Witness' : 'Show Witness'}
+              label={isPublishedToWitness ? 'Hide Witness' : 'Publish Witness'}
               onClick={isPublishedToWitness ? onUnpublishFromWitness : onPublishToWitness}
               disabled={!isPublishedToWitness && !canPublishToWitness}
               tone="authenticate"
@@ -133,7 +133,7 @@ export default function ProofLifecycleSteps({
           completed: isAuthenticated,
           action: (
             <StepActionButton
-              label={isPublishedToWitness ? 'Hide Witness' : 'Show Witness'}
+              label={isPublishedToWitness ? 'Hide Witness' : 'Publish Witness'}
               onClick={isPublishedToWitness ? onUnpublishFromWitness : onPublishToWitness}
               disabled={!isPublishedToWitness && !canPublishToWitness}
               tone="authenticate"
