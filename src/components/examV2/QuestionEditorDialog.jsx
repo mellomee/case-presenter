@@ -110,15 +110,15 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
 
   const visibleProofTree = useMemo(() => {
     const matchingProofs = availableProofs.filter((proof) => {
+      const parentCategory = getParentProofCategory(proof, proofById);
+
       if (proofTab === 'Exhibit') {
-        const parentCategory = getParentProofCategory(proof, proofById);
         const isAllowedExhibit = proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
-        const isAllowedExhibitChild = ['Extract', 'ExtractClip', 'VideoClip'].includes(proof.proof_child_type) && parentCategory === 'Exhibit';
+        const isAllowedExhibitChild = parentCategory === 'Exhibit';
         if (!isAllowedExhibit && !isAllowedExhibitChild) {
           return false;
         }
       } else {
-        const parentCategory = getParentProofCategory(proof, proofById);
         const isDepositionBranch = proof.proof_category === 'Deposition' || parentCategory === 'Deposition';
         if (!isDepositionBranch || isHiddenDepositionSource(proof)) {
           return false;
