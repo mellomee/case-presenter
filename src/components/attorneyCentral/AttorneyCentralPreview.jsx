@@ -72,8 +72,8 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
         {proof.proof_child_type === 'ExtractClip' && proof?.witness_markup ? (
           <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} />
         ) : proof.proof_child_type === 'ExtractClip' ? (
-          <div className="attorney-central-extract-clip h-full">
-            <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} />
+          <div className="h-full">
+            <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} hideHeader />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
           <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
@@ -108,14 +108,6 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
         </div>
       ) : null}
 
-      <style>{`
-        .attorney-central-extract-clip > div > div:first-child {
-          display: none;
-        }
-        .attorney-central-extract-clip > div > div:last-child {
-          height: 100%;
-        }
-      `}</style>
     </div>
   );
 }
