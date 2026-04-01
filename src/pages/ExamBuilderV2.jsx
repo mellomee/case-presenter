@@ -208,12 +208,7 @@ export default function ExamBuilderV2() {
   const proofsById = useMemo(() => Object.fromEntries(proofs.map((proof) => [proof.id, proof])), [proofs]);
   const itemsById = useMemo(() => Object.fromEntries(currentItems.map((item) => [item.id, item])), [currentItems]);
   const availableAttachmentProofs = useMemo(
-    () => proofs.filter((proof) => {
-      if (proof.proof_category === 'Deposition') return true;
-      if (proof.proof_category !== 'Exhibit') return false;
-      if (['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) return true;
-      return proof.proof_child_type === 'ExtractClip' && !!proof.parent_proof_id;
-    }),
+    () => proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
     [proofs]
   );
   const admissionStatusMeta = selectedRootProof?.status === 'Admitted'
