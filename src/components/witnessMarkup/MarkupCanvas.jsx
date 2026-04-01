@@ -63,6 +63,7 @@ export default function MarkupCanvas({
   const pointersRef = useRef(new Map());
   const pinchRef = useRef(null);
   const panRef = useRef(null);
+  const wheelTimeoutRef = useRef(null);
 
   const pageWidth = Math.max(
     240,
@@ -83,8 +84,15 @@ export default function MarkupCanvas({
       setZoom(1);
       pointersRef.current.clear();
       pinchRef.current = null;
+      panRef.current = null;
     }
   }, [isTouchNavigationMode, pageNumber, fileUrl]);
+
+  useEffect(() => () => {
+    if (wheelTimeoutRef.current) {
+      window.clearTimeout(wheelTimeoutRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     const updateSize = () => {
@@ -208,7 +216,7 @@ export default function MarkupCanvas({
       return;
     }
 
-    if (pointersRef.current.size === 1 && panRef.current && wrapperRef.current && zoom > 1) {
+    if (pointersRef.current.size === 1 && panRef.current && wrapperRef.current) {
       event.preventDefault();
       wrapperRef.current.scrollLeft = panRef.current.scrollLeft - (event.clientX - panRef.current.startX);
       wrapperRef.current.scrollTop = panRef.current.scrollTop - (event.clientY - panRef.current.startY);
@@ -236,6 +244,28 @@ export default function MarkupCanvas({
         scrollTop: wrapperRef.current.scrollTop,
       };
     }
+  };
+
+  const handleWheel = (event) => {
+    if (!isTouchNavigationMode || !wrapperRef.current) return;
+
+    const isPinchLikeGesture = event.ctrlKey || Math.abs(event.deltaY) < Math.abs(event.deltaX);
+    if (isPinchLikeGesture) {
+      event.preventDefault();
+      const nextZoom = clampZoom(zoom - event.deltaY * 0.01);
+      setZoom(nextZoom);
+      return;
+    }
+
+    wrapperRef.current.scrollLeft += event.deltaX;
+    wrapperRef.current.scrollTop += event.deltaY;
+
+    if (wheelTimeoutRef.current) {
+      window.clearTimeout(wheelTimeoutRef.current);
+    }
+    wheelTimeoutRef.current = window.setTimeout(() => {
+      wheelTimeoutRef.current = null;
+    }, 120);
   };
 
   const renderStroke = (stroke) => (
@@ -276,7 +306,7 @@ export default function MarkupCanvas({
   }
 
   return (
-    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: isTouchNavigationMode ? 'none' : 'none' }}>
+    <div ref={wrapperRef} onWheel={handleWheel} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: isTouchNavigationMode ? 'none' : 'none' }}>
       <div className={`flex min-h-full ${zoom > 1 ? 'items-start justify-start' : 'h-full items-center justify-center'} overflow-visible`}>
         <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
           <Document
