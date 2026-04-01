@@ -39,15 +39,11 @@ export default function AddToJointModal({ open, onClose, proof }) {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      const getDescendants = (parentId) => {
-        const directChildren = proofs.filter((item) => item.parent_proof_id === parentId);
-        return directChildren.flatMap((child) => [child, ...getDescendants(child.id)]);
-      };
-
       await base44.entities.Proof.update(proof.id, data);
 
-      const descendants = getDescendants(proof.id);
-      for (const child of descendants) {
+      // Update all children to Joint status as well
+      const children = proofs.filter((p) => p.parent_proof_id === proof.id);
+      for (const child of children) {
         await base44.entities.Proof.update(child.id, {
           status: 'Joint',
           joint_exhibit_num: data.joint_exhibit_num,
