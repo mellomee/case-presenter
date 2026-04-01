@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FolderKanban } from 'lucide-react';
+
+const ATTORNEY_CENTRAL_QUESTIONS_SCROLL_KEY = 'attorney-central-questions-scroll-top';
 import { getProofDisplayName, parseIdsField } from '@/lib/examV2Utils';
 import { buildQuestionTree, getProofKindLabel, getProofNumber, getProofStatusConfig } from '@/lib/attorneyCentralUtils';
 
@@ -131,6 +133,13 @@ export default function AttorneyCentralQuestionsDrawer({
   onSelectProof,
 }) {
   const questionTree = buildQuestionTree(questionItems, selectedRootId);
+  const scrollRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!open || !scrollRef.current) return;
+    const savedScrollTop = Number(window.localStorage.getItem(ATTORNEY_CENTRAL_QUESTIONS_SCROLL_KEY) || '0');
+    scrollRef.current.scrollTop = savedScrollTop;
+  }, [open, selectedExamPartyId, selectedRootId]);
 
   return (
     <aside className={`absolute bottom-0 right-0 top-0 z-20 w-[min(30rem,calc(100vw-3rem))] border-l border-stone-200 bg-white shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
@@ -174,7 +183,13 @@ export default function AttorneyCentralQuestionsDrawer({
           </div>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+        <div
+          ref={scrollRef}
+          onScroll={(event) => {
+            window.localStorage.setItem(ATTORNEY_CENTRAL_QUESTIONS_SCROLL_KEY, String(event.currentTarget.scrollTop));
+          }}
+          className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
+        >
           {questionTree.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-stone-300 bg-stone-50 px-5 py-8 text-center text-sm text-stone-500">
               Pick an exam group to see its questions here.

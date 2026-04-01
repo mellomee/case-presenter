@@ -22,6 +22,8 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Los_Angeles',
 });
 
+const ATTORNEY_CENTRAL_QUESTIONS_STATE_KEY = 'attorney-central-questions-state';
+
 function formatElapsedTime(totalSeconds) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -42,9 +44,16 @@ export default function AttorneyCentral() {
   const [selectedDepositionParentId, setSelectedDepositionParentId] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedProofId, setSelectedProofId] = useState('');
-  const [selectedExamType, setSelectedExamType] = useState('Direct');
-  const [selectedExamPartyId, setSelectedExamPartyId] = useState('');
-  const [selectedRootId, setSelectedRootId] = useState('');
+  const savedQuestionsState = React.useMemo(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem(ATTORNEY_CENTRAL_QUESTIONS_STATE_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
+  const [selectedExamType, setSelectedExamType] = useState(savedQuestionsState.selectedExamType || 'Direct');
+  const [selectedExamPartyId, setSelectedExamPartyId] = useState(savedQuestionsState.selectedExamPartyId || '');
+  const [selectedRootId, setSelectedRootId] = useState(savedQuestionsState.selectedRootId || '');
   const [checkedQuestionIds, setCheckedQuestionIds] = useState([]);
   const [localDecisionMap, setLocalDecisionMap] = useState({});
   const [selectedProofForModal, setSelectedProofForModal] = useState(null);
@@ -128,6 +137,13 @@ export default function AttorneyCentral() {
     if (!selectedRootId && rootItems[0]) setSelectedRootId(rootItems[0].id);
     if (selectedRootId && !rootItems.some((item) => item.id === selectedRootId)) setSelectedRootId(rootItems[0]?.id || '');
   }, [rootItems, selectedRootId]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      ATTORNEY_CENTRAL_QUESTIONS_STATE_KEY,
+      JSON.stringify({ selectedExamType, selectedExamPartyId, selectedRootId })
+    );
+  }, [selectedExamType, selectedExamPartyId, selectedRootId]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
