@@ -318,7 +318,11 @@ export default function AttorneyCentral() {
               setLeftDrawer(null);
               setRightDrawerOpen(false);
             }}
-            className="absolute inset-0 z-10 cursor-default"
+            className="absolute inset-y-0 z-10 cursor-default"
+            style={{
+              left: leftDrawer ? 'min(28rem, calc(100vw - 3rem))' : '0',
+              right: rightDrawerOpen ? 'min(30rem, calc(100vw - 3rem))' : '0',
+            }}
           />
         ) : null}
 
