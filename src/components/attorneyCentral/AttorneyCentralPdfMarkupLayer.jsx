@@ -1,5 +1,4 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
 
 const VIEWBOX_SIZE = 1000;
 const DEFAULT_STROKE_WIDTH = 5;
@@ -65,7 +64,7 @@ function renderHighlight(highlight) {
   );
 }
 
-export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange, className = '' }) {
+export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }) {
   const stageRef = useRef(null);
   const activePointerIdRef = useRef(null);
   const draftStrokeRef = useRef(null);
@@ -175,9 +174,9 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange, 
   };
 
   return (
-    <div className={cn(`absolute inset-0 z-20 ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${cursorClass}`, className)}>
-      <div ref={stageRef} className="absolute inset-0 touch-none overflow-hidden">
-        <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="xMidYMid meet">
+    <div className={`absolute inset-0 z-20 ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${cursorClass}`}>
+      <div ref={stageRef} className="absolute inset-0 touch-none">
+        <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="none">
           {highlights.map(renderHighlight)}
           {draftHighlight ? renderHighlight(draftHighlight) : null}
           {strokes.map(renderStroke)}

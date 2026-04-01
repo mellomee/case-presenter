@@ -88,9 +88,8 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
               onUndoMarkup={onUndoMarkup}
               hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
               onClearMarkup={onClearMarkup}
-              pageSurfaceClassName="attorney-central-pdf-page-surface"
             />
-            <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} className="attorney-central-pdf-page-surface" />
+            <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
           </div>
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
@@ -125,10 +124,9 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
               onUndoMarkup={onUndoMarkup}
               hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
               onClearMarkup={onClearMarkup}
-              pageSurfaceClassName="attorney-central-pdf-page-surface"
             />
             {proof.file_type === 'PDF' && proof.proof_child_type !== 'ExtractClip' ? (
-              <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} className="attorney-central-pdf-page-surface" />
+              <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
             ) : null}
           </div>
         ) : (
@@ -148,9 +146,6 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
         }
         .attorney-central-extract-clip > div > div:last-child {
           height: 100%;
-        }
-        .attorney-central-pdf-page-surface > .attorney-central-pdf-page-surface {
-          inset: 0;
         }
       `}</style>
     </div>

@@ -4,7 +4,7 @@ import PDFViewer from './PDFViewer';
 import { parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
-export default function ExtractViewer({ proof, mode = 'controller', syncState, onStateChange, markupMode = null, onMarkupModeChange, canUndoMarkup = false, onUndoMarkup, hasMarkup = false, onClearMarkup, pageSurfaceClassName = '' }) {
+export default function ExtractViewer({ proof, mode = 'controller', syncState, onStateChange, markupMode = null, onMarkupModeChange, canUndoMarkup = false, onUndoMarkup, hasMarkup = false, onClearMarkup }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
 
   // Only restrict visible pages when the extract is pointing at the original parent PDF
@@ -38,7 +38,6 @@ export default function ExtractViewer({ proof, mode = 'controller', syncState, o
       onUndoMarkup={onUndoMarkup}
       hasMarkup={hasMarkup}
       onClearMarkup={onClearMarkup}
-      pageSurfaceClassName={pageSurfaceClassName}
     />
   );
 }
