@@ -88,8 +88,9 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
               onUndoMarkup={onUndoMarkup}
               hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
               onClearMarkup={onClearMarkup}
+              pageOverlay={<AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />}
+              pageOverlayInteractive={interactionMode === 'pen' || interactionMode === 'highlight'}
             />
-            <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
           </div>
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
@@ -124,10 +125,9 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
               onUndoMarkup={onUndoMarkup}
               hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
               onClearMarkup={onClearMarkup}
+              pageOverlay={proof.file_type === 'PDF' && proof.proof_child_type !== 'ExtractClip' ? <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} /> : null}
+              pageOverlayInteractive={interactionMode === 'pen' || interactionMode === 'highlight'}
             />
-            {proof.file_type === 'PDF' && proof.proof_child_type !== 'ExtractClip' ? (
-              <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
-            ) : null}
           </div>
         ) : (
           <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No file attached</div>

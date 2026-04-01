@@ -22,6 +22,7 @@ export default function PDFViewer({
   onPageChange,
   allowPan = true,
   pageOverlay = null,
+  pageOverlayInteractive = false,
   visiblePages = null,
   selectableThumbnails = false,
   selectedPages = [],
@@ -321,12 +322,12 @@ export default function PDFViewer({
   }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   const handleMouseDown = (e) => {
-    if (!allowPan) return;
+    if (!allowPan || pageOverlayInteractive) return;
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
   };
 
   const handleMouseMove = (e) => {
-    if (!dragRef.current.dragging) return;
+    if (!dragRef.current.dragging || pageOverlayInteractive) return;
     const dx = e.clientX - dragRef.current.x;
     const dy = e.clientY - dragRef.current.y;
     dragRef.current.x = e.clientX;
@@ -551,8 +552,8 @@ export default function PDFViewer({
         >
           <div
             ref={containerRef}
-            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
-            style={{ touchAction: 'none' }}
+            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${(allowPan && !pageOverlayInteractive) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            style={{ touchAction: pageOverlayInteractive ? 'auto' : 'none' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -587,7 +588,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                {pageOverlay}
+                {pageOverlay ? <div className="absolute inset-0 z-20">{pageOverlay}</div> : null}
               </div>
             </div>
           </div>
