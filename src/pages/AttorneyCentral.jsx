@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, FolderKanban, Play } from 'lucide-react';
-import AttorneyCentralMarkupToolbar from '@/components/attorneyCentral/AttorneyCentralMarkupToolbar.jsx';
 import { base44 } from '@/api/base44Client';
 import { useJurySync } from '@/components/attorneyView/useJurySync.jsx';
 import { useWitnessSync } from '@/components/witnessView/useWitnessSync.jsx';
@@ -319,6 +318,41 @@ export default function AttorneyCentral() {
             onUpdateJury={update}
             onUpdateWitness={updateWitness}
             markupMode={markupMode}
+            onMarkupModeChange={(nextMode) => {
+              setMarkupMode(nextMode);
+              if (isPublishedToJury) {
+                update({ live_markup_mode: nextMode });
+              }
+              if (isPublishedToWitness) {
+                updateWitness({ live_markup_mode: nextMode });
+              }
+            }}
+            onMarkupUndo={() => {
+              const currentStrokes = isPublishedToJury
+                ? (juryState?.live_markup_strokes || [])
+                : isPublishedToWitness
+                  ? (witnessState?.live_markup_strokes || [])
+                  : [];
+              const currentHighlights = isPublishedToJury
+                ? (juryState?.live_markup_highlights || [])
+                : isPublishedToWitness
+                  ? (witnessState?.live_markup_highlights || [])
+                  : [];
+              const nextPayload = currentStrokes.length > 0
+                ? { live_markup_strokes: currentStrokes.slice(0, -1), live_markup_highlights: currentHighlights }
+                : { live_markup_strokes: currentStrokes, live_markup_highlights: currentHighlights.slice(0, -1) };
+
+              if (isPublishedToJury) update(nextPayload);
+              if (isPublishedToWitness) updateWitness(nextPayload);
+            }}
+            onMarkupClear={() => {
+              if (isPublishedToJury) {
+                update({ live_markup_strokes: [], live_markup_highlights: [] });
+              }
+              if (isPublishedToWitness) {
+                updateWitness({ live_markup_strokes: [], live_markup_highlights: [] });
+              }
+            }}
           />
         </div>
 
@@ -390,28 +424,6 @@ export default function AttorneyCentral() {
           checkedQuestionIds={checkedQuestionIds}
           onToggleChecked={(questionId) => setCheckedQuestionIds((prev) => prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId])}
           onSelectProof={(proofId) => selectProof(proofId, 'questions')}
-        />
-
-        <AttorneyCentralMarkupToolbar
-          visible={supportsLiveMarkup}
-          mode={markupMode}
-          onModeChange={(nextMode) => {
-            setMarkupMode(nextMode);
-            if (isPublishedToJury) {
-              update({ live_markup_mode: nextMode });
-            }
-            if (isPublishedToWitness) {
-              updateWitness({ live_markup_mode: nextMode });
-            }
-          }}
-          onClear={() => {
-            if (isPublishedToJury) {
-              update({ live_markup_strokes: [], live_markup_highlights: [] });
-            }
-            if (isPublishedToWitness) {
-              updateWitness({ live_markup_strokes: [], live_markup_highlights: [] });
-            }
-          }}
         />
 
         <AttorneyCentralWitnessNotice proof={pendingWitnessProof} onAdd={handleAddWitnessProof} onDismiss={() => setPendingWitnessProof(null)} />

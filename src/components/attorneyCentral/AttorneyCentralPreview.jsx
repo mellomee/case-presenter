@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import AttorneyCentralLiveMarkupOverlay from '@/components/attorneyCentral/AttorneyCentralLiveMarkupOverlay.jsx';
+import AttorneyCentralMarkupToolbar from '@/components/attorneyCentral/AttorneyCentralMarkupToolbar.jsx';
 import { FileText, Loader2 } from 'lucide-react';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
@@ -8,7 +9,7 @@ import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
 
-export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, markupMode = 'navigate' }) {
+export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, markupMode = 'navigate', onMarkupModeChange, onMarkupUndo, onMarkupClear }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
@@ -61,17 +62,29 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
     }
   }, [juryState, witnessState, proof, onUpdateJury, onUpdateWitness, markupMode]);
 
+  const activeMarkup = useMemo(() => {
+    if (juryState?.published_proof_id === proof?.id && !juryState?.is_blank) {
+      return {
+        strokes: juryState?.live_markup_strokes || [],
+        highlights: juryState?.live_markup_highlights || [],
+      };
+    }
+
+    if (witnessState?.published_proof_id === proof?.id && !witnessState?.is_blank) {
+      return {
+        strokes: witnessState?.live_markup_strokes || [],
+        highlights: witnessState?.live_markup_highlights || [],
+      };
+    }
+
+    return { strokes: [], highlights: [] };
+  }, [juryState, witnessState, proof]);
+
   const liveMarkupOverlay = (proof?.file_type === 'PDF' || proof?.proof_child_type === 'Extract') ? (
     <AttorneyCentralLiveMarkupOverlay
       mode={markupMode}
-      strokes={[
-        ...((juryState?.published_proof_id === proof?.id && !juryState?.is_blank ? juryState?.live_markup_strokes : null) || []),
-        ...((witnessState?.published_proof_id === proof?.id && !witnessState?.is_blank ? witnessState?.live_markup_strokes : null) || []),
-      ].slice(0, juryState?.published_proof_id === proof?.id && !juryState?.is_blank ? (juryState?.live_markup_strokes || []).length : (witnessState?.live_markup_strokes || []).length)}
-      highlights={[
-        ...((juryState?.published_proof_id === proof?.id && !juryState?.is_blank ? juryState?.live_markup_highlights : null) || []),
-        ...((witnessState?.published_proof_id === proof?.id && !witnessState?.is_blank ? witnessState?.live_markup_highlights : null) || []),
-      ].slice(0, juryState?.published_proof_id === proof?.id && !juryState?.is_blank ? (juryState?.live_markup_highlights || []).length : (witnessState?.live_markup_highlights || []).length)}
+      strokes={activeMarkup.strokes}
+      highlights={activeMarkup.highlights}
       onChange={handleLiveMarkupChange}
     />
   ) : null;
@@ -110,17 +123,32 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
   const parentName = parentProof?.name || parentProof?.formal_name || '';
   const isVideoClipLoading = (isLoading || isParentLoading) && !externalUrl;
 
+  const supportsLiveMarkup = proof?.file_type === 'PDF' || proof?.proof_child_type === 'Extract';
+  const isMarkupActive = supportsLiveMarkup && markupMode !== 'navigate';
+
   return (
     <div className="relative h-full overflow-hidden bg-[#f5ecdf]">
+      {supportsLiveMarkup ? (
+        <div className="absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-full border border-stone-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+          <AttorneyCentralMarkupToolbar
+            visible={supportsLiveMarkup}
+            mode={markupMode}
+            onModeChange={onMarkupModeChange}
+            onUndo={onMarkupUndo}
+            onClear={onMarkupClear}
+          />
+        </div>
+      ) : null}
+
       <div className="h-full overflow-hidden rounded-none bg-white">
         {proof.proof_child_type === 'ExtractClip' && proof?.witness_markup ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" allowPan={!isMarkupActive} />
         ) : proof.proof_child_type === 'ExtractClip' ? (
           <div className="h-full">
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} hideHeader />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
-          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} />
+          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} allowPan={!isMarkupActive} />
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
@@ -140,7 +168,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <img src={externalUrl} alt={proof.name} className="max-h-full max-w-full rounded-3xl object-contain shadow-lg" />
           </div>
         ) : externalUrl ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" allowPan={!isMarkupActive} />
         ) : (
           <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No file attached</div>
         )}
