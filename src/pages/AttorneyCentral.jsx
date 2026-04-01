@@ -109,6 +109,7 @@ export default function AttorneyCentral() {
   const canPublishToWitness = canPublishProofToWitness(selectedProof);
   const supportsLiveMarkup = Boolean(selectedProof && selectedProof.file_type === 'PDF' && selectedProof.proof_child_type !== 'ExtractClip');
   const canUndoMarkup = attorneyMarkup.strokes.length > 0 || attorneyMarkup.highlights.length > 0;
+  const canPublishMarkup = supportsLiveMarkup && canUndoMarkup;
 
   useEffect(() => {
     if (selectedProof?.proof_category !== 'Deposition') return;
@@ -228,7 +229,7 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
-      attorney_markup: supportsLiveMarkup ? attorneyMarkup : null,
+      attorney_markup: null,
     });
   };
 
@@ -259,7 +260,7 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
-      attorney_markup: supportsLiveMarkup ? attorneyMarkup : null,
+      attorney_markup: null,
     });
   };
 
@@ -276,6 +277,22 @@ export default function AttorneyCentral() {
       is_blank: true,
       exhibit_label: '',
     });
+  };
+
+  const publishMarkup = () => {
+    if (!selectedProof || !canPublishMarkup) return;
+    const nextMarkup = {
+      strokes: attorneyMarkup.strokes,
+      highlights: attorneyMarkup.highlights,
+    };
+
+    if (juryState?.published_proof_id === selectedProof.id && !juryState?.is_blank) {
+      update({ attorney_markup: nextMarkup });
+    }
+
+    if (witnessState?.published_proof_id === selectedProof.id && !witnessState?.is_blank) {
+      updateWitness({ attorney_markup: nextMarkup });
+    }
   };
 
   const handleAddWitnessProof = () => {
@@ -452,6 +469,8 @@ export default function AttorneyCentral() {
             isPublishedToWitness={isPublishedToWitness}
             onPublishToWitness={() => publishProofToWitness(selectedProof)}
             onUnpublishFromWitness={() => unpublishProofFromWitness(selectedProof)}
+            canPublishMarkup={canPublishMarkup}
+            onPublishMarkup={publishMarkup}
             onRejectToggle={() => handleProofAction(selectedProof, 'not_admitted')}
             onAdmitExhibit={() => handleProofAction(selectedProof, 'admit')}
             onAdmitDemo={() => handleProofAction(selectedProof, 'demo')}
