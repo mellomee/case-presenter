@@ -23,6 +23,13 @@ export default function Layout() {
     base44.auth.me().then(u => setUser(u)).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (location.pathname === '/AttorneyCentral') {
+      setSidebarCollapsed(true);
+      setSidebarOpen(false);
+    }
+  }, [location.pathname]);
+
   // Track unread count via real-time subscription
   useEffect(() => {
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
@@ -52,8 +59,7 @@ export default function Layout() {
       path: '/present',
       icon: Tv,
       children: [
-        { label: 'Attorney Hub', path: '/AttorneyHub' },
-        { label: 'Attorney Central', path: '/AttorneyCentral' },
+        { label: 'Attorney View', path: '/AttorneyCentral' },
         { label: 'Witness View', path: '/WitnessMarkup' },
         { label: 'Jury View', path: '/present/jury' },
       ],
