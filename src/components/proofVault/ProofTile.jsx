@@ -66,7 +66,7 @@ export default function ProofTile({
   const proofParties = parties.filter((item) => proofPartyIds.includes(item.id));
   const category = categories.find((item) => item.id === proof.category_id) || null;
 
-  const children = allProofs.filter((p) => p.parent_proof_id === proof.id && (currentTab !== 'Joint' || p.status === 'Joint'));
+  const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
   const parentProof = proof.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
   const hasChildren = children.length > 0;
   const hasAttachment = proofHasLinkedFile(proof);
