@@ -107,9 +107,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
   const visibleProofTree = useMemo(() => {
     const matchingProofs = availableProofs.filter((proof) => {
       if (proofTab === 'Exhibit') {
-        const isVisibleExhibit = proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
-        const isExtractClip = proof.proof_child_type === 'ExtractClip' && !!proof.parent_proof_id;
-        if (!isVisibleExhibit && !isExtractClip) {
+        if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) {
           return false;
         }
       } else {
