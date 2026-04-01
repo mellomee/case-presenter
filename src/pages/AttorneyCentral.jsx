@@ -320,12 +320,6 @@ export default function AttorneyCentral() {
             onUpdateWitness={updateWitness}
             interactionMode={previewInteractionMode}
             attorneyMarkup={attorneyMarkup}
-            onPdfPageChange={() => {
-              if (previewInteractionMode !== 'touch' || attorneyMarkup.strokes.length > 0 || attorneyMarkup.highlights.length > 0) {
-                setPreviewInteractionMode('touch');
-                setAttorneyMarkup({ strokes: [], highlights: [] });
-              }
-            }}
             onMarkupModeChange={setPreviewInteractionMode}
             onUndoMarkup={() => {
               if (attorneyMarkup.strokes.length > 0) {
