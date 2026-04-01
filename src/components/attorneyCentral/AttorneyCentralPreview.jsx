@@ -89,7 +89,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
               hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
               onClearMarkup={onClearMarkup}
             />
-            <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
+            <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} className="left-1/2 top-6 h-[800px] w-[600px] -translate-x-1/2" />
           </div>
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
@@ -126,7 +126,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
               onClearMarkup={onClearMarkup}
             />
             {proof.file_type === 'PDF' && proof.proof_child_type !== 'ExtractClip' ? (
-              <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
+              <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} className="left-1/2 top-6 h-[800px] w-[600px] -translate-x-1/2" />
             ) : null}
           </div>
         ) : (
