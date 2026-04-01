@@ -120,6 +120,7 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }
     activePointerIdRef.current = event.pointerId;
     event.currentTarget.setPointerCapture?.(event.pointerId);
     event.preventDefault();
+    event.stopPropagation();
 
     if (mode === 'pen') {
       const nextStroke = {
@@ -146,6 +147,7 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }
     if (activePointerIdRef.current !== event.pointerId) return;
     const point = normalizePoint(event, stageRef.current);
     event.preventDefault();
+    event.stopPropagation();
 
     if (mode === 'pen' && draftStrokeRef.current) {
       const nextStroke = {
@@ -166,6 +168,8 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }
 
   const handlePointerUp = (event) => {
     if (activePointerIdRef.current !== event.pointerId) return;
+    event.preventDefault();
+    event.stopPropagation();
     if (mode === 'pen') {
       finishStroke();
       return;
@@ -174,7 +178,7 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }
   };
 
   return (
-    <div className={`absolute inset-0 z-20 ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${cursorClass}`}>
+    <div className={`absolute inset-0 z-20 ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${cursorClass}`} style={{ touchAction: interactive ? 'none' : 'auto' }}>
       <div ref={stageRef} className="absolute inset-0 touch-none">
         <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="none">
           {highlights.map(renderHighlight)}

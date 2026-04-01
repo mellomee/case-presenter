@@ -276,6 +276,7 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
+      if (pageOverlayInteractive) return;
       if (e.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
@@ -290,6 +291,7 @@ export default function PDFViewer({
       }
     };
     const onTouchMove = (e) => {
+      if (pageOverlayInteractive) return;
       e.preventDefault();
       if (touchRef.current.mode === 'pinch' && e.touches.length === 2) {
         const dist = Math.hypot(
@@ -313,13 +315,21 @@ export default function PDFViewer({
         });
       }
     };
+    const onTouchEnd = () => {
+      if (pageOverlayInteractive) return;
+      touchRef.current = {};
+    };
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages, pageOverlayInteractive]);
 
   const handleMouseDown = (e) => {
     if (!allowPan || pageOverlayInteractive) return;
