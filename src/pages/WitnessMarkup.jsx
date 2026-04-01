@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import JuryPdfMirror from '@/components/juryView/JuryPdfMirror.jsx';
 import { useQuery } from '@tanstack/react-query';
 import ReactPlayer from 'react-player';
 import { ChevronLeft, ChevronRight, Loader2, Maximize, Save, Scale } from 'lucide-react';
@@ -334,38 +333,22 @@ export default function WitnessMarkup() {
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         ) : isPdf ? (
-          isPublishedWitnessView ? (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm" style={{ height: 'calc(100vh - 15rem)' }}>
-              <JuryPdfMirror
-                fileUrl={fileUrl}
-                syncState={{
-                  currentPage: witnessState?.pdf_page || 1,
-                  zoom: witnessState?.zoom ?? 1,
-                  panX: witnessState?.panX ?? 0,
-                  panY: witnessState?.panY ?? 0,
-                }}
-                highlights={proof?.highlights || []}
-                liveMarkups={witnessState?.live_markups || []}
-              />
-            </div>
-          ) : (
-            <MarkupCanvas
-              captureRef={captureRef}
-              fileUrl={fileUrl}
-              pageNumber={currentPage}
-              tool={tool}
-              penColor={PEN_COLOR}
-              highlightColor={HIGHLIGHT_COLOR}
-              strokes={strokes}
-              highlights={highlights}
-              onAddStroke={(stroke) => setStrokes((current) => [...current, stroke])}
-              onAddHighlight={(highlight) => setHighlights((current) => [...current, highlight])}
-              onLoadDocument={(pages) => {
-                setNumPages(pages || 1);
-                setCurrentPage((page) => Math.min(Math.max(page, 1), pages || 1));
-              }}
-            />
-          )
+          <MarkupCanvas
+            captureRef={captureRef}
+            fileUrl={fileUrl}
+            pageNumber={currentPage}
+            tool={tool}
+            penColor={PEN_COLOR}
+            highlightColor={HIGHLIGHT_COLOR}
+            strokes={strokes}
+            highlights={highlights}
+            onAddStroke={(stroke) => setStrokes((current) => [...current, stroke])}
+            onAddHighlight={(highlight) => setHighlights((current) => [...current, highlight])}
+            onLoadDocument={(pages) => {
+              setNumPages(pages || 1);
+              setCurrentPage((page) => Math.min(Math.max(page, 1), pages || 1));
+            }}
+          />
         ) : (
           <WitnessMediaPreview proof={proof} fileUrl={fileUrl} witnessState={witnessState} />
         )}

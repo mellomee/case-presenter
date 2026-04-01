@@ -4,8 +4,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, Layers, Loader2, Download, Hand, Pencil, Highlighter, Eraser } from 'lucide-react';
-import { buildMarkupOverlay, createHighlightRect, createPenStroke } from './pdfMarkupUtils';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, Layers, Loader2, Download } from 'lucide-react';
 import debounce from 'lodash/debounce';
 import { normalizeHighlightGroups } from './highlightGroupUtils';
 
@@ -28,11 +27,6 @@ export default function PDFViewer({
   selectedPages = [],
   onSelectedPagesChange,
   thumbnailWidth = 62,
-  liveMarkupEnabled = false,
-  liveMarkupMode = 'navigate',
-  liveMarkups = [],
-  onLiveMarkupModeChange,
-  onLiveMarkupsChange,
 }) {
   const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
@@ -55,9 +49,6 @@ export default function PDFViewer({
   const selectionAnchorRef = useRef(null);
   const panXRef = useRef(0);
   const panYRef = useRef(0);
-  const liveDraftRef = useRef(null);
-  const [draftLiveStroke, setDraftLiveStroke] = useState(null);
-  const [draftLiveHighlight, setDraftLiveHighlight] = useState(null);
 
   const pageNumbers = useMemo(() => {
     if (Array.isArray(visiblePages) && visiblePages.length > 0) {
@@ -85,7 +76,6 @@ export default function PDFViewer({
       ),
     [normalizedHighlightGroups, currentPage, activePageNumber]
   );
-  const activeLiveMarkups = useMemo(() => buildMarkupOverlay(liveMarkups, activePageNumber), [liveMarkups, activePageNumber]);
 
   const debouncedPush = useCallback(
     debounce((s) => onStateChange && onStateChange(s), 250),
@@ -279,7 +269,6 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
-      if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
       if (e.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
@@ -326,7 +315,6 @@ export default function PDFViewer({
   }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   const handleMouseDown = (e) => {
-    if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
     if (!allowPan) return;
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
   };
@@ -462,26 +450,6 @@ export default function PDFViewer({
               All
             </Button>
           )}
-          {liveMarkupEnabled && (
-            <>
-              <div className="w-px h-4 bg-zinc-600 mx-1" />
-              <Button variant="ghost" size="icon" className={`h-7 w-7 ${liveMarkupMode === 'navigate' ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`} onClick={() => onLiveMarkupModeChange?.('navigate')}>
-                <Hand className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className={`h-7 w-7 ${liveMarkupMode === 'pen' ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`} onClick={() => onLiveMarkupModeChange?.('pen')}>
-                <Pencil className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className={`h-7 w-7 ${liveMarkupMode === 'highlight' ? 'text-amber-400' : 'text-zinc-400 hover:text-white'}`} onClick={() => onLiveMarkupModeChange?.('highlight')}>
-                <Highlighter className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => onLiveMarkupsChange?.((liveMarkups || []).slice(0, -1))}>
-                <RotateCcw className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => onLiveMarkupsChange?.([])}>
-                <Eraser className="w-3.5 h-3.5" />
-              </Button>
-            </>
-          )}
           <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white">
             <a href={fileUrl} target="_blank" rel="noopener noreferrer" download>
               <Download className="w-3.5 h-3.5" />
@@ -588,115 +556,6 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                  {activeLiveMarkups.map((item) => item.type === 'highlight' ? (
-                    <rect
-                      key={item.id}
-                      x={Math.round(item.x * 1000)}
-                      y={Math.round(item.y * 1000)}
-                      width={Math.round(item.width * 1000)}
-                      height={Math.round(item.height * 1000)}
-                      fill={item.color}
-                      opacity={item.opacity ?? 0.32}
-                      rx="8"
-                      ry="8"
-                    />
-                  ) : (
-                    <polyline
-                      key={item.id}
-                      fill="none"
-                      stroke={item.color}
-                      strokeWidth={item.width || 6}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      points={(item.points || []).map((point) => `${Math.round(point.x * 1000)},${Math.round(point.y * 1000)}`).join(' ')}
-                    />
-                  ))}
-                  {draftLiveHighlight ? (
-                    <rect
-                      x={Math.round(draftLiveHighlight.x * 1000)}
-                      y={Math.round(draftLiveHighlight.y * 1000)}
-                      width={Math.round(draftLiveHighlight.width * 1000)}
-                      height={Math.round(draftLiveHighlight.height * 1000)}
-                      fill={draftLiveHighlight.color}
-                      opacity={draftLiveHighlight.opacity ?? 0.32}
-                      rx="8"
-                      ry="8"
-                    />
-                  ) : null}
-                  {draftLiveStroke ? (
-                    <polyline
-                      fill="none"
-                      stroke={draftLiveStroke.color}
-                      strokeWidth={draftLiveStroke.width || 6}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      points={(draftLiveStroke.points || []).map((point) => `${Math.round(point.x * 1000)},${Math.round(point.y * 1000)}`).join(' ')}
-                    />
-                  ) : null}
-                </svg>
-                {liveMarkupEnabled && (
-                  <div
-                    className={`absolute inset-0 ${liveMarkupMode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto'}`}
-                    style={{ touchAction: liveMarkupMode === 'navigate' ? 'none' : 'none' }}
-                    onPointerDown={(event) => {
-                      if (liveMarkupMode === 'navigate') return;
-                      const rect = event.currentTarget.getBoundingClientRect();
-                      const point = {
-                        x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
-                        y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
-                      };
-                      if (liveMarkupMode === 'pen') {
-                        const stroke = createPenStroke([point]);
-                        stroke.page = activePageNumber;
-                        liveDraftRef.current = point;
-                        setDraftLiveStroke(stroke);
-                      }
-                      if (liveMarkupMode === 'highlight') {
-                        liveDraftRef.current = point;
-                        const highlight = createHighlightRect(point, point);
-                        highlight.page = activePageNumber;
-                        setDraftLiveHighlight(highlight);
-                      }
-                    }}
-                    onPointerMove={(event) => {
-                      if (liveMarkupMode === 'pen' && draftLiveStroke) {
-                        const rect = event.currentTarget.getBoundingClientRect();
-                        const point = {
-                          x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
-                          y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
-                        };
-                        setDraftLiveStroke((current) => ({ ...current, points: [...(current?.points || []), point] }));
-                      }
-                      if (liveMarkupMode === 'highlight' && liveDraftRef.current) {
-                        const rect = event.currentTarget.getBoundingClientRect();
-                        const point = {
-                          x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
-                          y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
-                        };
-                        const highlight = createHighlightRect(liveDraftRef.current, point);
-                        highlight.page = activePageNumber;
-                        setDraftLiveHighlight(highlight);
-                      }
-                    }}
-                    onPointerUp={() => {
-                      if (draftLiveStroke?.points?.length > 1) {
-                        onLiveMarkupsChange?.([...(liveMarkups || []), draftLiveStroke]);
-                      }
-                      if (draftLiveHighlight && draftLiveHighlight.width > 0.003 && draftLiveHighlight.height > 0.003) {
-                        onLiveMarkupsChange?.([...(liveMarkups || []), draftLiveHighlight]);
-                      }
-                      liveDraftRef.current = null;
-                      setDraftLiveStroke(null);
-                      setDraftLiveHighlight(null);
-                    }}
-                    onPointerLeave={() => {
-                      liveDraftRef.current = null;
-                      setDraftLiveStroke(null);
-                      setDraftLiveHighlight(null);
-                    }}
-                  />
-                )}
                 {pageOverlay}
               </div>
             </div>

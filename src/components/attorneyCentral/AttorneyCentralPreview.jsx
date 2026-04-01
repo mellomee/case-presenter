@@ -8,8 +8,6 @@ import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
 
 export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness }) {
-  const liveMarkupMode = juryState?.live_markup_mode || witnessState?.live_markup_mode || 'navigate';
-  const liveMarkups = juryState?.live_markups || witnessState?.live_markups || [];
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
@@ -78,22 +76,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
-          <ExtractViewer
-            proof={proof}
-            mode="controller"
-            onStateChange={handlePdfStateChange}
-            liveMarkupEnabled
-            liveMarkupMode={liveMarkupMode}
-            liveMarkups={liveMarkups}
-            onLiveMarkupModeChange={(nextMode) => {
-              onUpdateJury?.({ live_markup_mode: nextMode });
-              onUpdateWitness?.({ live_markup_mode: nextMode });
-            }}
-            onLiveMarkupsChange={(nextMarkups) => {
-              onUpdateJury?.({ live_markups: nextMarkups });
-              onUpdateWitness?.({ live_markups: nextMarkups });
-            }}
-          />
+          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
@@ -113,24 +96,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <img src={externalUrl} alt={proof.name} className="max-h-full max-w-full rounded-3xl object-contain shadow-lg" />
           </div>
         ) : externalUrl ? (
-          <PDFViewer
-            fileUrl={externalUrl}
-            mode="controller"
-            onStateChange={handlePdfStateChange}
-            highlights={proof.highlights || []}
-            clippedPage={proof.clipped_page || null}
-            liveMarkupEnabled
-            liveMarkupMode={liveMarkupMode}
-            liveMarkups={liveMarkups}
-            onLiveMarkupModeChange={(nextMode) => {
-              onUpdateJury?.({ live_markup_mode: nextMode });
-              onUpdateWitness?.({ live_markup_mode: nextMode });
-            }}
-            onLiveMarkupsChange={(nextMarkups) => {
-              onUpdateJury?.({ live_markups: nextMarkups });
-              onUpdateWitness?.({ live_markups: nextMarkups });
-            }}
-          />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} />
         ) : (
           <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No file attached</div>
         )}

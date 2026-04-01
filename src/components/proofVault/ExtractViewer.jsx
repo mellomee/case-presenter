@@ -4,7 +4,7 @@ import PDFViewer from './PDFViewer';
 import { parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
-export default function ExtractViewer({ proof, mode = 'controller', syncState, onStateChange, liveMarkupEnabled = false, liveMarkupMode = 'navigate', liveMarkups = [], onLiveMarkupModeChange, onLiveMarkupsChange }) {
+export default function ExtractViewer({ proof, mode = 'controller', syncState, onStateChange }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
 
   // Only restrict visible pages when the extract is pointing at the original parent PDF
@@ -32,11 +32,6 @@ export default function ExtractViewer({ proof, mode = 'controller', syncState, o
       syncState={syncState}
       onStateChange={onStateChange}
       visiblePages={visiblePages && visiblePages.length > 0 ? visiblePages : null}
-      liveMarkupEnabled={liveMarkupEnabled}
-      liveMarkupMode={liveMarkupMode}
-      liveMarkups={liveMarkups}
-      onLiveMarkupModeChange={onLiveMarkupModeChange}
-      onLiveMarkupsChange={onLiveMarkupsChange}
     />
   );
 }
