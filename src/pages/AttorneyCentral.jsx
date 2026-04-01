@@ -216,7 +216,6 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
-      attorney_markup: attorneyMarkupByProof[proof.id] || { strokes: [], highlights: [] },
     });
   };
 
@@ -247,7 +246,6 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
-      attorney_markup: attorneyMarkupByProof[proof.id] || { strokes: [], highlights: [] },
     });
   };
 
