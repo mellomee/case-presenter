@@ -67,6 +67,8 @@ export default function AttorneyMarkupLayer({ mode, tool, strokes, highlights, d
 
   const handlePointerDown = (event) => {
     if (disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
     const element = event.currentTarget;
     const point = normalizePoint(event, element);
     element.setPointerCapture?.(event.pointerId);
@@ -89,6 +91,8 @@ export default function AttorneyMarkupLayer({ mode, tool, strokes, highlights, d
 
   const handlePointerMove = (event) => {
     if (disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
     const element = event.currentTarget;
     const point = normalizePoint(event, element);
 
@@ -123,10 +127,17 @@ export default function AttorneyMarkupLayer({ mode, tool, strokes, highlights, d
       </svg>
       <div
         className={`absolute inset-0 ${disabled ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair touch-none'}`}
+        style={{ touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={tool === 'pen' ? finishStroke : finishHighlight}
-        onPointerLeave={tool === 'pen' ? finishStroke : finishHighlight}
+        onPointerUp={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (tool === 'pen') finishStroke(); else finishHighlight();
+        }}
+        onPointerLeave={() => {
+          if (tool === 'pen') finishStroke(); else finishHighlight();
+        }}
       />
     </>
   );

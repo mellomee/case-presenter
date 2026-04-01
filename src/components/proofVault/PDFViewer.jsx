@@ -269,6 +269,10 @@ export default function PDFViewer({
   }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, resolvedAllowPan, numPages]);
 
   useEffect(() => {
+    if (!resolvedAllowPan) {
+      touchRef.current = {};
+      return;
+    }
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
@@ -281,7 +285,7 @@ export default function PDFViewer({
           ),
           initZoom: zoom,
         };
-      } else if (resolvedAllowPan) {
+      } else {
         touchRef.current = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
@@ -525,7 +529,7 @@ export default function PDFViewer({
           <div
             ref={containerRef}
             className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${resolvedAllowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
-            style={{ touchAction: 'none' }}
+            style={{ touchAction: resolvedAllowPan ? 'none' : 'auto' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
