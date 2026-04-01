@@ -111,7 +111,8 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
           return false;
         }
       } else {
-        if (proof.proof_category !== 'Deposition' || isHiddenDepositionSource(proof)) {
+        const belongsToDepositionTree = proof.proof_category === 'Deposition' || proofById[proof.parent_proof_id]?.proof_category === 'Deposition';
+        if (!belongsToDepositionTree || isHiddenDepositionSource(proof)) {
           return false;
         }
       }
