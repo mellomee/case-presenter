@@ -564,7 +564,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                {pageOverlay ? <div className={overlayClassName}>{pageOverlay}</div> : null}
+                {pageOverlay ? <div className={`absolute inset-0 z-20 ${overlayClassName}`}>{pageOverlay}</div> : null}
               </div>
             </div>
           </div>

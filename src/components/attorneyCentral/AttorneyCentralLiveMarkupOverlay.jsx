@@ -127,7 +127,7 @@ export default function AttorneyCentralLiveMarkupOverlay({
 
   return (
     <>
-      <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="none">
+      <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full" viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} preserveAspectRatio="none">
         {highlights.map(renderHighlight)}
         {draftHighlight ? renderHighlight(draftHighlight) : null}
         {strokes.map(renderStroke)}
@@ -135,7 +135,7 @@ export default function AttorneyCentralLiveMarkupOverlay({
       </svg>
       <div
         ref={stageRef}
-        className={`absolute inset-0 ${mode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair touch-none'}`}
+        className={`absolute inset-0 z-30 ${mode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair touch-none'}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={mode === 'pen' ? finishStroke : finishHighlight}
