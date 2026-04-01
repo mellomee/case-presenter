@@ -22,6 +22,7 @@ export default function PDFViewer({
   onPageChange,
   allowPan = true,
   pageOverlay = null,
+  pageSurfaceClassName = '',
   visiblePages = null,
   selectableThumbnails = false,
   selectedPages = [],
@@ -561,7 +562,7 @@ export default function PDFViewer({
             }}
           >
             <div style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})`, transformOrigin: 'top center', userSelect: 'none' }}>
-              <div ref={pageSurfaceRef} className="relative shadow-2xl">
+              <div ref={pageSurfaceRef} className={`relative shadow-2xl ${pageSurfaceClassName}`.trim()}>
                 <Page
                   pageNumber={activePageNumber}
                   width={600}
