@@ -120,7 +120,6 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }
     activePointerIdRef.current = event.pointerId;
     event.currentTarget.setPointerCapture?.(event.pointerId);
     event.preventDefault();
-    event.stopPropagation();
 
     if (mode === 'pen') {
       const nextStroke = {
@@ -147,7 +146,6 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }
     if (activePointerIdRef.current !== event.pointerId) return;
     const point = normalizePoint(event, stageRef.current);
     event.preventDefault();
-    event.stopPropagation();
 
     if (mode === 'pen' && draftStrokeRef.current) {
       const nextStroke = {
@@ -169,7 +167,6 @@ export default function AttorneyCentralPdfMarkupLayer({ mode, markup, onChange }
   const handlePointerUp = (event) => {
     if (activePointerIdRef.current !== event.pointerId) return;
     event.preventDefault();
-    event.stopPropagation();
     if (mode === 'pen') {
       finishStroke();
       return;
