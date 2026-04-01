@@ -43,13 +43,19 @@ function getPrimaryExhibitNumber(proof) {
   return proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || proof.draft_exhibit_num || '';
 }
 
-function shouldShowInJointTab(proof) {
+function shouldShowInJointTab(proof, allProofs = []) {
   if (proof.status !== 'Joint') return false;
 
   const isTopLevelOriginalPdf = proof.file_type === 'PDF' && !proof.parent_proof_id && !proof.proof_child_type;
   if (isTopLevelOriginalPdf) return false;
 
-  return ['Image', 'Video'].includes(proof.file_type) || ['Extract', 'ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
+  const allowedVisibleType = ['Image', 'Video'].includes(proof.file_type) || ['Extract', 'ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
+  if (!allowedVisibleType) return false;
+
+  if (!proof.parent_proof_id) return true;
+
+  const parentProof = allProofs.find((item) => item.id === proof.parent_proof_id);
+  return parentProof?.status !== 'Joint';
 }
 
 function proofMatchesSearch(proof, searchQuery) {
@@ -303,7 +309,7 @@ export default function ProofVault() {
     const exhibitsByStatus = exhibitFilter === 'all'
       ? exhibitsTopLevel
       : exhibitFilter === 'Joint'
-        ? allExhibits.filter((proof) => shouldShowInJointTab(proof))
+        ? allExhibits.filter((proof) => shouldShowInJointTab(proof, allExhibits))
         : exhibitFilter === 'Admitted'
           ? allExhibits.filter((proof) => proof.status === 'Admitted')
           : exhibitFilter === 'Demonstrative'
