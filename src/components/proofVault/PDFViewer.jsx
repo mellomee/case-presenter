@@ -564,7 +564,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                <div className="absolute inset-0 z-20">{pageOverlay}</div>
+                {pageOverlay}
               </div>
             </div>
           </div>
