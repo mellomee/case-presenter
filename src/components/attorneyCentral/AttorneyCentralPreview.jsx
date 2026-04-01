@@ -8,7 +8,7 @@ import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
 
-export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, markupMode = 'navigate' }) {
+export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, markupMode = 'navigate', disablePdfGestures = false }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
@@ -114,13 +114,13 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
     <div className="relative h-full overflow-hidden bg-[#f5ecdf]">
       <div className="h-full overflow-hidden rounded-none bg-white">
         {proof.proof_child_type === 'ExtractClip' && proof?.witness_markup ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" allowPan={!disablePdfGestures} />
         ) : proof.proof_child_type === 'ExtractClip' ? (
           <div className="h-full">
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} hideHeader />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
-          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} />
+          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} allowPan={!disablePdfGestures} />
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
