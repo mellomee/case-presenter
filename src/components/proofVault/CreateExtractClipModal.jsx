@@ -361,6 +361,17 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       return;
     }
 
+    const inheritedStatusFields = {
+      status: actualParentExtract.status,
+      joint_exhibit_num: actualParentExtract.joint_exhibit_num || null,
+      joint_by: actualParentExtract.joint_by || null,
+      joint_date: actualParentExtract.joint_date || null,
+      admitted_exhibit_num: actualParentExtract.admitted_exhibit_num || null,
+      admitted_by: actualParentExtract.admitted_by || null,
+      admit_date: actualParentExtract.admit_date || null,
+      demonstrative_exhibit_num: actualParentExtract.demonstrative_exhibit_num || null,
+    };
+
     const clipData = {
       proof_category: actualParentExtract.proof_category,
       file_type: 'PDF',
@@ -371,7 +382,6 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       parent_proof_id: isEditing ? parentExtract.parent_proof_id : actualParentExtract.id,
       party_id: selectedPartyIds[0] || null,
       party_ids: { ids: selectedPartyIds },
-      status: actualParentExtract.status,
       category_id: actualParentExtract.category_id || null,
       proof_type_category_id: proofTypeId || actualParentExtract.proof_type_category_id,
       file_source: actualParentExtract.file_source || 'base44',
@@ -382,6 +392,7 @@ export default function CreateExtractClipModal({ open, onClose, parentExtract, o
       clipped_page: cleanedGroups[0].page,
       highlights: cleanedGroups,
       draft_exhibit_num: draftExhibitNum.trim() || null,
+      ...inheritedStatusFields,
     };
 
     saveMutation.mutate(clipData);
