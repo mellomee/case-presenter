@@ -4,7 +4,7 @@ import PDFViewer from './PDFViewer';
 import { parsePageRange } from './pageRangeUtils';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 
-export default function ExtractViewer({ proof, mode = 'controller', syncState, onStateChange, pageOverlay = null }) {
+export default function ExtractViewer({ proof, mode = 'controller', syncState, onStateChange, pageOverlay = null, gesturesEnabled = true }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
 
   // Only restrict visible pages when the extract is pointing at the original parent PDF
@@ -34,6 +34,7 @@ export default function ExtractViewer({ proof, mode = 'controller', syncState, o
       visiblePages={visiblePages && visiblePages.length > 0 ? visiblePages : null}
       pageOverlay={pageOverlay}
       overlayClassName="absolute inset-0"
+      gesturesEnabled={gesturesEnabled}
     />
   );
 }

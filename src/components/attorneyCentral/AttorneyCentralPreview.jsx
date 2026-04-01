@@ -114,13 +114,13 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
     <div className="relative h-full overflow-hidden bg-[#f5ecdf]">
       <div className="h-full overflow-hidden rounded-none bg-white">
         {proof.proof_child_type === 'ExtractClip' && proof?.witness_markup ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" gesturesEnabled={markupMode === 'navigate'} />
         ) : proof.proof_child_type === 'ExtractClip' ? (
           <div className="h-full">
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} hideHeader />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
-          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} />
+          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} pageOverlay={liveMarkupOverlay} gesturesEnabled={markupMode === 'navigate'} />
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
@@ -140,7 +140,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <img src={externalUrl} alt={proof.name} className="max-h-full max-w-full rounded-3xl object-contain shadow-lg" />
           </div>
         ) : externalUrl ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} pageOverlay={liveMarkupOverlay} overlayClassName="absolute inset-0" gesturesEnabled={markupMode === 'navigate'} />
         ) : (
           <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No file attached</div>
         )}
