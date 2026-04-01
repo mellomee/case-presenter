@@ -43,9 +43,20 @@ function getPrimaryExhibitNumber(proof) {
   return proof.admitted_exhibit_num || proof.demonstrative_exhibit_num || proof.joint_exhibit_num || proof.draft_exhibit_num || '';
 }
 
-function shouldShowInJointTab(proof) {
+function shouldShowInJointTab(proof, allProofs = []) {
   if (proof.status !== 'Joint') return false;
-  return !(proof.file_type === 'PDF' && !proof.parent_proof_id && !proof.proof_child_type);
+
+  const isTopLevel = !proof.parent_proof_id;
+  const isOriginalPdfParent = isTopLevel && proof.file_type === 'PDF' && !proof.proof_child_type;
+  if (isOriginalPdfParent) return false;
+
+  const isChild = Boolean(proof.parent_proof_id);
+  if (!isChild) return true;
+
+  const parent = allProofs.find((item) => item.id === proof.parent_proof_id);
+  if (!parent) return true;
+
+  return parent.status !== 'Joint';
 }
 
 function proofMatchesSearch(proof, searchQuery) {
@@ -299,7 +310,7 @@ export default function ProofVault() {
     const exhibitsByStatus = exhibitFilter === 'all'
       ? exhibitsTopLevel
       : exhibitFilter === 'Joint'
-        ? allExhibits.filter((proof) => shouldShowInJointTab(proof))
+        ? allExhibits.filter((proof) => shouldShowInJointTab(proof, allExhibits))
         : exhibitFilter === 'Admitted'
           ? allExhibits.filter((proof) => proof.status === 'Admitted')
           : exhibitFilter === 'Demonstrative'
@@ -316,7 +327,7 @@ export default function ProofVault() {
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
-    if (status === 'Joint') return allExhibits.filter((proof) => shouldShowInJointTab(proof)).length;
+    if (status === 'Joint') return allExhibits.filter((proof) => shouldShowInJointTab(proof, allExhibits)).length;
     if (status === 'Admitted') return allExhibits.filter((proof) => proof.status === 'Admitted').length;
     if (status === 'Demonstrative') return allExhibits.filter((proof) => proof.status === 'Demonstrative').length;
     return exhibitsTopLevel.filter((proof) => proof.status === status).length;

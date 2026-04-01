@@ -71,7 +71,7 @@ export default function ProofTileEnhanced({
     enabled: !!proof.category_id,
   });
 
-  const children = allProofs.filter((p) => p.parent_proof_id === proof.id);
+  const children = allProofs.filter((p) => p.parent_proof_id === proof.id && (currentTab !== 'Joint' || p.status === 'Joint'));
   const parentProof = proof.parent_proof_id ? allProofs.find((p) => p.id === proof.parent_proof_id) : null;
   const grandParentProof = parentProof?.parent_proof_id ? allProofs.find((p) => p.id === parentProof.parent_proof_id) : null;
   const hasChildren = children.length > 0;
