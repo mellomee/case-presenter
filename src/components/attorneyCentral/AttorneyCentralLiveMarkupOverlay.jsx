@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const VIEWBOX_SIZE = 1000;
 const DEFAULT_STROKE_WIDTH = 6;
@@ -71,21 +71,51 @@ export default function AttorneyCentralLiveMarkupOverlay({
   onChange,
 }) {
   const stageRef = useRef(null);
+  const draftStrokeRef = useRef(null);
+  const draftHighlightRef = useRef(null);
+  const highlightStartRef = useRef(null);
+  const strokesRef = useRef(strokes);
+  const highlightsRef = useRef(highlights);
   const [draftStroke, setDraftStroke] = useState(null);
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [highlightStart, setHighlightStart] = useState(null);
 
+  useEffect(() => {
+    strokesRef.current = strokes;
+  }, [strokes]);
+
+  useEffect(() => {
+    highlightsRef.current = highlights;
+  }, [highlights]);
+
+  useEffect(() => {
+    draftStrokeRef.current = draftStroke;
+  }, [draftStroke]);
+
+  useEffect(() => {
+    draftHighlightRef.current = draftHighlight;
+  }, [draftHighlight]);
+
+  useEffect(() => {
+    highlightStartRef.current = highlightStart;
+  }, [highlightStart]);
+
   const finishStroke = () => {
-    if (draftStroke?.points?.length > 1) {
-      onChange?.({ strokes: [...strokes, draftStroke], highlights });
+    const nextStroke = draftStrokeRef.current;
+    if (nextStroke?.points?.length > 1) {
+      onChange?.({ strokes: [...strokesRef.current, nextStroke], highlights: highlightsRef.current });
     }
+    draftStrokeRef.current = null;
     setDraftStroke(null);
   };
 
   const finishHighlight = () => {
-    if (draftHighlight && draftHighlight.width > 0.003 && draftHighlight.height > 0.003) {
-      onChange?.({ strokes, highlights: [...highlights, draftHighlight] });
+    const nextHighlight = draftHighlightRef.current;
+    if (nextHighlight && nextHighlight.width > 0.003 && nextHighlight.height > 0.003) {
+      onChange?.({ strokes: strokesRef.current, highlights: [...highlightsRef.current, nextHighlight] });
     }
+    draftHighlightRef.current = null;
+    highlightStartRef.current = null;
     setDraftHighlight(null);
     setHighlightStart(null);
   };
@@ -96,18 +126,23 @@ export default function AttorneyCentralLiveMarkupOverlay({
     event.currentTarget.setPointerCapture?.(event.pointerId);
 
     if (mode === 'pen') {
-      setDraftStroke({
+      const nextStroke = {
         id: `stroke-${Date.now()}`,
         color: penColor,
         width: DEFAULT_STROKE_WIDTH,
         points: [point],
-      });
+      };
+      draftStrokeRef.current = nextStroke;
+      setDraftStroke(nextStroke);
       return;
     }
 
     if (mode === 'highlight') {
+      highlightStartRef.current = point;
       setHighlightStart(point);
-      setDraftHighlight(clampRect(point, point, highlightColor));
+      const nextHighlight = clampRect(point, point, highlightColor);
+      draftHighlightRef.current = nextHighlight;
+      setDraftHighlight(nextHighlight);
     }
   };
 
@@ -115,13 +150,17 @@ export default function AttorneyCentralLiveMarkupOverlay({
     if (mode === 'navigate' || !stageRef.current) return;
     const point = normalizePoint(event, stageRef.current);
 
-    if (mode === 'pen' && draftStroke) {
-      setDraftStroke((current) => ({ ...current, points: [...current.points, point] }));
+    if (mode === 'pen' && draftStrokeRef.current) {
+      const nextStroke = { ...draftStrokeRef.current, points: [...draftStrokeRef.current.points, point] };
+      draftStrokeRef.current = nextStroke;
+      setDraftStroke(nextStroke);
       return;
     }
 
-    if (mode === 'highlight' && highlightStart) {
-      setDraftHighlight(clampRect(highlightStart, point, highlightColor));
+    if (mode === 'highlight' && highlightStartRef.current) {
+      const nextHighlight = clampRect(highlightStartRef.current, point, highlightColor);
+      draftHighlightRef.current = nextHighlight;
+      setDraftHighlight(nextHighlight);
     }
   };
 
