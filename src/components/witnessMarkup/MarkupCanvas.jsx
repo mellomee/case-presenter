@@ -81,14 +81,19 @@ export default function MarkupCanvas({
   });
 
   useEffect(() => {
-    if (!isTouchNavigationMode) {
-      setZoom(1);
-      setPanOffset({ x: 0, y: 0 });
-      pointersRef.current.clear();
-      pinchRef.current = null;
-      panRef.current = null;
-    }
-  }, [isTouchNavigationMode, pageNumber, fileUrl]);
+    pointersRef.current.clear();
+    pinchRef.current = null;
+    panRef.current = null;
+    setDraftStroke(null);
+    setDraftHighlight(null);
+    setHighlightStart(null);
+  }, [pageNumber, fileUrl]);
+
+  useEffect(() => {
+    pointersRef.current.clear();
+    pinchRef.current = null;
+    panRef.current = null;
+  }, [isTouchNavigationMode]);
 
   useEffect(() => () => {
     if (wheelTimeoutRef.current) {
