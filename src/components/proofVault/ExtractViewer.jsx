@@ -26,15 +26,17 @@ export default function ExtractViewer({ proof, mode = 'controller', syncState, o
   }
 
   return (
-    <PDFViewer
-      fileUrl={url}
-      mode={mode}
-      syncState={syncState}
-      onStateChange={onStateChange}
-      visiblePages={visiblePages && visiblePages.length > 0 ? visiblePages : null}
-      pageOverlay={pageOverlay}
-      topOverlay={topOverlay}
-      forceAllowPan={forceAllowPan}
-    />
+    <div className="h-full w-full overflow-hidden" style={{ touchAction: 'none', overscrollBehavior: 'contain' }}>
+      <PDFViewer
+        fileUrl={url}
+        mode={mode}
+        syncState={syncState}
+        onStateChange={onStateChange}
+        visiblePages={visiblePages && visiblePages.length > 0 ? visiblePages : null}
+        pageOverlay={pageOverlay}
+        topOverlay={topOverlay}
+        forceAllowPan={forceAllowPan}
+      />
+    </div>
   );
 }
