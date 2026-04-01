@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import AttorneyCentralMarkupToolbar from '@/components/attorneyCentral/AttorneyCentralMarkupToolbar.jsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, FolderKanban, Play } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -63,7 +62,7 @@ export default function AttorneyCentral() {
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
   const [pendingWitnessProof, setPendingWitnessProof] = useState(null);
   const [highlightedProofId, setHighlightedProofId] = useState('');
-  const [previewInteractionMode, setPreviewInteractionMode] = useState('navigate');
+  const [previewInteractionMode, setPreviewInteractionMode] = useState('touch');
   const [attorneyMarkup, setAttorneyMarkup] = useState({ strokes: [], highlights: [] });
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -117,7 +116,7 @@ export default function AttorneyCentral() {
 
   useEffect(() => {
     setAttorneyMarkup({ strokes: [], highlights: [] });
-    setPreviewInteractionMode('navigate');
+    setPreviewInteractionMode('touch');
   }, [selectedProofId]);
 
   const updateProofMutation = useMutation({
@@ -321,6 +320,26 @@ export default function AttorneyCentral() {
             onUpdateWitness={updateWitness}
             interactionMode={previewInteractionMode}
             attorneyMarkup={attorneyMarkup}
+            onMarkupModeChange={setPreviewInteractionMode}
+            onUndoMarkup={() => {
+              if (attorneyMarkup.strokes.length > 0) {
+                const nextMarkup = { ...attorneyMarkup, strokes: attorneyMarkup.strokes.slice(0, -1) };
+                setAttorneyMarkup(nextMarkup);
+                if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
+                if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
+                return;
+              }
+              const nextMarkup = { ...attorneyMarkup, highlights: attorneyMarkup.highlights.slice(0, -1) };
+              setAttorneyMarkup(nextMarkup);
+              if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
+              if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
+            }}
+            onClearMarkup={() => {
+              const nextMarkup = { strokes: [], highlights: [] };
+              setAttorneyMarkup(nextMarkup);
+              if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
+              if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
+            }}
             onAttorneyMarkupChange={(nextMarkup) => {
               setAttorneyMarkup(nextMarkup);
               if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) {
@@ -332,33 +351,6 @@ export default function AttorneyCentral() {
             }}
           />
         </div>
-
-        <AttorneyCentralMarkupToolbar
-          visible={supportsLiveMarkup}
-          mode={previewInteractionMode}
-          onModeChange={setPreviewInteractionMode}
-          canUndo={canUndoMarkup}
-          hasMarkup={canUndoMarkup}
-          onUndo={() => {
-            if (attorneyMarkup.strokes.length > 0) {
-              const nextMarkup = { ...attorneyMarkup, strokes: attorneyMarkup.strokes.slice(0, -1) };
-              setAttorneyMarkup(nextMarkup);
-              if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
-              if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
-              return;
-            }
-            const nextMarkup = { ...attorneyMarkup, highlights: attorneyMarkup.highlights.slice(0, -1) };
-            setAttorneyMarkup(nextMarkup);
-            if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
-            if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
-          }}
-          onClear={() => {
-            const nextMarkup = { strokes: [], highlights: [] };
-            setAttorneyMarkup(nextMarkup);
-            if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) update({ attorney_markup: nextMarkup });
-            if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) updateWitness({ attorney_markup: nextMarkup });
-          }}
-        />
 
         {(leftDrawer || rightDrawerOpen) ? (
           <button

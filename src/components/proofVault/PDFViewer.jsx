@@ -4,7 +4,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, Layers, Loader2, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, Layers, Loader2, Download, Hand, Highlighter, PenLine, Trash2 } from 'lucide-react';
 import debounce from 'lodash/debounce';
 import { normalizeHighlightGroups } from './highlightGroupUtils';
 
@@ -27,6 +27,12 @@ export default function PDFViewer({
   selectedPages = [],
   onSelectedPagesChange,
   thumbnailWidth = 62,
+  markupMode = null,
+  onMarkupModeChange,
+  canUndoMarkup = false,
+  onUndoMarkup,
+  hasMarkup = false,
+  onClearMarkup,
 }) {
   const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
@@ -450,6 +456,31 @@ export default function PDFViewer({
               All
             </Button>
           )}
+          {markupMode ? (
+            <>
+              <div className="w-px h-4 bg-zinc-600 mx-1" />
+              <Button variant="ghost" size="sm" className={`h-7 px-2 text-[11px] ${markupMode === 'touch' ? 'text-white bg-zinc-700' : 'text-zinc-300 hover:text-white'}`} onClick={() => onMarkupModeChange?.('touch')}>
+                <Hand className="w-3.5 h-3.5" />
+                Touch
+              </Button>
+              <Button variant="ghost" size="sm" className={`h-7 px-2 text-[11px] ${markupMode === 'pen' ? 'text-white bg-zinc-700' : 'text-zinc-300 hover:text-white'}`} onClick={() => onMarkupModeChange?.('pen')}>
+                <PenLine className="w-3.5 h-3.5" />
+                Pen
+              </Button>
+              <Button variant="ghost" size="sm" className={`h-7 px-2 text-[11px] ${markupMode === 'highlight' ? 'text-white bg-zinc-700' : 'text-zinc-300 hover:text-white'}`} onClick={() => onMarkupModeChange?.('highlight')}>
+                <Highlighter className="w-3.5 h-3.5" />
+                Highlight
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white disabled:opacity-40" onClick={onUndoMarkup} disabled={!canUndoMarkup}>
+                <RotateCcw className="w-3.5 h-3.5" />
+                Undo
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white disabled:opacity-40" onClick={onClearMarkup} disabled={!hasMarkup}>
+                <Trash2 className="w-3.5 h-3.5" />
+                Clear
+              </Button>
+            </>
+          ) : null}
           <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white">
             <a href={fileUrl} target="_blank" rel="noopener noreferrer" download>
               <Download className="w-3.5 h-3.5" />
