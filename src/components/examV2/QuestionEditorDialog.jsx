@@ -120,6 +120,13 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
         }
       }
 
+      if (proof.parent_proof_id) {
+        const parentProof = proofById[proof.parent_proof_id];
+        if (parentProof?.proof_category && parentProof.proof_category !== proof.proof_category) {
+          return false;
+        }
+      }
+
       if (partyFilter !== 'all' && !getProofPartyIds(proof).includes(partyFilter)) {
         return false;
       }
