@@ -79,11 +79,16 @@ export default function ExamBuilderProofPickerDialog({ open, onOpenChange, proof
   const visibleProofTree = useMemo(() => {
     const matchingProofs = proofs.filter((proof) => {
       if (proofTab === 'Exhibit') {
-        if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) {
+        const belongsToExhibitTree = proof.proof_category === 'Exhibit' || proofById[proof.parent_proof_id]?.proof_category === 'Exhibit';
+        const isEligibleExhibit = ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) || ['ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
+        if (!belongsToExhibitTree || !isEligibleExhibit) {
           return false;
         }
-      } else if (proof.proof_category !== 'Deposition') {
-        return false;
+      } else {
+        const belongsToDepositionTree = proof.proof_category === 'Deposition' || proofById[proof.parent_proof_id]?.proof_category === 'Deposition';
+        if (!belongsToDepositionTree) {
+          return false;
+        }
       }
 
       if (partyFilter !== 'all' && !getProofPartyIds(proof).includes(partyFilter)) {
