@@ -79,7 +79,8 @@ export default function ExamBuilderProofPickerDialog({ open, onOpenChange, proof
   const visibleProofTree = useMemo(() => {
     const matchingProofs = proofs.filter((proof) => {
       if (proofTab === 'Exhibit') {
-        if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) {
+        const isEligibleExhibit = proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
+        if (!isEligibleExhibit) {
           return false;
         }
       } else if (proof.proof_category !== 'Deposition') {
