@@ -83,7 +83,6 @@ export default function MarkupCanvas({
       setZoom(1);
       pointersRef.current.clear();
       pinchRef.current = null;
-      panRef.current = null;
     }
   }, [isTouchNavigationMode, pageNumber, fileUrl]);
 
@@ -208,6 +207,12 @@ export default function MarkupCanvas({
       setZoom(nextZoom);
       return;
     }
+
+    if (pointersRef.current.size === 1 && panRef.current && wrapperRef.current && zoom > 1) {
+      event.preventDefault();
+      wrapperRef.current.scrollLeft = panRef.current.scrollLeft - (event.clientX - panRef.current.startX);
+      wrapperRef.current.scrollTop = panRef.current.scrollTop - (event.clientY - panRef.current.startY);
+    }
   };
 
   const handleNavigationPointerEnd = (event) => {
@@ -271,7 +276,7 @@ export default function MarkupCanvas({
   }
 
   return (
-    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: isTouchNavigationMode ? 'pan-x pan-y' : 'none' }}>
+    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: isTouchNavigationMode ? 'none' : 'none' }}>
       <div className={`flex min-h-full ${zoom > 1 ? 'items-start justify-start' : 'h-full items-center justify-center'} overflow-visible`}>
         <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
           <Document
@@ -302,7 +307,6 @@ export default function MarkupCanvas({
 
           <div
             className={`absolute inset-0 ${isTouchNavigationMode ? 'cursor-grab' : 'cursor-crosshair'}`}
-            style={isTouchNavigationMode ? { touchAction: 'pinch-zoom' } : undefined}
             onPointerDown={isTouchNavigationMode ? handleNavigationPointerDown : handlePointerDown}
             onPointerMove={isTouchNavigationMode ? handleNavigationPointerMove : handlePointerMove}
             onPointerUp={isTouchNavigationMode ? handleNavigationPointerEnd : (tool === 'pen' ? finishStroke : finishHighlight)}
