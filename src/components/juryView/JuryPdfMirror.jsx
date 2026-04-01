@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Loader2 } from 'lucide-react';
 import { normalizeHighlightGroups } from '@/components/proofVault/highlightGroupUtils';
+import { buildMarkupOverlay } from '@/components/proofVault/pdfMarkupUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -13,6 +14,7 @@ export default function JuryPdfMirror({
   highlights = [],
   clippedPage = null,
   visiblePages = null,
+  liveMarkups = [],
 }) {
   const containerRef = useRef(null);
   const [numPages, setNumPages] = useState(null);
@@ -46,6 +48,7 @@ export default function JuryPdfMirror({
       ),
     [highlights, clippedPage, currentPage, activePageNumber]
   );
+  const activeLiveMarkups = useMemo(() => buildMarkupOverlay(liveMarkups, activePageNumber), [liveMarkups, activePageNumber]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -146,6 +149,31 @@ export default function JuryPdfMirror({
                     }}
                   />
                 ))}
+                <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                  {activeLiveMarkups.map((item) => item.type === 'highlight' ? (
+                    <rect
+                      key={item.id}
+                      x={Math.round(item.x * 1000)}
+                      y={Math.round(item.y * 1000)}
+                      width={Math.round(item.width * 1000)}
+                      height={Math.round(item.height * 1000)}
+                      fill={item.color}
+                      opacity={item.opacity ?? 0.32}
+                      rx="8"
+                      ry="8"
+                    />
+                  ) : (
+                    <polyline
+                      key={item.id}
+                      fill="none"
+                      stroke={item.color}
+                      strokeWidth={item.width || 6}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={(item.points || []).map((point) => `${Math.round(point.x * 1000)},${Math.round(point.y * 1000)}`).join(' ')}
+                    />
+                  ))}
+                </svg>
               </div>
             </div>
           </div>

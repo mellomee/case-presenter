@@ -34,6 +34,8 @@ export function useJurySync(role = 'attorney') {
           video_time: 0,
           is_playing: false,
           exhibit_label: '',
+          live_markup_mode: 'navigate',
+          live_markups: [],
         });
         if (!cancelled) {
           setRecordId(created.id);
