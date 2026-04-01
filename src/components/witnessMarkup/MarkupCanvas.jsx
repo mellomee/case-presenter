@@ -320,7 +320,7 @@ export default function MarkupCanvas({
   return (
     <div ref={wrapperRef} onWheel={handleWheel} className="h-[calc(100vh-17rem)] w-full overflow-hidden overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: 'none' }}>
       <div className="flex min-h-full items-center justify-center overflow-hidden">
-        <div ref={stageRef} className="relative inline-block max-w-none select-none overflow-visible rounded-xl bg-white shadow-sm" style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`, transformOrigin: 'center center' }}>
+        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
           <Document
             file={fileUrl}
             loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
@@ -348,7 +348,7 @@ export default function MarkupCanvas({
         </svg>
 
           <div
-            className={`absolute inset-0 ${isTouchNavigationMode ? 'cursor-grab' : tool === 'highlight' ? 'cursor-cell' : 'cursor-crosshair'}`}
+            className={`absolute inset-0 ${isTouchNavigationMode ? 'cursor-grab' : 'cursor-crosshair'}`}
             onPointerDown={isTouchNavigationMode ? handleNavigationPointerDown : handlePointerDown}
             onPointerMove={isTouchNavigationMode ? handleNavigationPointerMove : handlePointerMove}
             onPointerUp={isTouchNavigationMode ? handleNavigationPointerEnd : (tool === 'pen' ? finishStroke : finishHighlight)}
