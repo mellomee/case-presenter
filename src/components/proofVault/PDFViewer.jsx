@@ -411,7 +411,7 @@ export default function PDFViewer({
   return (
     <div className="flex flex-col h-full bg-zinc-900 select-none overflow-hidden" style={{ position: 'relative' }}>
       {mode === 'controller' && (
-        <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
+        <div className="relative z-20 flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
           <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => setShowThumbs((v) => !v)}>
             <Layers className="w-3.5 h-3.5" />
           </Button>
@@ -552,7 +552,7 @@ export default function PDFViewer({
         >
           <div
             ref={containerRef}
-            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            className={`relative z-0 flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ touchAction: 'none' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -588,7 +588,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                <svg className="pointer-events-none absolute inset-0 z-[5] h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
                   {activeLiveMarkups.map((item) => item.type === 'highlight' ? (
                     <rect
                       key={item.id}
@@ -637,8 +637,8 @@ export default function PDFViewer({
                 </svg>
                 {liveMarkupEnabled && (
                   <div
-                    className={`absolute inset-0 ${liveMarkupMode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto'}`}
-                    style={{ touchAction: liveMarkupMode === 'navigate' ? 'none' : 'none' }}
+                    className={`absolute inset-0 z-10 ${liveMarkupMode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto'}`}
+                    style={{ touchAction: 'none' }}
                     onPointerDown={(event) => {
                       if (liveMarkupMode === 'navigate') return;
                       const rect = event.currentTarget.getBoundingClientRect();
