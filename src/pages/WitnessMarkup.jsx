@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ReactPlayer from 'react-player';
-import { ChevronLeft, ChevronRight, Loader2, Maximize, Save, Scale } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Loader2, Maximize, Save, Scale } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import MarkupCanvas from '@/components/witnessMarkup/MarkupCanvas.jsx';
@@ -300,34 +299,6 @@ export default function WitnessMarkup() {
 
           {isPdf ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage <= 1}>
-                <ChevronLeft className="h-4 w-4" /> Prev
-              </Button>
-              <div className="min-w-[96px] rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm font-medium text-slate-700">
-                Page {currentPage} / {numPages}
-              </div>
-              <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1">
-                <span className="text-sm text-slate-600">Go to</span>
-                <Input
-                  type="number"
-                  min="1"
-                  max={numPages}
-                  value={pageInput}
-                  onChange={(e) => setPageInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handlePageJump();
-                    }
-                  }}
-                  className="h-8 w-20 border-slate-200 bg-slate-50 text-center"
-                />
-                <Button variant="outline" onClick={handlePageJump}>
-                  Jump
-                </Button>
-              </div>
-              <Button variant="outline" onClick={() => setCurrentPage((page) => Math.min(numPages, page + 1))} disabled={currentPage >= numPages}>
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
               <Button onClick={handleSave} disabled={isSaving || isLoading || isLoadingAsset} className="bg-blue-600 hover:bg-blue-700">
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save as Proof
               </Button>
@@ -343,6 +314,18 @@ export default function WitnessMarkup() {
               onUndo={handleUndo}
               onClear={handleClear}
               canUndo={canUndo}
+              currentPage={currentPage}
+              numPages={numPages}
+              pageInput={pageInput}
+              onPageInputChange={(e) => setPageInput(e.target.value)}
+              onPageInputKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handlePageJump();
+                }
+              }}
+              onPageJump={handlePageJump}
+              onPrevPage={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              onNextPage={() => setCurrentPage((page) => Math.min(numPages, page + 1))}
             />
 
             {saveMessage ? (
