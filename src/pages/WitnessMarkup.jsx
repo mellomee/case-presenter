@@ -6,8 +6,6 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import MarkupCanvas from '@/components/witnessMarkup/MarkupCanvas.jsx';
 import MarkupToolbar from '@/components/witnessMarkup/MarkupToolbar.jsx';
-import JuryPdfMirror from '@/components/juryView/JuryPdfMirror.jsx';
-import AttorneyCentralLiveMarkupLayer from '@/components/attorneyCentral/AttorneyCentralLiveMarkupLayer.jsx';
 import { exportElementToPdfBase64 } from '@/lib/witnessMarkupExport';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { getPrimaryExhibitNumber } from '@/lib/dropboxPdfProcessing';
@@ -335,47 +333,22 @@ export default function WitnessMarkup() {
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         ) : isPdf ? (
-          isPublishedWitnessView ? (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm" ref={captureRef}>
-              <div className="h-[70vh]">
-                <JuryPdfMirror
-                  fileUrl={fileUrl}
-                  syncState={{
-                    currentPage: witnessState?.pdf_page || currentPage,
-                    zoom: witnessState?.zoom ?? 1,
-                    panX: witnessState?.panX ?? 0,
-                    panY: witnessState?.panY ?? 0,
-                  }}
-                  pageOverlay={
-                    <AttorneyCentralLiveMarkupLayer
-                      enabled
-                      interactive={false}
-                      mode="navigate"
-                      currentPage={witnessState?.pdf_page || currentPage}
-                      markup={witnessState?.live_markup}
-                    />
-                  }
-                />
-              </div>
-            </div>
-          ) : (
-            <MarkupCanvas
-              captureRef={captureRef}
-              fileUrl={fileUrl}
-              pageNumber={currentPage}
-              tool={tool}
-              penColor={PEN_COLOR}
-              highlightColor={HIGHLIGHT_COLOR}
-              strokes={strokes}
-              highlights={highlights}
-              onAddStroke={(stroke) => setStrokes((current) => [...current, stroke])}
-              onAddHighlight={(highlight) => setHighlights((current) => [...current, highlight])}
-              onLoadDocument={(pages) => {
-                setNumPages(pages || 1);
-                setCurrentPage((page) => Math.min(Math.max(page, 1), pages || 1));
-              }}
-            />
-          )
+          <MarkupCanvas
+            captureRef={captureRef}
+            fileUrl={fileUrl}
+            pageNumber={currentPage}
+            tool={tool}
+            penColor={PEN_COLOR}
+            highlightColor={HIGHLIGHT_COLOR}
+            strokes={strokes}
+            highlights={highlights}
+            onAddStroke={(stroke) => setStrokes((current) => [...current, stroke])}
+            onAddHighlight={(highlight) => setHighlights((current) => [...current, highlight])}
+            onLoadDocument={(pages) => {
+              setNumPages(pages || 1);
+              setCurrentPage((page) => Math.min(Math.max(page, 1), pages || 1));
+            }}
+          />
         ) : (
           <WitnessMediaPreview proof={proof} fileUrl={fileUrl} witnessState={witnessState} />
         )}

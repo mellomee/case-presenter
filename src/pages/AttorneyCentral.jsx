@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import AttorneyCentralLiveMarkupToolbar from '@/components/attorneyCentral/AttorneyCentralLiveMarkupToolbar.jsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, FolderKanban, Play } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -66,7 +65,6 @@ export default function AttorneyCentral() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [currentTimeLabel, setCurrentTimeLabel] = useState(() => TIME_FORMATTER.format(new Date()));
-  const [previewInteractionMode, setPreviewInteractionMode] = useState('navigate');
 
   const hubQueryOptions = {
     staleTime: 2 * 60 * 1000,
@@ -215,7 +213,6 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
-      live_markup: null,
     });
   };
 
@@ -231,7 +228,6 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: true,
       exhibit_label: '',
-      live_markup: null,
     });
   };
 
@@ -247,7 +243,6 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
-      live_markup: null,
     });
   };
 
@@ -263,7 +258,6 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: true,
       exhibit_label: '',
-      live_markup: null,
     });
   };
 
@@ -313,23 +307,8 @@ export default function AttorneyCentral() {
             witnessState={witnessState}
             onUpdateJury={update}
             onUpdateWitness={updateWitness}
-            interactionMode={previewInteractionMode}
           />
         </div>
-
-        <AttorneyCentralLiveMarkupToolbar
-          enabled={Boolean(selectedProof && selectedProof.file_type === 'PDF')}
-          mode={previewInteractionMode}
-          onModeChange={setPreviewInteractionMode}
-          onClear={() => {
-            if (juryState?.published_proof_id === selectedProof?.id && !juryState?.is_blank) {
-              update({ live_markup: { page: juryState?.pdf_page || 1, strokes: [], highlights: [] } });
-            }
-            if (witnessState?.published_proof_id === selectedProof?.id && !witnessState?.is_blank) {
-              updateWitness({ live_markup: { page: witnessState?.pdf_page || 1, strokes: [], highlights: [] } });
-            }
-          }}
-        />
 
         {(leftDrawer || rightDrawerOpen) ? (
           <button

@@ -6,39 +6,11 @@ import ExtractViewer from '@/components/proofVault/ExtractViewer.jsx';
 import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
-import AttorneyCentralLiveMarkupLayer from '@/components/attorneyCentral/AttorneyCentralLiveMarkupLayer.jsx';
 
-export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, interactionMode = 'navigate' }) {
+export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
-
-  const liveMarkup = (juryState?.published_proof_id === proof?.id && !juryState?.is_blank)
-    ? juryState?.live_markup
-    : (witnessState?.published_proof_id === proof?.id && !witnessState?.is_blank)
-      ? witnessState?.live_markup
-      : null;
-
-  const handleMarkupChange = useCallback((nextMarkup) => {
-    if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
-      onUpdateJury({ live_markup: nextMarkup });
-    }
-
-    if (witnessState && witnessState.published_proof_id === proof?.id && !witnessState.is_blank && onUpdateWitness) {
-      onUpdateWitness({ live_markup: nextMarkup });
-    }
-  }, [juryState, proof, onUpdateJury, witnessState, onUpdateWitness]);
-
-  const liveMarkupOverlay = proof?.file_type === 'PDF' ? (
-    <AttorneyCentralLiveMarkupLayer
-      enabled
-      interactive
-      mode={interactionMode}
-      currentPage={(juryState?.published_proof_id === proof?.id && !juryState?.is_blank ? juryState?.pdf_page : witnessState?.published_proof_id === proof?.id && !witnessState?.is_blank ? witnessState?.pdf_page : 1) || 1}
-      markup={liveMarkup}
-      onChange={handleMarkupChange}
-    />
-  ) : null;
 
   const handlePdfStateChange = useCallback((pdfSync) => {
     if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
@@ -98,13 +70,13 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
     <div className="relative h-full overflow-hidden bg-[#f5ecdf]">
       <div className="h-full overflow-hidden rounded-none bg-white">
         {proof.proof_child_type === 'ExtractClip' && proof?.witness_markup ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} hideDefaultToolbar interactionMode={interactionMode} pageOverlay={liveMarkupOverlay} />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} />
         ) : proof.proof_child_type === 'ExtractClip' ? (
           <div className="attorney-central-extract-clip h-full">
-            <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} interactionMode={interactionMode} pageOverlay={liveMarkupOverlay} />
+            <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
-          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} interactionMode={interactionMode} pageOverlay={liveMarkupOverlay} />
+          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
@@ -124,7 +96,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <img src={externalUrl} alt={proof.name} className="max-h-full max-w-full rounded-3xl object-contain shadow-lg" />
           </div>
         ) : externalUrl ? (
-          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} hideDefaultToolbar interactionMode={interactionMode} pageOverlay={liveMarkupOverlay} />
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} />
         ) : (
           <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No file attached</div>
         )}
