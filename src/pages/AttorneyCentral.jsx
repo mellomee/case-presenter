@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, FolderKanban, Play } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -64,6 +64,7 @@ export default function AttorneyCentral() {
   const [highlightedProofId, setHighlightedProofId] = useState('');
   const [previewInteractionMode, setPreviewInteractionMode] = useState('touch');
   const [attorneyMarkup, setAttorneyMarkup] = useState({ strokes: [], highlights: [] });
+  const previousProofIdRef = useRef('');
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [currentTimeLabel, setCurrentTimeLabel] = useState(() => TIME_FORMATTER.format(new Date()));
@@ -115,9 +116,14 @@ export default function AttorneyCentral() {
   }, [selectedProof]);
 
   useEffect(() => {
-    setAttorneyMarkup({ strokes: [], highlights: [] });
+    if (previousProofIdRef.current === selectedProofId) return;
+    previousProofIdRef.current = selectedProofId;
+    const clearedMarkup = { strokes: [], highlights: [] };
+    setAttorneyMarkup(clearedMarkup);
     setPreviewInteractionMode('touch');
-  }, [selectedProofId]);
+    if (juryState?.published_proof_id && !juryState?.is_blank) update({ attorney_markup: clearedMarkup });
+    if (witnessState?.published_proof_id && !witnessState?.is_blank) updateWitness({ attorney_markup: clearedMarkup });
+  }, [selectedProofId, juryState?.published_proof_id, juryState?.is_blank, witnessState?.published_proof_id, witnessState?.is_blank, update, updateWitness]);
 
   const updateProofMutation = useMutation({
     mutationFn: ({ proofId, data }) => base44.entities.Proof.update(proofId, data),

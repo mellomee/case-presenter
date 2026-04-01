@@ -22,6 +22,7 @@ function resetJuryState(recordId) {
     is_playing: false,
     is_blank: true,
     exhibit_label: '',
+    attorney_markup: { strokes: [], highlights: [] },
   });
 }
 
