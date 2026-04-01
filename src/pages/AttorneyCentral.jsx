@@ -248,18 +248,33 @@ export default function AttorneyCentral() {
   const handleAddWitnessProof = () => {
     if (!pendingWitnessProof) return;
     const parentProof = proofsById[pendingWitnessProof.parent_proof_id];
+    const inheritedStatus = parentProof?.status || 'Draft';
+    const updateData = {
+      status: inheritedStatus,
+      joint_exhibit_num: parentProof?.joint_exhibit_num || null,
+      joint_by: parentProof?.joint_by || null,
+      joint_date: parentProof?.joint_date || null,
+      admitted_exhibit_num: parentProof?.admitted_exhibit_num || null,
+      admitted_by: parentProof?.admitted_by || null,
+      admit_date: parentProof?.admit_date || null,
+      demonstrative_exhibit_num: parentProof?.demonstrative_exhibit_num || null,
+    };
+
     updateProofMutation.mutate({
       proofId: pendingWitnessProof.id,
-      data: {
-        status: 'Joint',
-        joint_exhibit_num: parentProof?.joint_exhibit_num || parentProof?.admitted_exhibit_num || parentProof?.demonstrative_exhibit_num || null,
-        joint_by: parentProof?.joint_by || parentProof?.admitted_by || null,
-        joint_date: parentProof?.joint_date || parentProof?.admit_date || null,
-      },
+      data: updateData,
     });
     setPendingWitnessProof(null);
     setLeftDrawer('marked');
-    setStatusFilter('joint');
+    setStatusFilter(
+      inheritedStatus === 'Admitted'
+        ? 'admitted'
+        : inheritedStatus === 'Demonstrative'
+          ? 'demonstrative'
+          : inheritedStatus === 'Joint'
+            ? 'joint'
+            : 'all'
+    );
     setSelectedProofId(pendingWitnessProof.id);
     setHighlightedProofId(pendingWitnessProof.id);
   };

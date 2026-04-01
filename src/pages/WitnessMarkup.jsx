@@ -94,6 +94,7 @@ export default function WitnessMarkup() {
   const urlParams = new URLSearchParams(window.location.search);
   const proofIdFromUrl = urlParams.get('proofId') || '';
   const requestedWitnessName = urlParams.get('witness') || '';
+  const requestedWitnessId = urlParams.get('witnessId') || '';
   const requestedPage = Number(urlParams.get('page') || '1') || 1;
   const activeProofId = proofIdFromUrl || witnessState?.published_proof_id || '';
   const isPublishedWitnessView = !proofIdFromUrl;
@@ -122,6 +123,15 @@ export default function WitnessMarkup() {
   const { data: settings } = useQuery({
     queryKey: ['appSettings'],
     queryFn: () => base44.entities.AppSettings.list().then((records) => records[0] || {}),
+  });
+
+  const { data: witnessParty } = useQuery({
+    queryKey: ['witness-markup-party', requestedWitnessId],
+    queryFn: async () => {
+      const records = await base44.entities.Party.filter({ id: requestedWitnessId });
+      return records[0] || null;
+    },
+    enabled: !!requestedWitnessId,
   });
 
   const { url: fileUrl, isLoading: isLoadingAsset } = useResolvedProofAsset(proof);
@@ -174,6 +184,11 @@ export default function WitnessMarkup() {
     setHighlights([]);
     setSaveMessage('');
   }, [activeProofId]);
+
+  useEffect(() => {
+    const autoWitnessName = requestedWitnessName || [witnessParty?.first_name, witnessParty?.last_name].filter(Boolean).join(' ');
+    setWitnessName(autoWitnessName);
+  }, [requestedWitnessName, witnessParty?.first_name, witnessParty?.last_name]);
 
   const canUndo = strokes.length > 0 || highlights.length > 0;
   const exhibitNumber = useMemo(() => getPrimaryExhibitNumber(proof), [proof]);
@@ -293,6 +308,7 @@ export default function WitnessMarkup() {
             <MarkupToolbar
               witnessName={witnessName}
               onWitnessNameChange={setWitnessName}
+              witnessNameDisabled
               tool={tool}
               onToolChange={setTool}
               onUndo={handleUndo}

@@ -12,6 +12,7 @@ function toolClass(isActive) {
 export default function MarkupToolbar({
   witnessName,
   onWitnessNameChange,
+  witnessNameDisabled = false,
   tool,
   onToolChange,
   onUndo,
@@ -26,7 +27,8 @@ export default function MarkupToolbar({
             value={witnessName}
             onChange={(event) => onWitnessNameChange(event.target.value)}
             placeholder="Witness name"
-            className="h-11 min-w-[220px] border-slate-200 bg-white"
+            disabled={witnessNameDisabled}
+            className="h-11 min-w-[220px] border-slate-200 bg-white disabled:cursor-not-allowed disabled:bg-slate-100"
           />
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" className={toolClass(tool === 'pen')} onClick={() => onToolChange('pen')}>
