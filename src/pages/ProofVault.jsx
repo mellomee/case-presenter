@@ -45,7 +45,11 @@ function getPrimaryExhibitNumber(proof) {
 
 function shouldShowInJointTab(proof) {
   if (proof.status !== 'Joint') return false;
-  return !(proof.file_type === 'PDF' && !proof.parent_proof_id && !proof.proof_child_type);
+
+  const isTopLevelOriginalPdf = proof.file_type === 'PDF' && !proof.parent_proof_id && !proof.proof_child_type;
+  if (isTopLevelOriginalPdf) return false;
+
+  return ['Image', 'Video'].includes(proof.file_type) || ['Extract', 'ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
 }
 
 function proofMatchesSearch(proof, searchQuery) {
