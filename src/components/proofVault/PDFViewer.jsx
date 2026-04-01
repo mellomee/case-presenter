@@ -58,7 +58,6 @@ export default function PDFViewer({
   const liveDraftRef = useRef(null);
   const [draftLiveStroke, setDraftLiveStroke] = useState(null);
   const [draftLiveHighlight, setDraftLiveHighlight] = useState(null);
-  const isLiveDrawMode = liveMarkupEnabled && liveMarkupMode !== 'navigate';
 
   const pageNumbers = useMemo(() => {
     if (Array.isArray(visiblePages) && visiblePages.length > 0) {
@@ -280,7 +279,7 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
-      if (isLiveDrawMode) return;
+      if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
       if (e.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
@@ -324,7 +323,7 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages, isLiveDrawMode]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   const handleMouseDown = (e) => {
     if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
@@ -412,7 +411,7 @@ export default function PDFViewer({
   return (
     <div className="flex flex-col h-full bg-zinc-900 select-none overflow-hidden" style={{ position: 'relative' }}>
       {mode === 'controller' && (
-        <div className="relative z-20 flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
+        <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
           <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-white" onClick={() => setShowThumbs((v) => !v)}>
             <Layers className="w-3.5 h-3.5" />
           </Button>
@@ -553,7 +552,7 @@ export default function PDFViewer({
         >
           <div
             ref={containerRef}
-            className={`relative z-0 flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{ touchAction: 'none' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -589,7 +588,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                <svg className="pointer-events-none absolute inset-0 z-[5] h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
                   {activeLiveMarkups.map((item) => item.type === 'highlight' ? (
                     <rect
                       key={item.id}
@@ -636,10 +635,10 @@ export default function PDFViewer({
                     />
                   ) : null}
                 </svg>
-                {isLiveDrawMode && (
+                {liveMarkupEnabled && (
                   <div
-                    className="absolute inset-0 z-10 pointer-events-auto"
-                    style={{ touchAction: 'none' }}
+                    className={`absolute inset-0 ${liveMarkupMode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto'}`}
+                    style={{ touchAction: liveMarkupMode === 'navigate' ? 'none' : 'none' }}
                     onPointerDown={(event) => {
                       if (liveMarkupMode === 'navigate') return;
                       const rect = event.currentTarget.getBoundingClientRect();
