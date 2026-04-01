@@ -46,14 +46,15 @@ function getPrimaryExhibitNumber(proof) {
 function shouldShowInJointTab(proof, allProofs = []) {
   if (proof.status !== 'Joint') return false;
 
+  const parent = proof.parent_proof_id
+    ? allProofs.find((item) => item.id === proof.parent_proof_id)
+    : null;
   const isTopLevel = !proof.parent_proof_id;
   const isOriginalPdfParent = isTopLevel && proof.file_type === 'PDF' && !proof.proof_child_type;
+  const isChildOfOriginalPdf = Boolean(parent) && !parent.parent_proof_id && parent.file_type === 'PDF' && !parent.proof_child_type;
+
   if (isOriginalPdfParent) return false;
-
-  const isChild = Boolean(proof.parent_proof_id);
-  if (!isChild) return true;
-
-  const parent = allProofs.find((item) => item.id === proof.parent_proof_id);
+  if (isChildOfOriginalPdf) return true;
   if (!parent) return true;
 
   return parent.status !== 'Joint';
