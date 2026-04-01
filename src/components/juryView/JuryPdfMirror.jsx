@@ -148,46 +148,13 @@ export default function JuryPdfMirror({
                   />
                 ))}
                 {attorneyMarkup ? (
-                  <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                    {(attorneyMarkup.highlights || []).map((highlight, index) => {
-                      const left = Math.max(0, Math.min(1, Number(highlight.x) || 0));
-                      const top = Math.max(0, Math.min(1, Number(highlight.y) || 0));
-                      const width = Math.max(0, Math.min(1 - left, Number(highlight.width) || 0));
-                      const height = Math.max(0, Math.min(1 - top, Number(highlight.height) || 0));
-                      return (
-                        <rect
-                          key={highlight.id || `highlight-${index}`}
-                          x={Math.round(left * 1000)}
-                          y={Math.round(top * 1000)}
-                          width={Math.round(width * 1000)}
-                          height={Math.round(height * 1000)}
-                          fill={highlight.color || '#facc15'}
-                          opacity={highlight.opacity ?? 0.32}
-                          rx="10"
-                          ry="10"
-                        />
-                      );
-                    })}
-                    {(attorneyMarkup.strokes || []).map((stroke, index) => {
-                      const points = (stroke.points || [])
-                        .map((point) => `${Math.round((Math.max(0, Math.min(1, Number(point.x) || 0))) * 1000)},${Math.round((Math.max(0, Math.min(1, Number(point.y) || 0))) * 1000)}`)
-                        .join(' ');
-
-                      if (!points) return null;
-
-                      return (
-                        <polyline
-                          key={stroke.id || `stroke-${index}`}
-                          fill="none"
-                          stroke={stroke.color || '#ef4444'}
-                          strokeWidth={(stroke.width || 5) * 2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          vectorEffect="non-scaling-stroke"
-                          points={points}
-                        />
-                      );
-                    })}
+                  <svg className="pointer-events-none absolute inset-0 h-full w-full z-10" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                    {(attorneyMarkup.highlights || []).map((highlight) => (
+                      <rect key={highlight.id} x={Math.round(highlight.x * 1000)} y={Math.round(highlight.y * 1000)} width={Math.round(highlight.width * 1000)} height={Math.round(highlight.height * 1000)} fill={highlight.color} opacity={highlight.opacity ?? 0.32} rx="10" ry="10" />
+                    ))}
+                    {(attorneyMarkup.strokes || []).map((stroke) => (
+                      <polyline key={stroke.id} fill="none" stroke={stroke.color} strokeWidth={stroke.width} strokeLinecap="round" strokeLinejoin="round" points={(stroke.points || []).map((point) => `${Math.round(point.x * 1000)},${Math.round(point.y * 1000)}`).join(' ')} />
+                    ))}
                   </svg>
                 ) : null}
               </div>
