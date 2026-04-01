@@ -58,6 +58,10 @@ export function useJurySync(role = 'attorney') {
 
   const update = useCallback((patch) => {
     if (!recordId) return;
+    if (Object.keys(patch).length === 1 && Object.prototype.hasOwnProperty.call(patch, 'attorney_markup')) {
+      base44.entities.JuryState.update(recordId, patch);
+      return;
+    }
     pendingRef.current = { ...pendingRef.current, ...patch };
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
