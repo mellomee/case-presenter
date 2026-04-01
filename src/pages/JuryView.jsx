@@ -9,6 +9,7 @@ import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { Scale, Maximize } from 'lucide-react';
 import JuryVideoClipPlayer from '@/components/juryView/JuryVideoClipPlayer.jsx';
 import JuryPdfMirror from '@/components/juryView/JuryPdfMirror.jsx';
+import AttorneyCentralLiveMarkupLayer from '@/components/attorneyCentral/AttorneyCentralLiveMarkupLayer.jsx';
 
 function JuryVideo({ src, videoTime, isPlaying }) {
   const playerRef = useRef(null);
@@ -219,6 +220,15 @@ export default function JuryView() {
             visiblePages={visiblePages?.length ? visiblePages : null}
             highlights={proof.highlights || []}
             clippedPage={initialClipPage}
+            pageOverlay={
+              <AttorneyCentralLiveMarkupLayer
+                enabled
+                interactive={false}
+                mode="navigate"
+                currentPage={juryState.pdf_page || 1}
+                markup={juryState?.live_markup}
+              />
+            }
           />
         ) : (
           <p className="text-white/20 text-lg">No file attached</p>

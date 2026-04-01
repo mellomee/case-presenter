@@ -13,6 +13,7 @@ export default function JuryPdfMirror({
   highlights = [],
   clippedPage = null,
   visiblePages = null,
+  pageOverlay = null,
 }) {
   const containerRef = useRef(null);
   const [numPages, setNumPages] = useState(null);
@@ -146,6 +147,7 @@ export default function JuryPdfMirror({
                     }}
                   />
                 ))}
+                {pageOverlay}
               </div>
             </div>
           </div>
