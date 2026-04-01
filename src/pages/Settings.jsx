@@ -9,6 +9,7 @@ import AdmissionTemplatesTab from '@/components/settings/AdmissionTemplatesTab';
 import RolesTab from '@/components/settings/RolesTab';
 import CredentialsTab from '@/components/settings/CredentialsTab';
 import TrialPointCategoriesTab from '@/components/settings/TrialPointCategoriesTab';
+import AccountTab from '@/components/settings/AccountTab';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
@@ -57,6 +58,7 @@ export default function Settings() {
               <TabsTrigger value="roles" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Roles</TabsTrigger>
               <TabsTrigger value="credentials" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Credentials</TabsTrigger>
               <TabsTrigger value="trialPointCategories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Trial Point Categories</TabsTrigger>
+              <TabsTrigger value="account" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-4">Account</TabsTrigger>
             </TabsList>
 
             <div className="p-4 sm:p-8">
@@ -68,6 +70,7 @@ export default function Settings() {
               <TabsContent value="roles" className="mt-0"><RolesTab /></TabsContent>
               <TabsContent value="credentials" className="mt-0"><CredentialsTab /></TabsContent>
               <TabsContent value="trialPointCategories" className="mt-0"><TrialPointCategoriesTab /></TabsContent>
+              <TabsContent value="account" className="mt-0"><AccountTab /></TabsContent>
             </div>
           </Tabs>
         </div>
