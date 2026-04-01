@@ -28,23 +28,9 @@ function FullscreenButton({ onClick, visible }) {
 
 function WitnessBlankScreen({ caseName, onEnterFullscreen, isFullscreen, actionLabel, onAction }) {
   return (
-    <div className="relative flex h-screen w-full items-center justify-center bg-black group px-6">
+    <div className="relative flex h-screen w-full items-center justify-center bg-black group">
       <div className="text-center select-none">
         <Scale className="mx-auto mb-6 h-[200px] w-[200px] text-white/25" strokeWidth={1} />
-
-        {!isFullscreen ? (
-          <div className="mb-6 flex justify-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onEnterFullscreen}
-              className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-            >
-              <Maximize className="h-4 w-4" /> Full Screen
-            </Button>
-          </div>
-        ) : null}
-
         <p className="text-lg font-light uppercase tracking-[0.3em] text-white/12">
           {caseName || 'Case Presenter'}
         </p>
@@ -61,6 +47,7 @@ function WitnessBlankScreen({ caseName, onEnterFullscreen, isFullscreen, actionL
           </div>
         ) : null}
       </div>
+      <FullscreenButton onClick={onEnterFullscreen} visible={!isFullscreen} />
     </div>
   );
 }
