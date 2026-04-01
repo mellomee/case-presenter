@@ -161,7 +161,11 @@ export default function AttorneyCentral() {
       setSelectedDepositionParentId(nextProof?.parent_proof_id || proofId);
     }
 
-    if (source === 'questions') setRightDrawerOpen(false);
+    if (source === 'questions') {
+      setRightDrawerOpen(false);
+      return;
+    }
+
     if ((source === 'marked' || source === 'depositions') && !options.keepDrawerOpen) setLeftDrawer(null);
   };
 
