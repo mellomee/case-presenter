@@ -216,8 +216,19 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
+      attorney_markup: attorneyMarkupByProof[proof.id] || { strokes: [], highlights: [] },
     });
   };
+
+  useEffect(() => {
+    if (!selectedProof?.id) return;
+    if (juryState?.published_proof_id === selectedProof.id) {
+      update({ attorney_markup: attorneyMarkupByProof[selectedProof.id] || { strokes: [], highlights: [] } });
+    }
+    if (witnessState?.published_proof_id === selectedProof.id) {
+      updateWitness({ attorney_markup: attorneyMarkupByProof[selectedProof.id] || { strokes: [], highlights: [] } });
+    }
+  }, [selectedProof?.id, attorneyMarkupByProof, juryState?.published_proof_id, witnessState?.published_proof_id, update, updateWitness]);
 
   const unpublishProof = (proof) => {
     if (juryState?.published_proof_id !== proof?.id || juryState?.is_blank) return;
@@ -246,6 +257,7 @@ export default function AttorneyCentral() {
       is_playing: false,
       is_blank: false,
       exhibit_label: getPublishedLabel(proof),
+      attorney_markup: attorneyMarkupByProof[proof.id] || { strokes: [], highlights: [] },
     });
   };
 
