@@ -58,6 +58,7 @@ export default function PDFViewer({
   const liveDraftRef = useRef(null);
   const [draftLiveStroke, setDraftLiveStroke] = useState(null);
   const [draftLiveHighlight, setDraftLiveHighlight] = useState(null);
+  const isLiveDrawMode = liveMarkupEnabled && liveMarkupMode !== 'navigate';
 
   const pageNumbers = useMemo(() => {
     if (Array.isArray(visiblePages) && visiblePages.length > 0) {
@@ -279,7 +280,7 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
-      if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
+      if (isLiveDrawMode) return;
       if (e.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
@@ -323,7 +324,7 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages, isLiveDrawMode]);
 
   const handleMouseDown = (e) => {
     if (liveMarkupEnabled && liveMarkupMode !== 'navigate') return;
@@ -635,9 +636,9 @@ export default function PDFViewer({
                     />
                   ) : null}
                 </svg>
-                {liveMarkupEnabled && (
+                {isLiveDrawMode && (
                   <div
-                    className={`absolute inset-0 z-10 ${liveMarkupMode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto'}`}
+                    className="absolute inset-0 z-10 pointer-events-auto"
                     style={{ touchAction: 'none' }}
                     onPointerDown={(event) => {
                       if (liveMarkupMode === 'navigate') return;
