@@ -6,6 +6,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 const VIEWBOX_SIZE = 1000;
 const DEFAULT_STROKE_WIDTH = 6;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 4;
 
 function normalizePoint(event, element) {
   const rect = element.getBoundingClientRect();
@@ -57,6 +59,9 @@ export default function MarkupCanvas({
   const [draftStroke, setDraftStroke] = useState(null);
   const [draftHighlight, setDraftHighlight] = useState(null);
   const [highlightStart, setHighlightStart] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const pointersRef = useRef(new Map());
+  const pinchRef = useRef(null);
 
   const pageWidth = Math.max(
     240,
@@ -71,6 +76,14 @@ export default function MarkupCanvas({
       captureRef.current = stageRef.current;
     }
   });
+
+  useEffect(() => {
+    if (!isTouchNavigationMode) {
+      setZoom(1);
+      pointersRef.current.clear();
+      pinchRef.current = null;
+    }
+  }, [isTouchNavigationMode, pageNumber, fileUrl]);
 
   useEffect(() => {
     const updateSize = () => {
@@ -147,6 +160,49 @@ export default function MarkupCanvas({
     }
   };
 
+  const clampZoom = (value) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
+
+  const getPointerDistance = (points) => {
+    if (points.length < 2) return 0;
+    const [first, second] = points;
+    const deltaX = second.clientX - first.clientX;
+    const deltaY = second.clientY - first.clientY;
+    return Math.hypot(deltaX, deltaY);
+  };
+
+  const handleNavigationPointerDown = (event) => {
+    if (!isTouchNavigationMode) return;
+    pointersRef.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+
+    if (pointersRef.current.size === 2) {
+      const points = Array.from(pointersRef.current.values());
+      pinchRef.current = {
+        distance: getPointerDistance(points),
+        zoom,
+      };
+    }
+  };
+
+  const handleNavigationPointerMove = (event) => {
+    if (!isTouchNavigationMode || !pointersRef.current.has(event.pointerId)) return;
+    pointersRef.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+
+    if (pointersRef.current.size === 2 && pinchRef.current) {
+      event.preventDefault();
+      const points = Array.from(pointersRef.current.values());
+      const distance = getPointerDistance(points);
+      const nextZoom = clampZoom((distance / pinchRef.current.distance) * pinchRef.current.zoom);
+      setZoom(nextZoom);
+    }
+  };
+
+  const handleNavigationPointerEnd = (event) => {
+    pointersRef.current.delete(event.pointerId);
+    if (pointersRef.current.size < 2) {
+      pinchRef.current = null;
+    }
+  };
+
   const renderStroke = (stroke) => (
     <polyline
       key={stroke.id}
@@ -185,9 +241,9 @@ export default function MarkupCanvas({
   }
 
   return (
-    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={isTouchNavigationMode ? { touchAction: 'auto' } : { touchAction: 'none' }}>
+    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={{ touchAction: isTouchNavigationMode ? 'none' : 'none' }}>
       <div className="flex h-full items-center justify-center overflow-visible">
-        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`}>
+        <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`} style={isTouchNavigationMode ? { transform: `scale(${zoom})`, transformOrigin: 'center center' } : undefined}>
           <Document
             file={fileUrl}
             loading={<div className="flex h-[70vh] w-full items-center justify-center bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}
@@ -215,11 +271,12 @@ export default function MarkupCanvas({
         </svg>
 
           <div
-            className={`absolute inset-0 ${isTouchNavigationMode ? 'pointer-events-none cursor-grab' : 'cursor-crosshair'}`}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={tool === 'pen' ? finishStroke : finishHighlight}
-            onPointerLeave={tool === 'pen' ? finishStroke : finishHighlight}
+            className={`absolute inset-0 ${isTouchNavigationMode ? 'cursor-grab' : 'cursor-crosshair'}`}
+            onPointerDown={isTouchNavigationMode ? handleNavigationPointerDown : handlePointerDown}
+            onPointerMove={isTouchNavigationMode ? handleNavigationPointerMove : handlePointerMove}
+            onPointerUp={isTouchNavigationMode ? handleNavigationPointerEnd : (tool === 'pen' ? finishStroke : finishHighlight)}
+            onPointerCancel={isTouchNavigationMode ? handleNavigationPointerEnd : undefined}
+            onPointerLeave={isTouchNavigationMode ? undefined : (tool === 'pen' ? finishStroke : finishHighlight)}
           />
         </div>
       </div>
