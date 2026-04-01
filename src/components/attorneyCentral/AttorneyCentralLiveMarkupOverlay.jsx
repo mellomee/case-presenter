@@ -92,8 +92,6 @@ export default function AttorneyCentralLiveMarkupOverlay({
 
   const handlePointerDown = (event) => {
     if (mode === 'navigate' || !stageRef.current) return;
-    event.preventDefault();
-    event.stopPropagation();
     const point = normalizePoint(event, stageRef.current);
     event.currentTarget.setPointerCapture?.(event.pointerId);
 
@@ -115,8 +113,6 @@ export default function AttorneyCentralLiveMarkupOverlay({
 
   const handlePointerMove = (event) => {
     if (mode === 'navigate' || !stageRef.current) return;
-    event.preventDefault();
-    event.stopPropagation();
     const point = normalizePoint(event, stageRef.current);
 
     if (mode === 'pen' && draftStroke) {
@@ -139,11 +135,10 @@ export default function AttorneyCentralLiveMarkupOverlay({
       </svg>
       <div
         ref={stageRef}
-        className={`absolute inset-0 z-20 ${mode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair touch-none'}`}
+        className={`absolute inset-0 ${mode === 'navigate' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair touch-none'}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={mode === 'pen' ? finishStroke : finishHighlight}
-        onPointerCancel={mode === 'pen' ? finishStroke : finishHighlight}
         onPointerLeave={mode === 'pen' ? finishStroke : finishHighlight}
       />
     </>

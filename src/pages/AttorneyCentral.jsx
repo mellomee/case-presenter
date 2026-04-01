@@ -309,51 +309,6 @@ export default function AttorneyCentral() {
   return (
     <div className="h-full bg-[#f3ebdf]">
       <div className="flex h-full flex-col overflow-hidden">
-        <div className="flex shrink-0 items-center justify-center border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <AttorneyCentralMarkupToolbar
-            visible={supportsLiveMarkup}
-            mode={markupMode}
-            onModeChange={(nextMode) => {
-              setMarkupMode(nextMode);
-              if (isPublishedToJury) {
-                update({ live_markup_mode: nextMode });
-              }
-              if (isPublishedToWitness) {
-                updateWitness({ live_markup_mode: nextMode });
-              }
-            }}
-            onUndo={() => {
-              const juryStrokes = juryState?.live_markup_strokes || [];
-              const juryHighlights = juryState?.live_markup_highlights || [];
-              const witnessStrokes = witnessState?.live_markup_strokes || [];
-              const witnessHighlights = witnessState?.live_markup_highlights || [];
-
-              if (isPublishedToJury) {
-                if (juryStrokes.length > 0) {
-                  update({ live_markup_strokes: juryStrokes.slice(0, -1) });
-                } else if (juryHighlights.length > 0) {
-                  update({ live_markup_highlights: juryHighlights.slice(0, -1) });
-                }
-              }
-
-              if (isPublishedToWitness) {
-                if (witnessStrokes.length > 0) {
-                  updateWitness({ live_markup_strokes: witnessStrokes.slice(0, -1) });
-                } else if (witnessHighlights.length > 0) {
-                  updateWitness({ live_markup_highlights: witnessHighlights.slice(0, -1) });
-                }
-              }
-            }}
-            onClear={() => {
-              if (isPublishedToJury) {
-                update({ live_markup_strokes: [], live_markup_highlights: [] });
-              }
-              if (isPublishedToWitness) {
-                updateWitness({ live_markup_strokes: [], live_markup_highlights: [] });
-              }
-            }}
-          />
-        </div>
         <div className="relative min-h-0 flex-1">
           <div className="absolute inset-0">
           <AttorneyCentralPreview
@@ -364,7 +319,6 @@ export default function AttorneyCentral() {
             onUpdateJury={update}
             onUpdateWitness={updateWitness}
             markupMode={markupMode}
-            disablePdfGestures={markupMode !== 'navigate'}
           />
         </div>
 
@@ -436,6 +390,28 @@ export default function AttorneyCentral() {
           checkedQuestionIds={checkedQuestionIds}
           onToggleChecked={(questionId) => setCheckedQuestionIds((prev) => prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId])}
           onSelectProof={(proofId) => selectProof(proofId, 'questions')}
+        />
+
+        <AttorneyCentralMarkupToolbar
+          visible={supportsLiveMarkup}
+          mode={markupMode}
+          onModeChange={(nextMode) => {
+            setMarkupMode(nextMode);
+            if (isPublishedToJury) {
+              update({ live_markup_mode: nextMode });
+            }
+            if (isPublishedToWitness) {
+              updateWitness({ live_markup_mode: nextMode });
+            }
+          }}
+          onClear={() => {
+            if (isPublishedToJury) {
+              update({ live_markup_strokes: [], live_markup_highlights: [] });
+            }
+            if (isPublishedToWitness) {
+              updateWitness({ live_markup_strokes: [], live_markup_highlights: [] });
+            }
+          }}
         />
 
         <AttorneyCentralWitnessNotice proof={pendingWitnessProof} onAdd={handleAddWitnessProof} onDismiss={() => setPendingWitnessProof(null)} />
