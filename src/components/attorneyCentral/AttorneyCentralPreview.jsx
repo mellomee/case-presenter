@@ -69,7 +69,9 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
   return (
     <div className="relative h-full overflow-hidden bg-[#f5ecdf]">
       <div className="h-full overflow-hidden rounded-none bg-white">
-        {proof.proof_child_type === 'ExtractClip' ? (
+        {proof.proof_child_type === 'ExtractClip' && proof?.witness_markup ? (
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} />
+        ) : proof.proof_child_type === 'ExtractClip' ? (
           <div className="attorney-central-extract-clip h-full">
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} />
           </div>
