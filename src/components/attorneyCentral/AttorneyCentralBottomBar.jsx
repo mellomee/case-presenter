@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Pause, PenLine, Play, Square } from 'lucide-react';
+import { ExternalLink, Pause, Play, Square } from 'lucide-react';
 import { getProofDisplayName } from '@/lib/examV2Utils';
 import { getProofKindLabel, getProofNumber, getProofStatusConfig } from '@/lib/attorneyCentralUtils';
 import ProofLifecycleSteps from '@/components/attorneyCentral/ProofLifecycleSteps.jsx';
@@ -21,8 +21,6 @@ export default function AttorneyCentralBottomBar({
   isPublishedToWitness,
   onPublishToWitness,
   onUnpublishFromWitness,
-  canPublishMarkup,
-  onPublishMarkup,
   onRejectToggle,
   onAdmitExhibit,
   onAdmitDemo,
@@ -55,37 +53,22 @@ export default function AttorneyCentralBottomBar({
                 <p className="mt-2 truncate text-sm font-bold text-stone-900">{selectedProof.formal_name || getProofDisplayName(selectedProof)}</p>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <ProofLifecycleSteps
-                  selectedProof={selectedProof}
-                  canPublishToWitness={canPublishToWitness}
-                  isPublishedToWitness={isPublishedToWitness}
-                  onPublishToWitness={onPublishToWitness}
-                  onUnpublishFromWitness={onUnpublishFromWitness}
-                  canPublishToJury={canPublishToJury}
-                  isPublishedToJury={isPublishedToJury}
-                  onPublishToJury={onPublishToJury}
-                  onUnpublishFromJury={onUnpublishFromJury}
-                  localDecision={localDecision}
-                  onRejectToggle={onRejectToggle}
-                  onAdmitExhibit={onAdmitExhibit}
-                  onAdmitDemo={onAdmitDemo}
-                  onUnAdmit={onUnAdmit}
-                />
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={onPublishMarkup}
-                    disabled={!canPublishMarkup}
-                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition ${canPublishMarkup ? 'bg-blue-600 text-white hover:bg-blue-700' : 'cursor-not-allowed bg-stone-100 text-stone-400'}`}
-                  >
-                    <PenLine className="h-4 w-4" />
-                    Publish Markup
-                  </button>
-                  <p className="text-xs text-stone-500">Sends current annotations to any already-published jury or witness view.</p>
-                </div>
-              </div>
+              <ProofLifecycleSteps
+                selectedProof={selectedProof}
+                canPublishToWitness={canPublishToWitness}
+                isPublishedToWitness={isPublishedToWitness}
+                onPublishToWitness={onPublishToWitness}
+                onUnpublishFromWitness={onUnpublishFromWitness}
+                canPublishToJury={canPublishToJury}
+                isPublishedToJury={isPublishedToJury}
+                onPublishToJury={onPublishToJury}
+                onUnpublishFromJury={onUnpublishFromJury}
+                localDecision={localDecision}
+                onRejectToggle={onRejectToggle}
+                onAdmitExhibit={onAdmitExhibit}
+                onAdmitDemo={onAdmitDemo}
+                onUnAdmit={onUnAdmit}
+              />
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 text-sm text-stone-500">
