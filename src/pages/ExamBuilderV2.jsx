@@ -217,11 +217,7 @@ export default function ExamBuilderV2() {
       ? { label: `Admitted as Demonstrative · #${selectedRootProof.demonstrative_exhibit_num || selectedRootProof.joint_exhibit_num || '—'}`, color: 'text-blue-400' }
       : null;
   const selectableProofs = useMemo(
-    () => proofs.filter((proof) => {
-      if (proof.proof_category === 'Deposition') return true;
-      if (['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) return true;
-      return ['ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
-    }),
+    () => proofs.filter((proof) => proof.proof_category === 'Deposition' || ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)),
     [proofs]
   );
   const questionItems = useMemo(() => currentItems.filter((item) => item.item_type === 'question'), [currentItems]);

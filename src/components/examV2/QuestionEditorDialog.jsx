@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Search, X } from 'lucide-react';
 import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import ExamBuilderSafePreviewDialog from '@/components/examV2/ExamBuilderSafePreviewDialog.jsx';
-import { getProofDisplayName, getTopLevelAncestorId } from '@/lib/examV2Utils';
+import { getProofDisplayName } from '@/lib/examV2Utils';
 
 const PARTY_SIDE_ORDER = ['Plaintiff', 'Defense', 'Neutral'];
 
@@ -29,11 +29,13 @@ function renderGroupedPartyOptions(parties = [], { allLabel = null } = {}) {
   return (
     <>
       {allLabel ? <option value="all">{allLabel}</option> : null}
-      {groups.flatMap((group, index) => [
-        ...(index > 0 ? [<option key={`${group.side}-separator`} disabled>──────────</option>] : []),
-        <option key={`${group.side}-label`} disabled>{group.side}</option>,
-        ...group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>),
-      ])}
+      {groups.map((group, index) => (
+        <React.Fragment key={group.side}>
+          {index > 0 ? <option disabled>──────────</option> : null}
+          <option disabled>{group.side}</option>
+          {group.items.map((party) => <option key={party.id} value={party.id}>{party.first_name} {party.last_name}</option>)}
+        </React.Fragment>
+      ))}
     </>
   );
 }
@@ -103,26 +105,13 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
   };
 
   const visibleProofTree = useMemo(() => {
-    const getRootProof = (proof) => {
-      let currentProof = proof;
-      while (currentProof?.parent_proof_id && proofById[currentProof.parent_proof_id]) {
-        currentProof = proofById[currentProof.parent_proof_id];
-      }
-      return currentProof;
-    };
-
     const matchingProofs = availableProofs.filter((proof) => {
-      const rootProof = getRootProof(proof);
-
       if (proofTab === 'Exhibit') {
-        const belongsToExhibitTree = rootProof?.proof_category === 'Exhibit';
-        const isEligibleExhibit = ['Joint', 'Admitted', 'Demonstrative'].includes(rootProof?.status) || ['ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
-        if (!belongsToExhibitTree || !isEligibleExhibit) {
+        if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) {
           return false;
         }
       } else {
-        const belongsToDepositionTree = rootProof?.proof_category === 'Deposition';
-        if (!belongsToDepositionTree || isHiddenDepositionSource(proof)) {
+        if (proof.proof_category !== 'Deposition' || isHiddenDepositionSource(proof)) {
           return false;
         }
       }
@@ -161,19 +150,15 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
       }
     });
 
-    const roots = availableProofs.filter((proof) => visibleIds.has(proof.id) && getTopLevelAncestorId(proof, proofById) === proof.id);
+    const roots = availableProofs.filter((proof) => visibleIds.has(proof.id) && (!proof.parent_proof_id || !visibleIds.has(proof.parent_proof_id)));
     const childrenByParent = new Map();
 
     availableProofs.forEach((proof) => {
-      if (!visibleIds.has(proof.id) || !proof.parent_proof_id) return;
-      const parentId = visibleIds.has(proof.parent_proof_id)
-        ? proof.parent_proof_id
-        : getTopLevelAncestorId(proof, proofById);
-      if (!parentId || parentId === proof.id) return;
-      if (!childrenByParent.has(parentId)) {
-        childrenByParent.set(parentId, []);
+      if (!visibleIds.has(proof.id) || !proof.parent_proof_id || !visibleIds.has(proof.parent_proof_id)) return;
+      if (!childrenByParent.has(proof.parent_proof_id)) {
+        childrenByParent.set(proof.parent_proof_id, []);
       }
-      childrenByParent.get(parentId).push(proof);
+      childrenByParent.get(proof.parent_proof_id).push(proof);
     });
 
     childrenByParent.forEach((items) => {
