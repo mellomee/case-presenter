@@ -102,6 +102,24 @@ export function buildChildrenMap(proofs = []) {
   }, {});
 }
 
+export function getTopLevelMarkedProofs(proofs = []) {
+  const markedStatuses = ['Joint', 'Admitted', 'Demonstrative'];
+  const proofsById = Object.fromEntries(proofs.map((proof) => [proof.id, proof]));
+
+  return proofs.filter((proof) => {
+    if (!markedStatuses.includes(proof?.status)) return false;
+    if (proof?.proof_category !== 'Exhibit') return false;
+
+    let parent = proof?.parent_proof_id ? proofsById[proof.parent_proof_id] : null;
+    while (parent) {
+      if (markedStatuses.includes(parent.status)) return false;
+      parent = parent.parent_proof_id ? proofsById[parent.parent_proof_id] : null;
+    }
+
+    return true;
+  });
+}
+
 export function countQuestionLinks(proofId, examItems = []) {
   return examItems.filter((item) => item.item_type === 'question' && parseIdsField(item.attached_proof_ids).includes(proofId)).length;
 }

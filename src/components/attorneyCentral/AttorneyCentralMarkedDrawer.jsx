@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import { getProofDisplayName } from '@/lib/examV2Utils';
-import { countQuestionLinks, getProofHistoryChips, getProofKindLabel, getProofMetaLine, getProofNumber, getProofStatusConfig, normalizeSearchValue } from '@/lib/attorneyCentralUtils';
+import { countQuestionLinks, getProofHistoryChips, getProofKindLabel, getProofMetaLine, getProofNumber, getProofStatusConfig, getTopLevelMarkedProofs, normalizeSearchValue } from '@/lib/attorneyCentralUtils';
 
 function getPrimaryName(proof) {
   return proof?.name || proof?.formal_name || getProofDisplayName(proof);
@@ -114,9 +114,8 @@ export default function AttorneyCentralMarkedDrawer({
   selectedDepositionParentId,
   onSelectDepositionParentId,
 }) {
-  const visibleProofs = proofs
+  const visibleProofs = (mode === 'marked' ? getTopLevelMarkedProofs(proofs) : proofs)
     .filter((proof) => {
-      if (mode === 'marked' && proof.parent_proof_id) return false;
       const searchMatch = matchesProofSearch(proof, search);
       if (!searchMatch) return false;
       if (mode !== 'marked' || statusFilter === 'all') return true;
