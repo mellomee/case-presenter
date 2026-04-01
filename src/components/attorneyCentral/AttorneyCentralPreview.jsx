@@ -78,7 +78,17 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
           <div className="relative h-full">
-            <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
+            <ExtractViewer
+              proof={proof}
+              mode="controller"
+              onStateChange={handlePdfStateChange}
+              markupMode={interactionMode}
+              onMarkupModeChange={onMarkupModeChange}
+              canUndoMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
+              onUndoMarkup={onUndoMarkup}
+              hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
+              onClearMarkup={onClearMarkup}
+            />
             <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />
           </div>
         ) : proof.proof_child_type === 'VideoClip' ? (
