@@ -263,7 +263,7 @@ export default function WitnessMarkup() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+    <div className="h-screen overflow-hidden bg-slate-50 p-4 md:p-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>

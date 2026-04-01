@@ -185,7 +185,7 @@ export default function MarkupCanvas({
   }
 
   return (
-    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={isTouchNavigationMode ? { touchAction: 'auto' } : { touchAction: 'none' }}>
+    <div ref={wrapperRef} className="h-[calc(100vh-17rem)] w-full overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-100 p-3 md:h-[calc(100vh-15rem)]" style={isTouchNavigationMode ? { touchAction: 'auto' } : { touchAction: 'none' }}>
       <div className="flex h-full items-center justify-center overflow-visible">
         <div ref={stageRef} className={`relative inline-block max-w-none select-none rounded-xl bg-white shadow-sm ${isTouchNavigationMode ? 'overflow-visible' : 'overflow-hidden'}`}>
           <Document
