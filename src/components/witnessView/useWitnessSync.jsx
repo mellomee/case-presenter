@@ -31,7 +31,6 @@ export function useWitnessSync(role = 'attorney') {
           video_time: 0,
           is_playing: false,
           exhibit_label: '',
-          attorney_markup: null,
         });
 
         if (!cancelled) {

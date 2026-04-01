@@ -4,7 +4,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, Layers, Loader2, Download, Hand, Highlighter, PenLine, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Search, X, Layers, Loader2, Download } from 'lucide-react';
 import debounce from 'lodash/debounce';
 import { normalizeHighlightGroups } from './highlightGroupUtils';
 
@@ -22,18 +22,11 @@ export default function PDFViewer({
   onPageChange,
   allowPan = true,
   pageOverlay = null,
-  pageOverlayInteractive = false,
   visiblePages = null,
   selectableThumbnails = false,
   selectedPages = [],
   onSelectedPagesChange,
   thumbnailWidth = 62,
-  markupMode = null,
-  onMarkupModeChange,
-  canUndoMarkup = false,
-  onUndoMarkup,
-  hasMarkup = false,
-  onClearMarkup,
 }) {
   const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
@@ -276,7 +269,6 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
-      if (pageOverlayInteractive) return;
       if (e.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
@@ -291,7 +283,6 @@ export default function PDFViewer({
       }
     };
     const onTouchMove = (e) => {
-      if (pageOverlayInteractive) return;
       e.preventDefault();
       if (touchRef.current.mode === 'pinch' && e.touches.length === 2) {
         const dist = Math.hypot(
@@ -315,29 +306,21 @@ export default function PDFViewer({
         });
       }
     };
-    const onTouchEnd = () => {
-      if (pageOverlayInteractive) return;
-      touchRef.current = {};
-    };
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: true });
-    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-      el.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages, pageOverlayInteractive]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   const handleMouseDown = (e) => {
-    if (!allowPan || pageOverlayInteractive) return;
+    if (!allowPan) return;
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
   };
 
   const handleMouseMove = (e) => {
-    if (!dragRef.current.dragging || pageOverlayInteractive) return;
+    if (!dragRef.current.dragging) return;
     const dx = e.clientX - dragRef.current.x;
     const dy = e.clientY - dragRef.current.y;
     dragRef.current.x = e.clientX;
@@ -467,31 +450,6 @@ export default function PDFViewer({
               All
             </Button>
           )}
-          {markupMode ? (
-            <>
-              <div className="w-px h-4 bg-zinc-600 mx-1" />
-              <Button variant="ghost" size="sm" className={`h-7 px-2 text-[11px] ${markupMode === 'touch' ? 'text-white bg-zinc-700' : 'text-zinc-300 hover:text-white'}`} onClick={() => onMarkupModeChange?.('touch')}>
-                <Hand className="w-3.5 h-3.5" />
-                Touch
-              </Button>
-              <Button variant="ghost" size="sm" className={`h-7 px-2 text-[11px] ${markupMode === 'pen' ? 'text-white bg-zinc-700' : 'text-zinc-300 hover:text-white'}`} onClick={() => onMarkupModeChange?.('pen')}>
-                <PenLine className="w-3.5 h-3.5" />
-                Pen
-              </Button>
-              <Button variant="ghost" size="sm" className={`h-7 px-2 text-[11px] ${markupMode === 'highlight' ? 'text-white bg-zinc-700' : 'text-zinc-300 hover:text-white'}`} onClick={() => onMarkupModeChange?.('highlight')}>
-                <Highlighter className="w-3.5 h-3.5" />
-                Highlight
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white disabled:opacity-40" onClick={onUndoMarkup} disabled={!canUndoMarkup}>
-                <RotateCcw className="w-3.5 h-3.5" />
-                Undo
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white disabled:opacity-40" onClick={onClearMarkup} disabled={!hasMarkup}>
-                <Trash2 className="w-3.5 h-3.5" />
-                Clear
-              </Button>
-            </>
-          ) : null}
           <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-zinc-300 hover:text-white">
             <a href={fileUrl} target="_blank" rel="noopener noreferrer" download>
               <Download className="w-3.5 h-3.5" />
@@ -562,8 +520,8 @@ export default function PDFViewer({
         >
           <div
             ref={containerRef}
-            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${(allowPan && !pageOverlayInteractive) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
-            style={{ touchAction: pageOverlayInteractive ? 'auto' : 'none' }}
+            className={`flex-1 overflow-hidden flex items-start justify-center pt-6 bg-zinc-900 ${allowPan ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+            style={{ touchAction: 'none' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -598,7 +556,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                {pageOverlay ? <div className="absolute inset-0 z-20">{pageOverlay}</div> : null}
+                {pageOverlay}
               </div>
             </div>
           </div>

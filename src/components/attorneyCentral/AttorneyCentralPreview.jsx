@@ -6,9 +6,8 @@ import ExtractViewer from '@/components/proofVault/ExtractViewer.jsx';
 import ExtractClipViewer from '@/components/proofVault/ExtractClipViewer.jsx';
 import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
-import AttorneyCentralPdfMarkupLayer from '@/components/attorneyCentral/AttorneyCentralPdfMarkupLayer.jsx';
 
-export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, interactionMode = 'touch', attorneyMarkup = { strokes: [], highlights: [] }, onAttorneyMarkupChange, onMarkupModeChange, onUndoMarkup, onClearMarkup }) {
+export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
@@ -77,21 +76,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <ExtractClipViewer proof={proof} allProofs={allProofs} mode="controller" onStateChange={handlePdfStateChange} />
           </div>
         ) : proof.proof_child_type === 'Extract' ? (
-          <div className="relative h-full">
-            <ExtractViewer
-              proof={proof}
-              mode="controller"
-              onStateChange={handlePdfStateChange}
-              markupMode={interactionMode}
-              onMarkupModeChange={onMarkupModeChange}
-              canUndoMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
-              onUndoMarkup={onUndoMarkup}
-              hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
-              onClearMarkup={onClearMarkup}
-              pageOverlay={<AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} />}
-              pageOverlayInteractive={interactionMode === 'pen' || interactionMode === 'highlight'}
-            />
-          </div>
+          <ExtractViewer proof={proof} mode="controller" onStateChange={handlePdfStateChange} />
         ) : proof.proof_child_type === 'VideoClip' ? (
           isVideoClipLoading ? (
             <div className="flex h-full items-center justify-center bg-stone-100"><Loader2 className="h-8 w-8 animate-spin text-stone-400" /></div>
@@ -111,24 +96,7 @@ export default function AttorneyCentralPreview({ proof, allProofs = [], juryStat
             <img src={externalUrl} alt={proof.name} className="max-h-full max-w-full rounded-3xl object-contain shadow-lg" />
           </div>
         ) : externalUrl ? (
-          <div className="relative h-full">
-            <PDFViewer
-              fileUrl={externalUrl}
-              mode="controller"
-              onStateChange={handlePdfStateChange}
-              highlights={proof.highlights || []}
-              clippedPage={proof.clipped_page || null}
-              allowPan={interactionMode === 'touch'}
-              markupMode={proof.file_type === 'PDF' && proof.proof_child_type !== 'ExtractClip' ? interactionMode : null}
-              onMarkupModeChange={onMarkupModeChange}
-              canUndoMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
-              onUndoMarkup={onUndoMarkup}
-              hasMarkup={(attorneyMarkup?.strokes || []).length > 0 || (attorneyMarkup?.highlights || []).length > 0}
-              onClearMarkup={onClearMarkup}
-              pageOverlay={proof.file_type === 'PDF' && proof.proof_child_type !== 'ExtractClip' ? <AttorneyCentralPdfMarkupLayer mode={interactionMode} markup={attorneyMarkup} onChange={onAttorneyMarkupChange} /> : null}
-              pageOverlayInteractive={interactionMode === 'pen' || interactionMode === 'highlight'}
-            />
-          </div>
+          <PDFViewer fileUrl={externalUrl} mode="controller" onStateChange={handlePdfStateChange} highlights={proof.highlights || []} clippedPage={proof.clipped_page || null} />
         ) : (
           <div className="flex h-full items-center justify-center bg-stone-100 text-stone-500">No file attached</div>
         )}
