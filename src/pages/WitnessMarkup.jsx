@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import MarkupCanvas from '@/components/witnessMarkup/MarkupCanvas.jsx';
 import MarkupToolbar from '@/components/witnessMarkup/MarkupToolbar.jsx';
+import PDFViewer from '@/components/proofVault/PDFViewer.jsx';
 import { exportElementToPdfBase64 } from '@/lib/witnessMarkupExport';
 import useResolvedProofAsset from '@/hooks/useResolvedProofAsset';
 import { getPrimaryExhibitNumber } from '@/lib/dropboxPdfProcessing';
@@ -333,22 +334,45 @@ export default function WitnessMarkup() {
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         ) : isPdf ? (
-          <MarkupCanvas
-            captureRef={captureRef}
-            fileUrl={fileUrl}
-            pageNumber={currentPage}
-            tool={tool}
-            penColor={PEN_COLOR}
-            highlightColor={HIGHLIGHT_COLOR}
-            strokes={strokes}
-            highlights={highlights}
-            onAddStroke={(stroke) => setStrokes((current) => [...current, stroke])}
-            onAddHighlight={(highlight) => setHighlights((current) => [...current, highlight])}
-            onLoadDocument={(pages) => {
-              setNumPages(pages || 1);
-              setCurrentPage((page) => Math.min(Math.max(page, 1), pages || 1));
-            }}
-          />
+          isPublishedWitnessView ? (
+            <PDFViewer
+              fileUrl={fileUrl}
+              mode="viewer"
+              syncState={{
+                currentPage: currentPage,
+                zoom: witnessState?.zoom ?? 1,
+                panX: witnessState?.panX ?? 0,
+                panY: witnessState?.panY ?? 0,
+              }}
+              pageOverlay={witnessState?.live_markup?.currentPage === currentPage ? (
+                <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                  {(witnessState?.live_markup?.highlights || []).map((highlight) => (
+                    <rect key={highlight.id} x={Math.round(highlight.x * 1000)} y={Math.round(highlight.y * 1000)} width={Math.round(highlight.width * 1000)} height={Math.round(highlight.height * 1000)} fill={highlight.color} opacity={highlight.opacity ?? 0.32} rx="10" ry="10" />
+                  ))}
+                  {(witnessState?.live_markup?.strokes || []).map((stroke) => (
+                    <polyline key={stroke.id} fill="none" stroke={stroke.color} strokeWidth={stroke.width} strokeLinecap="round" strokeLinejoin="round" points={stroke.points.map((point) => `${Math.round(point.x * 1000)},${Math.round(point.y * 1000)}`).join(' ')} />
+                  ))}
+                </svg>
+              ) : null}
+            />
+          ) : (
+            <MarkupCanvas
+              captureRef={captureRef}
+              fileUrl={fileUrl}
+              pageNumber={currentPage}
+              tool={tool}
+              penColor={PEN_COLOR}
+              highlightColor={HIGHLIGHT_COLOR}
+              strokes={strokes}
+              highlights={highlights}
+              onAddStroke={(stroke) => setStrokes((current) => [...current, stroke])}
+              onAddHighlight={(highlight) => setHighlights((current) => [...current, highlight])}
+              onLoadDocument={(pages) => {
+                setNumPages(pages || 1);
+                setCurrentPage((page) => Math.min(Math.max(page, 1), pages || 1));
+              }}
+            />
+          )
         ) : (
           <WitnessMediaPreview proof={proof} fileUrl={fileUrl} witnessState={witnessState} />
         )}

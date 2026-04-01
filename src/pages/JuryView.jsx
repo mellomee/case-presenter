@@ -219,6 +219,16 @@ export default function JuryView() {
             visiblePages={visiblePages?.length ? visiblePages : null}
             highlights={proof.highlights || []}
             clippedPage={initialClipPage}
+            pageOverlay={juryState?.live_markup?.currentPage === (juryState.pdf_page || 1) ? (
+              <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                {(juryState?.live_markup?.highlights || []).map((highlight) => (
+                  <rect key={highlight.id} x={Math.round(highlight.x * 1000)} y={Math.round(highlight.y * 1000)} width={Math.round(highlight.width * 1000)} height={Math.round(highlight.height * 1000)} fill={highlight.color} opacity={highlight.opacity ?? 0.32} rx="10" ry="10" />
+                ))}
+                {(juryState?.live_markup?.strokes || []).map((stroke) => (
+                  <polyline key={stroke.id} fill="none" stroke={stroke.color} strokeWidth={stroke.width} strokeLinecap="round" strokeLinejoin="round" points={stroke.points.map((point) => `${Math.round(point.x * 1000)},${Math.round(point.y * 1000)}`).join(' ')} />
+                ))}
+              </svg>
+            ) : null}
           />
         ) : (
           <p className="text-white/20 text-lg">No file attached</p>
