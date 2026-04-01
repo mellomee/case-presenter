@@ -69,7 +69,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   }, [focusTarget]);
 
   return (
-    <div className="flex h-full flex-col bg-zinc-900" style={{ touchAction: 'none', overscrollBehavior: 'contain' }}>
+    <div className="flex flex-col h-full bg-zinc-900">
       <div className="shrink-0 border-b border-zinc-700 bg-zinc-800">
         <div className="flex items-center justify-between gap-3 px-4 py-2">
           <div className="min-w-0">
