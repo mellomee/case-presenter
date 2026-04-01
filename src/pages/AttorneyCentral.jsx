@@ -62,9 +62,6 @@ export default function AttorneyCentral() {
   const [showUnAdmitModal, setShowUnAdmitModal] = useState(false);
   const [pendingWitnessProof, setPendingWitnessProof] = useState(null);
   const [highlightedProofId, setHighlightedProofId] = useState('');
-  const [markupMode, setMarkupMode] = useState(false);
-  const [markupTool, setMarkupTool] = useState('pan');
-  const [liveMarkup, setLiveMarkup] = useState({ strokes: [], highlights: [] });
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [currentTimeLabel, setCurrentTimeLabel] = useState(() => TIME_FORMATTER.format(new Date()));
@@ -135,12 +132,6 @@ export default function AttorneyCentral() {
   useEffect(() => {
     if (!selectedProofId && markedExhibits[0]) setSelectedProofId(markedExhibits[0].id);
   }, [markedExhibits, selectedProofId]);
-
-  useEffect(() => {
-    setLiveMarkup({ strokes: [], highlights: [] });
-    setMarkupMode(false);
-    setMarkupTool('pan');
-  }, [selectedProofId]);
 
   useEffect(() => {
     if (!selectedRootId && rootItems[0]) setSelectedRootId(rootItems[0].id);
@@ -316,21 +307,6 @@ export default function AttorneyCentral() {
             witnessState={witnessState}
             onUpdateJury={update}
             onUpdateWitness={updateWitness}
-            markupMode={markupMode}
-            markupTool={markupTool}
-            liveMarkup={liveMarkup}
-            onToggleMarkupMode={() => setMarkupMode((value) => !value)}
-            onMarkupToolChange={setMarkupTool}
-            onUndoMarkup={() => {
-              if (liveMarkup.strokes.length > 0) {
-                setLiveMarkup((current) => ({ ...current, strokes: current.strokes.slice(0, -1) }));
-                return;
-              }
-              setLiveMarkup((current) => ({ ...current, highlights: current.highlights.slice(0, -1) }));
-            }}
-            onClearMarkup={() => setLiveMarkup({ strokes: [], highlights: [] })}
-            onAddMarkupStroke={(stroke) => setLiveMarkup((current) => ({ ...current, strokes: [...current.strokes, stroke] }))}
-            onAddMarkupHighlight={(highlight) => setLiveMarkup((current) => ({ ...current, highlights: [...current.highlights, highlight] }))}
           />
         </div>
 
