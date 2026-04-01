@@ -103,15 +103,25 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
   };
 
   const visibleProofTree = useMemo(() => {
+    const getRootProof = (proof) => {
+      let currentProof = proof;
+      while (currentProof?.parent_proof_id && proofById[currentProof.parent_proof_id]) {
+        currentProof = proofById[currentProof.parent_proof_id];
+      }
+      return currentProof;
+    };
+
     const matchingProofs = availableProofs.filter((proof) => {
+      const rootProof = getRootProof(proof);
+
       if (proofTab === 'Exhibit') {
-        const belongsToExhibitTree = proof.proof_category === 'Exhibit' || proofById[proof.parent_proof_id]?.proof_category === 'Exhibit';
-        const isEligibleExhibit = ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status) || ['ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
+        const belongsToExhibitTree = rootProof?.proof_category === 'Exhibit';
+        const isEligibleExhibit = ['Joint', 'Admitted', 'Demonstrative'].includes(rootProof?.status) || ['ExtractClip', 'VideoClip'].includes(proof.proof_child_type);
         if (!belongsToExhibitTree || !isEligibleExhibit) {
           return false;
         }
       } else {
-        const belongsToDepositionTree = proof.proof_category === 'Deposition' || proofById[proof.parent_proof_id]?.proof_category === 'Deposition';
+        const belongsToDepositionTree = rootProof?.proof_category === 'Deposition';
         if (!belongsToDepositionTree || isHiddenDepositionSource(proof)) {
           return false;
         }
