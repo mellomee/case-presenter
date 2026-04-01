@@ -46,10 +46,12 @@ function getPrimaryExhibitNumber(proof) {
 function shouldShowInJointTab(proof, allProofs = []) {
   if (proof.status !== 'Joint') return false;
 
-  const isOriginalPdfParent = !proof.parent_proof_id && proof.file_type === 'PDF' && !proof.proof_child_type;
+  const isTopLevel = !proof.parent_proof_id;
+  const isOriginalPdfParent = isTopLevel && proof.file_type === 'PDF' && !proof.proof_child_type;
   if (isOriginalPdfParent) return false;
 
-  if (!proof.parent_proof_id) return true;
+  const isChild = Boolean(proof.parent_proof_id);
+  if (!isChild) return true;
 
   const parent = allProofs.find((item) => item.id === proof.parent_proof_id);
   if (!parent) return true;
@@ -300,23 +302,15 @@ export default function ProofVault() {
   const allExhibits = proofs.filter((p) => p.proof_category === 'Exhibit');
   const allDepositions = proofs.filter((p) => p.proof_category === 'Deposition');
 
-  // Primary lists stay top-level for All / Draft views
+  // Primary lists stay top-level for All / Draft / Joint views
   const exhibitsTopLevel = allExhibits.filter((p) => !p.parent_proof_id);
   const depositionsTopLevel = allDepositions.filter((p) => !p.parent_proof_id);
-  const jointRootExhibits = allExhibits.filter((proof) => {
-    if (proof.status !== 'Joint') return false;
-    if (proof.parent_proof_id) {
-      const parent = allExhibits.find((item) => item.id === proof.parent_proof_id);
-      return !parent || parent.status !== 'Joint';
-    }
-    return !(proof.file_type === 'PDF' && !proof.proof_child_type);
-  });
 
   const filteredExhibits = useMemo(() => {
     const exhibitsByStatus = exhibitFilter === 'all'
       ? exhibitsTopLevel
       : exhibitFilter === 'Joint'
-        ? jointRootExhibits
+        ? allExhibits.filter((proof) => shouldShowInJointTab(proof, allExhibits))
         : exhibitFilter === 'Admitted'
           ? allExhibits.filter((proof) => proof.status === 'Admitted')
           : exhibitFilter === 'Demonstrative'
@@ -324,7 +318,7 @@ export default function ProofVault() {
             : exhibitsTopLevel.filter((proof) => proof.status === exhibitFilter);
 
     return sortProofsByExhibitNumber(exhibitsByStatus.filter((proof) => proofMatchesSearch(proof, searchQuery)));
-  }, [allExhibits, exhibitFilter, exhibitsTopLevel, jointRootExhibits, searchQuery]);
+  }, [allExhibits, exhibitFilter, exhibitsTopLevel, searchQuery]);
 
   const filteredDepositions = useMemo(
     () => sortProofsByExhibitNumber(depositionsTopLevel.filter((proof) => proofMatchesSearch(proof, searchQuery))),
@@ -333,7 +327,7 @@ export default function ProofVault() {
 
   const getExhibitCount = (status) => {
     if (status === 'all') return exhibitsTopLevel.length;
-    if (status === 'Joint') return jointRootExhibits.length;
+    if (status === 'Joint') return allExhibits.filter((proof) => shouldShowInJointTab(proof, allExhibits)).length;
     if (status === 'Admitted') return allExhibits.filter((proof) => proof.status === 'Admitted').length;
     if (status === 'Demonstrative') return allExhibits.filter((proof) => proof.status === 'Demonstrative').length;
     return exhibitsTopLevel.filter((proof) => proof.status === status).length;
