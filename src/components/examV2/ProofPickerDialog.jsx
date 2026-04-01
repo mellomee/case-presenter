@@ -64,10 +64,17 @@ export default function ProofPickerDialog({ open, onOpenChange, proofs = [], par
 
   const selectedProof = parentProofs.find((proof) => proof.id === selectedId) || parentProofs[0] || null;
 
-  const childProofs = useMemo(
-    () => selectedProof ? filtered.filter((proof) => proof.parent_proof_id === selectedProof.id) : [],
-    [filtered, selectedProof]
-  );
+  const childProofs = useMemo(() => {
+    if (!selectedProof) return [];
+
+    const collectDescendants = (parentId) => (
+      filtered
+        .filter((proof) => proof.parent_proof_id === parentId)
+        .flatMap((proof) => [proof, ...collectDescendants(proof.id)])
+    );
+
+    return collectDescendants(selectedProof.id);
+  }, [filtered, selectedProof]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
