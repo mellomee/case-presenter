@@ -69,7 +69,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
   }, [focusTarget]);
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900">
+    <div className="flex flex-col h-full bg-zinc-900" style={{ touchAction: forceAllowPan ? 'none' : 'auto' }}>
       <div className="shrink-0 border-b border-zinc-700 bg-zinc-800">
         <div className="flex items-center justify-between gap-3 px-4 py-2">
           <div className="min-w-0">
@@ -159,7 +159,7 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
           onToggleHighlights={() => setShowHighlights((value) => !value)}
         />
 
-        <div className="flex-1 overflow-hidden min-w-0">
+        <div className="flex-1 overflow-hidden min-w-0" style={{ touchAction: forceAllowPan ? 'none' : 'auto' }}>
           {isLoading ? (
             <div className="flex items-center justify-center h-full text-zinc-500 text-sm">
               <Loader2 className="w-5 h-5 animate-spin" />

@@ -26,7 +26,8 @@ export default function ExtractViewer({ proof, mode = 'controller', syncState, o
   }
 
   return (
-    <PDFViewer
+    <div className="h-full" style={{ touchAction: forceAllowPan ? 'none' : 'auto' }}>
+      <PDFViewer
       fileUrl={url}
       mode={mode}
       syncState={syncState}
@@ -36,5 +37,6 @@ export default function ExtractViewer({ proof, mode = 'controller', syncState, o
       topOverlay={topOverlay}
       forceAllowPan={forceAllowPan}
     />
+    </div>
   );
 }
