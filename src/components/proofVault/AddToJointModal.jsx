@@ -7,11 +7,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { AlertCircle } from 'lucide-react';
 
-function getDescendantProofs(allProofs = [], parentId) {
-  const directChildren = allProofs.filter((item) => item.parent_proof_id === parentId);
-  return directChildren.flatMap((child) => [child, ...getDescendantProofs(allProofs, child.id)]);
-}
-
 export default function AddToJointModal({ open, onClose, proof }) {
   const queryClient = useQueryClient();
   const [jointExhibitNum, setJointExhibitNum] = useState('');
@@ -44,16 +39,16 @@ export default function AddToJointModal({ open, onClose, proof }) {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      const lineage = [proof, ...getDescendantProofs(proofs, proof.id)].filter(Boolean);
-      const jointDate = new Date().toISOString().split('T')[0];
+      await base44.entities.Proof.update(proof.id, data);
 
-      for (const item of lineage) {
-        await base44.entities.Proof.update(item.id, {
+      // Update all children to Joint status as well
+      const children = proofs.filter((p) => p.parent_proof_id === proof.id);
+      for (const child of children) {
+        await base44.entities.Proof.update(child.id, {
           status: 'Joint',
-          formal_name: item.id === proof.id ? data.formal_name : item.formal_name,
           joint_exhibit_num: data.joint_exhibit_num,
           joint_by: data.joint_by,
-          joint_date: jointDate,
+          joint_date: new Date().toISOString().split('T')[0],
           party_ids: data.party_ids,
           party_id: data.party_id,
         });
