@@ -116,6 +116,7 @@ export default function AttorneyCentralMarkedDrawer({
 }) {
   const visibleProofs = proofs
     .filter((proof) => {
+      if (mode === 'marked' && proof.parent_proof_id) return false;
       const searchMatch = matchesProofSearch(proof, search);
       if (!searchMatch) return false;
       if (mode !== 'marked' || statusFilter === 'all') return true;
