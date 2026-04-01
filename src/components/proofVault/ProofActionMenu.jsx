@@ -154,7 +154,6 @@ export default function ProofActionMenu({
     const canOptimizePdf = isOptimizableDropboxPdf(proof);
     const canAddToJoint =
       proof.proof_category === 'Exhibit' &&
-      proof.status === 'Draft' &&
       hasAttachment &&
       (isExtract || (isTopLevel && !isOriginalPdfProof));
 
