@@ -8,12 +8,14 @@ import VideoViewer from '@/components/proofVault/VideoViewer.jsx';
 import VideoClipController from '@/components/attorneyView/VideoClipController.jsx';
 import AttorneyCentralPdfMarkupLayer from '@/components/attorneyCentral/AttorneyCentralPdfMarkupLayer.jsx';
 
-export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, interactionMode = 'touch', attorneyMarkup = { strokes: [], highlights: [] }, onAttorneyMarkupChange, onMarkupModeChange, onUndoMarkup, onClearMarkup }) {
+export default function AttorneyCentralPreview({ proof, allProofs = [], juryState, witnessState, onUpdateJury, onUpdateWitness, interactionMode = 'touch', attorneyMarkup = { strokes: [], highlights: [] }, onAttorneyMarkupChange, onMarkupModeChange, onUndoMarkup, onClearMarkup, onPdfPageChange }) {
   const { url, isLoading } = useResolvedProofAsset(proof);
   const parentProof = proof?.parent_proof_id ? allProofs.find((item) => item.id === proof.parent_proof_id) : null;
   const { url: parentUrl, isLoading: isParentLoading } = useResolvedProofAsset(parentProof);
 
   const handlePdfStateChange = useCallback((pdfSync) => {
+    onPdfPageChange?.(pdfSync.currentPage);
+
     if (juryState && juryState.published_proof_id === proof?.id && !juryState.is_blank && onUpdateJury) {
       onUpdateJury({
         pdf_page: pdfSync.currentPage,
