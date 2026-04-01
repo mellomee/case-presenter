@@ -58,3 +58,11 @@ export function collectDescendantIds(items = [], parentId) {
   const children = items.filter((item) => item.parent_item_id === parentId);
   return children.flatMap((child) => [child.id, ...collectDescendantIds(items, child.id)]);
 }
+
+export function getTopLevelAncestorId(proof, proofById = {}) {
+  let currentProof = proof;
+  while (currentProof?.parent_proof_id && proofById[currentProof.parent_proof_id]) {
+    currentProof = proofById[currentProof.parent_proof_id];
+  }
+  return currentProof?.id || proof?.id || null;
+}

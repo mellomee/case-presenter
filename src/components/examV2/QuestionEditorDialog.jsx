@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Search, X } from 'lucide-react';
 import ExamBuilderProofThumb from '@/components/examV2/ExamBuilderProofThumb.jsx';
 import ExamBuilderSafePreviewDialog from '@/components/examV2/ExamBuilderSafePreviewDialog.jsx';
-import { getProofDisplayName } from '@/lib/examV2Utils';
+import { getProofDisplayName, getTopLevelAncestorId } from '@/lib/examV2Utils';
 
 const PARTY_SIDE_ORDER = ['Plaintiff', 'Defense', 'Neutral'];
 
@@ -161,15 +161,19 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
       }
     });
 
-    const roots = availableProofs.filter((proof) => visibleIds.has(proof.id) && (!proof.parent_proof_id || !visibleIds.has(proof.parent_proof_id)));
+    const roots = availableProofs.filter((proof) => visibleIds.has(proof.id) && getTopLevelAncestorId(proof, proofById) === proof.id);
     const childrenByParent = new Map();
 
     availableProofs.forEach((proof) => {
-      if (!visibleIds.has(proof.id) || !proof.parent_proof_id || !visibleIds.has(proof.parent_proof_id)) return;
-      if (!childrenByParent.has(proof.parent_proof_id)) {
-        childrenByParent.set(proof.parent_proof_id, []);
+      if (!visibleIds.has(proof.id) || !proof.parent_proof_id) return;
+      const parentId = visibleIds.has(proof.parent_proof_id)
+        ? proof.parent_proof_id
+        : getTopLevelAncestorId(proof, proofById);
+      if (!parentId || parentId === proof.id) return;
+      if (!childrenByParent.has(parentId)) {
+        childrenByParent.set(parentId, []);
       }
-      childrenByParent.get(proof.parent_proof_id).push(proof);
+      childrenByParent.get(parentId).push(proof);
     });
 
     childrenByParent.forEach((items) => {
