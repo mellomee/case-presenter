@@ -47,17 +47,17 @@ export function useJurySync(role = 'attorney') {
   }, [role]);
 
   useEffect(() => {
-    if (!recordId) return;
     const unsub = base44.entities.JuryState.subscribe((event) => {
-      if (event.id === recordId) {
-        setJuryState(event.data);
-      }
+      if (event.data?.room_id !== ROOM_ID) return;
+      setRecordId(event.id);
+      setJuryState(event.data);
     });
     return unsub;
-  }, [recordId]);
+  }, []);
 
   const update = useCallback((patch) => {
     if (!recordId) return;
+    setJuryState((current) => current ? { ...current, ...patch } : current);
     pendingRef.current = { ...pendingRef.current, ...patch };
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
