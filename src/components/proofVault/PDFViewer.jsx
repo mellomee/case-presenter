@@ -253,11 +253,10 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onWheel = (e) => {
-      if (!allowPan) return;
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         applyZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1));
-      } else {
+      } else if (allowPan) {
         const nextPanY = panY - e.deltaY * 0.5;
         setPanY(nextPanY);
         if (mode === 'controller') debouncedPush({ currentPage, zoom, panX, panY: nextPanY });
@@ -271,7 +270,6 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
-      if (!allowPan) return;
       if (e.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
@@ -286,7 +284,6 @@ export default function PDFViewer({
       }
     };
     const onTouchMove = (e) => {
-      if (!allowPan) return;
       e.preventDefault();
       if (touchRef.current.mode === 'pinch' && e.touches.length === 2) {
         const dist = Math.hypot(
