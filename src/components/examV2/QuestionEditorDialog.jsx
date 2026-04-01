@@ -63,10 +63,6 @@ function isHiddenDepositionSource(proof) {
   return proof?.proof_category === 'Deposition' && proof?.file_type === 'PDF' && !proof?.parent_proof_id && !proof?.proof_child_type;
 }
 
-function getParentProofCategory(proof, proofById) {
-  return proof?.parent_proof_id ? proofById[proof.parent_proof_id]?.proof_category : null;
-}
-
 export default function QuestionEditorDialog({ open, onOpenChange, onSave, initialValue = null, availableProofs = [], parties = [], title = 'Question' }) {
   const [form, setForm] = useState({ text: '', expected_answer: '', notes: '', attached_proof_ids: [] });
   const [previewProof, setPreviewProof] = useState(null);
@@ -111,16 +107,11 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
   const visibleProofTree = useMemo(() => {
     const matchingProofs = availableProofs.filter((proof) => {
       if (proofTab === 'Exhibit') {
-        const parentCategory = getParentProofCategory(proof, proofById);
-        const isAllowedExhibit = proof.proof_category === 'Exhibit' && ['Joint', 'Admitted', 'Demonstrative'].includes(proof.status);
-        const isAllowedExhibitChild = ['Extract', 'ExtractClip', 'VideoClip'].includes(proof.proof_child_type) && parentCategory === 'Exhibit';
-        if (!isAllowedExhibit && !isAllowedExhibitChild) {
+        if (proof.proof_category !== 'Exhibit' || !['Joint', 'Admitted', 'Demonstrative'].includes(proof.status)) {
           return false;
         }
       } else {
-        const parentCategory = getParentProofCategory(proof, proofById);
-        const isDepositionBranch = proof.proof_category === 'Deposition' || parentCategory === 'Deposition';
-        if (!isDepositionBranch || isHiddenDepositionSource(proof)) {
+        if (proof.proof_category !== 'Deposition' || isHiddenDepositionSource(proof)) {
           return false;
         }
       }
