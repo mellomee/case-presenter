@@ -219,9 +219,6 @@ export default function JuryView() {
             visiblePages={visiblePages?.length ? visiblePages : null}
             highlights={proof.highlights || []}
             clippedPage={initialClipPage}
-            liveMarkupPage={juryState.live_markup_page || 1}
-            liveMarkupStrokes={juryState.live_markup_strokes || []}
-            liveMarkupHighlights={juryState.live_markup_highlights || []}
           />
         ) : (
           <p className="text-white/20 text-lg">No file attached</p>

@@ -27,8 +27,6 @@ export default function PDFViewer({
   selectedPages = [],
   onSelectedPagesChange,
   thumbnailWidth = 62,
-  overlayClassName = '',
-  gesturesEnabled = true,
 }) {
   const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
@@ -254,7 +252,6 @@ export default function PDFViewer({
     const el = containerRef.current;
     if (!el) return;
     const onWheel = (e) => {
-      if (!gesturesEnabled) return;
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         applyZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1));
@@ -266,16 +263,12 @@ export default function PDFViewer({
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages, gesturesEnabled]);
+  }, [zoom, panX, panY, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
-      if (!gesturesEnabled) {
-        touchRef.current = {};
-        return;
-      }
       if (e.touches.length === 2) {
         touchRef.current = {
           mode: 'pinch',
@@ -290,7 +283,6 @@ export default function PDFViewer({
       }
     };
     const onTouchMove = (e) => {
-      if (!gesturesEnabled) return;
       e.preventDefault();
       if (touchRef.current.mode === 'pinch' && e.touches.length === 2) {
         const dist = Math.hypot(
@@ -320,15 +312,15 @@ export default function PDFViewer({
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages, gesturesEnabled]);
+  }, [zoom, currentPage, mode, applyZoom, debouncedPush, allowPan, numPages]);
 
   const handleMouseDown = (e) => {
-    if (!gesturesEnabled || !allowPan) return;
+    if (!allowPan) return;
     if (e.button === 0) dragRef.current = { dragging: true, x: e.clientX, y: e.clientY };
   };
 
   const handleMouseMove = (e) => {
-    if (!gesturesEnabled || !dragRef.current.dragging) return;
+    if (!dragRef.current.dragging) return;
     const dx = e.clientX - dragRef.current.x;
     const dy = e.clientY - dragRef.current.y;
     dragRef.current.x = e.clientX;
@@ -564,7 +556,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                {pageOverlay ? <div className={`absolute inset-0 z-20 ${overlayClassName}`}>{pageOverlay}</div> : null}
+                {pageOverlay}
               </div>
             </div>
           </div>

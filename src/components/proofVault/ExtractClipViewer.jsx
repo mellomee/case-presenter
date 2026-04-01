@@ -6,7 +6,7 @@ import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage, 
 import { parsePageRange } from './pageRangeUtils';
 import HighlightGroupPanel from './HighlightGroupPanel.jsx';
 
-export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange, hideHeader = false }) {
+export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange }) {
   if (!proof) return null;
 
   const parentExtract = allProofs.find((p) => p.id === proof.parent_proof_id);
@@ -70,64 +70,62 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
 
   return (
     <div className="flex flex-col h-full bg-zinc-900">
-      {!hideHeader && (
-        <div className="shrink-0 border-b border-zinc-700 bg-zinc-800">
-          <div className="flex items-center justify-between gap-3 px-4 py-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-xs">
-                <Scissors className="w-3.5 h-3.5 shrink-0 text-teal-400" />
-                <span className="truncate font-semibold text-zinc-200">{proof.name}</span>
-                <span className="ml-1 rounded border border-teal-500/30 bg-teal-500/20 px-1.5 py-0.5 font-mono text-[10px] text-teal-300">Page {currentPage}</span>
-              </div>
-              {topMetaCollapsed && (
-                <div className="mt-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</div>
-              )}
+      <div className="shrink-0 border-b border-zinc-700 bg-zinc-800">
+        <div className="flex items-center justify-between gap-3 px-4 py-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs">
+              <Scissors className="w-3.5 h-3.5 shrink-0 text-teal-400" />
+              <span className="truncate font-semibold text-zinc-200">{proof.name}</span>
+              <span className="ml-1 rounded border border-teal-500/30 bg-teal-500/20 px-1.5 py-0.5 font-mono text-[10px] text-teal-300">Page {currentPage}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setTopMetaCollapsed((value) => !value)}
-              className="rounded-md p-1 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-              aria-label={topMetaCollapsed ? 'Expand clip details' : 'Collapse clip details'}
-            >
-              {topMetaCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </button>
+            {topMetaCollapsed && (
+              <div className="mt-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</div>
+            )}
           </div>
-
-          {!topMetaCollapsed && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-700 px-4 py-2">
-              {originalPDF && (
-                <>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    <span className="text-zinc-500">PDF:</span>
-                    <span className="text-zinc-200 font-medium">{originalPDF.name}</span>
-                  </div>
-                  <span className="text-zinc-600 text-xs">›</span>
-                </>
-              )}
-
-              {parentExtract && (
-                <>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                    <span className="text-zinc-500">Extract:</span>
-                    <span className="text-zinc-200 font-medium">{parentExtract.name}</span>
-                  </div>
-                  <span className="text-zinc-600 text-xs">›</span>
-                </>
-              )}
-
-              <div className="flex items-center gap-1.5 text-xs">
-                <Scissors className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                <span className="text-zinc-500">Clip:</span>
-                <span className="text-zinc-200 font-semibold">{proof.name}</span>
-                <span className="ml-1 rounded border border-teal-500/30 bg-teal-500/20 px-1.5 py-0.5 font-mono text-[10px] text-teal-300">Page {currentPage}</span>
-                <span className="ml-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>
-              </div>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => setTopMetaCollapsed((value) => !value)}
+            className="rounded-md p-1 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+            aria-label={topMetaCollapsed ? 'Expand clip details' : 'Collapse clip details'}
+          >
+            {topMetaCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
         </div>
-      )}
+
+        {!topMetaCollapsed && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-700 px-4 py-2">
+            {originalPDF && (
+              <>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span className="text-zinc-500">PDF:</span>
+                  <span className="text-zinc-200 font-medium">{originalPDF.name}</span>
+                </div>
+                <span className="text-zinc-600 text-xs">›</span>
+              </>
+            )}
+
+            {parentExtract && (
+              <>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="text-zinc-500">Extract:</span>
+                  <span className="text-zinc-200 font-medium">{parentExtract.name}</span>
+                </div>
+                <span className="text-zinc-600 text-xs">›</span>
+              </>
+            )}
+
+            <div className="flex items-center gap-1.5 text-xs">
+              <Scissors className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+              <span className="text-zinc-500">Clip:</span>
+              <span className="text-zinc-200 font-semibold">{proof.name}</span>
+              <span className="ml-1 rounded border border-teal-500/30 bg-teal-500/20 px-1.5 py-0.5 font-mono text-[10px] text-teal-300">Page {currentPage}</span>
+              <span className="ml-1 text-[10px] text-amber-300">{groupCount} group{groupCount === 1 ? '' : 's'} • {highlightCount} highlight{highlightCount === 1 ? '' : 's'}</span>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex-1 overflow-hidden flex min-h-0">
         <HighlightGroupPanel
