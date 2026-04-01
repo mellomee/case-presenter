@@ -22,7 +22,7 @@ export default function MarkupToolbar({
           <Hand className="h-4 w-4" /> Touch Navigation
         </Button>
         <Button type="button" variant="outline" className={toolClass(tool === 'pen')} onClick={() => onToolChange('pen')}>
-          <Pencil className="h-4 w-4" /> Freehand
+          <Pencil className="h-4 w-4" /> Draw
         </Button>
         <Button type="button" variant="outline" className={toolClass(tool === 'highlight')} onClick={() => onToolChange('highlight')}>
           <Highlighter className="h-4 w-4" /> Highlight
