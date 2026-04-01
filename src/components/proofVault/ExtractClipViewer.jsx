@@ -6,7 +6,7 @@ import { countGroupedHighlights, countHighlightGroups, getInitialHighlightPage, 
 import { parsePageRange } from './pageRangeUtils';
 import HighlightGroupPanel from './HighlightGroupPanel.jsx';
 
-export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange }) {
+export default function ExtractClipViewer({ proof, allProofs = [], mode = 'controller', syncState, onStateChange, pageOverlay = null, topOverlay = null, forceAllowPan = null }) {
   if (!proof) return null;
 
   const parentExtract = allProofs.find((p) => p.id === proof.parent_proof_id);
@@ -177,6 +177,9 @@ export default function ExtractClipViewer({ proof, allProofs = [], mode = 'contr
               focusTarget={focusTarget}
               clippedPage={initialPage}
               visiblePages={pdfVisiblePages}
+              pageOverlay={pageOverlay}
+              topOverlay={topOverlay}
+              forceAllowPan={forceAllowPan}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-zinc-500 text-sm">No file attached to this clip</div>
