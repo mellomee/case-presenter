@@ -155,7 +155,8 @@ export default function ProofActionMenu({
     const canAddToJoint =
       proof.proof_category === 'Exhibit' &&
       hasAttachment &&
-      (isExtract || (isTopLevel && !isOriginalPdfProof));
+      isTopLevel &&
+      !isOriginalPdfProof;
 
     if (canOptimizePdf) {
       actions.push({ id: 'optimizePdf', label: 'Optimize PDF', icon: FileText, action: () => setOptimizeDialogOpen(true), color: 'text-blue-600' });
