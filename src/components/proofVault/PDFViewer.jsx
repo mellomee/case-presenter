@@ -27,6 +27,7 @@ export default function PDFViewer({
   selectedPages = [],
   onSelectedPagesChange,
   thumbnailWidth = 62,
+  overlayClassName = '',
 }) {
   const initialPage = controlledPage || (visiblePages?.length ? 1 : clippedPage || 1);
   const [numPages, setNumPages] = useState(null);
@@ -556,7 +557,7 @@ export default function PDFViewer({
                     }}
                   />
                 ))}
-                {pageOverlay}
+                {pageOverlay ? <div className={overlayClassName}>{pageOverlay}</div> : null}
               </div>
             </div>
           </div>
