@@ -62,7 +62,7 @@ function Branch({ parentId, rootParentId, items, proofsById, admissionStatusMeta
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white leading-relaxed">{item.text}</p>
                         {item.expected_answer && <p className="mt-2 text-xs text-green-300">Expected: {item.expected_answer}</p>}
-                        {item.notes && <p className="mt-1 text-xs text-amber-300">Notes: {item.notes}</p>}
+                        {item.notes && <p className="mt-1 whitespace-pre-wrap text-xs text-blue-300">Notes: {item.notes}</p>}
                         {attachedProofs.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {attachedProofs.map((proof) => (

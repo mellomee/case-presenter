@@ -247,7 +247,7 @@ export default function QuestionEditorDialog({ open, onOpenChange, onSave, initi
             value={form.notes}
             onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
             placeholder="Notes"
-            rows={3}
+            rows={5}
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500"
           />
 
