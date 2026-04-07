@@ -44,12 +44,30 @@ export function parseExamV2TextImport({ rawText, availableRootProofs = [], allPr
   let currentRoot = null;
   let currentQuestion = null;
   let questionStack = [];
+  let activeMultilineField = null;
 
   lines.forEach((line, index) => {
     const lineNumber = index + 1;
     const trimmed = line.trim();
 
-    if (!trimmed) return;
+    if (activeMultilineField && trimmed) {
+      const isNextCommand = /^((PROOF\s*:)|(GROUP\s*:)|(QUESTION\s+GROUP\s*:)|(@attach(?:ed\s+proofs?)?\s*:)|(@notes?\s*:)|(->\s*)|(\s*)([-*•]|\d+\.)\s+)/i.test(line);
+      if (!isNextCommand) {
+        const nextValue = activeMultilineField.target[activeMultilineField.key]
+          ? `${activeMultilineField.target[activeMultilineField.key]}\n${normalizeValue(line)}`
+          : normalizeValue(line);
+        activeMultilineField.target[activeMultilineField.key] = nextValue;
+        return;
+      }
+      activeMultilineField = null;
+    }
+
+    if (!trimmed) {
+      if (activeMultilineField) {
+        activeMultilineField.target[activeMultilineField.key] = `${activeMultilineField.target[activeMultilineField.key]}\n`;
+      }
+      return;
+    }
 
     const proofMatch = trimmed.match(/^PROOF\s*:\s*(.+)$/i);
     if (proofMatch) {
@@ -61,6 +79,7 @@ export function parseExamV2TextImport({ rawText, availableRootProofs = [], allPr
         currentRoot = null;
         currentQuestion = null;
         questionStack = [];
+        activeMultilineField = null;
         return;
       }
 
@@ -75,6 +94,7 @@ export function parseExamV2TextImport({ rawText, availableRootProofs = [], allPr
       rootItems.push(currentRoot);
       currentQuestion = null;
       questionStack = [];
+      activeMultilineField = null;
       return;
     }
 
@@ -92,6 +112,7 @@ export function parseExamV2TextImport({ rawText, availableRootProofs = [], allPr
       rootItems.push(currentRoot);
       currentQuestion = null;
       questionStack = [];
+      activeMultilineField = null;
       return;
     }
 
@@ -136,16 +157,18 @@ export function parseExamV2TextImport({ rawText, availableRootProofs = [], allPr
         return;
       }
       currentQuestion.expected_answer = normalizeValue(answerMatch[1]);
+      activeMultilineField = null;
       return;
     }
 
-    const notesMatch = trimmed.match(/^@notes?\s*:\s*(.+)$/i);
+    const notesMatch = line.match(/^\s*@notes?\s*:\s*(.*)$/i);
     if (notesMatch) {
       if (!currentQuestion) {
         errors.push(createError(lineNumber, trimmed, 'Notes line must come after a question.'));
         return;
       }
       currentQuestion.notes = normalizeValue(notesMatch[1]);
+      activeMultilineField = { target: currentQuestion, key: 'notes' };
       return;
     }
 
@@ -172,6 +195,7 @@ export function parseExamV2TextImport({ rawText, availableRootProofs = [], allPr
       }
 
       currentQuestion.attached_proof_ids = attachedIds;
+      activeMultilineField = null;
       return;
     }
 

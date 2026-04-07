@@ -27,7 +27,11 @@ const EXAMPLE_TEXT = `PROOF: my new extract pages 1,3,5
 GROUP: What human Factors
 - What does the document show?
 - Why does it matter?
-  @notes: Follow-up question`;
+  @notes:
+  49:5 A.   I recall there being enough room for
+  49:6 another vehicle to be stopped behind the limit line
+  49:7 of the intersection in front of the involved
+  49:8 vehicle.`;
 
 export default function ExamV2TextImportDialog({
   open,
@@ -153,7 +157,7 @@ export default function ExamV2TextImportDialog({
                     <li><span className="font-medium">Indented - Question</span> creates a follow-up</li>
                     <li><span className="font-medium">-&gt; Answer</span> sets expected answer</li>
                     <li><span className="font-medium">@attach:</span> proof1 | proof2</li>
-                    <li><span className="font-medium">@notes:</span> adds attorney notes</li>
+                    <li><span className="font-medium">@notes:</span> supports single-line or multi-line attorney notes</li>
                   </ul>
                 </div>
 
