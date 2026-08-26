@@ -1,0 +1,72 @@
+{
+  "name": "Question",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Question text"
+    },
+    "expected_answer": {
+      "type": "string",
+      "description": "Expected answer"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Direct",
+        "Cross"
+      ],
+      "description": "Question type"
+    },
+    "parent_question_id": {
+      "type": "string",
+      "description": "Parent question ID if child question"
+    },
+    "party_id": {
+      "type": "string",
+      "description": "Party ID"
+    },
+    "bucket_id": {
+      "type": "string",
+      "description": "Bucket ID"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes"
+    },
+    "proof_ids": {
+      "type": "object",
+      "description": "Attached proof IDs (JSON array)"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sort order"
+    },
+    "block_type": {
+      "type": "string",
+      "enum": [
+        "Question",
+        "AdmissionBlock"
+      ],
+      "default": "Question",
+      "description": "Block type"
+    },
+    "admission_block_id": {
+      "type": "string",
+      "description": "Admission block ID if part of block"
+    },
+    "follow_up_group": {
+      "type": "string",
+      "enum": [
+        "Forgot",
+        "Deny"
+      ],
+      "description": "Group for child follow-up questions"
+    }
+  },
+  "required": [
+    "text",
+    "type",
+    "party_id"
+  ]
+}

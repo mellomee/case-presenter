@@ -1,0 +1,57 @@
+{
+  "name": "WitnessState",
+  "type": "object",
+  "properties": {
+    "room_id": {
+      "type": "string",
+      "default": "case-presenter-witness",
+      "description": "Witness room identifier"
+    },
+    "published_proof_id": {
+      "type": "string",
+      "description": "Currently displayed proof ID (null = blank screen)"
+    },
+    "pdf_page": {
+      "type": "number",
+      "default": 1,
+      "description": "Current PDF page number"
+    },
+    "zoom": {
+      "type": "number",
+      "default": 1,
+      "description": "Current PDF zoom level"
+    },
+    "panX": {
+      "type": "number",
+      "default": 0,
+      "description": "Current horizontal pan offset"
+    },
+    "panY": {
+      "type": "number",
+      "default": 0,
+      "description": "Current vertical pan offset"
+    },
+    "video_time": {
+      "type": "number",
+      "default": 0,
+      "description": "Current video playback position in seconds"
+    },
+    "is_playing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether video is currently playing"
+    },
+    "is_blank": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the witness screen is blanked"
+    },
+    "exhibit_label": {
+      "type": "string",
+      "description": "Label shown on witness screen"
+    }
+  },
+  "required": [
+    "room_id"
+  ]
+}

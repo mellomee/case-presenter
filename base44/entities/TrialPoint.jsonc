@@ -1,0 +1,21 @@
+{
+  "name": "TrialPoint",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Trial point name"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "Trial point category ID"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sort order"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

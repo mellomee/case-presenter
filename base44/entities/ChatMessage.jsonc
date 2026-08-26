@@ -1,0 +1,33 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "thread_id": {
+      "type": "string",
+      "default": "general",
+      "description": "Chat thread ID"
+    },
+    "sender_id": {
+      "type": "string",
+      "description": "User ID of sender"
+    },
+    "sender_name": {
+      "type": "string",
+      "description": "Display name of sender"
+    },
+    "text": {
+      "type": "string",
+      "description": "Message content"
+    },
+    "read_by": {
+      "type": "object",
+      "description": "Array of user IDs who have read (JSON)"
+    }
+  },
+  "required": [
+    "thread_id",
+    "sender_id",
+    "sender_name",
+    "text"
+  ]
+}

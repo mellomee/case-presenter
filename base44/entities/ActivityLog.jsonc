@@ -1,0 +1,33 @@
+{
+  "name": "ActivityLog",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "Action description"
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "Proof",
+        "Question",
+        "Party",
+        "AdmissionBlock"
+      ],
+      "description": "Entity type"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "Entity ID"
+    },
+    "details": {
+      "type": "object",
+      "description": "Additional context (JSON)"
+    }
+  },
+  "required": [
+    "action",
+    "entity_type",
+    "entity_id"
+  ]
+}

@@ -1,0 +1,288 @@
+{
+  "name": "Proof",
+  "type": "object",
+  "properties": {
+    "proof_category": {
+      "type": "string",
+      "enum": [
+        "Exhibit",
+        "Deposition"
+      ],
+      "description": "Exhibit or Deposition"
+    },
+    "file_type": {
+      "type": "string",
+      "enum": [
+        "PDF",
+        "Image",
+        "Video"
+      ],
+      "description": "Type of file"
+    },
+    "proof_child_type": {
+      "type": "string",
+      "enum": [
+        null,
+        "Extract",
+        "ExtractClip",
+        "VideoClip"
+      ],
+      "description": "Child proof type if applicable"
+    },
+    "name": {
+      "type": "string",
+      "description": "Internal name"
+    },
+    "formal_name": {
+      "type": "string",
+      "description": "Display/formal name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description"
+    },
+    "parent_proof_id": {
+      "type": "string",
+      "description": "Parent proof ID if child proof"
+    },
+    "party_id": {
+      "type": "string",
+      "description": "Primary party associated with this proof"
+    },
+    "party_ids": {
+      "type": "object",
+      "description": "JSON array of associated party IDs for Joint/Admitted/Demonstrative exhibits"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Joint",
+        "Admitted",
+        "Demonstrative"
+      ],
+      "default": "Draft",
+      "description": "Current status"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "Proof category ID"
+    },
+    "proof_type_category_id": {
+      "type": "string",
+      "description": "Proof type category ID (e.g., Photo, Video, Business Record, etc.)"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to uploaded file"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "Streaming URL for videos"
+    },
+    "file_source": {
+      "type": "string",
+      "enum": [
+        "base44",
+        "dropbox"
+      ],
+      "default": "base44",
+      "description": "Where the file is stored"
+    },
+    "dropbox_file_id": {
+      "type": "string",
+      "description": "Active Dropbox file ID used by the viewer"
+    },
+    "dropbox_path": {
+      "type": "string",
+      "description": "Active Dropbox path used by the viewer"
+    },
+    "dropbox_file_name": {
+      "type": "string",
+      "description": "Active Dropbox filename used by the viewer"
+    },
+    "original_dropbox_file_id": {
+      "type": "string",
+      "description": "Original Dropbox file ID before app-generated processing"
+    },
+    "original_dropbox_path": {
+      "type": "string",
+      "description": "Original Dropbox path before app-generated processing"
+    },
+    "original_dropbox_file_name": {
+      "type": "string",
+      "description": "Original Dropbox filename before app-generated processing"
+    },
+    "optimized_for_viewer": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the active Dropbox file is an app-generated processed PDF"
+    },
+    "optimized_date": {
+      "type": "string",
+      "description": "When the PDF was last processed for viewer optimization"
+    },
+    "optimized_with_cover_page": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the latest processed PDF includes a cover page"
+    },
+    "optimized_with_page_numbers": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the latest processed PDF includes page numbers"
+    },
+    "draft_exhibit_num": {
+      "type": "string",
+      "description": "Draft exhibit number"
+    },
+    "joint_exhibit_num": {
+      "type": "string",
+      "description": "Joint exhibit number"
+    },
+    "joint_by": {
+      "type": "string",
+      "enum": [
+        "Plaintiff",
+        "Defense"
+      ],
+      "description": "Party that joined the exhibit"
+    },
+    "joint_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date added to joint"
+    },
+    "admitted_exhibit_num": {
+      "type": "string",
+      "description": "Admitted exhibit number"
+    },
+    "admitted_by": {
+      "type": "string",
+      "enum": [
+        "Plaintiff",
+        "Defense"
+      ],
+      "description": "Party that admitted the exhibit"
+    },
+    "admit_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date admitted"
+    },
+    "demonstrative_exhibit_num": {
+      "type": "string",
+      "description": "Demonstrative exhibit number"
+    },
+    "extract_pages": {
+      "type": "string",
+      "description": "Page range for extract (e.g. 1-3, 5, 13-18)"
+    },
+    "clipped_page": {
+      "type": "number",
+      "description": "Page number for extract clip"
+    },
+    "highlights": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "page": {
+            "type": "number"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "color": {
+            "type": "string"
+          },
+          "opacity": {
+            "type": "number"
+          },
+          "highlights": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "width": {
+                  "type": "number"
+                },
+                "height": {
+                  "type": "number"
+                },
+                "color": {
+                  "type": "string"
+                },
+                "opacity": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Highlights or grouped highlight data for extract clips"
+    },
+    "video_clips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "segment",
+              "pause"
+            ],
+            "description": "Playlist item type"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Video clip playlist items, including video segments and manual pauses"
+    },
+    "witness_name": {
+      "type": "string",
+      "description": "Witness name associated with a saved markup proof"
+    },
+    "witness_markup": {
+      "type": "object",
+      "description": "Saved witness markup payload including freehand strokes and highlight rectangles"
+    }
+  },
+  "required": [
+    "proof_category",
+    "file_type",
+    "name",
+    "proof_type_category_id"
+  ]
+}

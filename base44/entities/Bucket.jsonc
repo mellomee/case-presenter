@@ -1,0 +1,35 @@
+{
+  "name": "Bucket",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Bucket name"
+    },
+    "trial_point_id": {
+      "type": "string",
+      "description": "Trial point ID"
+    },
+    "party_id": {
+      "type": "string",
+      "description": "Party ID"
+    },
+    "exam_type": {
+      "type": "string",
+      "enum": [
+        "Direct",
+        "Cross"
+      ],
+      "description": "Exam type"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sort order"
+    }
+  },
+  "required": [
+    "name",
+    "party_id",
+    "exam_type"
+  ]
+}

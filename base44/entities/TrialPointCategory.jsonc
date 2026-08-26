@@ -1,0 +1,17 @@
+{
+  "name": "TrialPointCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Category name (e.g. Liability, Damages, Foundation, Credibility)"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sort order"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

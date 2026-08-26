@@ -1,0 +1,36 @@
+{
+  "name": "AppSettings",
+  "type": "object",
+  "properties": {
+    "case_name": {
+      "type": "string",
+      "description": "Case name"
+    },
+    "jury_demonstrative_label": {
+      "type": "string",
+      "default": "For illustrative purposes only",
+      "description": "Label for demonstrative exhibits on jury view"
+    },
+    "liveblocks_room_id": {
+      "type": "string",
+      "default": "case-presenter-trial",
+      "description": "Liveblocks room ID"
+    },
+    "dropbox_save_folder": {
+      "type": "string",
+      "default": "/Case Presenter/OCR",
+      "description": "Dropbox folder used for optimized parent proofs (source PDFs)"
+    },
+    "dropbox_extract_folder": {
+      "type": "string",
+      "default": "/Case Presenter/Extracts",
+      "description": "Dropbox folder used for extract PDFs and extract clips"
+    },
+    "dropbox_browse_folder": {
+      "type": "string",
+      "default": "",
+      "description": "Default Dropbox folder opened by the link Dropbox file picker"
+    }
+  },
+  "required": []
+}

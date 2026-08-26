@@ -1,0 +1,40 @@
+{
+  "name": "AdmissionBlock",
+  "type": "object",
+  "properties": {
+    "proof_id": {
+      "type": "string",
+      "description": "Proof ID"
+    },
+    "party_id": {
+      "type": "string",
+      "description": "Party ID"
+    },
+    "bucket_id": {
+      "type": "string",
+      "description": "Bucket ID"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sort order"
+    },
+    "proof_type_category_id": {
+      "type": "string",
+      "description": "Proof type category ID"
+    },
+    "step_overrides": {
+      "type": "object",
+      "description": "Step-specific question text overrides (JSON)"
+    },
+    "path_question_sets": {
+      "type": "object",
+      "description": "JSON object containing admitted and not_admitted path question trees with optional child questions, attached proofs, and parties"
+    }
+  },
+  "required": [
+    "proof_id",
+    "party_id",
+    "bucket_id",
+    "proof_type_category_id"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "ProofTypeCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Category name (Photo, Video, Business Record, Medical Record, Diagram, Expert Report)"
+    },
+    "template_questions": {
+      "type": "object",
+      "description": "Default template questions per step (JSON)"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "ExamV2",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Exam title"
+    },
+    "party_id": {
+      "type": "string",
+      "description": "Related party ID"
+    },
+    "exam_type": {
+      "type": "string",
+      "enum": [
+        "Direct",
+        "Cross"
+      ],
+      "description": "Exam type"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this exam is active"
+    }
+  },
+  "required": [
+    "title",
+    "party_id",
+    "exam_type"
+  ]
+}
